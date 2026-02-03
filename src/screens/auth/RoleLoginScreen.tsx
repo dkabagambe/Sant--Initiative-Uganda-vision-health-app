@@ -14,11 +14,12 @@ import RoleTabs from "../../components/RoleTabs";
 import AppButton from "../../components/AppButton";
 import { colors } from "../../theme/colors";
 
-// Define the navigation types matching your AppNavigator
+// Define navigation types
 type RootStackParamList = {
   Login: undefined;
   OTP: { phone: string; role: string };
   Register: undefined;
+  CHWRegistrationStep1: undefined;
   AppTabs: { role: string };
 };
 
@@ -41,7 +42,6 @@ export default function RoleLoginScreen() {
 
   const handleSendOTP = () => {
     if (phone.trim()) {
-      // Navigate to OTP screen with phone and role as params
       navigation.navigate("OTP", {
         phone: phone.trim(),
         role: role,
@@ -49,8 +49,8 @@ export default function RoleLoginScreen() {
     }
   };
 
+  // Function to navigate to RegisterScreen
   const handleRegisterPress = () => {
-    // Navigate to Register screen
     navigation.navigate("Register");
   };
 
@@ -100,6 +100,7 @@ export default function RoleLoginScreen() {
         onPress={handleSendOTP}
       />
 
+      {/* Updated: This button now navigates to RegisterScreen */}
       <AppButton
         title="Register as CHW/Outlet"
         variant="outline"

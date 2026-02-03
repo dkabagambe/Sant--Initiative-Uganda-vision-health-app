@@ -14,6 +14,10 @@ type RootStackParamList = {
   Login: undefined;
   OTP: { phone: string; role: string };
   Register: undefined;
+  CHWRegistrationStep1: undefined;
+  // Add these when you create the screens:
+  // ShopRegistrationStep1: undefined;
+  // VSLARegistrationStep1: undefined;
   AppTabs: { role: string };
 };
 
@@ -27,6 +31,23 @@ export default function RegisterScreen() {
 
   const handleBackPress = () => {
     navigation.goBack();
+  };
+
+  // Add these navigation functions:
+  const handleRegisterCHW = () => {
+    navigation.navigate("CHWRegistrationStep1");
+  };
+
+  const handleRegisterShop = () => {
+    // TODO: Create and navigate to ShopRegistrationStep1
+    console.log("Navigate to Shop Registration");
+    // navigation.navigate("ShopRegistrationStep1");
+  };
+
+  const handleRegisterVSLA = () => {
+    // TODO: Create and navigate to VSLARegistrationStep1
+    console.log("Navigate to VSLA Registration");
+    // navigation.navigate("VSLARegistrationStep1");
   };
 
   return (
@@ -76,7 +97,11 @@ export default function RegisterScreen() {
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.registerButton}>
+          {/* Updated: Added onPress to this button */}
+          <TouchableOpacity
+            style={styles.registerButton}
+            onPress={handleRegisterCHW}
+          >
             <Text style={styles.registerButtonText}>Register as CHW</Text>
           </TouchableOpacity>
         </View>
@@ -112,7 +137,11 @@ export default function RegisterScreen() {
             <Text style={styles.listText}>Receive stock replenishments</Text>
           </View>
 
-          <TouchableOpacity style={styles.registerButton}>
+          {/* Updated: Added onPress to this button */}
+          <TouchableOpacity
+            style={styles.registerButton}
+            onPress={handleRegisterShop}
+          >
             <Text style={styles.registerButtonText}>Register as Shop</Text>
           </TouchableOpacity>
         </View>
@@ -150,7 +179,11 @@ export default function RegisterScreen() {
             <Text style={styles.listText}>Support community eye health</Text>
           </View>
 
-          <TouchableOpacity style={styles.registerButton}>
+          {/* Updated: Added onPress to this button */}
+          <TouchableOpacity
+            style={styles.registerButton}
+            onPress={handleRegisterVSLA}
+          >
             <Text style={styles.registerButtonText}>Register as VSLA</Text>
           </TouchableOpacity>
         </View>

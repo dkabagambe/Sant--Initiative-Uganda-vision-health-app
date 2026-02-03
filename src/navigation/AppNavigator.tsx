@@ -3,6 +3,10 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import RoleLoginScreen from "../screens/auth/RoleLoginScreen";
 import OTPScreen from "../screens/auth/OTPScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
+import CHWRegistrationStep1 from "../screens/auth/CHWRegistrationStep1";
+import CHWRegistrationStep2 from "../screens/auth/CHWRegistrationStep2";
+import CHWRegistrationStep3 from "../screens/auth/CHWRegistrationStep3";
+import CHWRegistrationStep4 from "../screens/auth/CHWRegistrationStep4"; // Add this import
 import CHWDashboard from "../screens/chw/CHWDashboard";
 import OutletDashboard from "../screens/outlet/OutletDashboard";
 import VSLADashboard from "../screens/vsla/VSLADashboard";
@@ -38,6 +42,22 @@ export default function AppNavigator() {
       <Stack.Screen name="Login" component={RoleLoginScreen} />
       <Stack.Screen name="OTP" component={OTPScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen
+        name="CHWRegistrationStep1"
+        component={CHWRegistrationStep1}
+      />
+      <Stack.Screen
+        name="CHWRegistrationStep2"
+        component={CHWRegistrationStep2}
+      />
+      <Stack.Screen
+        name="CHWRegistrationStep3"
+        component={CHWRegistrationStep3}
+      />
+      <Stack.Screen
+        name="CHWRegistrationStep4"
+        component={CHWRegistrationStep4}
+      />
       <Stack.Screen name="AppTabs" component={AppTabs} />
     </Stack.Navigator>
   );
