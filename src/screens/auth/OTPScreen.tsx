@@ -1,36 +1,17 @@
+import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { useState } from "react";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import AppInput from "../../components/AppInput";
-import AppButton from "../../components/AppButton";
-import { colors } from "../../theme/colors";
+import { useRoute } from "@react-navigation/native";
 
 export default function OTPScreen() {
-  const [otp, setOtp] = useState("");
-  const navigation = useNavigation<any>();
-  const route = useRoute<any>();
-  const { role } = route.params;
+  const route = useRoute();
+  const { phone, role } = route.params as { phone: string; role: string };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Verify OTP</Text>
-      <Text style={styles.subtitle}>
-        Enter the 6-digit code sent to your phone
-      </Text>
-
-      <AppInput
-        label="OTP Code"
-        value={otp}
-        onChangeText={setOtp}
-        placeholder="123456"
-        keyboardType="number-pad"
-      />
-
-      <AppButton
-        title="Verify & Continue"
-        disabled={otp.length < 6}
-        onPress={() => navigation.replace("AppTabs", { role })}
-      />
+      <Text style={styles.title}>OTP Verification</Text>
+      <Text style={styles.subtitle}>Phone: {phone}</Text>
+      <Text style={styles.subtitle}>Role: {role}</Text>
+      {/* Add your OTP input and verification logic here */}
     </View>
   );
 }
@@ -38,16 +19,16 @@ export default function OTPScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
     justifyContent: "center",
+    alignItems: "center",
   },
   title: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 8,
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
   },
   subtitle: {
-    color: colors.textSecondary,
-    marginBottom: 16,
+    fontSize: 18,
+    marginBottom: 10,
   },
 });

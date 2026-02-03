@@ -8,19 +8,50 @@ import {
 } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import RoleTabs from "../../components/RoleTabs";
 import AppButton from "../../components/AppButton";
 import { colors } from "../../theme/colors";
+
+// Define the navigation types matching your AppNavigator
+type RootStackParamList = {
+  Login: undefined;
+  OTP: { phone: string; role: string };
+  Register: undefined;
+  AppTabs: { role: string };
+};
+
+type RoleLoginScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Login"
+>;
 
 export default function RoleLoginScreen() {
   const [role, setRole] = useState<"CHW" | "Outlet" | "VSLA">("CHW");
   const [phone, setPhone] = useState("");
 
-  // Handle role change with type safety
+  const navigation = useNavigation<RoleLoginScreenNavigationProp>();
+
   const handleRoleChange = (newRole: string) => {
     if (newRole === "CHW" || newRole === "Outlet" || newRole === "VSLA") {
       setRole(newRole);
     }
+  };
+
+  const handleSendOTP = () => {
+    if (phone.trim()) {
+      // Navigate to OTP screen with phone and role as params
+      navigation.navigate("OTP", {
+        phone: phone.trim(),
+        role: role,
+      });
+    }
+  };
+
+  const handleRegisterPress = () => {
+    // Navigate to Register screen
+    navigation.navigate("Register");
   };
 
   return (
@@ -56,18 +87,23 @@ export default function RoleLoginScreen() {
           keyboardType="phone-pad"
           value={phone}
           onChangeText={setPhone}
+          maxLength={9}
         />
       </View>
 
       <Text style={styles.helperText}>Enter your registered mobile number</Text>
 
       {/* Buttons */}
-      <AppButton title="Send OTP" disabled={!phone} onPress={() => {}} />
+      <AppButton
+        title="Send OTP"
+        disabled={!phone.trim()}
+        onPress={handleSendOTP}
+      />
 
       <AppButton
         title="Register as CHW/Outlet"
         variant="outline"
-        onPress={() => {}}
+        onPress={handleRegisterPress}
       />
 
       {/* Info Card */}
@@ -101,6 +137,7 @@ export default function RoleLoginScreen() {
   );
 }
 
+// Keep your existing styles exactly as they are
 const styles = StyleSheet.create({
   container: {
     flex: 1,
