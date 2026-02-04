@@ -15,7 +15,7 @@ type RootStackParamList = {
   Register: undefined;
   CHWRegistrationStep1: undefined;
   OutletRegistrationStep1: undefined;
-  VSLADashboard: undefined;
+  VSLARegistrationStep1: undefined; // Updated from VSLADashboard
   [key: string]: any;
 };
 
@@ -33,7 +33,7 @@ const RegisterScreen = () => {
         navigation.navigate("OutletRegistrationStep1");
         break;
       case "VSLA":
-        navigation.navigate("VSLADashboard");
+        navigation.navigate("VSLARegistrationStep1"); // Now goes to registration flow
         break;
       default:
         break;
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   },
   vslaCard: {
     borderColor: "#FF9800",
-    borderWidth: 1,
+    borderWidth: 2,
   },
   cardHeader: {
     marginBottom: 12,

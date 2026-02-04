@@ -14,6 +14,10 @@ import OutletRegistrationStep1 from "../screens/auth/OutletRegistrationStep1";
 import OutletRegistrationStep2 from "../screens/auth/OutletRegistrationStep2";
 import OutletRegistrationStep3 from "../screens/auth/OutletRegistrationStep3";
 import OutletRegistrationStep4 from "../screens/auth/OutletRegistrationStep4";
+import VSLARegistrationStep1 from "../screens/auth/VSLARegistrationStep1";
+import VSLARegistrationStep2 from "../screens/auth/VSLARegistrationStep2";
+import VSLARegistrationStep3 from "../screens/auth/VSLARegistrationStep3";
+import VSLARegistrationStep4 from "../screens/auth/VSLARegistrationStep4";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -82,6 +86,26 @@ export default function AppNavigator() {
       <Stack.Screen
         name="OutletRegistrationStep4"
         component={OutletRegistrationStep4}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="VSLARegistrationStep1"
+        component={VSLARegistrationStep1}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="VSLARegistrationStep2"
+        component={VSLARegistrationStep2}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="VSLARegistrationStep3"
+        component={VSLARegistrationStep3}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="VSLARegistrationStep4"
+        component={VSLARegistrationStep4}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
