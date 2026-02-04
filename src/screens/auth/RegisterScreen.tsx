@@ -1,337 +1,224 @@
+import React from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Platform,
+  SafeAreaView,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { colors } from "../../theme/colors";
+import { StackNavigationProp } from "@react-navigation/stack";
 
 type RootStackParamList = {
-  Login: undefined;
-  OTP: { phone: string; role: string };
   Register: undefined;
   CHWRegistrationStep1: undefined;
-  // Add these when you create the screens:
-  // ShopRegistrationStep1: undefined;
-  // VSLARegistrationStep1: undefined;
-  AppTabs: { role: string };
+  OutletRegistrationStep1: undefined;
+  VSLADashboard: undefined;
+  [key: string]: any;
 };
 
-type RegisterScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "Register"
->;
+type NavigationProp = StackNavigationProp<RootStackParamList>;
 
-export default function RegisterScreen() {
-  const navigation = useNavigation<RegisterScreenNavigationProp>();
+const RegisterScreen = () => {
+  const navigation = useNavigation<NavigationProp>();
 
-  const handleBackPress = () => {
-    navigation.goBack();
-  };
-
-  // Add these navigation functions:
-  const handleRegisterCHW = () => {
-    navigation.navigate("CHWRegistrationStep1");
-  };
-
-  const handleRegisterShop = () => {
-    // TODO: Create and navigate to ShopRegistrationStep1
-    console.log("Navigate to Shop Registration");
-    // navigation.navigate("ShopRegistrationStep1");
-  };
-
-  const handleRegisterVSLA = () => {
-    // TODO: Create and navigate to VSLARegistrationStep1
-    console.log("Navigate to VSLA Registration");
-    // navigation.navigate("VSLARegistrationStep1");
+  const handleRoleSelect = (role: string) => {
+    switch (role) {
+      case "CHW":
+        navigation.navigate("CHWRegistrationStep1");
+        break;
+      case "RETAIL_OUTLET":
+        navigation.navigate("OutletRegistrationStep1");
+        break;
+      case "VSLA":
+        navigation.navigate("VSLADashboard");
+        break;
+      default:
+        break;
+    }
   };
 
   return (
-    <View style={styles.screenContainer}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Register Account</Text>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Register Account</Text>
+          <Text style={styles.subtitle}>Choose your account type</Text>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Subtitle */}
-        <Text style={styles.subtitle}>Choose your account type</Text>
-
-        {/* ===== CHW CARD ===== */}
-        <View style={styles.roleCard}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="medical-outline" size={30} color="#2E7D32" />
-            <Text style={styles.roleTitle}>Community Health Worker</Text>
-          </View>
-
-          <Text style={styles.roleSubtitle}>
-            Register as a CHW to conduct vision screenings in your community
-          </Text>
-
-          <View style={styles.listRow}>
-            <Ionicons name="checkmark-circle" size={18} color="#2E7D32" />
-            <Text style={styles.listText}>Conduct near-vision screenings</Text>
-          </View>
-
-          <View style={styles.listRow}>
-            <Ionicons name="checkmark-circle" size={18} color="#2E7D32" />
-            <Text style={styles.listText}>Distribute reading glasses</Text>
-          </View>
-
-          <View style={styles.listRow}>
-            <Ionicons name="checkmark-circle" size={18} color="#2E7D32" />
-            <Text style={styles.listText}>Track hire-purchase payments</Text>
-          </View>
-
-          <View style={styles.listRow}>
-            <Ionicons name="checkmark-circle" size={18} color="#2E7D32" />
-            <Text style={styles.listText}>
-              Make referrals for advanced care
+          {/* Community Health Worker Card */}
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => handleRoleSelect("CHW")}
+          >
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Community Health Worker</Text>
+            </View>
+            <Text style={styles.cardDescription}>
+              Register as a CHW to conduct vision screenings in your community
             </Text>
-          </View>
-
-          {/* Updated: Added onPress to this button */}
-          <TouchableOpacity
-            style={styles.registerButton}
-            onPress={handleRegisterCHW}
-          >
-            <Text style={styles.registerButtonText}>Register as CHW</Text>
+            <View style={styles.featuresList}>
+              <Text style={styles.feature}>
+                • Conduct near-vision screenings
+              </Text>
+              <Text style={styles.feature}>• Distribute reading glasses</Text>
+              <Text style={styles.feature}>• Track hire-purchase payments</Text>
+              <Text style={styles.feature}>
+                • Make referrals for advanced care
+              </Text>
+            </View>
+            <View style={styles.cardFooter}>
+              <Text style={styles.registerText}>Register as CHW →</Text>
+            </View>
           </TouchableOpacity>
-        </View>
 
-        {/* ===== SHOP CARD ===== */}
-        <View style={styles.roleCard}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="storefront-outline" size={30} color="#2E7D32" />
-            <Text style={styles.roleTitle}>Retail Outlet / Shop</Text>
-          </View>
-
-          <Text style={styles.roleSubtitle}>
-            Register your shop to sell reading glasses in partnership with Santé
-          </Text>
-
-          <View style={styles.listRow}>
-            <Ionicons name="checkmark-circle" size={18} color="#2E7D32" />
-            <Text style={styles.listText}>Sell Santé reading glasses</Text>
-          </View>
-
-          <View style={styles.listRow}>
-            <Ionicons name="checkmark-circle" size={18} color="#2E7D32" />
-            <Text style={styles.listText}>Manage inventory & stock</Text>
-          </View>
-
-          <View style={styles.listRow}>
-            <Ionicons name="checkmark-circle" size={18} color="#2E7D32" />
-            <Text style={styles.listText}>Track sales & revenue</Text>
-          </View>
-
-          <View style={styles.listRow}>
-            <Ionicons name="checkmark-circle" size={18} color="#2E7D32" />
-            <Text style={styles.listText}>Receive stock replenishments</Text>
-          </View>
-
-          {/* Updated: Added onPress to this button */}
+          {/* Retail Outlet Card */}
           <TouchableOpacity
-            style={styles.registerButton}
-            onPress={handleRegisterShop}
+            style={[styles.card, styles.outletCard]}
+            onPress={() => handleRoleSelect("RETAIL_OUTLET")}
           >
-            <Text style={styles.registerButtonText}>Register as Shop</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ===== VSLA CARD ===== */}
-        <View style={styles.roleCard}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="people-outline" size={30} color="#2E7D32" />
-            <Text style={styles.roleTitle}>VSLA / SACCO Group</Text>
-          </View>
-
-          <Text style={styles.roleSubtitle}>
-            Register your community savings group to support member eye health
-          </Text>
-
-          <View style={styles.listRow}>
-            <Ionicons name="checkmark-circle" size={18} color="#2E7D32" />
-            <Text style={styles.listText}>
-              Facilitate hire-purchase for members
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Retail Outlet / Shop</Text>
+            </View>
+            <Text style={styles.cardDescription}>
+              Register your shop to sell reading glasses in partnership with
+              Santé
             </Text>
-          </View>
+            <View style={styles.featuresList}>
+              <Text style={styles.feature}>• Sell Santé reading glasses</Text>
+              <Text style={styles.feature}>• Manage inventory & stock</Text>
+              <Text style={styles.feature}>• Track sales & revenue</Text>
+              <Text style={styles.feature}>• Receive stock replenishments</Text>
+            </View>
+            <View style={styles.cardFooter}>
+              <Text style={[styles.registerText, styles.outletRegisterText]}>
+                Register Shop →
+              </Text>
+            </View>
+          </TouchableOpacity>
 
-          <View style={styles.listRow}>
-            <Ionicons name="checkmark-circle" size={18} color="#2E7D32" />
-            <Text style={styles.listText}>Bulk purchase discounts</Text>
-          </View>
-
-          <View style={styles.listRow}>
-            <Ionicons name="checkmark-circle" size={18} color="#2E7D32" />
-            <Text style={styles.listText}>Earn group revenue from sales</Text>
-          </View>
-
-          <View style={styles.listRow}>
-            <Ionicons name="checkmark-circle" size={18} color="#2E7D32" />
-            <Text style={styles.listText}>Support community eye health</Text>
-          </View>
-
-          {/* Updated: Added onPress to this button */}
+          {/* VSLA Card */}
           <TouchableOpacity
-            style={styles.registerButton}
-            onPress={handleRegisterVSLA}
+            style={[styles.card, styles.vslaCard]}
+            onPress={() => handleRoleSelect("VSLA")}
           >
-            <Text style={styles.registerButtonText}>Register as VSLA</Text>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>VSLA / SACCO Group</Text>
+            </View>
+            <Text style={styles.cardDescription}>
+              Register your community savings group to support member eye health
+            </Text>
+            <View style={styles.featuresList}>
+              <Text style={styles.feature}>
+                • Facilitate hire-purchase for members
+              </Text>
+              <Text style={styles.feature}>• Bulk purchase discounts</Text>
+              <Text style={styles.feature}>
+                • Earn group revenue from sales
+              </Text>
+              <Text style={styles.feature}>• Support community eye health</Text>
+            </View>
+            <View style={styles.cardFooter}>
+              <Text style={[styles.registerText, styles.vslaRegisterText]}>
+                Register Group →
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
-
-        {/* ===== PROCESS SECTION ===== */}
-        <View style={styles.processSection}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="document-text-outline" size={30} color="#2E7D32" />
-            <Text style={styles.processTitle}>Registration Process</Text>
-          </View>
-
-          <Text style={styles.processItem}>1. Complete registration form</Text>
-          <Text style={styles.processItem}>
-            2. Submit documents for verification
-          </Text>
-          <Text style={styles.processItem}>
-            3. Wait for administrator approval (24–48 hours)
-          </Text>
-          <Text style={styles.processItem}>
-            4. Receive SMS confirmation when approved
-          </Text>
-          <Text style={styles.processItem}>
-            5. Login and start helping your community
-          </Text>
-        </View>
-
-        {/* Footer */}
-        <Text style={styles.footer}>Santé Initiative Uganda © 2026</Text>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-  },
-
-  backButton: {
-    marginRight: 12,
-  },
-
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-
   container: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    flex: 1,
+    backgroundColor: "#F8F9FA",
   },
-
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+    paddingTop: Platform.OS === "ios" ? 20 : 40,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#1A1A1A",
+    textAlign: "center",
+    marginBottom: 8,
+  },
   subtitle: {
     fontSize: 16,
     color: "#666",
-    marginBottom: 20,
     textAlign: "center",
-  },
-
-  roleCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    elevation: 2,
-  },
-
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-
-  roleTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginLeft: 10,
-  },
-
-  roleSubtitle: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 14,
-  },
-
-  listRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-
-  listText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: "#333",
-    flex: 1,
-  },
-
-  registerButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 16,
-  },
-
-  registerButtonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
-  processSection: {
-    backgroundColor: "#F8F8F8",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 24,
-  },
-
-  processTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginLeft: 10,
-  },
-
-  processItem: {
-    fontSize: 14,
-    marginBottom: 10,
-    color: "#333",
-  },
-
-  footer: {
-    textAlign: "center",
-    fontSize: 12,
-    color: "#999",
     marginBottom: 32,
   },
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  outletCard: {
+    borderColor: "#4CAF50",
+    borderWidth: 2,
+  },
+  vslaCard: {
+    borderColor: "#FF9800",
+    borderWidth: 1,
+  },
+  cardHeader: {
+    marginBottom: 12,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1A1A1A",
+  },
+  cardDescription: {
+    fontSize: 15,
+    color: "#666",
+    marginBottom: 20,
+    lineHeight: 22,
+  },
+  featuresList: {
+    marginBottom: 24,
+  },
+  feature: {
+    fontSize: 14,
+    color: "#555",
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  cardFooter: {
+    borderTopWidth: 1,
+    borderTopColor: "#E0E0E0",
+    paddingTop: 20,
+    alignItems: "flex-end",
+  },
+  registerText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#007AFF",
+  },
+  outletRegisterText: {
+    color: "#4CAF50",
+  },
+  vslaRegisterText: {
+    color: "#FF9800",
+  },
 });
+
+export default RegisterScreen;

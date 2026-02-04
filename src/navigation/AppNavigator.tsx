@@ -10,6 +10,10 @@ import CHWRegistrationStep4 from "../screens/auth/CHWRegistrationStep4"; // Add 
 import CHWDashboard from "../screens/chw/CHWDashboard";
 import OutletDashboard from "../screens/outlet/OutletDashboard";
 import VSLADashboard from "../screens/vsla/VSLADashboard";
+import OutletRegistrationStep1 from "../screens/auth/OutletRegistrationStep1";
+import OutletRegistrationStep2 from "../screens/auth/OutletRegistrationStep2";
+import OutletRegistrationStep3 from "../screens/auth/OutletRegistrationStep3";
+import OutletRegistrationStep4 from "../screens/auth/OutletRegistrationStep4";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -59,6 +63,27 @@ export default function AppNavigator() {
         component={CHWRegistrationStep4}
       />
       <Stack.Screen name="AppTabs" component={AppTabs} />
+
+      <Stack.Screen
+        name="OutletRegistrationStep1"
+        component={OutletRegistrationStep1}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="OutletRegistrationStep2"
+        component={OutletRegistrationStep2}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="OutletRegistrationStep3"
+        component={OutletRegistrationStep3}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="OutletRegistrationStep4"
+        component={OutletRegistrationStep4}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 }
