@@ -13,14 +13,13 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 type RootStackParamList = {
   CHWDashboard: undefined;
+  VisionScreeningStep1: undefined;
+  StartScreening: undefined;
   MyClients: undefined;
   Inventory: undefined;
   Referrals: undefined;
   Payments: undefined;
   Reports: undefined;
-  StartScreening: undefined;
-  VisionScreeningStep1: undefined;
-  Settings: undefined;
 };
 
 type DashboardScreenNavigationProp = NativeStackNavigationProp<
@@ -28,7 +27,7 @@ type DashboardScreenNavigationProp = NativeStackNavigationProp<
   "CHWDashboard"
 >;
 
-export default function CHWDashboard() {
+export default function CHWDashboardScreen() {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
 
   return (
@@ -36,7 +35,6 @@ export default function CHWDashboard() {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -46,11 +44,8 @@ export default function CHWDashboard() {
               <Text style={styles.userName}>Jane Nambi</Text>
               <Text style={styles.userRole}>CHW - Luweero</Text>
             </View>
-            <TouchableOpacity
-              style={styles.menuButton}
-              onPress={() => navigation.navigate("Settings")}
-            >
-              <Ionicons name="menu" size={30} color="#1E40AF" />
+            <TouchableOpacity style={styles.profileButton}>
+              <Ionicons name="person-circle" size={40} color="#1E40AF" />
             </TouchableOpacity>
           </View>
 
@@ -79,7 +74,7 @@ export default function CHWDashboard() {
           {/* Start New Screening - Blue Primary Card */}
           <TouchableOpacity
             style={styles.primaryCard}
-            onPress={() => navigation.navigate("StartScreening")}
+            onPress={() => navigation.navigate("VisionScreeningStep1")} // Update this line
           >
             <View style={styles.cardHeader}>
               <Text style={[styles.cardTitle, styles.primaryCardText]}>
@@ -232,10 +227,9 @@ export default function CHWDashboard() {
             <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
           </View>
         </TouchableOpacity>
-
-        {/* Spacer for bottom tab bar */}
-        <View style={styles.spacer} />
       </ScrollView>
+
+      {/* NO BOTTOM NAVIGATION HERE - It will be provided by CHWTabs */}
     </SafeAreaView>
   );
 }
@@ -247,131 +241,128 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 70,
-    paddingBottom: 100, // Extra space for bottom tab bar
+    paddingHorizontal: 16,
+    paddingBottom: 80, // Space for tab bar
   },
   header: {
-    marginBottom: 28,
+    paddingTop: 16,
+    marginBottom: 24,
   },
   headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   organization: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#6B7280",
     fontWeight: "500",
-    marginBottom: 2,
   },
   userName: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
     color: "#1F2937",
-    marginBottom: 2,
+    marginTop: 2,
   },
   userRole: {
-    fontSize: 15,
+    fontSize: 14,
     color: "#6B7280",
+    marginTop: 2,
   },
-  menuButton: {
-    padding: 6,
-    marginTop: -4,
+  profileButton: {
+    padding: 4,
   },
   welcomeText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "600",
     color: "#1F2937",
-    marginBottom: 6,
+    marginBottom: 4,
   },
   roleDistrict: {
-    fontSize: 15,
+    fontSize: 14,
     color: "#6B7280",
     marginBottom: 4,
   },
   readyText: {
-    fontSize: 15,
+    fontSize: 14,
     color: "#6B7280",
   },
   weekStatsContainer: {
-    marginBottom: 28,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
     color: "#1F2937",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   weekStats: {
     flexDirection: "row",
-    gap: 20,
+    gap: 16,
   },
   statCard: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 20,
+    borderRadius: 12,
+    padding: 16,
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#E5E7EB",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 2,
     elevation: 2,
   },
   statNumber: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "700",
     color: "#1E40AF",
-    marginBottom: 6,
+    marginBottom: 4,
   },
   statLabel: {
-    fontSize: 15,
+    fontSize: 14,
     color: "#6B7280",
     textAlign: "center",
   },
   cardsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 16,
-    marginBottom: 20,
+    gap: 12,
+    marginBottom: 16,
   },
   card: {
-    width: "47%",
+    width: "48%",
     backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 18,
+    borderRadius: 12,
+    padding: 16,
     borderWidth: 1,
     borderColor: "#E5E7EB",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 2,
     elevation: 2,
   },
   primaryCard: {
-    width: "47%",
+    width: "48%",
     backgroundColor: "#1E40AF",
-    borderRadius: 14,
-    padding: 18,
+    borderRadius: 12,
+    padding: 16,
     borderWidth: 1,
     borderColor: "#1E3A8A",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 2,
     elevation: 2,
   },
   primaryCardText: {
     color: "#FFFFFF",
   },
   primaryCardSubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: "#E5E7EB",
     marginBottom: 4,
   },
@@ -379,80 +370,80 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   cardTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
     color: "#1F2937",
     flex: 1,
   },
   cardSubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: "#6B7280",
     marginBottom: 4,
   },
   cardNote: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#6B7280",
     marginBottom: 12,
   },
   goodStock: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#059669",
     fontWeight: "500",
     marginBottom: 12,
   },
   paymentsDueCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 20,
-    marginBottom: 28,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
     borderWidth: 1,
     borderColor: "#E5E7EB",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 2,
     elevation: 2,
   },
   paymentsDueHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   paymentsDueTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
     color: "#1F2937",
   },
   paymentsDueSubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: "#6B7280",
   },
   paymentsDueBadge: {
     backgroundColor: "#EF4444",
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
   paymentsDueNumber: {
     color: "#FFFFFF",
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
   },
   paymentsDueAmount: {
-    fontSize: 15,
+    fontSize: 14,
     color: "#1F2937",
-    marginBottom: 14,
+    marginBottom: 12,
   },
   paymentsDueButton: {
     backgroundColor: "#FEE2E2",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 8,
     alignItems: "center",
     borderWidth: 1,
@@ -460,99 +451,99 @@ const styles = StyleSheet.create({
   },
   paymentsDueButtonText: {
     color: "#DC2626",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
   },
   recentActivityContainer: {
-    marginBottom: 28,
+    marginBottom: 24,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   viewAllText: {
     color: "#1E40AF",
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "500",
   },
   activityList: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 20,
+    borderRadius: 12,
+    padding: 16,
     borderWidth: 1,
     borderColor: "#E5E7EB",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 2,
     elevation: 2,
   },
   activityItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#F3F4F6",
   },
   activityAvatar: {
-    marginRight: 14,
+    marginRight: 12,
   },
   activityDetails: {
     flex: 1,
   },
   activityName: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
     color: "#1F2937",
-    marginBottom: 3,
+    marginBottom: 2,
   },
   activityDescription: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#6B7280",
-    marginBottom: 3,
+    marginBottom: 2,
   },
   activityTime: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#9CA3AF",
   },
   activityAmountPositive: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#D1FAE5",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 12,
   },
   positiveAmount: {
     color: "#059669",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
     marginLeft: 4,
   },
   activityAmountNeutral: {
     backgroundColor: "#F3F4F6",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 12,
   },
   neutralAmount: {
     color: "#6B7280",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
   },
   activityAmountInfo: {
     backgroundColor: "#DBEAFE",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 12,
   },
   reportsCard: {
     backgroundColor: "#EFF6FF",
-    borderRadius: 14,
-    padding: 20,
-    marginBottom: 28,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
     borderWidth: 1,
     borderColor: "#BFDBFE",
   },
@@ -562,19 +553,16 @@ const styles = StyleSheet.create({
   },
   reportsText: {
     flex: 1,
-    marginLeft: 14,
+    marginLeft: 12,
   },
   reportsTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
     color: "#1F2937",
-    marginBottom: 3,
+    marginBottom: 2,
   },
   reportsSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#6B7280",
-  },
-  spacer: {
-    height: 40,
   },
 });

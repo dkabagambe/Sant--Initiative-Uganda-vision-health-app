@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -5,16 +6,18 @@ import {
   Image,
   TextInput,
   TouchableOpacity,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  ActivityIndicator,
 } from "react-native";
-import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import RoleTabs from "../../components/RoleTabs";
 import AppButton from "../../components/AppButton";
-import { colors } from "../../theme/colors";
 
-// Define navigation types
 type RootStackParamList = {
   Login: undefined;
   OTP: { phone: string; role: string };
@@ -28,10 +31,62 @@ type RoleLoginScreenNavigationProp = NativeStackNavigationProp<
   "Login"
 >;
 
+// Simple validation functions (if you haven't created validation.ts yet)
+const Validation = {
+  validatePhone: (phone: string): { isValid: boolean; message?: string } => {
+    const cleaned = phone.replace(/\D/g, "");
+    if (!cleaned)
+      return { isValid: false, message: "Phone number is required" };
+    if (cleaned.length !== 9)
+      return { isValid: false, message: "Phone number must be 9 digits" };
+    const prefix = cleaned.substring(0, 2);
+    const validPrefixes = [
+      "70",
+      "71",
+      "72",
+      "73",
+      "74",
+      "75",
+      "76",
+      "77",
+      "78",
+      "79",
+      "20",
+      "39",
+    ];
+    if (!validPrefixes.includes(prefix)) {
+      return { isValid: false, message: "Invalid Ugandan mobile number" };
+    }
+    return { isValid: true };
+  },
+};
+
+// Simple OTP service (if you haven't created otpService.ts yet)
+const OTPService = {
+  generateOTP: async (
+    phone: string,
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      // Generate 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      // In real app, save to AsyncStorage
+      // For now, we'll just log it
+      console.log(`📱 OTP for ${phone}: ${otp}`);
+      // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return { success: true, message: `OTP sent to ${phone}` };
+    } catch (error) {
+      console.error("OTP generation error:", error);
+      return { success: false, message: "Failed to send OTP" };
+    }
+  },
+};
+
 export default function RoleLoginScreen() {
   const [role, setRole] = useState<"CHW" | "Outlet" | "VSLA">("CHW");
   const [phone, setPhone] = useState("");
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const navigation = useNavigation<RoleLoginScreenNavigationProp>();
 
   const handleRoleChange = (newRole: string) => {
@@ -40,144 +95,247 @@ export default function RoleLoginScreen() {
     }
   };
 
-  const handleSendOTP = () => {
-    if (phone.trim()) {
-      navigation.navigate("OTP", {
-        phone: phone.trim(),
-        role: role,
-      });
+  const handleSendOTP = async () => {
+    setPhoneError(null);
+    // Validate phone number
+    const phoneValidation = Validation.validatePhone(phone.trim());
+    if (!phoneValidation.isValid) {
+      setPhoneError(phoneValidation.message || "Invalid phone number");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Send OTP
+      const result = await OTPService.generateOTP(phone.trim());
+      if (result.success) {
+        // Navigate to OTP screen
+        navigation.navigate("OTP", {
+          phone: phone.trim(),
+          role: role,
+        });
+      } else {
+        Alert.alert("OTP Error", result.message);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to send OTP. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Function to navigate to RegisterScreen
   const handleRegisterPress = () => {
     navigation.navigate("Register");
   };
 
+  const formatPhoneInput = (text: string) => {
+    // Remove all non-digits
+    let digits = text.replace(/\D/g, "");
+    // Limit to 9 digits
+    if (digits.length > 9) {
+      digits = digits.substring(0, 9);
+    }
+    // Format with spaces: XXX XXX XXX
+    let formatted = digits;
+    if (digits.length > 6) {
+      formatted = `${digits.substring(0, 3)} ${digits.substring(
+        3,
+        6,
+      )} ${digits.substring(6)}`;
+    } else if (digits.length > 3) {
+      formatted = `${digits.substring(0, 3)} ${digits.substring(3)}`;
+    }
+    setPhone(formatted);
+    // Clear error when user starts typing
+    if (phoneError && text.length > 0) {
+      setPhoneError(null);
+    }
+  };
+
+  const handlePhoneSubmit = () => {
+    // When user presses enter/next on keyboard
+    handleSendOTP();
+  };
+
   return (
-    <View style={styles.container}>
-      {/* Logo */}
-      <View style={styles.logoBox}>
-        <Image
-          source={require("../../../assets/logo.png")}
-          style={styles.logo}
-        />
-      </View>
-
-      {/* Title */}
-      <Text style={styles.title}>Santé Initiative Uganda</Text>
-      <Text style={styles.subtitle}>
-        Bringing vision health services closer to communities
-      </Text>
-
-      {/* Role Tabs */}
-      <RoleTabs value={role} onChange={handleRoleChange} />
-
-      {/* Phone Number */}
-      <Text style={styles.label}>Phone Number</Text>
-      <View style={styles.phoneRow}>
-        <View style={styles.phoneIconBox}>
-          <Ionicons name="call-outline" size={18} color="#666" />
-          <Text style={styles.countryCode}>+256</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Logo */}
+        <View style={styles.logoBox}>
+          <Image
+            source={require("../../../assets/logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
-        <TextInput
-          style={styles.phoneInput}
-          placeholder="700 123 456"
-          keyboardType="phone-pad"
-          value={phone}
-          onChangeText={setPhone}
-          maxLength={9}
-        />
-      </View>
-
-      <Text style={styles.helperText}>Enter your registered mobile number</Text>
-
-      {/* Buttons */}
-      <AppButton
-        title="Send OTP"
-        disabled={!phone.trim()}
-        onPress={handleSendOTP}
-      />
-
-      {/* Updated: This button now navigates to RegisterScreen */}
-      <AppButton
-        title="Register as CHW/Outlet"
-        variant="outline"
-        onPress={handleRegisterPress}
-      />
-
-      {/* Info Card */}
-      <View style={styles.infoCard}>
-        <Ionicons name="eye-outline" size={18} color={colors.primary} />
-        <Text style={styles.infoText}>
-          For Community Health Workers{"\n"}
-          Screen clients, sell reading glasses, and track payments using mobile
-          money
+        {/* Title */}
+        <Text style={styles.title}>Santé Initiative Uganda</Text>
+        <Text style={styles.subtitle}>
+          Bringing vision health services closer to communities
         </Text>
-      </View>
 
-      {/* Divider */}
-      <View style={styles.divider}>
-        <Text style={styles.offlineText}>Works offline for screening</Text>
-      </View>
+        {/* Role Tabs */}
+        <RoleTabs value={role} onChange={handleRoleChange} />
 
-      {/* Language Switch */}
-      <View style={styles.languageRow}>
-        <TouchableOpacity style={styles.langActive}>
-          <Text style={styles.langActiveText}>English</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.langInactive}>
-          <Text style={styles.langInactiveText}>Luganda</Text>
-        </TouchableOpacity>
-      </View>
+        {/* Phone Number Section */}
+        <Text style={styles.label}>Phone Number</Text>
+        <View
+          style={[styles.phoneRow, phoneError ? styles.phoneRowError : null]}
+        >
+          <View style={styles.phoneIconBox}>
+            <Ionicons
+              name="call-outline"
+              size={18}
+              color={phoneError ? "#EF4444" : "#666"}
+            />
+            <Text
+              style={[
+                styles.countryCode,
+                phoneError ? styles.countryCodeError : null,
+              ]}
+            >
+              +256
+            </Text>
+          </View>
+          <TextInput
+            style={styles.phoneInput}
+            placeholder="700 123 456"
+            placeholderTextColor="#999"
+            keyboardType="phone-pad"
+            value={phone}
+            onChangeText={formatPhoneInput}
+            onSubmitEditing={handlePhoneSubmit}
+            returnKeyType="done"
+            maxLength={11} // 9 digits + 2 spaces
+            editable={!isLoading}
+          />
+        </View>
 
-      {/* Footer */}
-      <Text style={styles.footerText}>Santé Initiative Uganda © 2026</Text>
-    </View>
+        {/* Error Message */}
+        {phoneError && (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle-outline" size={14} color="#EF4444" />
+            <Text style={styles.errorText}>{phoneError}</Text>
+          </View>
+        )}
+
+        <Text style={styles.helperText}>
+          Enter your registered mobile number
+        </Text>
+
+        {/* Send OTP Button */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (!phone.trim() || isLoading) && styles.sendButtonDisabled,
+            ]}
+            onPress={handleSendOTP}
+            disabled={!phone.trim() || isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.sendButtonText}>Send OTP</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Register Button */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.registerButton}
+            onPress={handleRegisterPress}
+          >
+            <Text style={styles.registerButtonText}>
+              Register as CHW/Outlet
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Info Card */}
+        <View style={styles.infoCard}>
+          <Ionicons name="eye-outline" size={18} color="#1E40AF" />
+          <Text style={styles.infoText}>
+            For Community Health Workers{"\n"}
+            Screen clients, sell reading glasses, and track payments using
+            mobile money
+          </Text>
+        </View>
+
+        {/* Divider */}
+        <View style={styles.divider}>
+          <Text style={styles.offlineText}>Works offline for screening</Text>
+        </View>
+
+        {/* Language Switch */}
+        <View style={styles.languageRow}>
+          <TouchableOpacity style={styles.langActive}>
+            <Text style={styles.langActiveText}>English</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.langInactive}>
+            <Text style={styles.langInactiveText}>Luganda</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Footer */}
+        <Text style={styles.footerText}>Santé Initiative Uganda © 2026</Text>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-// Keep your existing styles exactly as they are
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 48,
     backgroundColor: "#F8FFF8",
   },
-
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 48,
+    paddingBottom: 24,
+  },
   logoBox: {
     alignSelf: "center",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
   },
-
   logo: {
     width: 80,
     height: 80,
-    resizeMode: "cover",
   },
-
   title: {
     fontSize: 22,
     fontWeight: "700",
     textAlign: "center",
+    color: "#333",
   },
-
   subtitle: {
+    fontSize: 14,
     textAlign: "center",
     color: "#666",
     marginTop: 4,
     marginBottom: 24,
+    lineHeight: 20,
   },
-
   label: {
+    fontSize: 14,
     fontWeight: "600",
-    marginBottom: 6,
+    color: "#333",
+    marginBottom: 8,
   },
-
   phoneRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -185,33 +343,87 @@ const styles = StyleSheet.create({
     borderColor: "#DDD",
     borderRadius: 10,
     backgroundColor: "#fff",
+    overflow: "hidden",
   },
-
+  phoneRowError: {
+    borderColor: "#EF4444",
+    borderWidth: 1.5,
+  },
   phoneIconBox: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
+    paddingVertical: 14,
     borderRightWidth: 1,
     borderColor: "#EEE",
+    backgroundColor: "#F3F4F6",
   },
-
   countryCode: {
-    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: "500",
     color: "#333",
+    marginLeft: 6,
   },
-
+  countryCodeError: {
+    color: "#EF4444",
+  },
   phoneInput: {
     flex: 1,
     padding: 14,
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "500",
   },
-
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  errorText: {
+    fontSize: 12,
+    color: "#EF4444",
+    marginLeft: 4,
+    fontWeight: "500",
+  },
   helperText: {
     fontSize: 12,
     color: "#777",
     marginTop: 6,
     marginBottom: 16,
   },
-
+  buttonContainer: {
+    marginBottom: 12,
+  },
+  sendButton: {
+    backgroundColor: "#1E40AF",
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sendButtonDisabled: {
+    backgroundColor: "#93C5FD",
+  },
+  sendButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  registerButton: {
+    backgroundColor: "transparent",
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#1E40AF",
+  },
+  registerButtonText: {
+    color: "#1E40AF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
   infoCard: {
     flexDirection: "row",
     backgroundColor: "#EAF2FF",
@@ -220,61 +432,59 @@ const styles = StyleSheet.create({
     marginTop: 16,
     gap: 8,
   },
-
   infoText: {
     fontSize: 12,
     color: "#1E40AF",
     flex: 1,
+    lineHeight: 16,
   },
-
   divider: {
     marginTop: 24,
     paddingVertical: 10,
-    backgroundColor: "#F2F2F2",
+    backgroundColor: "#F3F4F6",
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
   },
-
   offlineText: {
     textAlign: "center",
     fontSize: 12,
     color: "#666",
+    fontWeight: "500",
   },
-
   languageRow: {
     flexDirection: "row",
     justifyContent: "center",
     gap: 8,
     marginTop: 16,
+    marginBottom: 8,
   },
-
   langActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: "#1E40AF",
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 16,
   },
-
   langActiveText: {
     color: "#fff",
     fontSize: 12,
+    fontWeight: "600",
   },
-
   langInactive: {
     backgroundColor: "#E5E7EB",
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 16,
   },
-
   langInactiveText: {
     fontSize: 12,
     color: "#333",
+    fontWeight: "500",
   },
-
   footerText: {
     textAlign: "center",
     fontSize: 11,
-    color: "#777",
+    color: "#9CA3AF",
     marginTop: 12,
   },
 });
