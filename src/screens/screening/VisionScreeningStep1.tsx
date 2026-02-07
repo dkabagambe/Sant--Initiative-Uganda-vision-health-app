@@ -27,6 +27,7 @@ type RootStackParamList = {
   VisionScreeningStep5: undefined;
   ClientRegistration: undefined;
   CHWDashboard: undefined;
+  MainTabs: undefined;
 };
 
 type ScreeningScreenNavigationProp = NativeStackNavigationProp<
@@ -462,7 +463,7 @@ export default function VisionScreeningFlow() {
       [
         {
           text: "OK",
-          onPress: () => navigation.navigate("CHWDashboard"),
+          onPress: () => navigation.navigate("MainTabs"),
         },
       ],
     );
