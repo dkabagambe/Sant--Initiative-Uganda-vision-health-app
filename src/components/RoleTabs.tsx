@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   },
   text: {
     textAlign: "center",
-    color: colors.textPrimary,
+    color: "#1E40AF",
   },
   activeText: {
     color: "#FFFFFF",
