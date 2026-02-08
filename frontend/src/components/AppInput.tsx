@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   },
   label: {
     marginBottom: 6,
-    color: colors.textSecondary,
+    color: "colors.textSecondary",
   },
   input: {
     borderWidth: 1,

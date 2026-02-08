@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,26 +6,31 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Platform,
+  Modal,
+  FlatList,
+  SafeAreaView,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { colors } from "../../theme/colors";
 
 type RootStackParamList = {
+  OutletRegistrationStep1: undefined;
   OutletRegistrationStep2: { step1Data: any };
   OutletRegistrationStep3: { step1Data: any; step2Data: any };
   [key: string]: any;
 };
 
-type NavigationProp = StackNavigationProp<RootStackParamList>;
-type RouteProps = {
-  key: string;
-  name: string;
-  params: {
-    step1Data: any;
-  };
-};
+type OutletRegistrationStep2NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "OutletRegistrationStep2"
+>;
+
+type OutletRegistrationStep2RouteProp = RouteProp<
+  RootStackParamList,
+  "OutletRegistrationStep2"
+>;
 
 interface FormData {
   primaryPhoneNumber: string;
@@ -41,8 +46,8 @@ interface FormData {
 }
 
 const OutletRegistrationStep2 = () => {
-  const navigation = useNavigation<NavigationProp>();
-  const route = useRoute<RouteProps>();
+  const navigation = useNavigation<OutletRegistrationStep2NavigationProp>();
+  const route = useRoute<OutletRegistrationStep2RouteProp>();
   const step1Data = route.params?.step1Data;
 
   const [formData, setFormData] = useState<FormData>({
@@ -58,34 +63,30 @@ const OutletRegistrationStep2 = () => {
     nearestLandmark: "",
   });
 
-  const [districts, setDistricts] = useState<string[]>(["Select District"]);
+  const [districtModalVisible, setDistrictModalVisible] = useState(false);
 
-  // Mock districts data
-  useEffect(() => {
-    setDistricts([
-      "Select District",
-      "Kampala",
-      "Wakiso",
-      "Mukono",
-      "Mpigi",
-      "Jinja",
-      "Iganga",
-      "Mbale",
-      "Soroti",
-      "Gulu",
-      "Lira",
-      "Arua",
-      "Kitgum",
-      "Mbarara",
-      "Kabale",
-      "Fort Portal",
-      "Hoima",
-      "Masaka",
-      "Kalangala",
-      "Rakai",
-      "Lyantonde",
-    ]);
-  }, []);
+  const districts = [
+    "Kampala",
+    "Wakiso",
+    "Mukono",
+    "Mpigi",
+    "Jinja",
+    "Iganga",
+    "Mbale",
+    "Soroti",
+    "Gulu",
+    "Lira",
+    "Arua",
+    "Kitgum",
+    "Mbarara",
+    "Kabale",
+    "Fort Portal",
+    "Hoima",
+    "Masaka",
+    "Kalangala",
+    "Rakai",
+    "Lyantonde",
+  ];
 
   const handleChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({
@@ -95,39 +96,80 @@ const OutletRegistrationStep2 = () => {
   };
 
   const handleNext = () => {
-    navigation.navigate("OutletRegistrationStep3", {
-      step1Data: step1Data,
-      step2Data: formData,
-    });
+    if (isFormValid()) {
+      navigation.navigate("OutletRegistrationStep3", {
+        step1Data: step1Data,
+        step2Data: formData,
+      });
+    }
   };
 
   const handleBack = () => {
     navigation.goBack();
   };
 
-  return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
+  const selectDistrict = (district: string) => {
+    handleChange("district", district);
+    setDistrictModalVisible(false);
+  };
+
+  const isFormValid = () => {
+    return (
+      formData.primaryPhoneNumber.trim() !== "" &&
+      formData.district.trim() !== ""
+    );
+  };
+
+  const renderDistrictItem = ({ item }: { item: string }) => (
+    <TouchableOpacity
+      style={[
+        styles.modalItem,
+        formData.district === item && styles.modalItemSelected,
+      ]}
+      onPress={() => selectDistrict(item)}
     >
-      {/* Header with Back Button */}
+      <Text
+        style={[
+          styles.modalItemText,
+          formData.district === item && styles.modalItemTextSelected,
+        ]}
+      >
+        {item}
+      </Text>
+      {formData.district === item && (
+        <Ionicons name="checkmark" size={20} color={colors.primary} />
+      )}
+    </TouchableOpacity>
+  );
+
+  return (
+    <SafeAreaView style={styles.screenContainer}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <View style={styles.progressInfo}>
-          <Text style={styles.progressTitle}>Outlet Registration</Text>
-          <Text style={styles.stepCounter}>Step 2 of 4</Text>
+        <Text style={styles.headerTitle}>Outlet Registration</Text>
+      </View>
+
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.contentContainer}
+      >
+        {/* Step Indicator */}
+        <View style={styles.stepIndicator}>
+          <Text style={styles.stepText}>Step 2 of 4</Text>
+          <View style={styles.stepProgress}>
+            <View style={styles.stepCompleted} />
+            <View style={styles.stepActive} />
+            <View style={styles.stepInactive} />
+            <View style={styles.stepInactive} />
+          </View>
         </View>
-      </View>
 
-      {/* Progress Bar */}
-      <View style={styles.progressBarContainer}>
-        <View style={[styles.progressBar, { width: "50%" }]} />
-      </View>
-
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Contact Information</Text>
+        {/* Form Title */}
+        <Text style={styles.sectionTitle}>Contact Information</Text>
         <Text style={styles.subtitle}>
           Provide your contact and location details
         </Text>
@@ -137,59 +179,51 @@ const OutletRegistrationStep2 = () => {
           <Text style={styles.sectionTitle}>Contact Information</Text>
 
           {/* Primary Phone Number */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Primary Phone Number *</Text>
-            <View style={styles.phoneInputContainer}>
-              <View style={styles.countryCodeContainer}>
-                <Text style={styles.countryCodeText}>+256</Text>
-              </View>
-              <TextInput
-                style={styles.phoneInput}
-                placeholder="700 123 456"
-                value={formData.primaryPhoneNumber}
-                onChangeText={(text) =>
-                  handleChange("primaryPhoneNumber", text)
-                }
-                keyboardType="phone-pad"
-                placeholderTextColor="#999"
-              />
+          <Text style={styles.label}>Primary Phone Number *</Text>
+          <View style={styles.phoneInputContainer}>
+            <View style={styles.countryCodeContainer}>
+              <Text style={styles.countryCodeText}>+256</Text>
             </View>
-            <Text style={styles.hintText}>This will be your login number</Text>
-          </View>
-
-          {/* Alternate Phone Number */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Alternate Phone (Optional)</Text>
-            <View style={styles.phoneInputContainer}>
-              <View style={styles.countryCodeContainer}>
-                <Text style={styles.countryCodeText}>+256</Text>
-              </View>
-              <TextInput
-                style={styles.phoneInput}
-                placeholder="700 123 456"
-                value={formData.alternatePhoneNumber}
-                onChangeText={(text) =>
-                  handleChange("alternatePhoneNumber", text)
-                }
-                keyboardType="phone-pad"
-                placeholderTextColor="#999"
-              />
-            </View>
-          </View>
-
-          {/* Email */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email (Optional)</Text>
             <TextInput
-              style={styles.input}
-              placeholder="nakato.pharmacy@example.com"
-              value={formData.email}
-              onChangeText={(text) => handleChange("email", text)}
-              keyboardType="email-address"
-              autoCapitalize="none"
+              style={styles.phoneInput}
+              placeholder="700 123 456"
+              value={formData.primaryPhoneNumber}
+              onChangeText={(text) => handleChange("primaryPhoneNumber", text)}
+              keyboardType="phone-pad"
               placeholderTextColor="#999"
             />
           </View>
+          <Text style={styles.hintText}>This will be your login number</Text>
+
+          {/* Alternate Phone Number */}
+          <Text style={styles.label}>Alternate Phone (Optional)</Text>
+          <View style={styles.phoneInputContainer}>
+            <View style={styles.countryCodeContainer}>
+              <Text style={styles.countryCodeText}>+256</Text>
+            </View>
+            <TextInput
+              style={styles.phoneInput}
+              placeholder="700 123 456"
+              value={formData.alternatePhoneNumber}
+              onChangeText={(text) =>
+                handleChange("alternatePhoneNumber", text)
+              }
+              keyboardType="phone-pad"
+              placeholderTextColor="#999"
+            />
+          </View>
+
+          {/* Email */}
+          <Text style={styles.label}>Email (Optional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="nakato.pharmacy@example.com"
+            value={formData.email}
+            onChangeText={(text) => handleChange("email", text)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            placeholderTextColor="#999"
+          />
         </View>
 
         {/* Location Information Section */}
@@ -197,168 +231,213 @@ const OutletRegistrationStep2 = () => {
           <Text style={styles.sectionTitle}>Location Information</Text>
 
           {/* District */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>District *</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={formData.district}
-                onValueChange={(value) => handleChange("district", value)}
-                style={styles.picker}
-              >
-                {districts.map((district, index) => (
-                  <Picker.Item key={index} label={district} value={district} />
-                ))}
-              </Picker>
-            </View>
-          </View>
+          <Text style={styles.label}>District *</Text>
+          <TouchableOpacity
+            style={styles.dropdownContainer}
+            onPress={() => setDistrictModalVisible(true)}
+          >
+            <Text
+              style={
+                formData.district
+                  ? styles.dropdownText
+                  : styles.dropdownPlaceholder
+              }
+            >
+              {formData.district || "Select District"}
+            </Text>
+            <Ionicons
+              name={districtModalVisible ? "chevron-up" : "chevron-down"}
+              size={20}
+              color="#666"
+            />
+          </TouchableOpacity>
 
           {/* County/Municipality */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>County/Municipality</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., Kampala Central"
-              value={formData.countyMunicipality}
-              onChangeText={(text) => handleChange("countyMunicipality", text)}
-              placeholderTextColor="#999"
-            />
-          </View>
+          <Text style={styles.label}>County/Municipality</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., Kampala Central"
+            value={formData.countyMunicipality}
+            onChangeText={(text) => handleChange("countyMunicipality", text)}
+            placeholderTextColor="#999"
+          />
 
           {/* Sub-county/Division */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Sub-county/Division</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., Nakasero Division"
-              value={formData.subcountyDivision}
-              onChangeText={(text) => handleChange("subcountyDivision", text)}
-              placeholderTextColor="#999"
-            />
-          </View>
+          <Text style={styles.label}>Sub-county/Division</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., Nakasero Division"
+            value={formData.subcountyDivision}
+            onChangeText={(text) => handleChange("subcountyDivision", text)}
+            placeholderTextColor="#999"
+          />
 
           {/* Parish/Ward */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Parish/Ward</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., Kololo Ward"
-              value={formData.parishWard}
-              onChangeText={(text) => handleChange("parishWard", text)}
-              placeholderTextColor="#999"
-            />
-          </View>
+          <Text style={styles.label}>Parish/Ward</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., Kololo Ward"
+            value={formData.parishWard}
+            onChangeText={(text) => handleChange("parishWard", text)}
+            placeholderTextColor="#999"
+          />
 
           {/* Village/Cell/Street */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Village/Cell/Street</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., Acacia Avenue"
-              value={formData.villageCellStreet}
-              onChangeText={(text) => handleChange("villageCellStreet", text)}
-              placeholderTextColor="#999"
-            />
-          </View>
+          <Text style={styles.label}>Village/Cell/Street</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., Acacia Avenue"
+            value={formData.villageCellStreet}
+            onChangeText={(text) => handleChange("villageCellStreet", text)}
+            placeholderTextColor="#999"
+          />
 
           {/* Physical Address/Building */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Physical Address/Building</Text>
-            <TextInput
-              style={[styles.input, { height: 80 }]}
-              placeholder="e.g., Plot 12, Bombo Road"
-              value={formData.physicalAddress}
-              onChangeText={(text) => handleChange("physicalAddress", text)}
-              placeholderTextColor="#999"
-              multiline
-            />
-          </View>
+          <Text style={styles.label}>Physical Address/Building</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="e.g., Plot 12, Bombo Road"
+            value={formData.physicalAddress}
+            onChangeText={(text) => handleChange("physicalAddress", text)}
+            placeholderTextColor="#999"
+            multiline
+            numberOfLines={3}
+          />
 
           {/* Nearest Landmark */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Nearest Landmark</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., Near Luweero Town Council"
-              value={formData.nearestLandmark}
-              onChangeText={(text) => handleChange("nearestLandmark", text)}
-              placeholderTextColor="#999"
-            />
-          </View>
+          <Text style={styles.label}>Nearest Landmark</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g., Near Luweero Town Council"
+            value={formData.nearestLandmark}
+            onChangeText={(text) => handleChange("nearestLandmark", text)}
+            placeholderTextColor="#999"
+          />
         </View>
 
         {/* Navigation Buttons */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.backButtonFull} onPress={handleBack}>
-            <Text style={styles.backButtonFullText}>Previous</Text>
+          <TouchableOpacity style={styles.previousButton} onPress={handleBack}>
+            <Text style={styles.previousButtonText}>Previous</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+
+          <TouchableOpacity
+            style={[
+              styles.nextButton,
+              !isFormValid() && styles.nextButtonDisabled,
+            ]}
+            onPress={handleNext}
+            disabled={!isFormValid()}
+          >
             <Text style={styles.nextButtonText}>Next</Text>
+            <Ionicons
+              name="arrow-forward"
+              size={20}
+              color="#FFFFFF"
+              style={styles.nextIcon}
+            />
           </TouchableOpacity>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+
+      {/* District Selection Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={districtModalVisible}
+        onRequestClose={() => setDistrictModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select District</Text>
+              <TouchableOpacity
+                onPress={() => setDistrictModalVisible(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={districts.sort()}
+              renderItem={renderDistrictItem}
+              keyExtractor={(item) => item}
+              style={styles.modalList}
+            />
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  screenContainer: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
-  },
-  contentContainer: {
-    paddingBottom: 40,
+    backgroundColor: "#FFFFFF",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 60 : 40,
-    paddingBottom: 15,
     backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingTop: 60,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: "#F0F0F0",
   },
   backButton: {
-    marginRight: 15,
+    marginRight: 16,
   },
-  backButtonText: {
-    fontSize: 16,
-    color: "#007AFF",
-    fontWeight: "500",
-  },
-  progressInfo: {
-    flex: 1,
-  },
-  progressTitle: {
+  headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1A1A1A",
+    color: "#000000",
   },
-  stepCounter: {
+  container: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  contentContainer: {
+    paddingBottom: 40,
+  },
+  stepIndicator: {
+    marginBottom: 24,
+  },
+  stepText: {
     fontSize: 14,
-    color: "#666",
-    marginTop: 2,
+    color: "#666666",
+    marginBottom: 8,
+    fontWeight: "500",
   },
-  progressBarContainer: {
+  stepProgress: {
+    flexDirection: "row",
     height: 4,
     backgroundColor: "#E0E0E0",
+    borderRadius: 2,
+    overflow: "hidden",
   },
-  progressBar: {
-    height: "100%",
-    backgroundColor: "#4CAF50",
+  stepCompleted: {
+    flex: 1,
+    backgroundColor: colors.primary,
   },
-  formContainer: {
-    padding: 20,
+  stepActive: {
+    flex: 1,
+    backgroundColor: colors.primary,
   },
-  title: {
-    fontSize: 24,
+  stepInactive: {
+    flex: 1,
+    backgroundColor: "#E0E0E0",
+  },
+  sectionTitle: {
+    fontSize: 22,
     fontWeight: "700",
-    color: "#1A1A1A",
+    color: "#000000",
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#666",
+    fontSize: 14,
+    color: "#666666",
     marginBottom: 24,
   },
   section: {
@@ -366,119 +445,175 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 20,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 3.84,
+    shadowRadius: 4,
     elevation: 2,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 20,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
   label: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#333",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333333",
     marginBottom: 8,
   },
   phoneInputContainer: {
     flexDirection: "row",
-    alignItems: "center",
     borderWidth: 1,
-    borderColor: "#D1D1D6",
+    borderColor: "#DDDDDD",
     borderRadius: 8,
     backgroundColor: "#FFFFFF",
-    overflow: "hidden",
+    marginBottom: 8,
   },
   countryCodeContainer: {
-    backgroundColor: "#F0F0F0",
     paddingHorizontal: 16,
-    paddingVertical: Platform.OS === "ios" ? 14 : 12,
+    paddingVertical: 16,
     borderRightWidth: 1,
-    borderRightColor: "#D1D1D6",
+    borderRightColor: "#EEEEEE",
+    justifyContent: "center",
   },
   countryCodeText: {
     fontSize: 16,
-    color: "#333",
+    color: "#333333",
     fontWeight: "500",
   },
   phoneInput: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: Platform.OS === "ios" ? 14 : 12,
+    padding: 16,
     fontSize: 16,
-    color: "#1A1A1A",
-  },
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#D1D1D6",
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: Platform.OS === "ios" ? 14 : 12,
-    fontSize: 16,
-    color: "#1A1A1A",
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: "#D1D1D6",
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
-    overflow: "hidden",
-  },
-  picker: {
-    height: Platform.OS === "ios" ? 140 : 50,
+    color: "#333333",
   },
   hintText: {
-    color: "#666",
-    fontSize: 13,
-    marginTop: 5,
-    fontStyle: "italic",
+    color: "#666666",
+    fontSize: 12,
+    marginBottom: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#DDDDDD",
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    padding: 16,
+    fontSize: 16,
+    color: "#333333",
+    marginBottom: 20,
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: "top",
+  },
+  dropdownContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#DDDDDD",
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    marginBottom: 20,
+  },
+  dropdownText: {
+    fontSize: 16,
+    color: "#333333",
+  },
+  dropdownPlaceholder: {
+    fontSize: 16,
+    color: "#999999",
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 20,
-    gap: 15,
   },
-  backButtonFull: {
+  previousButton: {
     flex: 1,
-    backgroundColor: "#F0F0F0",
-    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 8,
     paddingVertical: 16,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#D1D1D6",
+    marginRight: 12,
   },
-  backButtonFullText: {
-    color: "#333",
-    fontSize: 17,
+  previousButtonText: {
+    color: colors.primary,
+    fontSize: 16,
     fontWeight: "600",
   },
   nextButton: {
     flex: 1,
-    backgroundColor: "#4CAF50",
-    borderRadius: 10,
+    backgroundColor: colors.primaryDark,
+    borderRadius: 8,
     paddingVertical: 16,
     alignItems: "center",
-    shadowColor: "#4CAF50",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    marginLeft: 12,
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  nextButtonDisabled: {
+    backgroundColor: "#CCCCCC",
   },
   nextButtonText: {
     color: "#FFFFFF",
-    fontSize: 17,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  nextIcon: {
+    marginLeft: 8,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContainer: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "60%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333333",
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalList: {
+    paddingHorizontal: 20,
+  },
+  modalItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F5F5F5",
+  },
+  modalItemSelected: {
+    backgroundColor: "#F0F9F0",
+  },
+  modalItemText: {
+    fontSize: 16,
+    color: "#333333",
+  },
+  modalItemTextSelected: {
+    color: colors.primary,
     fontWeight: "600",
   },
 });

@@ -5,6 +5,8 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
+  Modal,
+  FlatList,
 } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,7 +14,6 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
 
-// UPDATED NAVIGATION TYPES - Added Step3 and Step4
 type RootStackParamList = {
   Login: undefined;
   OTP: { phone: string; role: string };
@@ -43,6 +44,33 @@ export default function CHWRegistrationStep2() {
     village: "",
   });
 
+  // District dropdown state
+  const [districtModalVisible, setDistrictModalVisible] = useState(false);
+
+  // Sample districts in Uganda
+  const districts = [
+    "Kampala",
+    "Wakiso",
+    "Mukono",
+    "Luweero",
+    "Masaka",
+    "Mbarara",
+    "Gulu",
+    "Lira",
+    "Jinja",
+    "Mbale",
+    "Soroti",
+    "Arua",
+    "Fort Portal",
+    "Hoima",
+    "Kabale",
+    "Mityana",
+    "Mubende",
+    "Ntungamo",
+    "Rukungiri",
+    "Tororo",
+  ];
+
   const handleBackPress = () => {
     navigation.goBack();
   };
@@ -51,17 +79,51 @@ export default function CHWRegistrationStep2() {
     navigation.navigate("CHWRegistrationStep1");
   };
 
-  // UPDATED handleNextPress - Now navigates to Step 3
   const handleNextPress = () => {
-    // REMOVE THE IF CONDITION
-    navigation.navigate("CHWRegistrationStep3");
+    if (isFormValid()) {
+      navigation.navigate("CHWRegistrationStep3");
+    }
   };
+
   const updateFormData = (field: string, value: string) => {
     setFormData({
       ...formData,
       [field]: value,
     });
   };
+
+  const selectDistrict = (district: string) => {
+    updateFormData("district", district);
+    setDistrictModalVisible(false);
+  };
+
+  const isFormValid = () => {
+    return (
+      formData.phoneNumber.trim() !== "" && formData.district.trim() !== ""
+    );
+  };
+
+  const renderDistrictItem = ({ item }: { item: string }) => (
+    <TouchableOpacity
+      style={[
+        styles.districtItem,
+        formData.district === item && styles.districtItemSelected,
+      ]}
+      onPress={() => selectDistrict(item)}
+    >
+      <Text
+        style={[
+          styles.districtItemText,
+          formData.district === item && styles.districtItemTextSelected,
+        ]}
+      >
+        {item}
+      </Text>
+      {formData.district === item && (
+        <Ionicons name="checkmark" size={20} color={colors.primary} />
+      )}
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.screenContainer}>
@@ -136,9 +198,12 @@ export default function CHWRegistrationStep2() {
           Location Information
         </Text>
 
-        {/* District */}
+        {/* District Dropdown */}
         <Text style={styles.label}>District *</Text>
-        <TouchableOpacity style={styles.dropdownContainer}>
+        <TouchableOpacity
+          style={styles.dropdownContainer}
+          onPress={() => setDistrictModalVisible(true)}
+        >
           <Text
             style={
               formData.district
@@ -148,7 +213,11 @@ export default function CHWRegistrationStep2() {
           >
             {formData.district || "Select District"}
           </Text>
-          <Ionicons name="chevron-down" size={20} color="#666" />
+          <Ionicons
+            name={districtModalVisible ? "chevron-up" : "chevron-down"}
+            size={20}
+            color="#666"
+          />
         </TouchableOpacity>
 
         {/* County/Municipality */}
@@ -205,16 +274,58 @@ export default function CHWRegistrationStep2() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.nextButton} // REMOVE conditional style
-            onPress={handleNextPress} // REMOVE disabled prop
+            style={[
+              styles.nextButton,
+              !isFormValid() && styles.nextButtonDisabled,
+            ]}
+            onPress={handleNextPress}
+            disabled={!isFormValid()}
           >
             <Text style={styles.nextButtonText}>Next</Text>
+            <Ionicons
+              name="arrow-forward"
+              size={20}
+              color="#FFFFFF"
+              style={styles.nextIcon}
+            />
           </TouchableOpacity>
         </View>
 
         {/* Footer Note */}
         <Text style={styles.footerNote}>Fields marked with * are required</Text>
       </ScrollView>
+
+      {/* District Selection Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={districtModalVisible}
+        onRequestClose={() => setDistrictModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select District</Text>
+              <TouchableOpacity
+                onPress={() => setDistrictModalVisible(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            {/* District List */}
+            <FlatList
+              data={districts.sort()}
+              renderItem={renderDistrictItem}
+              keyExtractor={(item) => item}
+              style={styles.districtList}
+              showsVerticalScrollIndicator={true}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -275,7 +386,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E0E0E0",
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "700",
     color: "#000000",
     marginBottom: 20,
@@ -378,6 +489,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: "center",
     marginLeft: 12,
+    flexDirection: "row",
+    justifyContent: "center",
   },
   nextButtonDisabled: {
     backgroundColor: "#CCCCCC",
@@ -387,11 +500,66 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+  nextIcon: {
+    marginLeft: 8,
+  },
   footerNote: {
     fontSize: 12,
     color: "#999999",
     textAlign: "center",
     marginTop: 16,
     marginBottom: 32,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContainer: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "70%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333333",
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  districtList: {
+    maxHeight: 400,
+    paddingHorizontal: 20,
+  },
+  districtItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F5F5F5",
+  },
+  districtItemSelected: {
+    backgroundColor: "#F0F9F0",
+  },
+  districtItemText: {
+    fontSize: 16,
+    color: "#333333",
+  },
+  districtItemTextSelected: {
+    color: colors.primary,
+    fontWeight: "600",
   },
 });

@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   SafeAreaView,
+  Platform,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -18,6 +19,62 @@ type RootStackParamList = {
 };
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
+
+// Progress Bar Component - Updated for Figma design
+const ProgressBar = ({
+  currentStep,
+  totalSteps,
+}: {
+  currentStep: number;
+  totalSteps: number;
+}) => {
+  return (
+    <View style={progressStyles.container}>
+      <View style={progressStyles.stepsContainer}>
+        {[...Array(totalSteps)].map((_, index) => {
+          const stepNumber = index + 1;
+          const isCompleted = stepNumber < currentStep;
+          const isCurrent = stepNumber === currentStep;
+
+          return (
+            <View key={`step-${stepNumber}`} style={progressStyles.stepWrapper}>
+              {/* Connecting Line */}
+              {index > 0 && (
+                <View
+                  style={[
+                    progressStyles.connectorLine,
+                    isCompleted ? progressStyles.connectorLineActive : {},
+                  ]}
+                />
+              )}
+              {/* Step Circle */}
+              <View
+                style={[
+                  progressStyles.stepCircle,
+                  isCurrent && progressStyles.stepCircleActive,
+                  isCompleted && progressStyles.stepCircleCompleted,
+                ]}
+              >
+                {isCompleted ? (
+                  <Text style={progressStyles.stepCheckmark}>1</Text>
+                ) : (
+                  <Text
+                    style={[
+                      progressStyles.stepNumber,
+                      isCurrent && progressStyles.stepNumberActive,
+                    ]}
+                  >
+                    {stepNumber}
+                  </Text>
+                )}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+};
 
 const VSLARegistrationStep2 = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -103,12 +160,28 @@ const VSLARegistrationStep2 = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.title}>VSLA/SACCO Registration</Text>
-          <Text style={styles.step}>Step 2 of 4</Text>
+      <View style={styles.headerContainer}>
+        {/* Header with Back Arrow and Title */}
+        <View style={styles.headerTop}>
+          <TouchableOpacity onPress={handlePrevious} style={styles.backButton}>
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.title}>VSLA/SACCO Registration</Text>
+            <Text style={styles.stepText}>Step 2 of 4</Text>
+          </View>
+          <View style={styles.backButtonPlaceholder} />
         </View>
 
+        {/* Progress Bar - Placed immediately under the header */}
+        <ProgressBar currentStep={2} totalSteps={4} />
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Leadership Information Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Leadership Information</Text>
@@ -215,16 +288,22 @@ const VSLARegistrationStep2 = () => {
           </View>
         </View>
 
+        {/* Spacer */}
+        <View style={styles.spacer} />
+
+        {/* Previous and Next Buttons */}
         <View style={styles.buttonRow}>
           <TouchableOpacity
             style={[styles.button, styles.previousButton]}
             onPress={handlePrevious}
+            activeOpacity={0.8}
           >
             <Text style={styles.previousButtonText}>Previous</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.nextButton]}
             onPress={handleNext}
+            activeOpacity={0.8}
           >
             <Text style={styles.nextButtonText}>Next</Text>
           </TouchableOpacity>
@@ -234,58 +313,172 @@ const VSLARegistrationStep2 = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F9FA" },
-  scrollContent: { padding: 20, paddingBottom: 40 },
-  header: { marginBottom: 32 },
-  title: {
-    fontSize: 24,
+// Progress Bar Styles - Updated for better positioning and colors
+const progressStyles = StyleSheet.create({
+  container: {
+    width: "100%",
+    paddingHorizontal: 40,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  stepsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    position: "relative",
+  },
+  stepWrapper: {
+    alignItems: "center",
+    position: "relative",
+    zIndex: 2,
+  },
+  stepCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#E0E0E0",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  stepCircleActive: {
+    backgroundColor: "#FF9800",
+    borderColor: "#FF9800",
+  },
+  stepCircleCompleted: {
+    backgroundColor: "#FF9800",
+    borderColor: "#FF9800",
+  },
+  stepNumber: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#757575",
+  },
+  stepNumberActive: {
+    color: "#FFFFFF",
+  },
+  stepCheckmark: {
+    fontSize: 14,
     fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  connectorLine: {
+    position: "absolute",
+    height: 2,
+    backgroundColor: "#E0E0E0",
+    top: 13, // Center of circle (28/2 = 14)
+    left: "-50%",
+    right: "50%",
+    zIndex: 1,
+  },
+  connectorLineActive: {
+    backgroundColor: "#4CAF50", // Green line for completed connections
+  },
+});
+
+// Main Component Styles
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F8F9FA",
+  },
+  headerContainer: {
+    backgroundColor: "#F8F9FA",
+    paddingTop: Platform.OS === "ios" ? 50 : 30,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E8E8E8",
+  },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    marginBottom: 32,
+    paddingTop: 70,
+  },
+  backButton: {
+    padding: 8,
+    marginLeft: -8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  backArrow: {
+    fontSize: 24,
+    fontWeight: "300",
+    color: "#333",
+  },
+  backButtonPlaceholder: {
+    width: 40,
+  },
+  headerCenter: {
+    alignItems: "center",
+    flex: 1,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "600",
     color: "#1A1A1A",
     textAlign: "center",
+    marginBottom: 4,
   },
-  step: { fontSize: 14, color: "#666", textAlign: "center", marginTop: 4 },
+  stepText: {
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
+    fontWeight: "400",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 30,
+  },
   section: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#1A1A1A",
-    marginBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEE",
-    paddingBottom: 8,
+    marginBottom: 24,
   },
-  personSection: { marginBottom: 24 },
+  personSection: {
+    marginBottom: 24,
+  },
   personTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
+    color: "#333333",
     marginBottom: 12,
   },
-  inputGroup: { marginBottom: 20 },
+  inputGroup: {
+    marginBottom: 20,
+  },
   label: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
-    color: "#333",
+    color: "#333333",
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: "#DDDDDD",
     borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: "#FFF",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    backgroundColor: "#FFFFFF",
+    color: "#333333",
+    height: 40,
     marginBottom: 12,
   },
   phoneInputContainer: {
@@ -295,18 +488,19 @@ const styles = StyleSheet.create({
   },
   countryCode: {
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: "#DDDDDD",
     borderRightWidth: 0,
     borderTopLeftRadius: 8,
     borderBottomLeftRadius: 8,
-    padding: 12,
+    padding: 10,
     backgroundColor: "#F5F5F5",
     justifyContent: "center",
     minWidth: 70,
+    height: 40,
   },
   countryCodeText: {
-    fontSize: 16,
-    color: "#333",
+    fontSize: 14,
+    color: "#333333",
     textAlign: "center",
   },
   phoneInput: {
@@ -314,54 +508,62 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
     marginBottom: 0,
+    height: 40,
   },
   selectContainer: {
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: "#DDDDDD",
     borderRadius: 8,
-    padding: 12,
-    backgroundColor: "#FFF",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#FFFFFF",
+    height: 40,
+    justifyContent: "center",
   },
   selectPlaceholder: {
-    fontSize: 16,
-    color: "#999",
+    fontSize: 14,
+    color: "#8E8E93",
   },
   hintText: {
     fontSize: 12,
-    color: "#666",
+    color: "#666666",
     fontStyle: "italic",
     marginTop: 4,
     marginBottom: 8,
+  },
+  spacer: {
+    flex: 1,
+    minHeight: 20,
   },
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 12,
-    marginTop: 20,
+    marginTop: 10,
   },
   button: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
   },
   previousButton: {
-    backgroundColor: "#FFF",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: "#DDDDDD",
   },
   nextButton: {
     backgroundColor: "#FF9800",
   },
   previousButtonText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#666",
+    fontWeight: "500",
+    color: "#666666",
   },
   nextButtonText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#FFF",
+    fontWeight: "500",
+    color: "#FFFFFF",
   },
 });
 

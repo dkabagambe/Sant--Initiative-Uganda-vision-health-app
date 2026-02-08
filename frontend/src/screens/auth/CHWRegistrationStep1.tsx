@@ -12,7 +12,6 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
 
-// UPDATE THIS TYPE - Add CHWRegistrationStep2
 type RootStackParamList = {
   Login: undefined;
   OTP: { phone: string; role: string };
@@ -42,10 +41,10 @@ export default function CHWRegistrationStep1() {
     navigation.goBack();
   };
 
-  // In handleNextPress function:
   const handleNextPress = () => {
-    // REMOVE THE IF CONDITION - just navigate
-    navigation.navigate("CHWRegistrationStep2");
+    if (isFormValid()) {
+      navigation.navigate("CHWRegistrationStep2");
+    }
   };
 
   const updateFormData = (field: string, value: string) => {
@@ -53,6 +52,15 @@ export default function CHWRegistrationStep1() {
       ...formData,
       [field]: value,
     });
+  };
+
+  const isFormValid = () => {
+    return (
+      formData.firstName.trim() !== "" &&
+      formData.lastName.trim() !== "" &&
+      formData.gender !== "" &&
+      formData.nationalId.trim() !== ""
+    );
   };
 
   return (
@@ -184,11 +192,23 @@ export default function CHWRegistrationStep1() {
           />
         </View>
 
-        {/* Next Button */}
+        {/* Next Button - FIXED: Green color and "Next" text */}
         <TouchableOpacity
-          style={styles.nextButton} // REMOVE the conditional style
-          onPress={handleNextPress} // REMOVE the disabled prop
-        ></TouchableOpacity>
+          style={[
+            styles.nextButton,
+            !isFormValid() && styles.nextButtonDisabled,
+          ]}
+          onPress={handleNextPress}
+          disabled={!isFormValid()}
+        >
+          <Text style={styles.nextButtonText}>Next</Text>
+          <Ionicons
+            name="arrow-forward"
+            size={20}
+            color="#FFFFFF"
+            style={styles.nextIcon}
+          />
+        </TouchableOpacity>
 
         {/* Footer Note */}
         <Text style={styles.footerNote}>Fields marked with * are required</Text>
@@ -242,7 +262,7 @@ const styles = StyleSheet.create({
   },
   stepActive: {
     flex: 1,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary, // Green from your theme
   },
   stepInactive: {
     flex: 1,
@@ -287,7 +307,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   genderOptionSelected: {
-    borderColor: colors.primary,
+    borderColor: colors.primary, // Green from your theme
     backgroundColor: "#F0F9F0",
   },
   genderRadio: {
@@ -304,18 +324,18 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary, // Green from your theme
   },
   genderText: {
     fontSize: 16,
     color: "#666666",
   },
   genderTextSelected: {
-    color: colors.primary,
+    color: colors.primary, // Green from your theme
     fontWeight: "500",
   },
   nextButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary, // Green from your theme
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",

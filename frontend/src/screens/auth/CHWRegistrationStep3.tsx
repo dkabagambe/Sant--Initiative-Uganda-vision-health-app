@@ -5,6 +5,8 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
+  Modal,
+  FlatList,
 } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,6 +39,9 @@ export default function CHWRegistrationStep3() {
     languages: [] as string[],
   });
 
+  // Dropdown state
+  const [experienceModalVisible, setExperienceModalVisible] = useState(false);
+
   const handleBackPress = () => {
     navigation.goBack();
   };
@@ -46,8 +51,9 @@ export default function CHWRegistrationStep3() {
   };
 
   const handleNextPress = () => {
-    // REMOVE THE IF CONDITION
-    navigation.navigate("CHWRegistrationStep4");
+    if (isFormValid()) {
+      navigation.navigate("CHWRegistrationStep4");
+    }
   };
 
   const updateFormData = (field: string, value: string) => {
@@ -73,6 +79,23 @@ export default function CHWRegistrationStep3() {
     });
   };
 
+  const selectExperience = (experience: string) => {
+    updateFormData("yearsExperience", experience);
+    setExperienceModalVisible(false);
+  };
+
+  const isFormValid = () => {
+    return formData.languages.length > 0; // At least one language required
+  };
+
+  const experienceOptions = [
+    "Less than 1 year",
+    "1-2 years",
+    "3-5 years",
+    "6-10 years",
+    "More than 10 years",
+  ];
+
   const languageOptions = [
     "English",
     "Luganda",
@@ -82,6 +105,29 @@ export default function CHWRegistrationStep3() {
     "Luo",
     "Ateso",
   ];
+
+  const renderExperienceItem = ({ item }: { item: string }) => (
+    <TouchableOpacity
+      style={[
+        styles.experienceItem,
+        formData.yearsExperience === item && styles.experienceItemSelected,
+      ]}
+      onPress={() => selectExperience(item)}
+    >
+      <Text
+        style={[
+          styles.experienceItemText,
+          formData.yearsExperience === item &&
+            styles.experienceItemTextSelected,
+        ]}
+      >
+        {item}
+      </Text>
+      {formData.yearsExperience === item && (
+        <Ionicons name="checkmark" size={20} color={colors.primary} />
+      )}
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.screenContainer}>
@@ -121,7 +167,10 @@ export default function CHWRegistrationStep3() {
 
         {/* Years of CHW Experience */}
         <Text style={styles.label}>Years of CHW Experience</Text>
-        <TouchableOpacity style={styles.dropdownContainer}>
+        <TouchableOpacity
+          style={styles.dropdownContainer}
+          onPress={() => setExperienceModalVisible(true)}
+        >
           <Text
             style={
               formData.yearsExperience
@@ -131,12 +180,16 @@ export default function CHWRegistrationStep3() {
           >
             {formData.yearsExperience || "Select experience"}
           </Text>
-          <Ionicons name="chevron-down" size={20} color="#666" />
+          <Ionicons
+            name={experienceModalVisible ? "chevron-up" : "chevron-down"}
+            size={20}
+            color="#666"
+          />
         </TouchableOpacity>
 
         {/* Languages Spoken */}
-        <Text style={[styles.label, styles.requiredLabel]}>
-          Languages Spoken *
+        <Text style={styles.label}>
+          Languages Spoken <Text style={styles.requiredAsterisk}>*</Text>
         </Text>
         <Text style={styles.helperText}>
           Select all languages you can communicate in
@@ -184,16 +237,58 @@ export default function CHWRegistrationStep3() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.nextButton} // REMOVE conditional style
-            onPress={handleNextPress} // REMOVE disabled prop
+            style={[
+              styles.nextButton,
+              !isFormValid() && styles.nextButtonDisabled,
+            ]}
+            onPress={handleNextPress}
+            disabled={!isFormValid()}
           >
             <Text style={styles.nextButtonText}>Next</Text>
+            <Ionicons
+              name="arrow-forward"
+              size={20}
+              color="#FFFFFF"
+              style={styles.nextIcon}
+            />
           </TouchableOpacity>
         </View>
 
         {/* Footer Note */}
         <Text style={styles.footerNote}>Fields marked with * are required</Text>
       </ScrollView>
+
+      {/* Experience Selection Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={experienceModalVisible}
+        onRequestClose={() => setExperienceModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Experience</Text>
+              <TouchableOpacity
+                onPress={() => setExperienceModalVisible(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Experience List */}
+            <FlatList
+              data={experienceOptions}
+              renderItem={renderExperienceItem}
+              keyExtractor={(item) => item}
+              style={styles.experienceList}
+              showsVerticalScrollIndicator={true}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -254,7 +349,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E0E0E0",
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "700",
     color: "#000000",
     marginBottom: 20,
@@ -265,7 +360,7 @@ const styles = StyleSheet.create({
     color: "#333333",
     marginBottom: 8,
   },
-  requiredLabel: {
+  requiredAsterisk: {
     color: colors.primary,
   },
   helperText: {
@@ -363,6 +458,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: "center",
     marginLeft: 12,
+    flexDirection: "row",
+    justifyContent: "center",
   },
   nextButtonDisabled: {
     backgroundColor: "#CCCCCC",
@@ -372,11 +469,65 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+  nextIcon: {
+    marginLeft: 8,
+  },
   footerNote: {
     fontSize: 12,
     color: "#999999",
     textAlign: "center",
     marginTop: 16,
     marginBottom: 32,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContainer: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "50%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333333",
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  experienceList: {
+    paddingHorizontal: 20,
+  },
+  experienceItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F5F5F5",
+  },
+  experienceItemSelected: {
+    backgroundColor: "#F0F9F0",
+  },
+  experienceItemText: {
+    fontSize: 16,
+    color: "#333333",
+  },
+  experienceItemTextSelected: {
+    color: colors.primary,
+    fontWeight: "600",
   },
 });

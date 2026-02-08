@@ -13,7 +13,7 @@ export const colors = {
   /* =========================
      LEGACY PRIMARY (KEEP)
      ========================= */
-  primary: "#1E40AF", // Existing blue (do NOT remove)
+  primary: "#2E7D32", // Existing blue (do NOT remove)
   primaryDark: "#1E3A8A",
   primaryLight: "#3B82F6",
 

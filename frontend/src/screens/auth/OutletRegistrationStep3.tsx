@@ -6,26 +6,31 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Platform,
+  Modal,
+  FlatList,
+  SafeAreaView,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { colors } from "../../theme/colors";
 
 type RootStackParamList = {
+  OutletRegistrationStep2: { step1Data: any };
   OutletRegistrationStep3: { step1Data: any; step2Data: any };
   OutletRegistrationStep4: { step1Data: any; step2Data: any; step3Data: any };
   [key: string]: any;
 };
 
-type NavigationProp = StackNavigationProp<RootStackParamList>;
-type RouteProps = {
-  key: string;
-  name: string;
-  params: {
-    step1Data: any;
-    step2Data: any;
-  };
-};
+type OutletRegistrationStep3NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "OutletRegistrationStep3"
+>;
+
+type OutletRegistrationStep3RouteProp = RouteProp<
+  RootStackParamList,
+  "OutletRegistrationStep3"
+>;
 
 interface FormData {
   operatingHours: string;
@@ -33,14 +38,26 @@ interface FormData {
 }
 
 const OutletRegistrationStep3 = () => {
-  const navigation = useNavigation<NavigationProp>();
-  const route = useRoute<RouteProps>();
+  const navigation = useNavigation<OutletRegistrationStep3NavigationProp>();
+  const route = useRoute<OutletRegistrationStep3RouteProp>();
   const { step1Data, step2Data } = route.params || {};
 
   const [formData, setFormData] = useState<FormData>({
     operatingHours: "",
     currentlySellingGlasses: false,
   });
+
+  const [operatingHoursModalVisible, setOperatingHoursModalVisible] =
+    useState(false);
+
+  const operatingHoursOptions = [
+    "Mon-Fri 8AM-6PM, Sat 9AM-4PM",
+    "Mon-Sat 8AM-8PM, Sun 10AM-4PM",
+    "Mon-Sun 7AM-9PM",
+    "Mon-Fri 9AM-5PM",
+    "24/7 Operation",
+    "Custom hours",
+  ];
 
   const handleChange = (field: keyof FormData, value: string | boolean) => {
     setFormData((prev) => ({
@@ -61,29 +78,61 @@ const OutletRegistrationStep3 = () => {
     navigation.goBack();
   };
 
-  return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
+  const selectOperatingHours = (hours: string) => {
+    handleChange("operatingHours", hours);
+    setOperatingHoursModalVisible(false);
+  };
+
+  const renderOperatingHoursItem = ({ item }: { item: string }) => (
+    <TouchableOpacity
+      style={[
+        styles.modalItem,
+        formData.operatingHours === item && styles.modalItemSelected,
+      ]}
+      onPress={() => selectOperatingHours(item)}
     >
-      {/* Header with Back Button */}
+      <Text
+        style={[
+          styles.modalItemText,
+          formData.operatingHours === item && styles.modalItemTextSelected,
+        ]}
+      >
+        {item}
+      </Text>
+      {formData.operatingHours === item && (
+        <Ionicons name="checkmark" size={20} color={colors.primary} />
+      )}
+    </TouchableOpacity>
+  );
+
+  return (
+    <SafeAreaView style={styles.screenContainer}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <View style={styles.progressInfo}>
-          <Text style={styles.progressTitle}>Outlet Registration</Text>
-          <Text style={styles.stepCounter}>Step 3 of 4</Text>
+        <Text style={styles.headerTitle}>Outlet Registration</Text>
+      </View>
+
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.contentContainer}
+      >
+        {/* Step Indicator */}
+        <View style={styles.stepIndicator}>
+          <Text style={styles.stepText}>Step 3 of 4</Text>
+          <View style={styles.stepProgress}>
+            <View style={styles.stepCompleted} />
+            <View style={styles.stepCompleted} />
+            <View style={styles.stepActive} />
+            <View style={styles.stepInactive} />
+          </View>
         </View>
-      </View>
 
-      {/* Progress Bar */}
-      <View style={styles.progressBarContainer}>
-        <View style={[styles.progressBar, { width: "75%" }]} />
-      </View>
-
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Business Details</Text>
+        {/* Form Title */}
+        <Text style={styles.sectionTitle}>Business Details</Text>
         <Text style={styles.subtitle}>
           Tell us more about your business operations
         </Text>
@@ -93,81 +142,87 @@ const OutletRegistrationStep3 = () => {
           <Text style={styles.sectionTitle}>Business Information</Text>
 
           {/* Operating Hours */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Operating Hours</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., Mon-Sat 8AM-6PM"
-              value={formData.operatingHours}
-              onChangeText={(text) => handleChange("operatingHours", text)}
-              placeholderTextColor="#999"
+          <Text style={styles.label}>Operating Hours</Text>
+          <TouchableOpacity
+            style={styles.dropdownContainer}
+            onPress={() => setOperatingHoursModalVisible(true)}
+          >
+            <Text
+              style={
+                formData.operatingHours
+                  ? styles.dropdownText
+                  : styles.dropdownPlaceholder
+              }
+            >
+              {formData.operatingHours || "Select operating hours"}
+            </Text>
+            <Ionicons
+              name={operatingHoursModalVisible ? "chevron-up" : "chevron-down"}
+              size={20}
+              color="#666"
             />
-          </View>
+          </TouchableOpacity>
 
           {/* Currently Selling Reading Glasses? */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Currently Selling Reading Glasses?</Text>
-            <View style={styles.radioGroup}>
-              <TouchableOpacity
+          <Text style={styles.label}>Currently Selling Reading Glasses?</Text>
+          <View style={styles.radioGroup}>
+            <TouchableOpacity
+              style={[
+                styles.radioOption,
+                formData.currentlySellingGlasses && styles.radioOptionSelected,
+              ]}
+              onPress={() => handleChange("currentlySellingGlasses", true)}
+            >
+              <View
                 style={[
-                  styles.radioOption,
+                  styles.radioCircle,
                   formData.currentlySellingGlasses &&
-                    styles.radioOptionSelected,
+                    styles.radioCircleSelected,
                 ]}
-                onPress={() => handleChange("currentlySellingGlasses", true)}
               >
-                <View
-                  style={[
-                    styles.radioCircle,
-                    formData.currentlySellingGlasses &&
-                      styles.radioCircleSelected,
-                  ]}
-                >
-                  {formData.currentlySellingGlasses && (
-                    <View style={styles.radioInnerCircle} />
-                  )}
-                </View>
-                <Text
-                  style={[
-                    styles.radioLabel,
-                    formData.currentlySellingGlasses &&
-                      styles.radioLabelSelected,
-                  ]}
-                >
-                  Yes
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
+                {formData.currentlySellingGlasses && (
+                  <View style={styles.radioInnerCircle} />
+                )}
+              </View>
+              <Text
                 style={[
-                  styles.radioOption,
-                  !formData.currentlySellingGlasses &&
-                    styles.radioOptionSelected,
+                  styles.radioLabel,
+                  formData.currentlySellingGlasses && styles.radioLabelSelected,
                 ]}
-                onPress={() => handleChange("currentlySellingGlasses", false)}
               >
-                <View
-                  style={[
-                    styles.radioCircle,
-                    !formData.currentlySellingGlasses &&
-                      styles.radioCircleSelected,
-                  ]}
-                >
-                  {!formData.currentlySellingGlasses && (
-                    <View style={styles.radioInnerCircle} />
-                  )}
-                </View>
-                <Text
-                  style={[
-                    styles.radioLabel,
-                    !formData.currentlySellingGlasses &&
-                      styles.radioLabelSelected,
-                  ]}
-                >
-                  No
-                </Text>
-              </TouchableOpacity>
-            </View>
+                Yes
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.radioOption,
+                formData.currentlySellingGlasses === false &&
+                  styles.radioOptionSelected,
+              ]}
+              onPress={() => handleChange("currentlySellingGlasses", false)}
+            >
+              <View
+                style={[
+                  styles.radioCircle,
+                  formData.currentlySellingGlasses === false &&
+                    styles.radioCircleSelected,
+                ]}
+              >
+                {formData.currentlySellingGlasses === false && (
+                  <View style={styles.radioInnerCircle} />
+                )}
+              </View>
+              <Text
+                style={[
+                  styles.radioLabel,
+                  formData.currentlySellingGlasses === false &&
+                    styles.radioLabelSelected,
+                ]}
+              >
+                No
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -178,7 +233,7 @@ const OutletRegistrationStep3 = () => {
           <View style={styles.benefitsList}>
             <View style={styles.benefitItem}>
               <View style={styles.benefitIcon}>
-                <Text style={styles.benefitIconText}>✓</Text>
+                <Ionicons name="checkmark" size={16} color="#FFFFFF" />
               </View>
               <Text style={styles.benefitText}>
                 Quality reading glasses at wholesale prices
@@ -187,7 +242,7 @@ const OutletRegistrationStep3 = () => {
 
             <View style={styles.benefitItem}>
               <View style={styles.benefitIcon}>
-                <Text style={styles.benefitIconText}>✓</Text>
+                <Ionicons name="checkmark" size={16} color="#FFFFFF" />
               </View>
               <Text style={styles.benefitText}>
                 Training on vision screening basics
@@ -196,7 +251,7 @@ const OutletRegistrationStep3 = () => {
 
             <View style={styles.benefitItem}>
               <View style={styles.benefitIcon}>
-                <Text style={styles.benefitIconText}>✓</Text>
+                <Ionicons name="checkmark" size={16} color="#FFFFFF" />
               </View>
               <Text style={styles.benefitText}>
                 Marketing materials and branding support
@@ -205,7 +260,7 @@ const OutletRegistrationStep3 = () => {
 
             <View style={styles.benefitItem}>
               <View style={styles.benefitIcon}>
-                <Text style={styles.benefitIconText}>✓</Text>
+                <Ionicons name="checkmark" size={16} color="#FFFFFF" />
               </View>
               <Text style={styles.benefitText}>
                 Flexible stock replenishment
@@ -214,7 +269,7 @@ const OutletRegistrationStep3 = () => {
 
             <View style={styles.benefitItem}>
               <View style={styles.benefitIcon}>
-                <Text style={styles.benefitIconText}>✓</Text>
+                <Ionicons name="checkmark" size={16} color="#FFFFFF" />
               </View>
               <Text style={styles.benefitText}>
                 Digital inventory management tools
@@ -230,77 +285,120 @@ const OutletRegistrationStep3 = () => {
 
         {/* Navigation Buttons */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.backButtonFull} onPress={handleBack}>
-            <Text style={styles.backButtonFullText}>Previous</Text>
+          <TouchableOpacity style={styles.previousButton} onPress={handleBack}>
+            <Text style={styles.previousButtonText}>Previous</Text>
           </TouchableOpacity>
+
           <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
             <Text style={styles.nextButtonText}>Next</Text>
+            <Ionicons
+              name="arrow-forward"
+              size={20}
+              color="#FFFFFF"
+              style={styles.nextIcon}
+            />
           </TouchableOpacity>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+
+      {/* Operating Hours Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={operatingHoursModalVisible}
+        onRequestClose={() => setOperatingHoursModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Operating Hours</Text>
+              <TouchableOpacity
+                onPress={() => setOperatingHoursModalVisible(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={operatingHoursOptions}
+              renderItem={renderOperatingHoursItem}
+              keyExtractor={(item) => item}
+              style={styles.modalList}
+            />
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  screenContainer: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
-  },
-  contentContainer: {
-    paddingBottom: 40,
+    backgroundColor: "#FFFFFF",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 60 : 40,
-    paddingBottom: 15,
     backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingTop: 60,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: "#F0F0F0",
   },
   backButton: {
-    marginRight: 15,
+    marginRight: 16,
   },
-  backButtonText: {
-    fontSize: 16,
-    color: "#007AFF",
-    fontWeight: "500",
-  },
-  progressInfo: {
-    flex: 1,
-  },
-  progressTitle: {
+  headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1A1A1A",
+    color: "#000000",
   },
-  stepCounter: {
+  container: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  contentContainer: {
+    paddingBottom: 40,
+  },
+  stepIndicator: {
+    marginBottom: 24,
+  },
+  stepText: {
     fontSize: 14,
-    color: "#666",
-    marginTop: 2,
+    color: "#666666",
+    marginBottom: 8,
+    fontWeight: "500",
   },
-  progressBarContainer: {
+  stepProgress: {
+    flexDirection: "row",
     height: 4,
     backgroundColor: "#E0E0E0",
+    borderRadius: 2,
+    overflow: "hidden",
   },
-  progressBar: {
-    height: "100%",
-    backgroundColor: "#4CAF50",
+  stepCompleted: {
+    flex: 1,
+    backgroundColor: colors.primary,
   },
-  formContainer: {
-    padding: 20,
+  stepActive: {
+    flex: 1,
+    backgroundColor: colors.primary,
   },
-  title: {
-    fontSize: 24,
+  stepInactive: {
+    flex: 1,
+    backgroundColor: "#E0E0E0",
+  },
+  sectionTitle: {
+    fontSize: 22,
     fontWeight: "700",
-    color: "#1A1A1A",
+    color: "#000000",
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#666",
+    fontSize: 14,
+    color: "#666666",
     marginBottom: 24,
   },
   section: {
@@ -308,39 +406,39 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 20,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 3.84,
+    shadowRadius: 4,
     elevation: 2,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 20,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
   label: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#333",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333333",
     marginBottom: 12,
   },
-  input: {
-    backgroundColor: "#FFFFFF",
+  dropdownContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: "#D1D1D6",
+    borderColor: "#DDDDDD",
     borderRadius: 8,
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
-    paddingVertical: Platform.OS === "ios" ? 14 : 12,
+    paddingVertical: 16,
+    marginBottom: 20,
+  },
+  dropdownText: {
     fontSize: 16,
-    color: "#1A1A1A",
+    color: "#333333",
+  },
+  dropdownPlaceholder: {
+    fontSize: 16,
+    color: "#999999",
   },
   radioGroup: {
     flexDirection: "row",
@@ -353,40 +451,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#D1D1D6",
+    borderColor: "#DDDDDD",
     backgroundColor: "#FFFFFF",
     minWidth: 120,
   },
   radioOptionSelected: {
-    borderColor: "#4CAF50",
-    backgroundColor: "#F1F8E9",
+    borderColor: colors.primary,
+    backgroundColor: "#F0F9F0",
   },
   radioCircle: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: "#D1D1D6",
+    borderColor: "#CCCCCC",
     marginRight: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   radioCircleSelected: {
-    borderColor: "#4CAF50",
+    borderColor: colors.primary,
   },
   radioInnerCircle: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#4CAF50",
+    backgroundColor: colors.primary,
   },
   radioLabel: {
     fontSize: 16,
-    color: "#666",
+    color: "#666666",
     fontWeight: "500",
   },
   radioLabelSelected: {
-    color: "#4CAF50",
+    color: colors.primary,
   },
   benefitsList: {
     marginBottom: 20,
@@ -400,26 +498,21 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#4CAF50",
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
     marginTop: 2,
   },
-  benefitIconText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "bold",
-  },
   benefitText: {
     flex: 1,
     fontSize: 15,
-    color: "#333",
+    color: "#333333",
     lineHeight: 22,
   },
   partnershipNote: {
     fontSize: 14,
-    color: "#666",
+    color: "#666666",
     lineHeight: 20,
     fontStyle: "italic",
     paddingTop: 12,
@@ -430,37 +523,89 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 20,
-    gap: 15,
   },
-  backButtonFull: {
+  previousButton: {
     flex: 1,
-    backgroundColor: "#F0F0F0",
-    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 8,
     paddingVertical: 16,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#D1D1D6",
+    marginRight: 12,
   },
-  backButtonFullText: {
-    color: "#333",
-    fontSize: 17,
+  previousButtonText: {
+    color: colors.primary,
+    fontSize: 16,
     fontWeight: "600",
   },
   nextButton: {
     flex: 1,
-    backgroundColor: "#4CAF50",
-    borderRadius: 10,
+    backgroundColor: colors.primaryDark,
+    borderRadius: 8,
     paddingVertical: 16,
     alignItems: "center",
-    shadowColor: "#4CAF50",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    marginLeft: 12,
+    flexDirection: "row",
+    justifyContent: "center",
   },
   nextButtonText: {
     color: "#FFFFFF",
-    fontSize: 17,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  nextIcon: {
+    marginLeft: 8,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContainer: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "60%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333333",
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalList: {
+    paddingHorizontal: 20,
+  },
+  modalItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F5F5F5",
+  },
+  modalItemSelected: {
+    backgroundColor: "#F0F9F0",
+  },
+  modalItemText: {
+    fontSize: 16,
+    color: "#333333",
+  },
+  modalItemTextSelected: {
+    color: colors.primary,
     fontWeight: "600",
   },
 });

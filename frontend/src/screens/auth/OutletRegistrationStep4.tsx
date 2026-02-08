@@ -5,515 +5,836 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Platform,
-  ActivityIndicator,
+  Image,
+  Alert,
+  SafeAreaView,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { colors } from "../../theme/colors";
+import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 
 type RootStackParamList = {
+  OutletRegistrationStep3: { step1Data: any; step2Data: any };
   OutletRegistrationStep4: { step1Data: any; step2Data: any; step3Data: any };
-  OutletDashboard: undefined;
+  AppTabs: { role: string };
   [key: string]: any;
 };
 
-type NavigationProp = StackNavigationProp<RootStackParamList>;
-type RouteProps = {
-  key: string;
-  name: string;
-  params: {
-    step1Data: any;
-    step2Data: any;
-    step3Data: any;
-  };
-};
+type OutletRegistrationStep4NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "OutletRegistrationStep4"
+>;
 
-interface FormData {
-  shopFrontPhoto: boolean;
-  ownerIdPhoto: boolean;
-  agreeToTerms: boolean;
+type OutletRegistrationStep4RouteProp = RouteProp<
+  RootStackParamList,
+  "OutletRegistrationStep4"
+>;
+
+interface SelectedFile {
+  name: string;
+  uri: string;
+  type: string;
 }
 
 const OutletRegistrationStep4 = () => {
-  const navigation = useNavigation<NavigationProp>();
-  const route = useRoute<RouteProps>();
+  const navigation = useNavigation<OutletRegistrationStep4NavigationProp>();
+  const route = useRoute<OutletRegistrationStep4RouteProp>();
   const { step1Data, step2Data, step3Data } = route.params || {};
 
-  const [formData, setFormData] = useState<FormData>({
-    shopFrontPhoto: false,
-    ownerIdPhoto: false,
-    agreeToTerms: false,
+  const [agreements, setAgreements] = useState({
+    infoAccurate: false,
+    partnershipTerms: false,
+    sellAtRecommendedPrices: false,
+    maintainQualityStandards: false,
+    approvalTime: false,
+    completeTraining: false,
   });
+
+  const [selectedFiles, setSelectedFiles] = useState<{
+    shopFront: SelectedFile | null;
+    ownerId: SelectedFile | null;
+  }>({
+    shopFront: null,
+    ownerId: null,
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleBack = () => {
+  const handleBackPress = () => {
     navigation.goBack();
   };
 
-  const togglePhoto = (type: "shopFront" | "ownerId") => {
-    if (type === "shopFront") {
-      setFormData((prev) => ({
-        ...prev,
-        shopFrontPhoto: !prev.shopFrontPhoto,
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, ownerIdPhoto: !prev.ownerIdPhoto }));
+  const handlePreviousPress = () => {
+    navigation.navigate("OutletRegistrationStep3", {
+      step1Data,
+      step2Data,
+    });
+  };
+
+  const pickImage = async (type: keyof typeof selectedFiles) => {
+    try {
+      // Request permissions
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Sorry, we need camera roll permissions to upload photos.",
+          [{ text: "OK" }],
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+        base64: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+
+        // Check file size (5MB limit)
+        if (asset.fileSize && asset.fileSize > 5 * 1024 * 1024) {
+          Alert.alert(
+            "File Too Large",
+            "Please select an image smaller than 5MB",
+            [{ text: "OK" }],
+          );
+          return;
+        }
+
+        const file: SelectedFile = {
+          name: asset.fileName || `photo_${type}_${Date.now()}.jpg`,
+          uri: asset.uri,
+          type: asset.type || "image",
+        };
+
+        setSelectedFiles((prev) => ({
+          ...prev,
+          [type]: file,
+        }));
+
+        Alert.alert("Photo Selected", "Photo has been uploaded successfully", [
+          { text: "OK" },
+        ]);
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image. Please try again.", [
+        { text: "OK" },
+      ]);
     }
   };
 
-  const toggleTerms = () => {
-    setFormData((prev) => ({ ...prev, agreeToTerms: !prev.agreeToTerms }));
+  const pickDocument = async (type: keyof typeof selectedFiles) => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["image/*", "application/pdf"],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const file = result.assets[0];
+
+      // Check file size (5MB limit)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size && file.size > maxSize) {
+        Alert.alert("File Too Large", "Please select a file smaller than 5MB", [
+          { text: "OK" },
+        ]);
+        return;
+      }
+
+      setSelectedFiles((prev) => ({
+        ...prev,
+        [type]: {
+          name: file.name,
+          uri: file.uri,
+          type: file.mimeType || "application/pdf",
+        },
+      }));
+
+      Alert.alert("File Selected", `${file.name} has been uploaded`, [
+        { text: "OK" },
+      ]);
+    } catch (error) {
+      console.error("Error picking document:", error);
+      Alert.alert("Error", "Failed to pick file. Please try again.", [
+        { text: "OK" },
+      ]);
+    }
   };
 
-  const handleSubmit = async () => {
+  const removeFile = (type: keyof typeof selectedFiles) => {
+    Alert.alert("Remove File", "Are you sure you want to remove this file?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () => {
+          setSelectedFiles((prev) => ({
+            ...prev,
+            [type]: null,
+          }));
+        },
+      },
+    ]);
+  };
+
+  const handleSubmitPress = async () => {
+    if (!isFormValid()) {
+      Alert.alert(
+        "Required Agreements",
+        "Please check all agreement boxes to continue",
+        [{ text: "OK" }],
+      );
+      return;
+    }
+
+    if (!selectedFiles.shopFront || !selectedFiles.ownerId) {
+      Alert.alert(
+        "Required Photos",
+        "Please upload both Shop Front Photo and Owner National ID Photo",
+        [{ text: "OK" }],
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      // Prepare form data for submission
+      const formData = new FormData();
+
+      // Add all previous steps data
+      formData.append("step1Data", JSON.stringify(step1Data));
+      formData.append("step2Data", JSON.stringify(step2Data));
+      formData.append("step3Data", JSON.stringify(step3Data));
+      formData.append("agreements", JSON.stringify(agreements));
+
+      // Add files if they exist
+      if (selectedFiles.shopFront) {
+        const file = selectedFiles.shopFront;
+        formData.append("shopFront", {
+          uri: file.uri,
+          type: file.type,
+          name: file.name,
+        } as any);
+      }
+
+      if (selectedFiles.ownerId) {
+        const file = selectedFiles.ownerId;
+        formData.append("ownerId", {
+          uri: file.uri,
+          type: file.type,
+          name: file.name,
+        } as any);
+      }
+
+      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      console.log("Submitting outlet registration:", {
-        step1Data,
-        step2Data,
-        step3Data,
-        formData,
-      });
-
-      // Navigate to dashboard after successful submission
-      navigation.navigate("OutletDashboard");
+      // Success - navigate to home page
+      Alert.alert(
+        "🎉 Registration Submitted Successfully!",
+        "Your outlet registration has been received. Our team will review your application within 24-48 hours. You'll receive an SMS notification once approved.",
+        [
+          {
+            onPress: () => navigation.navigate("Login"),
+          },
+        ],
+      );
     } catch (error) {
       console.error("Submission error:", error);
+      Alert.alert(
+        "Submission Failed",
+        "There was an error submitting your registration. Please check your connection and try again.",
+        [{ text: "OK" }],
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const toggleAgreement = (key: keyof typeof agreements) => {
+    setAgreements({
+      ...agreements,
+      [key]: !agreements[key],
+    });
+  };
+
+  const isFormValid = () => {
+    return Object.values(agreements).every((value) => value === true);
+  };
+
+  const allAgreementsChecked = isFormValid();
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-    >
-      {/* Header with Back Button */}
+    <SafeAreaView style={styles.screenContainer}>
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+        <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <View style={styles.progressInfo}>
-          <Text style={styles.progressTitle}>Outlet Registration</Text>
-          <Text style={styles.stepCounter}>Step 4 of 4</Text>
+        <Text style={styles.headerTitle}>Outlet Registration</Text>
+      </View>
+
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.contentContainer}
+      >
+        {/* Step Indicator */}
+        <View style={styles.stepIndicator}>
+          <Text style={styles.stepText}>Step 4 of 4</Text>
+          <View style={styles.stepProgress}>
+            <View style={styles.stepCompleted} />
+            <View style={styles.stepCompleted} />
+            <View style={styles.stepCompleted} />
+            <View style={styles.stepActive} />
+          </View>
         </View>
-      </View>
 
-      {/* Progress Bar */}
-      <View style={styles.progressBarContainer}>
-        <View style={[styles.progressBar, { width: "100%" }]} />
-      </View>
-
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Required Documents</Text>
-        <Text style={styles.subtitle}>
-          Upload required documents for verification
-        </Text>
+        {/* Form Title */}
+        <Text style={styles.sectionTitle}>Required Documents</Text>
 
         {/* Shop Front Photo */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Shop Front Photo *</Text>
-
-          <TouchableOpacity
-            style={[
-              styles.uploadArea,
-              formData.shopFrontPhoto && styles.uploadAreaSelected,
-            ]}
-            onPress={() => togglePhoto("shopFront")}
-          >
-            {formData.shopFrontPhoto ? (
-              <View style={styles.uploadedState}>
-                <View style={styles.uploadIcon}>
-                  <Text style={styles.uploadIconText}>✓</Text>
-                </View>
-                <Text style={styles.uploadText}>Photo Uploaded</Text>
-                <Text style={styles.uploadHint}>Tap to change photo</Text>
-              </View>
-            ) : (
-              <>
-                <View style={styles.uploadIcon}>
-                  <Text style={styles.uploadIconText}>+</Text>
-                </View>
-                <Text style={styles.uploadText}>
-                  Clear photo showing shop exterior
-                </Text>
-                <Text style={styles.uploadHint}>Tap to upload photo</Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <Text style={styles.uploadDescription}>
-            Upload a clear photo of your shop front showing the business name
-            and location.
-          </Text>
+        <Text style={styles.documentLabel}>Shop Front Photo *</Text>
+        <Text style={styles.documentHint}>
+          Clear photo showing shop exterior
+        </Text>
+        <View style={styles.documentCard}>
+          {selectedFiles.shopFront ? (
+            <View style={styles.photoPreviewContainer}>
+              <Image
+                source={{ uri: selectedFiles.shopFront.uri }}
+                style={styles.photoPreview}
+                resizeMode="cover"
+              />
+              <TouchableOpacity
+                style={styles.removePhotoButton}
+                onPress={() => removeFile("shopFront")}
+              >
+                <Ionicons name="close-circle" size={28} color="#DC2626" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={styles.uploadButton}
+                onPress={() => pickImage("shopFront")}
+              >
+                <Ionicons
+                  name="camera-outline"
+                  size={24}
+                  color={colors.primary}
+                />
+                <Text style={styles.uploadButtonText}>Choose File</Text>
+              </TouchableOpacity>
+              <Text style={styles.fileStatus}>No file chosen</Text>
+            </>
+          )}
         </View>
 
         {/* Owner National ID Photo */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Owner National ID Photo *</Text>
-
-          <TouchableOpacity
-            style={[
-              styles.uploadArea,
-              formData.ownerIdPhoto && styles.uploadAreaSelected,
-            ]}
-            onPress={() => togglePhoto("ownerId")}
-          >
-            {formData.ownerIdPhoto ? (
-              <View style={styles.uploadedState}>
-                <View style={styles.uploadIcon}>
-                  <Text style={styles.uploadIconText}>✓</Text>
-                </View>
-                <Text style={styles.uploadText}>Photo Uploaded</Text>
-                <Text style={styles.uploadHint}>Tap to change photo</Text>
-              </View>
-            ) : (
-              <>
-                <View style={styles.uploadIcon}>
-                  <Text style={styles.uploadIconText}>+</Text>
-                </View>
-                <Text style={styles.uploadText}>Clear photo of owner's ID</Text>
-                <Text style={styles.uploadHint}>Tap to upload photo</Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <Text style={styles.uploadDescription}>
-            Upload a clear photo of your National ID card (front side).
-          </Text>
+        <Text style={styles.documentLabel}>Owner National ID Photo *</Text>
+        <Text style={styles.documentHint}>Clear photo of owner's ID</Text>
+        <View style={styles.documentCard}>
+          {selectedFiles.ownerId ? (
+            <View style={styles.photoPreviewContainer}>
+              <Image
+                source={{ uri: selectedFiles.ownerId.uri }}
+                style={styles.photoPreview}
+                resizeMode="cover"
+              />
+              <TouchableOpacity
+                style={styles.removePhotoButton}
+                onPress={() => removeFile("ownerId")}
+              >
+                <Ionicons name="close-circle" size={28} color="#DC2626" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={styles.uploadButton}
+                onPress={() => pickImage("ownerId")}
+              >
+                <Ionicons
+                  name="camera-outline"
+                  size={24}
+                  color={colors.primary}
+                />
+                <Text style={styles.uploadButtonText}>Choose File</Text>
+              </TouchableOpacity>
+              <Text style={styles.fileStatus}>No file chosen</Text>
+            </>
+          )}
         </View>
 
-        {/* Agreement Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
+        {/* Consent Section */}
+        <View style={styles.consentSection}>
+          <Text style={styles.consentTitle}>
             By submitting this registration:
           </Text>
 
+          {/* Agreement Points - EXACTLY matching Figma */}
           <View style={styles.agreementList}>
             <View style={styles.agreementItem}>
-              <Text style={styles.agreementBullet}>•</Text>
+              <Text style={styles.bulletPoint}>•</Text>
               <Text style={styles.agreementText}>
                 I confirm all information provided is accurate
               </Text>
             </View>
 
             <View style={styles.agreementItem}>
-              <Text style={styles.agreementBullet}>•</Text>
+              <Text style={styles.bulletPoint}>•</Text>
               <Text style={styles.agreementText}>
                 I agree to Santé's partnership terms & conditions
               </Text>
             </View>
 
             <View style={styles.agreementItem}>
-              <Text style={styles.agreementBullet}>•</Text>
+              <Text style={styles.bulletPoint}>•</Text>
               <Text style={styles.agreementText}>
                 I agree to sell products at recommended prices
               </Text>
             </View>
 
             <View style={styles.agreementItem}>
-              <Text style={styles.agreementBullet}>•</Text>
+              <Text style={styles.bulletPoint}>•</Text>
               <Text style={styles.agreementText}>
                 I will maintain product quality standards
               </Text>
             </View>
 
             <View style={styles.agreementItem}>
-              <Text style={styles.agreementBullet}>•</Text>
+              <Text style={styles.bulletPoint}>•</Text>
               <Text style={styles.agreementText}>
                 I understand approval may take 24-48 hours
               </Text>
             </View>
 
             <View style={styles.agreementItem}>
-              <Text style={styles.agreementBullet}>•</Text>
+              <Text style={styles.bulletPoint}>•</Text>
               <Text style={styles.agreementText}>
                 I will complete required training before selling
               </Text>
             </View>
           </View>
 
-          <View style={styles.termsCheckbox}>
+          {/* Checkboxes for each agreement point */}
+          <View style={styles.checkboxContainer}>
             <TouchableOpacity
-              style={[
-                styles.checkbox,
-                formData.agreeToTerms && styles.checkboxChecked,
-              ]}
-              onPress={toggleTerms}
+              style={styles.agreementCheckboxRow}
+              onPress={() => toggleAgreement("infoAccurate")}
             >
-              {formData.agreeToTerms && (
-                <Text style={styles.checkboxCheck}>✓</Text>
-              )}
+              <View style={styles.checkboxWrapper}>
+                <View
+                  style={[
+                    styles.checkbox,
+                    agreements.infoAccurate && styles.checkboxChecked,
+                  ]}
+                >
+                  {agreements.infoAccurate && (
+                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                  )}
+                </View>
+              </View>
+              <Text style={styles.agreementCheckboxText}>
+                I confirm all information provided is accurate
+              </Text>
             </TouchableOpacity>
-            <Text style={styles.termsText}>
-              I have read and agree to all terms and conditions above
-            </Text>
+
+            <TouchableOpacity
+              style={styles.agreementCheckboxRow}
+              onPress={() => toggleAgreement("partnershipTerms")}
+            >
+              <View style={styles.checkboxWrapper}>
+                <View
+                  style={[
+                    styles.checkbox,
+                    agreements.partnershipTerms && styles.checkboxChecked,
+                  ]}
+                >
+                  {agreements.partnershipTerms && (
+                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                  )}
+                </View>
+              </View>
+              <Text style={styles.agreementCheckboxText}>
+                I agree to Santé's partnership terms & conditions
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.agreementCheckboxRow}
+              onPress={() => toggleAgreement("sellAtRecommendedPrices")}
+            >
+              <View style={styles.checkboxWrapper}>
+                <View
+                  style={[
+                    styles.checkbox,
+                    agreements.sellAtRecommendedPrices &&
+                      styles.checkboxChecked,
+                  ]}
+                >
+                  {agreements.sellAtRecommendedPrices && (
+                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                  )}
+                </View>
+              </View>
+              <Text style={styles.agreementCheckboxText}>
+                I agree to sell products at recommended prices
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.agreementCheckboxRow}
+              onPress={() => toggleAgreement("maintainQualityStandards")}
+            >
+              <View style={styles.checkboxWrapper}>
+                <View
+                  style={[
+                    styles.checkbox,
+                    agreements.maintainQualityStandards &&
+                      styles.checkboxChecked,
+                  ]}
+                >
+                  {agreements.maintainQualityStandards && (
+                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                  )}
+                </View>
+              </View>
+              <Text style={styles.agreementCheckboxText}>
+                I will maintain product quality standards
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.agreementCheckboxRow}
+              onPress={() => toggleAgreement("approvalTime")}
+            >
+              <View style={styles.checkboxWrapper}>
+                <View
+                  style={[
+                    styles.checkbox,
+                    agreements.approvalTime && styles.checkboxChecked,
+                  ]}
+                >
+                  {agreements.approvalTime && (
+                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                  )}
+                </View>
+              </View>
+              <Text style={styles.agreementCheckboxText}>
+                I understand approval may take 24-48 hours
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.agreementCheckboxRow}
+              onPress={() => toggleAgreement("completeTraining")}
+            >
+              <View style={styles.checkboxWrapper}>
+                <View
+                  style={[
+                    styles.checkbox,
+                    agreements.completeTraining && styles.checkboxChecked,
+                  ]}
+                >
+                  {agreements.completeTraining && (
+                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                  )}
+                </View>
+              </View>
+              <Text style={styles.agreementCheckboxText}>
+                I will complete required training before selling
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Submit Button */}
-        <TouchableOpacity
-          style={[
-            styles.submitButton,
-            (!formData.agreeToTerms || isSubmitting) &&
-              styles.submitButtonDisabled,
-          ]}
-          onPress={handleSubmit}
-          disabled={!formData.agreeToTerms || isSubmitting}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.submitButtonText}>Submit Registration</Text>
-          )}
-        </TouchableOpacity>
-
+        {/* Navigation Buttons */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.backButtonFull} onPress={handleBack}>
-            <Text style={styles.backButtonFullText}>Previous</Text>
+          <TouchableOpacity
+            style={styles.previousButton}
+            onPress={handlePreviousPress}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.previousButtonText}>Previous</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.submitButton,
+              (!allAgreementsChecked || isSubmitting) &&
+                styles.submitButtonDisabled,
+            ]}
+            onPress={handleSubmitPress}
+            disabled={!allAgreementsChecked || isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Ionicons name="time-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.submitButtonText}>Submitting...</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={20}
+                  color="#FFFFFF"
+                  style={styles.submitIcon}
+                />
+                <Text style={styles.submitButtonText}>Submit Registration</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
-
-        <Text style={styles.footerNote}>
-          Your registration will be reviewed within 24-48 hours. You'll receive
-          an email notification once approved.
-        </Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  screenContainer: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
-  },
-  contentContainer: {
-    paddingBottom: 40,
+    backgroundColor: "#FFFFFF",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 60 : 40,
-    paddingBottom: 15,
     backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingTop: 60,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: "#F0F0F0",
   },
   backButton: {
-    marginRight: 15,
+    marginRight: 16,
   },
-  backButtonText: {
-    fontSize: 16,
-    color: "#007AFF",
-    fontWeight: "500",
-  },
-  progressInfo: {
-    flex: 1,
-  },
-  progressTitle: {
+  headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1A1A1A",
+    color: "#000000",
   },
-  stepCounter: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 2,
+  container: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
-  progressBarContainer: {
-    height: 4,
-    backgroundColor: "#E0E0E0",
+  contentContainer: {
+    paddingBottom: 40,
   },
-  progressBar: {
-    height: "100%",
-    backgroundColor: "#4CAF50",
-  },
-  formContainer: {
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
+  stepIndicator: {
     marginBottom: 24,
   },
-  section: {
-    marginBottom: 30,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3.84,
-    elevation: 2,
+  stepText: {
+    fontSize: 14,
+    color: "#666666",
+    marginBottom: 8,
+    fontWeight: "500",
+  },
+  stepProgress: {
+    flexDirection: "row",
+    height: 4,
+    backgroundColor: "#E0E0E0",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  stepCompleted: {
+    flex: 1,
+    backgroundColor: colors.primary,
+  },
+  stepActive: {
+    flex: 1,
+    backgroundColor: colors.primary,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#000000",
+    marginBottom: 24,
+  },
+  documentLabel: {
+    fontSize: 14,
     fontWeight: "600",
-    color: "#333",
-    marginBottom: 20,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    color: "#333333",
+    marginBottom: 4,
   },
-  uploadArea: {
-    backgroundColor: "#F8F9FA",
-    borderWidth: 2,
-    borderStyle: "dashed",
-    borderColor: "#D1D1D6",
+  documentHint: {
+    fontSize: 12,
+    color: "#666666",
+    marginBottom: 12,
+  },
+  documentCard: {
+    backgroundColor: "#F8F8F8",
     borderRadius: 12,
-    padding: 30,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    marginBottom: 24,
+  },
+  uploadButton: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
-    minHeight: 200,
+    alignSelf: "flex-start",
   },
-  uploadAreaSelected: {
-    borderColor: "#4CAF50",
-    backgroundColor: "#F1F8E9",
-  },
-  uploadedState: {
-    alignItems: "center",
-  },
-  uploadIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#E0E0E0",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  uploadIconText: {
-    fontSize: 32,
-    color: "#666",
-    fontWeight: "300",
-  },
-  uploadText: {
-    fontSize: 16,
-    color: "#333",
-    fontWeight: "500",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  uploadHint: {
+  uploadButtonText: {
+    color: colors.primary,
     fontSize: 14,
-    color: "#666",
-    textAlign: "center",
+    fontWeight: "600",
+    marginLeft: 8,
   },
-  uploadDescription: {
-    fontSize: 14,
-    color: "#666",
-    lineHeight: 20,
+  fileStatus: {
+    fontSize: 12,
+    color: "#999999",
+    marginTop: 8,
+  },
+  photoPreviewContainer: {
+    position: "relative",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  photoPreview: {
+    width: "100%",
+    height: 200,
+    borderRadius: 8,
+  },
+  removePhotoButton: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 14,
+    padding: 2,
+  },
+  consentSection: {
+    backgroundColor: "#F8F8F8",
+    borderRadius: 12,
+    padding: 24,
+    marginBottom: 24,
+  },
+  consentTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#000000",
+    marginBottom: 20,
   },
   agreementList: {
-    marginBottom: 20,
+    marginBottom: 24,
+    paddingLeft: 8,
   },
   agreementItem: {
     flexDirection: "row",
     alignItems: "flex-start",
     marginBottom: 12,
   },
-  agreementBullet: {
+  bulletPoint: {
     fontSize: 16,
-    color: "#4CAF50",
+    color: "#333333",
     marginRight: 12,
     marginTop: 2,
   },
   agreementText: {
+    fontSize: 14,
+    color: "#333333",
+    lineHeight: 20,
     flex: 1,
-    fontSize: 15,
-    color: "#333",
-    lineHeight: 22,
   },
-  termsCheckbox: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 16,
-    paddingTop: 16,
+  checkboxContainer: {
     borderTopWidth: 1,
     borderTopColor: "#E0E0E0",
+    paddingTop: 20,
+  },
+  agreementCheckboxRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 16,
+  },
+  checkboxWrapper: {
+    marginRight: 12,
+    marginTop: 2,
   },
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: "#D1D1D6",
-    marginRight: 12,
-    alignItems: "center",
+    borderColor: "#666666",
     justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
   },
   checkboxChecked: {
-    backgroundColor: "#4CAF50",
-    borderColor: "#4CAF50",
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
-  checkboxCheck: {
-    color: "#FFFFFF",
+  agreementCheckboxText: {
     fontSize: 14,
-    fontWeight: "bold",
-  },
-  termsText: {
+    color: "#333333",
+    lineHeight: 20,
     flex: 1,
-    fontSize: 15,
-    color: "#333",
-    lineHeight: 22,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+  },
+  previousButton: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginRight: 12,
+  },
+  previousButtonText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: "600",
   },
   submitButton: {
-    backgroundColor: "#4CAF50",
-    borderRadius: 10,
-    paddingVertical: 18,
+    flex: 1,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 16,
     alignItems: "center",
-    marginBottom: 20,
-    shadowColor: "#4CAF50",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 4,
+    marginLeft: 12,
+    flexDirection: "row",
+    justifyContent: "center",
   },
   submitButtonDisabled: {
-    backgroundColor: "#C8E6C9",
+    backgroundColor: "#CCCCCC",
   },
   submitButtonText: {
     color: "#FFFFFF",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
   },
-  buttonContainer: {
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  backButtonFull: {
-    backgroundColor: "#F0F0F0",
-    borderRadius: 10,
-    paddingVertical: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#D1D1D6",
-  },
-  backButtonFullText: {
-    color: "#333",
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  footerNote: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-    lineHeight: 20,
-    marginTop: 20,
+  submitIcon: {
+    marginRight: 8,
   },
 });
 

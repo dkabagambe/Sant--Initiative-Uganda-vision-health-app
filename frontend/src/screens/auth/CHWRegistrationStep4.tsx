@@ -4,12 +4,14 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
+import * as DocumentPicker from "expo-document-picker";
 
 type RootStackParamList = {
   Login: undefined;
@@ -27,6 +29,13 @@ type CHWRegistrationStep4NavigationProp = NativeStackNavigationProp<
   "CHWRegistrationStep4"
 >;
 
+interface SelectedFile {
+  name: string;
+  uri: string;
+  size: number;
+  mimeType: string;
+}
+
 export default function CHWRegistrationStep4() {
   const navigation = useNavigation<CHWRegistrationStep4NavigationProp>();
 
@@ -38,6 +47,19 @@ export default function CHWRegistrationStep4() {
     approvalTime: false,
   });
 
+  const [selectedFiles, setSelectedFiles] = useState<{
+    certificate: SelectedFile | null;
+    recommendation: SelectedFile | null;
+  }>({
+    certificate: null,
+    recommendation: null,
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState<
+    "certificate" | "recommendation" | null
+  >(null);
+
   const handleBackPress = () => {
     navigation.goBack();
   };
@@ -46,10 +68,162 @@ export default function CHWRegistrationStep4() {
     navigation.navigate("CHWRegistrationStep3");
   };
 
-  const handleSubmitPress = () => {
-    // Navigate to appropriate screen after submission
-    // For now, go back to login
-    navigation.navigate("Login");
+  const pickDocument = async (type: "certificate" | "recommendation") => {
+    try {
+      setIsUploading(type);
+
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf", "image/jpeg", "image/png"],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (result.canceled) {
+        console.log("User cancelled document picker");
+        return;
+      }
+
+      const file = result.assets[0];
+
+      // Check file size (5MB limit)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size && file.size > maxSize) {
+        Alert.alert("File Too Large", "Please select a file smaller than 5MB", [
+          { text: "OK" },
+        ]);
+        return;
+      }
+
+      setSelectedFiles((prev) => ({
+        ...prev,
+        [type]: {
+          name: file.name,
+          uri: file.uri,
+          size: file.size || 0,
+          mimeType: file.mimeType || "application/pdf",
+        },
+      }));
+
+      Alert.alert("File Selected", `${file.name} has been selected`, [
+        { text: "OK" },
+      ]);
+    } catch (error) {
+      console.error("Error picking document:", error);
+      Alert.alert("Error", "Failed to pick document. Please try again.", [
+        { text: "OK" },
+      ]);
+    } finally {
+      setIsUploading(null);
+    }
+  };
+
+  const handleRemoveFile = (type: "certificate" | "recommendation") => {
+    Alert.alert("Remove File", "Are you sure you want to remove this file?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () => {
+          setSelectedFiles((prev) => ({
+            ...prev,
+            [type]: null,
+          }));
+        },
+      },
+    ]);
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  const getFileIcon = (mimeType: string | undefined) => {
+    if (!mimeType) return "document";
+
+    if (mimeType.includes("pdf")) return "document-text";
+    if (mimeType.includes("image")) return "image";
+    return "document";
+  };
+
+  const handleSubmitPress = async () => {
+    if (!isFormValid()) {
+      Alert.alert(
+        "Required Agreements",
+        "Please check all agreement boxes to continue",
+        [{ text: "OK" }],
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Prepare form data for submission
+      const formData = new FormData();
+
+      // Add agreements
+      formData.append("agreements", JSON.stringify(agreements));
+
+      // Add certificate file if exists
+      if (selectedFiles.certificate) {
+        formData.append("certificate", {
+          uri: selectedFiles.certificate.uri,
+          type: selectedFiles.certificate.mimeType,
+          name: selectedFiles.certificate.name,
+        } as any);
+      }
+
+      // Add recommendation file if exists
+      if (selectedFiles.recommendation) {
+        formData.append("recommendation", {
+          uri: selectedFiles.recommendation.uri,
+          type: selectedFiles.recommendation.mimeType,
+          name: selectedFiles.recommendation.name,
+        } as any);
+      }
+
+      // Simulate API call (replace with your actual API endpoint)
+      console.log("Submitting form data:", {
+        agreements,
+        certificate: selectedFiles.certificate?.name,
+        recommendation: selectedFiles.recommendation?.name,
+      });
+
+      // In real app, you would do:
+      // const response = await fetch('YOUR_API_ENDPOINT', {
+      //   method: 'POST',
+      //   body: formData,
+      //   headers: {
+      //     'Content-Type': 'multipart/form-data',
+      //   },
+      // });
+
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate network delay
+
+      Alert.alert(
+        "🎉 Registration Submitted Successfully!",
+        "Your registration has been received. Our team will review your application within 24-48 hours. You'll receive an SMS notification once approved.",
+        [
+          {
+            text: "Return to Login",
+            onPress: () => navigation.navigate("Login"),
+          },
+        ],
+      );
+    } catch (error) {
+      console.error("Submission error:", error);
+      Alert.alert(
+        "Submission Failed",
+        "There was an error submitting your registration. Please check your connection and try again.",
+        [{ text: "OK" }],
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const toggleAgreement = (key: keyof typeof agreements) => {
@@ -58,6 +232,12 @@ export default function CHWRegistrationStep4() {
       [key]: !agreements[key],
     });
   };
+
+  const isFormValid = () => {
+    return Object.values(agreements).every((value) => value === true);
+  };
+
+  const allAgreementsChecked = isFormValid();
 
   return (
     <View style={styles.screenContainer}>
@@ -83,18 +263,77 @@ export default function CHWRegistrationStep4() {
 
         {/* Form Title */}
         <Text style={styles.sectionTitle}>Required Documents</Text>
+        <Text style={styles.sectionSubtitle}>
+          Upload supporting documents (both optional)
+        </Text>
 
         {/* CHW Certificate */}
         <Text style={styles.documentLabel}>CHW Certificate (Optional)</Text>
         <View style={styles.documentCard}>
           <View style={styles.documentHeader}>
-            <Ionicons name="document-text-outline" size={24} color="#666" />
-            <Text style={styles.documentTitle}>CHW training certificate</Text>
+            <View style={styles.documentIconContainer}>
+              <Ionicons name="document-text-outline" size={24} color="#666" />
+            </View>
+            <View style={styles.documentTextContainer}>
+              <Text style={styles.documentTitle}>CHW training certificate</Text>
+              <Text style={styles.documentDescription}>
+                PDF, JPG, or PNG up to 5MB
+              </Text>
+            </View>
           </View>
-          <TouchableOpacity style={styles.uploadButton}>
-            <Text style={styles.uploadButtonText}>Choose File</Text>
-          </TouchableOpacity>
-          <Text style={styles.fileStatus}>No file chosen</Text>
+
+          {selectedFiles.certificate ? (
+            <View style={styles.selectedFileContainer}>
+              <View style={styles.fileInfo}>
+                <Ionicons
+                  name={getFileIcon(selectedFiles.certificate.mimeType)}
+                  size={20}
+                  color={colors.primary}
+                />
+                <View style={styles.fileDetails}>
+                  <Text style={styles.selectedFileName} numberOfLines={1}>
+                    {selectedFiles.certificate.name}
+                  </Text>
+                  <Text style={styles.fileSize}>
+                    {formatFileSize(selectedFiles.certificate.size)}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.removeButton}
+                onPress={() => handleRemoveFile("certificate")}
+              >
+                <Ionicons name="close-circle" size={24} color="#DC2626" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[
+                styles.uploadButton,
+                isUploading === "certificate" && styles.uploadButtonDisabled,
+              ]}
+              onPress={() => pickDocument("certificate")}
+              disabled={isUploading === "certificate"}
+            >
+              {isUploading === "certificate" ? (
+                <>
+                  <Ionicons name="cloud-upload" size={20} color="#666" />
+                  <Text style={[styles.uploadButtonText, { color: "#666" }]}>
+                    Selecting File...
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons
+                    name="cloud-upload-outline"
+                    size={20}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.uploadButtonText}>Choose File</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Recommendation Letter */}
@@ -103,13 +342,71 @@ export default function CHWRegistrationStep4() {
         </Text>
         <View style={styles.documentCard}>
           <View style={styles.documentHeader}>
-            <Ionicons name="mail-outline" size={24} color="#666" />
-            <Text style={styles.documentTitle}>From health facility or LC</Text>
+            <View style={styles.documentIconContainer}>
+              <Ionicons name="mail-outline" size={24} color="#666" />
+            </View>
+            <View style={styles.documentTextContainer}>
+              <Text style={styles.documentTitle}>
+                From health facility or LC
+              </Text>
+              <Text style={styles.documentDescription}>
+                PDF, JPG, or PNG up to 5MB
+              </Text>
+            </View>
           </View>
-          <TouchableOpacity style={styles.uploadButton}>
-            <Text style={styles.uploadButtonText}>Choose File</Text>
-          </TouchableOpacity>
-          <Text style={styles.fileStatus}>No file chosen</Text>
+
+          {selectedFiles.recommendation ? (
+            <View style={styles.selectedFileContainer}>
+              <View style={styles.fileInfo}>
+                <Ionicons
+                  name={getFileIcon(selectedFiles.recommendation.mimeType)}
+                  size={20}
+                  color={colors.primary}
+                />
+                <View style={styles.fileDetails}>
+                  <Text style={styles.selectedFileName} numberOfLines={1}>
+                    {selectedFiles.recommendation.name}
+                  </Text>
+                  <Text style={styles.fileSize}>
+                    {formatFileSize(selectedFiles.recommendation.size)}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.removeButton}
+                onPress={() => handleRemoveFile("recommendation")}
+              >
+                <Ionicons name="close-circle" size={24} color="#DC2626" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[
+                styles.uploadButton,
+                isUploading === "recommendation" && styles.uploadButtonDisabled,
+              ]}
+              onPress={() => pickDocument("recommendation")}
+              disabled={isUploading === "recommendation"}
+            >
+              {isUploading === "recommendation" ? (
+                <>
+                  <Ionicons name="cloud-upload" size={20} color="#666" />
+                  <Text style={[styles.uploadButtonText, { color: "#666" }]}>
+                    Selecting File...
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons
+                    name="cloud-upload-outline"
+                    size={20}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.uploadButtonText}>Choose File</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Consent Section */}
@@ -119,75 +416,110 @@ export default function CHWRegistrationStep4() {
           </Text>
 
           {/* Agreement Points */}
-          <View style={styles.agreementRow}>
-            <TouchableOpacity
-              style={styles.checkbox}
-              onPress={() => toggleAgreement("infoAccurate")}
-            >
-              {agreements.infoAccurate && (
-                <Ionicons name="checkmark" size={16} color={colors.primary} />
-              )}
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => toggleAgreement("infoAccurate")}
+          >
+            <View style={styles.checkboxContainer}>
+              <View
+                style={[
+                  styles.checkbox,
+                  agreements.infoAccurate && styles.checkboxChecked,
+                ]}
+              >
+                {agreements.infoAccurate && (
+                  <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                )}
+              </View>
+            </View>
             <Text style={styles.agreementText}>
               I confirm all information provided is accurate
             </Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.agreementRow}>
-            <TouchableOpacity
-              style={styles.checkbox}
-              onPress={() => toggleAgreement("dataProtection")}
-            >
-              {agreements.dataProtection && (
-                <Ionicons name="checkmark" size={16} color={colors.primary} />
-              )}
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => toggleAgreement("dataProtection")}
+          >
+            <View style={styles.checkboxContainer}>
+              <View
+                style={[
+                  styles.checkbox,
+                  agreements.dataProtection && styles.checkboxChecked,
+                ]}
+              >
+                {agreements.dataProtection && (
+                  <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                )}
+              </View>
+            </View>
             <Text style={styles.agreementText}>
               I agree to Santé's data protection policy
             </Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.agreementRow}>
-            <TouchableOpacity
-              style={styles.checkbox}
-              onPress={() => toggleAgreement("serveIntegrity")}
-            >
-              {agreements.serveIntegrity && (
-                <Ionicons name="checkmark" size={16} color={colors.primary} />
-              )}
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => toggleAgreement("serveIntegrity")}
+          >
+            <View style={styles.checkboxContainer}>
+              <View
+                style={[
+                  styles.checkbox,
+                  agreements.serveIntegrity && styles.checkboxChecked,
+                ]}
+              >
+                {agreements.serveIntegrity && (
+                  <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                )}
+              </View>
+            </View>
             <Text style={styles.agreementText}>
               I commit to serving my community with integrity
             </Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.agreementRow}>
-            <TouchableOpacity
-              style={styles.checkbox}
-              onPress={() => toggleAgreement("confidentiality")}
-            >
-              {agreements.confidentiality && (
-                <Ionicons name="checkmark" size={16} color={colors.primary} />
-              )}
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => toggleAgreement("confidentiality")}
+          >
+            <View style={styles.checkboxContainer}>
+              <View
+                style={[
+                  styles.checkbox,
+                  agreements.confidentiality && styles.checkboxChecked,
+                ]}
+              >
+                {agreements.confidentiality && (
+                  <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                )}
+              </View>
+            </View>
             <Text style={styles.agreementText}>
               I will maintain client confidentiality
             </Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.agreementRow}>
-            <TouchableOpacity
-              style={styles.checkbox}
-              onPress={() => toggleAgreement("approvalTime")}
-            >
-              {agreements.approvalTime && (
-                <Ionicons name="checkmark" size={16} color={colors.primary} />
-              )}
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => toggleAgreement("approvalTime")}
+          >
+            <View style={styles.checkboxContainer}>
+              <View
+                style={[
+                  styles.checkbox,
+                  agreements.approvalTime && styles.checkboxChecked,
+                ]}
+              >
+                {agreements.approvalTime && (
+                  <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                )}
+              </View>
+            </View>
             <Text style={styles.agreementText}>
               I understand approval may take 24-48 hours
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Navigation Buttons */}
@@ -195,15 +527,36 @@ export default function CHWRegistrationStep4() {
           <TouchableOpacity
             style={styles.previousButton}
             onPress={handlePreviousPress}
+            disabled={isSubmitting}
           >
             <Text style={styles.previousButtonText}>Previous</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[
+              styles.submitButton,
+              !allAgreementsChecked && styles.submitButtonDisabled,
+              isSubmitting && styles.submitButtonSubmitting,
+            ]}
             onPress={handleSubmitPress}
+            disabled={!allAgreementsChecked || isSubmitting}
           >
-            <Text style={styles.submitButtonText}>Submit Registration</Text>
+            {isSubmitting ? (
+              <>
+                <Ionicons name="time-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.submitButtonText}>Submitting...</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={20}
+                  color="#FFFFFF"
+                  style={styles.submitIcon}
+                />
+                <Text style={styles.submitButtonText}>Submit Registration</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -266,10 +619,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "700",
     color: "#000000",
-    marginBottom: 20,
+    marginBottom: 8,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: "#666666",
+    marginBottom: 24,
   },
   documentLabel: {
     fontSize: 14,
@@ -282,50 +640,97 @@ const styles = StyleSheet.create({
   },
   documentCard: {
     backgroundColor: "#F8F8F8",
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 20,
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
   documentHeader: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
+    alignItems: "flex-start",
+    marginBottom: 20,
+  },
+  documentIconContainer: {
+    marginRight: 12,
+    marginTop: 2,
+  },
+  documentTextContainer: {
+    flex: 1,
   },
   documentTitle: {
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: "600",
     color: "#333333",
-    marginLeft: 12,
-    fontWeight: "500",
+    marginBottom: 4,
+  },
+  documentDescription: {
+    fontSize: 12,
+    color: "#666666",
   },
   uploadButton: {
     backgroundColor: "#FFFFFF",
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.primary,
-    borderRadius: 6,
-    paddingVertical: 10,
+    borderRadius: 8,
+    paddingVertical: 14,
     paddingHorizontal: 20,
-    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "stretch",
+  },
+  uploadButtonDisabled: {
+    borderColor: "#CCCCCC",
   },
   uploadButtonText: {
     color: colors.primary,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "600",
+    marginLeft: 8,
   },
-  fileStatus: {
+  selectedFileContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  fileInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 12,
+  },
+  fileDetails: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  selectedFileName: {
+    fontSize: 14,
+    color: "#333333",
+    fontWeight: "500",
+  },
+  fileSize: {
     fontSize: 12,
-    color: "#999999",
-    marginTop: 8,
+    color: "#666666",
+    marginTop: 2,
+  },
+  removeButton: {
+    padding: 4,
   },
   consentSection: {
     backgroundColor: "#F8F8F8",
-    borderRadius: 8,
-    padding: 20,
+    borderRadius: 12,
+    padding: 24,
     marginTop: 30,
     marginBottom: 24,
   },
   consentTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     color: "#000000",
     marginBottom: 20,
@@ -335,17 +740,23 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 16,
   },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: "#666666",
+  checkboxContainer: {
     marginRight: 12,
     marginTop: 2,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: "#666666",
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
+  },
+  checkboxChecked: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   agreementText: {
     fontSize: 14,
@@ -380,11 +791,22 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: "center",
     marginLeft: 12,
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  submitButtonDisabled: {
+    backgroundColor: "#CCCCCC",
+  },
+  submitButtonSubmitting: {
+    backgroundColor: "#999999",
   },
   submitButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
+  },
+  submitIcon: {
+    marginRight: 8,
   },
   footerNote: {
     fontSize: 12,
