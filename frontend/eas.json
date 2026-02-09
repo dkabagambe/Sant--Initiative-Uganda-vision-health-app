@@ -12,7 +12,14 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundleRelease"
+      },
+      "env": {
+        "ANDROID_NDK_HOME": "/usr/local/lib/android/sdk/ndk/25.1.8937393"
+      }
     }
   },
   "submit": {
