@@ -10,10 +10,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-// Fix: Add VisionScreeningStep1 to the navigation params
+// Fix: Add VisionScreen1 to the navigation params
 type RootStackParamList = {
   StartScreening: undefined;
-  VisionScreeningStep1: undefined;
+  VisionScreen1: undefined;
 };
 
 type StartScreeningScreenNavigationProp = NativeStackNavigationProp<
@@ -105,7 +105,7 @@ export default function StartScreeningScreen() {
 
         <TouchableOpacity
           style={styles.startButton}
-          onPress={() => navigation.navigate("VisionScreeningStep1")}
+          onPress={() => navigation.navigate("VisionScreen1")}
         >
           <Ionicons name="play-circle" size={24} color="#FFFFFF" />
           <Text style={styles.startButtonText}>Start Screening</Text>

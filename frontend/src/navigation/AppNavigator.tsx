@@ -40,10 +40,18 @@ import ReportsScreen from "../screens/chw/ReportsScreen";
 import StartScreeningScreen from "../screens/chw/StartScreeningScreen";
 import SettingsScreen from "../screens/chw/SettingsScreen";
 
+// NEW Vision Screening Flow (6 Steps)
+import VisionScreen1 from "../screens/screening/VisionScreen1";
+import VisionScreen2 from "../screens/screening/VisionScreen2";
+import VisionScreen3 from "../screens/screening/VisionScreen3";
+import VisionScreen4 from "../screens/screening/VisionScreen4";
+import VisionScreen5 from "../screens/screening/VisionScreen5";
+import VisionScreen6 from "../screens/screening/VisionScreen6";
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Create a separate stack for Screening (within the Screen tab)
+// Create a separate stack for NEW Screening Flow (within the Screen tab)
 function ScreeningStack() {
   return (
     <Stack.Navigator
@@ -51,14 +59,12 @@ function ScreeningStack() {
         headerShown: false,
       }}
     >
-      <Stack.Screen
-        name="VisionScreeningStep1"
-        component={VisionScreeningStep1}
-      />
-      <Stack.Screen
-        name="VisionScreeningStep2"
-        component={VisionScreeningStep2}
-      />
+      <Stack.Screen name="VisionScreen1" component={VisionScreen1} />
+      <Stack.Screen name="VisionScreen2" component={VisionScreen2} />
+      <Stack.Screen name="VisionScreen3" component={VisionScreen3} />
+      <Stack.Screen name="VisionScreen4" component={VisionScreen4} />
+      <Stack.Screen name="VisionScreen5" component={VisionScreen5} />
+      <Stack.Screen name="VisionScreen6" component={VisionScreen6} />
     </Stack.Navigator>
   );
 }
@@ -71,19 +77,13 @@ function CHWHomeStack() {
         headerShown: false,
       }}
     >
-      <Stack.Screen
-        name="CHWDashboard"
-        component={CHWDashboard} // Using CHWDashboard from chw folder
-      />
+      <Stack.Screen name="CHWDashboard" component={CHWDashboard} />
       <Stack.Screen name="MyClients" component={MyClientsScreen} />
       <Stack.Screen name="Inventory" component={InventoryScreen} />
       <Stack.Screen name="Referrals" component={ReferralsScreen} />
       <Stack.Screen name="Payments" component={PaymentsScreen} />
       <Stack.Screen name="Reports" component={ReportsScreen} />
-      <Stack.Screen
-        name="StartScreening"
-        component={StartScreeningScreen} // Added StartScreening screen
-      />
+      <Stack.Screen name="StartScreening" component={StartScreeningScreen} />
     </Stack.Navigator>
   );
 }
@@ -437,7 +437,7 @@ export default function AppNavigator() {
         options={{ headerShown: false }}
       />
 
-      {/* Direct navigation to screening screens (optional) */}
+      {/* Old screens for backward compatibility */}
       <Stack.Screen
         name="VisionScreeningStep1"
         component={VisionScreeningStep1}

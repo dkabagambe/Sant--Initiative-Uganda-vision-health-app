@@ -234,8 +234,8 @@ export default function InventoryScreen() {
         <View style={styles.headerTop}>
           <View style={styles.headerInfo}>
             <Text style={styles.organization}>Santé Initiative Uganda</Text>
-            <Text style={styles.userName}>Jane Nambi</Text>
-            <Text style={styles.userRole}>CHW - Luweero</Text>
+            <Text style={styles.userName}>VHT</Text>
+            {/* <Text style={styles.userRole}>CHW - Luweero</Text> */}
           </View>
           <TouchableOpacity style={styles.profileButton}>
             <Ionicons name="person-circle-outline" size={44} color="#1E40AF" />

@@ -1137,11 +1137,11 @@ export default function VisionScreeningFlow() {
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerTop}>
-              <View>
+              {/* <View>
                 <Text style={styles.organization}>Santé Initiative Uganda</Text>
-                <Text style={styles.userName}>Jane Nambi</Text>
-                <Text style={styles.userRole}>CHW - Luweero</Text>
-              </View>
+                <Text style={styles.userName}>New VHT</Text>
+                <Text style={styles.userRole}>CHW </Text>
+              </View> */}
               <TouchableOpacity
                 style={styles.menuButton}
                 onPress={handlePreviousStep}

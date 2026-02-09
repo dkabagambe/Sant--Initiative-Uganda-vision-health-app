@@ -41,16 +41,16 @@ export default function CHWDashboardScreen() {
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.organization}>Santé Initiative Uganda</Text>
-              <Text style={styles.userName}>Jane Nambi</Text>
-              <Text style={styles.userRole}>CHW - Luweero</Text>
+              <Text style={styles.userName}>VHT</Text>
+              {/* <Text style={styles.userRole}>CHW - Luweero</Text> */}
             </View>
             <TouchableOpacity style={styles.profileButton}>
               <Ionicons name="person-circle" size={40} color="#1E40AF" />
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.welcomeText}>Welcome, Jane Nambi</Text>
-          <Text style={styles.roleDistrict}>VHT - Luweero District</Text>
+          <Text style={styles.welcomeText}>Welcome,</Text>
+          <Text style={styles.roleDistrict}>VHT</Text>
           <Text style={styles.readyText}>Ready to screen today?</Text>
         </View>
 

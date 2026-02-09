@@ -36,12 +36,12 @@ export default function SettingsScreen() {
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>JN</Text>
+              <Text style={styles.avatarText}>VHT</Text>
             </View>
           </View>
-          <Text style={styles.userName}>Jane Nambi</Text>
+          {/* <Text style={styles.userName}>Jane Nambi</Text> */}
           <Text style={styles.userId}>CHW ID: CHW-LU-2024-089</Text>
-          <Text style={styles.userLocation}>Luweero District</Text>
+          {/* <Text style={styles.userLocation}>Luweero District</Text> */}
           <TouchableOpacity style={styles.editButton}>
             <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>

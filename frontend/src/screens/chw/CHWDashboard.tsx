@@ -6,8 +6,16 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  StatusBar,
+  Dimensions,
+  Image,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Ionicons,
+  MaterialIcons,
+  FontAwesome5,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
@@ -28,132 +36,201 @@ type DashboardScreenNavigationProp = NativeStackNavigationProp<
   "CHWDashboard"
 >;
 
+const { width } = Dimensions.get("window");
+
 export default function CHWDashboard() {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
 
+  const recentActivities = [
+    {
+      name: "Nakato Grace",
+      action: "Screening completed +2.50D",
+      time: "2h ago",
+    },
+    {
+      name: "Musoke Peter",
+      action: "Payment received +UGX 5,000",
+      time: "5h ago",
+    },
+    {
+      name: "Nansubuga Sarah",
+      action: "Referred to Luweero Hospital",
+      time: "1d ago",
+    },
+  ];
+
+  const dashboardStats = [
+    {
+      label: "My Clients",
+      value: "47",
+      subtitle: "Active clients",
+      subValue: "8 due for repayment",
+    },
+    {
+      label: "Inventory",
+      value: "45",
+      subtitle: "Glasses in stock",
+      subValue: "Good stock level",
+    },
+    {
+      label: "Referrals",
+      value: "3",
+      subtitle: "Pending referrals",
+      subValue: "1 outstanding",
+    },
+    {
+      label: "Payments Due",
+      value: "3",
+      subtitle: "Clients due today",
+      subValue: "UGX 15,000 expected",
+    },
+  ];
+
+  const quickActions = [
+    {
+      title: "VHT Eye Screening",
+      subtitle: "Uganda Job Aid Protocol",
+      icon: "👁️",
+      onPress: () => navigation.navigate("StartScreening"),
+    },
+    {
+      title: "Quick Screening",
+      subtitle: "Simple version",
+      icon: "⚡",
+      onPress: () => navigation.navigate("VisionScreeningStep1"),
+    },
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+
+      {/* Top Header with Logo and Menu - Fixed at top */}
+      <View style={styles.topHeader}>
+        <View style={styles.headerLeft}>
+          <View style={styles.logoBox}>
+            <Image
+              source={require("../../../assets/logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+        </View>
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}></Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
+            <Ionicons name="menu" size={28} color="#1A4D8F" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <View>
-              <Text style={styles.organization}>Santé Initiative Uganda</Text>
-              <Text style={styles.userName}>Jane Nambi</Text>
-              <Text style={styles.userRole}>CHW - Luweero</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.menuButton}
-              onPress={() => navigation.navigate("Settings")}
-            >
-              <Ionicons name="menu" size={30} color="#1E40AF" />
-            </TouchableOpacity>
-          </View>
+        {/* Welcome Section */}
+        <View style={styles.welcomeSection}>
+          <Text style={styles.welcomeTitle}>Welcome</Text>
+          <Text style={styles.userRole}>VHT - Luweero District</Text>
 
-          <Text style={styles.welcomeText}>Welcome, Jane Nambi</Text>
-          <Text style={styles.roleDistrict}>VHT - Luweero District</Text>
-          <Text style={styles.readyText}>Ready to screen today?</Text>
+          <View style={styles.readyCard}>
+            <MaterialIcons name="access-time" size={20} color="#1A4D8F" />
+            <Text style={styles.readyText}>Ready to screen today?</Text>
+          </View>
         </View>
 
         {/* This Week Stats */}
-        <View style={styles.weekStatsContainer}>
+        <View style={styles.weekStatsSection}>
           <Text style={styles.sectionTitle}>This Week</Text>
-          <View style={styles.weekStats}>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>28</Text>
-              <Text style={styles.statLabel}>Screened</Text>
+          <View style={styles.weekStatsRow}>
+            <View style={styles.weekStatCard}>
+              <View style={styles.statIconContainer}>
+                <FontAwesome5 name="users" size={20} color="#FFFFFF" />
+              </View>
+              <Text style={styles.weekStatNumber}>28</Text>
+              <Text style={styles.weekStatLabel}>Screened</Text>
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>15</Text>
-              <Text style={styles.statLabel}>Glasses Given</Text>
+
+            <View style={styles.weekStatCard}>
+              <View
+                style={[
+                  styles.statIconContainer,
+                  { backgroundColor: "#4CAF50" },
+                ]}
+              >
+                <MaterialIcons name="school" size={20} color="#FFFFFF" />
+              </View>
+              <Text style={styles.weekStatNumber}>15</Text>
+              <Text style={styles.weekStatLabel}>Classes Given</Text>
             </View>
           </View>
         </View>
 
-        {/* Action Cards - 2x2 Grid */}
-        <View style={styles.cardsGrid}>
-          {/* Start New Screening - Blue Primary Card */}
-          <TouchableOpacity
-            style={styles.primaryCard}
-            onPress={() => navigation.navigate("StartScreening")}
-          >
-            <View style={styles.cardHeader}>
-              <Text style={[styles.cardTitle, styles.primaryCardText]}>
-                Start New Screening
-              </Text>
-              <Ionicons name="eye-outline" size={24} color="#FFFFFF" />
-            </View>
-            <Text style={styles.primaryCardSubtitle}>
-              Begin vision assessment
-            </Text>
-          </TouchableOpacity>
-
-          {/* My Clients */}
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => navigation.navigate("MyClients")}
-          >
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>My Clients</Text>
-              <Ionicons name="people-outline" size={24} color="#1E40AF" />
-            </View>
-            <Text style={styles.cardSubtitle}>47 Active clients</Text>
-            <Text style={styles.cardNote}>8 due for repayment</Text>
-          </TouchableOpacity>
-
-          {/* Inventory */}
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => navigation.navigate("Inventory")}
-          >
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Inventory</Text>
-              <Ionicons name="cube-outline" size={24} color="#1E40AF" />
-            </View>
-            <Text style={styles.cardSubtitle}>45 Glasses in stock</Text>
-            <Text style={styles.goodStock}>Good stock level</Text>
-          </TouchableOpacity>
-
-          {/* Referrals */}
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => navigation.navigate("Referrals")}
-          >
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Referrals</Text>
-              <Ionicons name="share-outline" size={24} color="#1E40AF" />
-            </View>
-            <Text style={styles.cardSubtitle}>3 Pending referrals</Text>
-            <Text style={styles.cardNote}>1 outstanding</Text>
-          </TouchableOpacity>
+        {/* Quick Action Cards */}
+        <View style={styles.quickActionsSection}>
+          {quickActions.map((action, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.actionCard}
+              onPress={action.onPress}
+            >
+              <Text style={styles.actionIcon}>{action.icon}</Text>
+              <View style={styles.actionContent}>
+                <Text style={styles.actionTitle}>{action.title}</Text>
+                <Text style={styles.actionSubtitle}>{action.subtitle}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#1A4D8F" />
+            </TouchableOpacity>
+          ))}
         </View>
 
-        {/* Payments Due Card */}
-        <View style={styles.paymentsDueCard}>
-          <View style={styles.paymentsDueHeader}>
-            <View>
-              <Text style={styles.paymentsDueTitle}>Payments Due</Text>
-              <Text style={styles.paymentsDueSubtitle}>Clients due today</Text>
-            </View>
-            <View style={styles.paymentsDueBadge}>
-              <Text style={styles.paymentsDueNumber}>3</Text>
-            </View>
+        {/* Dashboard Stats Grid - 2x2 */}
+        <View style={styles.dashboardGridSection}>
+          <View style={styles.dashboardGrid}>
+            {dashboardStats.map((stat, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.dashboardCard}
+                onPress={() => {
+                  // Map indices to correct screens based on your folder structure
+                  const routes = [
+                    "MyClients",
+                    "Inventory",
+                    "Referrals",
+                    "Payments",
+                  ];
+                  navigation.navigate(routes[index] as any);
+                }}
+              >
+                <Text style={styles.dashboardValue}>{stat.value}</Text>
+                <Text style={styles.dashboardLabel}>{stat.label}</Text>
+                <View style={styles.dashboardSub}>
+                  <Text style={styles.dashboardSubtitle}>{stat.subtitle}</Text>
+                  <Text
+                    style={[
+                      styles.dashboardSubValue,
+                      stat.subValue.includes("Good")
+                        ? styles.goodText
+                        : stat.subValue.includes("due")
+                          ? styles.dueText
+                          : styles.normalText,
+                    ]}
+                  >
+                    {stat.subValue}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
-          <Text style={styles.paymentsDueAmount}>UGX 15,000 expected</Text>
-          <TouchableOpacity
-            style={styles.paymentsDueButton}
-            onPress={() => navigation.navigate("Payments")}
-          >
-            <Text style={styles.paymentsDueButtonText}>Payments Due</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Recent Activity */}
-        <View style={styles.recentActivityContainer}>
+        <View style={styles.recentActivitySection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Activity</Text>
             <TouchableOpacity>
@@ -162,80 +239,79 @@ export default function CHWDashboard() {
           </View>
 
           <View style={styles.activityList}>
-            {/* Activity 1 */}
-            <View style={styles.activityItem}>
-              <View style={styles.activityAvatar}>
-                <Ionicons name="person-circle" size={40} color="#6B7280" />
+            {recentActivities.map((activity, index) => (
+              <View key={index} style={styles.activityItem}>
+                <View style={styles.activityContent}>
+                  <Text style={styles.activityName}>{activity.name}</Text>
+                  <Text style={styles.activityAction}>{activity.action}</Text>
+                </View>
+                <Text style={styles.activityTime}>{activity.time}</Text>
               </View>
-              <View style={styles.activityDetails}>
-                <Text style={styles.activityName}>Nakato Grace</Text>
-                <Text style={styles.activityDescription}>
-                  Screening completed • +2.50D
-                </Text>
-                <Text style={styles.activityTime}>2h ago</Text>
-              </View>
-              <View style={styles.activityAmountNeutral}>
-                <Text style={styles.neutralAmount}>+2.50</Text>
-              </View>
-            </View>
-
-            {/* Activity 2 */}
-            <View style={styles.activityItem}>
-              <View style={styles.activityAvatar}>
-                <Ionicons name="person-circle" size={40} color="#6B7280" />
-              </View>
-              <View style={styles.activityDetails}>
-                <Text style={styles.activityName}>Musoke Peter</Text>
-                <Text style={styles.activityDescription}>
-                  Payment received • UGX 5,000
-                </Text>
-                <Text style={styles.activityTime}>5h ago</Text>
-              </View>
-              <View style={styles.activityAmountPositive}>
-                <Ionicons name="arrow-down" size={16} color="#059669" />
-                <Text style={styles.positiveAmount}>+5,000</Text>
-              </View>
-            </View>
-
-            {/* Activity 3 */}
-            <View style={styles.activityItem}>
-              <View style={styles.activityAvatar}>
-                <Ionicons name="person-circle" size={40} color="#6B7280" />
-              </View>
-              <View style={styles.activityDetails}>
-                <Text style={styles.activityName}>Nansubuga Sarah</Text>
-                <Text style={styles.activityDescription}>
-                  Referred to Luweero Hospital
-                </Text>
-                <Text style={styles.activityTime}>1d ago</Text>
-              </View>
-              <View style={styles.activityAmountInfo}>
-                <Ionicons name="arrow-forward" size={16} color="#3B82F6" />
-              </View>
-            </View>
+            ))}
           </View>
         </View>
 
-        {/* View Reports Card */}
+        {/* View Reports Button */}
         <TouchableOpacity
-          style={styles.reportsCard}
+          style={styles.reportsButton}
           onPress={() => navigation.navigate("Reports")}
         >
-          <View style={styles.reportsCardContent}>
-            <Ionicons name="document-text-outline" size={32} color="#1E40AF" />
-            <View style={styles.reportsText}>
-              <Text style={styles.reportsTitle}>View Reports</Text>
-              <Text style={styles.reportsSubtitle}>
-                Sales, Payments, Stock & Referrals
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
-          </View>
+          <MaterialCommunityIcons name="file-chart" size={24} color="#1A4D8F" />
+          <Text style={styles.reportsButtonText}>View Reports</Text>
+          <Text style={styles.reportsSubtitle}>
+            Sales, Payments, Stock & Referrals
+          </Text>
         </TouchableOpacity>
 
-        {/* Spacer for bottom tab bar */}
+        {/* Spacer for bottom navigation */}
         <View style={styles.spacer} />
       </ScrollView>
+
+      {/* Bottom Navigation - Fixed at bottom */}
+      <View style={styles.bottomNav}>
+        {[
+          { name: "Home", icon: "home", screen: "CHWDashboard" },
+          {
+            name: "Screen",
+            icon: "eye",
+            screen: "StartScreening",
+            activeRoutes: [
+              "StartScreening",
+              "VisionScreen1",
+              "VisionScreen2",
+              "VisionScreen3",
+              "VisionScreen4",
+              "VisionScreen5",
+              "VisionScreen6",
+              "VisionScreeningStep1",
+              "VisionScreeningStep2",
+            ],
+          },
+          { name: "Stock", icon: "cube", screen: "Inventory" },
+          { name: "Payments", icon: "cash", screen: "Payments" },
+          { name: "Referrals", icon: "share", screen: "Referrals" },
+        ].map((item, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.navItem}
+            onPress={() => navigation.navigate(item.screen as any)}
+          >
+            <Ionicons
+              name={item.icon as any}
+              size={22}
+              color={item.name === "Home" ? "#1A4D8F" : "#8E8E93"}
+            />
+            <Text
+              style={[
+                styles.navText,
+                item.name === "Home" && styles.navTextActive,
+              ]}
+            >
+              {item.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </SafeAreaView>
   );
 }
@@ -243,338 +319,341 @@ export default function CHWDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FFF8",
+    backgroundColor: "#F8FAFC",
   },
-  scrollView: {
+  // Top Header Styles
+  topHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 44,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  headerLeft: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 70,
-    paddingBottom: 100, // Extra space for bottom tab bar
-  },
-  header: {
-    marginBottom: 28,
-  },
-  headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 20,
-  },
-  organization: {
-    fontSize: 13,
-    color: "#6B7280",
-    fontWeight: "500",
-    marginBottom: 2,
-  },
-  userName: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#1F2937",
-    marginBottom: 2,
-  },
-  userRole: {
-    fontSize: 15,
-    color: "#6B7280",
-  },
-  menuButton: {
-    padding: 6,
-    marginTop: -4,
-  },
-  welcomeText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 6,
-  },
-  roleDistrict: {
-    fontSize: 15,
-    color: "#6B7280",
-    marginBottom: 4,
-  },
-  readyText: {
-    fontSize: 15,
-    color: "#6B7280",
-  },
-  weekStatsContainer: {
-    marginBottom: 28,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#1F2937",
+  logoBox: {
+    alignSelf: "center",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 16,
   },
-  weekStats: {
-    flexDirection: "row",
-    gap: 20,
+  logo: {
+    width: 80,
+    height: 80,
   },
-  statCard: {
+  headerCenter: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 20,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1A1A1A",
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: "flex-end",
+  },
+  // Scroll View
+  scrollView: {
+    flex: 1,
+    marginTop: 170, // Adjust for fixed header
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 100, // Space for bottom nav
+  },
+  // Welcome Section
+  welcomeSection: {
+    backgroundColor: "#2E7D32",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
   },
-  statNumber: {
-    fontSize: 32,
+  welcomeTitle: {
+    fontSize: 24,
     fontWeight: "700",
-    color: "#1E40AF",
-    marginBottom: 6,
-  },
-  statLabel: {
-    fontSize: 15,
-    color: "#6B7280",
-    textAlign: "center",
-  },
-  cardsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 16,
-    marginBottom: 20,
-  },
-  card: {
-    width: "47%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  primaryCard: {
-    width: "47%",
-    backgroundColor: "#1E40AF",
-    borderRadius: 14,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: "#1E3A8A",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  primaryCardText: {
-    color: "#FFFFFF",
-  },
-  primaryCardSubtitle: {
-    fontSize: 15,
-    color: "#E5E7EB",
+    color: "#fff",
     marginBottom: 4,
   },
-  cardHeader: {
+  userRole: {
+    fontSize: 16,
+    color: "#fff",
+    marginBottom: 16,
+  },
+  readyCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  readyText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+    marginLeft: 12,
+  },
+  // This Week Section
+  weekStatsSection: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1A1A1A",
+    marginBottom: 12,
+  },
+  weekStatsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
   },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#1F2937",
+  weekStatCard: {
     flex: 1,
-  },
-  cardSubtitle: {
-    fontSize: 15,
-    color: "#6B7280",
-    marginBottom: 4,
-  },
-  cardNote: {
-    fontSize: 13,
-    color: "#6B7280",
-    marginBottom: 12,
-  },
-  goodStock: {
-    fontSize: 13,
-    color: "#059669",
-    fontWeight: "500",
-    marginBottom: 12,
-  },
-  paymentsDueCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 20,
-    marginBottom: 28,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 4,
+    alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
   },
-  paymentsDueHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  paymentsDueTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#1F2937",
-  },
-  paymentsDueSubtitle: {
-    fontSize: 15,
-    color: "#6B7280",
-  },
-  paymentsDueBadge: {
-    backgroundColor: "#EF4444",
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  statIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#FF9800",
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 8,
   },
-  paymentsDueNumber: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
+  weekStatNumber: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1A1A1A",
   },
-  paymentsDueAmount: {
-    fontSize: 15,
-    color: "#1F2937",
-    marginBottom: 14,
+  weekStatLabel: {
+    fontSize: 14,
+    color: "#666666",
+    marginTop: 4,
   },
-  paymentsDueButton: {
-    backgroundColor: "#FEE2E2",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 8,
+  // Quick Actions
+  quickActionsSection: {
+    marginBottom: 16,
+  },
+  actionCard: {
+    flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#FCA5A5",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  paymentsDueButtonText: {
-    color: "#DC2626",
-    fontSize: 13,
+  actionIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  actionContent: {
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 16,
     fontWeight: "600",
+    color: "#1A1A1A",
+    marginBottom: 4,
   },
-  recentActivityContainer: {
-    marginBottom: 28,
+  actionSubtitle: {
+    fontSize: 14,
+    color: "#666666",
+  },
+  // Dashboard Grid
+  dashboardGridSection: {
+    marginBottom: 16,
+  },
+  dashboardGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  dashboardCard: {
+    width: (width - 40) / 2, // 16px padding on each side + 8px gap
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  dashboardValue: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#1A4D8F",
+    marginBottom: 4,
+  },
+  dashboardLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1A1A1A",
+    marginBottom: 8,
+  },
+  dashboardSub: {
+    marginTop: 4,
+  },
+  dashboardSubtitle: {
+    fontSize: 12,
+    color: "#666666",
+  },
+  dashboardSubValue: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  goodText: {
+    color: "#4CAF50",
+  },
+  dueText: {
+    color: "#EF4444",
+  },
+  normalText: {
+    color: "#1A4D8F",
+  },
+  // Recent Activity
+  recentActivitySection: {
+    marginBottom: 16,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   viewAllText: {
-    color: "#1E40AF",
-    fontSize: 15,
-    fontWeight: "500",
+    fontSize: 14,
+    color: "#1A4D8F",
+    fontWeight: "600",
   },
   activityList: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
   },
   activityItem: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: "#F0F0F0",
   },
-  activityAvatar: {
-    marginRight: 14,
-  },
-  activityDetails: {
+  activityContent: {
     flex: 1,
   },
   activityName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 3,
+    color: "#1A1A1A",
+    marginBottom: 4,
   },
-  activityDescription: {
-    fontSize: 13,
-    color: "#6B7280",
-    marginBottom: 3,
+  activityAction: {
+    fontSize: 14,
+    color: "#666666",
   },
   activityTime: {
     fontSize: 12,
-    color: "#9CA3AF",
+    color: "#999999",
+    marginLeft: 8,
   },
-  activityAmountPositive: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#D1FAE5",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  // Reports Button
+  reportsButton: {
+    backgroundColor: "#E8F4FF",
     borderRadius: 12,
-  },
-  positiveAmount: {
-    color: "#059669",
-    fontSize: 13,
-    fontWeight: "600",
-    marginLeft: 4,
-  },
-  activityAmountNeutral: {
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  neutralAmount: {
-    color: "#6B7280",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  activityAmountInfo: {
-    backgroundColor: "#DBEAFE",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  reportsCard: {
-    backgroundColor: "#EFF6FF",
-    borderRadius: 14,
     padding: 20,
-    marginBottom: 28,
-    borderWidth: 1,
-    borderColor: "#BFDBFE",
-  },
-  reportsCardContent: {
-    flexDirection: "row",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#1A4D8F",
+    marginBottom: 16,
   },
-  reportsText: {
-    flex: 1,
-    marginLeft: 14,
-  },
-  reportsTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 3,
+  reportsButtonText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1A4D8F",
+    marginTop: 12,
+    marginBottom: 4,
   },
   reportsSubtitle: {
-    fontSize: 13,
-    color: "#6B7280",
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
   },
   spacer: {
-    height: 40,
+    height: 20,
+  },
+  // Bottom Navigation
+  bottomNav: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E0E0E0",
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 10,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  navText: {
+    fontSize: 12,
+    color: "#8E8E93",
+    marginTop: 4,
+  },
+  navTextActive: {
+    color: "#1A4D8F",
+    fontWeight: "600",
   },
 });

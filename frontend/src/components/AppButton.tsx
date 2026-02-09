@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   disabled: {
-    backgroundColor: colors.disabled,
+    backgroundColor: "colors.disabled",
   },
   text: {
     color: "#FFFFFF",

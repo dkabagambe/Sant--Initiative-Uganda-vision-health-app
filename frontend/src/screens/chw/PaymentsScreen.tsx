@@ -227,8 +227,8 @@ export default function PaymentsScreen() {
             </TouchableOpacity>
             <View style={styles.headerInfo}>
               <Text style={styles.organization}>Santé Initiative</Text>
-              <Text style={styles.userName}>Jane Nambi</Text>
-              <Text style={styles.userRole}>CHW - Luweero</Text>
+              <Text style={styles.userName}>VHT</Text>
+              {/* <Text style={styles.userRole}>CHW - Luweero</Text> */}
             </View>
           </View>
           <TouchableOpacity style={styles.notificationButton}>
