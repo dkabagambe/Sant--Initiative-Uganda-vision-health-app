@@ -2,24 +2,26 @@
 
 ## Santé Initiative Vision Health App
 
-This application is designed to support community-based vision health screening.
+This application supports community health and VSLA/SACCO registration processes.
 
-### Camera Usage
+### Media and Document Access
 
-The app may request access to the device camera solely to support vision screening activities. Camera access is only used when initiated by the user. The app does not record, store, or share images or videos.
+The app allows users to select images and documents from their device for registration and verification purposes, such as uploading group photos and supporting documents.
 
-### Data Collection
+The app does not capture photos automatically and does not access the camera without user interaction.
 
-The app does not collect, store, or transmit personal data from camera usage. Any visual input is processed locally on the device.
+### Data Handling
 
-### Third-Party Access
+Selected images and documents are used only for the intended registration process. Files are processed securely and are not shared with third parties without user consent.
 
-No camera data or personal information is shared with third parties.
+### Permissions
 
-### User Control
+The app requests access to the device’s media library solely to allow users to choose images and documents. Users may deny permissions at any time through their device settings, though required features may not function.
 
-Users may deny camera permission at any time through their device settings. Camera-related features will be unavailable if permission is denied.
+### Data Storage
+
+The app does not sell, misuse, or publicly expose personal data. Uploaded information is handled according to organizational data protection practices.
 
 ### Contact
 
-If you have questions about this privacy policy, please contact the app administrator.
+For privacy-related questions, please contact the app administrator.
