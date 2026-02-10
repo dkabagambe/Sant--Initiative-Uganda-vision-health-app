@@ -5,6 +5,13 @@ export type RootStackParamList = {
   Register: undefined;
   RoleLogin: undefined;
   OTPScreen: { phone: string; userType: string };
+  // Vision screening screens
+  VisionScreen1: { clientAge: number };
+  VisionScreen2: { clientAge: number };
+  VisionScreen3: { clientAge: number };
+  VisionScreen4: { clientAge: number };
+  VisionScreen5: { clientAge: number };
+  VisionScreen6: { clientAge: number };
 
   // CHW Registration
   CHWRegistrationStep1: undefined;

@@ -359,7 +359,7 @@ export default function TorchLightStepScreen() {
       <View style={styles.waitCard}>
         <Text style={styles.waitTitle}>⏱️ Next Step:</Text>
         <View style={styles.waitInfo}>
-          <Ionicons name="timer" size={24} color="#1A4D8F" />
+          <Ionicons name="timer" size={24} color="#2E7D32" />
           <Text style={styles.waitText}>
             Wait <Text style={styles.waitHighlight}>2 minutes</Text> before
             testing distance vision
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#1A4D8F",
+    backgroundColor: "#2E7D32",
     borderRadius: 3,
   },
   divider: {
@@ -1098,7 +1098,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   primaryButton: {
-    backgroundColor: "#1A4D8F",
+    backgroundColor: "#2E7D32",
     borderRadius: 12,
     paddingVertical: 18,
     alignItems: "center",

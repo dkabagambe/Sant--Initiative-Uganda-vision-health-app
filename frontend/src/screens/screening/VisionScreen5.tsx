@@ -7,9 +7,12 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+
+const { width } = Dimensions.get("window");
 
 export default function DistanceVisionTestScreen() {
   const navigation = useNavigation<any>();
@@ -60,73 +63,98 @@ export default function DistanceVisionTestScreen() {
     }
   };
 
+  // Render rotated E characters like in Figma
+  const renderRotatedE = (rotation: string, size: number) => {
+    let transform: any[] = [];
+
+    switch (rotation) {
+      case "right":
+        transform = [{ rotate: "0deg" }];
+        break;
+      case "down":
+        transform = [{ rotate: "90deg" }];
+        break;
+      case "left":
+        transform = [{ rotate: "180deg" }];
+        break;
+      case "up":
+        transform = [{ rotate: "270deg" }];
+        break;
+      default:
+        transform = [{ rotate: "0deg" }];
+    }
+
+    return (
+      <View style={[styles.rotatedEBox, { transform }]}>
+        <Text style={[styles.rotatedEText, { fontSize: size }]}>E</Text>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+
+      {/* Header - KEEPING YOUR ORIGINAL FORMAT */}
+      <View style={styles.header}>
+        <Text style={styles.screenTitle}>VHT Eye Screening</Text>
+        <View style={styles.progressRow}>
+          <Text style={styles.progressText}>Step 5 of 6</Text>
+          <View style={styles.progressBar}>
+            <View
+              style={[styles.progressFill, { width: `${(5 / 6) * 100}%` }]}
+            />
+          </View>
+        </View>
+      </View>
 
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Progress Section */}
-        <View style={styles.progressSection}>
-          <Text style={styles.screenTitle}>VHT Eye Screening</Text>
-          <View style={styles.progressRow}>
-            <Text style={styles.progressText}>Step 5 of 6</Text>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: "83.33%" }]} />
-            </View>
-          </View>
-        </View>
-
         {/* Step Title */}
         <Text style={styles.stepTitle}>Step 5: Distance Vision Test</Text>
 
-        {/* Test Info Badge */}
+        {/* Info Badge */}
         <View style={styles.infoBadge}>
-          <Ionicons name="document-text" size={16} color="#1A4D8F" />
+          <Ionicons name="document-text" size={16} color="#1565C0" />
           <Text style={styles.infoBadgeText}>
             3-Meter E-Chart • Ages 6+ Only
           </Text>
         </View>
 
-        {/* Prerequisites Section */}
+        {/* Prerequisites Section - Updated to match Figma */}
         <View style={styles.prerequisitesCard}>
-          <View style={styles.prerequisitesHeader}>
-            <Ionicons name="warning" size={20} color="#EAB308" />
-            <Text style={styles.prerequisitesTitle}>
-              Prerequisites Confirmed:
-            </Text>
-          </View>
-
-          <View style={styles.prerequisiteItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-            <Text style={styles.prerequisiteText}>
-              Torch Light Test - Passed
-            </Text>
-          </View>
-
-          <View style={styles.prerequisiteItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-            <Text style={styles.prerequisiteText}>
-              Client Age - 88 years (≥6)
-            </Text>
-          </View>
-
-          <View style={styles.prerequisiteItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-            <Text style={styles.prerequisiteText}>
-              Waited 2 minutes after torch test
-            </Text>
+          <Text style={styles.prerequisitesTitle}>
+            ⚠️ Prerequisites Confirmed:
+          </Text>
+          <View style={styles.prerequisiteList}>
+            <View style={styles.prerequisiteItem}>
+              <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+              <Text style={styles.prerequisiteText}>
+                Torch Light Test - Passed
+              </Text>
+            </View>
+            <View style={styles.prerequisiteItem}>
+              <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+              <Text style={styles.prerequisiteText}>
+                Client Age - 88 years (≥6)
+              </Text>
+            </View>
+            <View style={styles.prerequisiteItem}>
+              <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+              <Text style={styles.prerequisiteText}>
+                Waited 2 minutes after torch test
+              </Text>
+            </View>
           </View>
         </View>
 
         {/* Testing Eye Section */}
         <View style={styles.testingSection}>
-          <View style={styles.testingHeader}>
-            <Ionicons name="eye" size={24} color="#1A4D8F" />
-            <Text style={styles.testingTitle}>
+          <View style={styles.testingBadge}>
+            <Text style={styles.testingBadgeText}>
               Testing:{" "}
               {testStage === "rightEye" ? "RIGHT EYE 👁️" : "LEFT EYE 👁️"}
             </Text>
@@ -135,7 +163,7 @@ export default function DistanceVisionTestScreen() {
           {/* Test Setup Instructions */}
           <View style={styles.setupCard}>
             <View style={styles.setupHeader}>
-              <Ionicons name="resize" size={20} color="#1A4D8F" />
+              <Ionicons name="resize" size={20} color="#1565C0" />
               <Text style={styles.setupTitle}>Test Setup:</Text>
             </View>
 
@@ -144,7 +172,8 @@ export default function DistanceVisionTestScreen() {
                 <Text style={styles.instructionNumberText}>1</Text>
               </View>
               <Text style={styles.instructionText}>
-                Stand 3 meters away from client
+                Stand <Text style={styles.boldText}>3 meters</Text> away from
+                client
               </Text>
             </View>
 
@@ -153,7 +182,10 @@ export default function DistanceVisionTestScreen() {
                 <Text style={styles.instructionNumberText}>2</Text>
               </View>
               <Text style={styles.instructionText}>
-                Cover client's {testStage === "rightEye" ? "LEFT" : "RIGHT"} eye
+                Cover client's{" "}
+                <Text style={styles.boldText}>
+                  {testStage === "rightEye" ? "LEFT" : "RIGHT"} eye
+                </Text>{" "}
                 with hand or card
               </Text>
             </View>
@@ -172,54 +204,45 @@ export default function DistanceVisionTestScreen() {
                 <Text style={styles.instructionNumberText}>4</Text>
               </View>
               <Text style={styles.instructionText}>
-                Ask: "Which way does the E point?"
+                Ask:{" "}
+                <Text style={styles.italicText}>
+                  "Which way does the E point?"
+                </Text>
               </Text>
             </View>
           </View>
         </View>
 
-        {/* E-Chart Display */}
+        {/* E-Chart Display - Updated with rotated E's */}
         <View style={styles.eChartCard}>
-          <Text style={styles.eChartTitle}>3-Meter E-Chart</Text>
+          <Text style={styles.eChartTitle}>3-Meter E-Chart (Tumbling E)</Text>
 
           {/* Line 1 */}
           <View style={styles.eChartLine}>
             <Text style={styles.lineLabel}>Line 1: 6/60 (Largest)</Text>
-            <View style={styles.lettersContainer}>
-              <View style={styles.letterBox}>
-                <Text style={styles.letterText1}>E</Text>
-              </View>
-              <View style={styles.letterBox}>
-                <Text style={styles.letterText1}>F</Text>
-              </View>
-              <View style={styles.letterBox}>
-                <Text style={styles.letterText1}>P</Text>
-              </View>
+            <View style={styles.eContainer}>
+              {renderRotatedE("right", 44)}
+              {renderRotatedE("down", 44)}
+              {renderRotatedE("left", 44)}
             </View>
-            <Text style={styles.lettersNote}>3 letters to read</Text>
+            <Text style={styles.lettersNote}>
+              3 letters to read (Right, Down, Left)
+            </Text>
           </View>
 
           {/* Line 2 */}
           <View style={styles.eChartLine}>
             <Text style={styles.lineLabel}>Line 2: 6/12 (Smaller)</Text>
-            <View style={styles.lettersContainer}>
-              <View style={styles.letterBox}>
-                <Text style={styles.letterText}>E</Text>
-              </View>
-              <View style={styles.letterBox}>
-                <Text style={styles.letterText}>F</Text>
-              </View>
-              <View style={styles.letterBox}>
-                <Text style={styles.letterText}>P</Text>
-              </View>
-              <View style={styles.letterBox}>
-                <Text style={styles.letterText}>T</Text>
-              </View>
-              <View style={styles.letterBox}>
-                <Text style={styles.letterText}>O</Text>
-              </View>
+            <View style={[styles.eContainer, styles.smallEContainer]}>
+              {renderRotatedE("right", 32)}
+              {renderRotatedE("up", 32)}
+              {renderRotatedE("down", 32)}
+              {renderRotatedE("left", 32)}
+              {renderRotatedE("right", 32)}
             </View>
-            <Text style={styles.lettersNote}>5 letters to read</Text>
+            <Text style={styles.lettersNote}>
+              5 letters to read (Right, Up, Down, Left, Right)
+            </Text>
           </View>
         </View>
 
@@ -255,12 +278,20 @@ export default function DistanceVisionTestScreen() {
             ))}
           </View>
 
-          {/* Warning for Line 1 */}
+          {/* Status for Line 1 */}
           {line1Score !== null && line1Score < 2 && (
             <View style={styles.warningBox}>
               <Ionicons name="warning" size={18} color="#DC2626" />
               <Text style={styles.warningText}>
-                Less than 2 correct = Automatic Fail
+                ⚠️ Less than 2 correct = Automatic Fail
+              </Text>
+            </View>
+          )}
+          {line1Score !== null && line1Score >= 2 && (
+            <View style={styles.successBox}>
+              <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+              <Text style={styles.successText}>
+                ✓ 2 or more = Continue to Line 2
               </Text>
             </View>
           )}
@@ -275,7 +306,7 @@ export default function DistanceVisionTestScreen() {
             Total letters: 5 | Must read at least 4 to pass
           </Text>
 
-          <View style={styles.scoreButtonsRow}>
+          <View style={styles.scoreButtonsRowLarge}>
             {[0, 1, 2, 3, 4, 5].map((score) => (
               <TouchableOpacity
                 key={score}
@@ -297,6 +328,20 @@ export default function DistanceVisionTestScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* Status for Line 2 */}
+          {line2Score !== null && line2Score < 4 && line2Score > 0 && (
+            <View style={styles.warningBox}>
+              <Ionicons name="warning" size={18} color="#DC2626" />
+              <Text style={styles.warningText}>⚠️ Less than 4 = Fail</Text>
+            </View>
+          )}
+          {line2Score !== null && line2Score >= 4 && (
+            <View style={styles.successBox}>
+              <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+              <Text style={styles.successText}>✓ 4 or more = Pass</Text>
+            </View>
+          )}
         </View>
 
         {/* Pass Criteria */}
@@ -311,7 +356,7 @@ export default function DistanceVisionTestScreen() {
         <View style={styles.spacer} />
       </ScrollView>
 
-      {/* Bottom Navigation Buttons */}
+      {/* Bottom Navigation Buttons - YOUR ORIGINAL FORMAT */}
       <View style={styles.bottomNav}>
         <TouchableOpacity
           style={styles.backButton}
@@ -322,8 +367,13 @@ export default function DistanceVisionTestScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.nextButton}
+          style={[
+            styles.nextButton,
+            (line1Score === null || line2Score === null) &&
+              styles.nextButtonDisabled,
+          ]}
           onPress={handleNextEye}
+          disabled={line1Score === null || line2Score === null}
           activeOpacity={0.8}
         >
           <Text style={styles.nextButtonText}>
@@ -334,7 +384,7 @@ export default function DistanceVisionTestScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Bottom Tab Bar */}
+      {/* Bottom Tab Bar - YOUR ORIGINAL FORMAT */}
       <View style={styles.tabBar}>
         {[
           { icon: "home-outline", label: "Home" },
@@ -351,7 +401,7 @@ export default function DistanceVisionTestScreen() {
             <Ionicons
               name={tab.icon as any}
               size={22}
-              color={index === 1 ? "#1A4D8F" : "#6B7280"}
+              color={index === 1 ? "#1565C0" : "#6B7280"}
             />
             <Text
               style={[styles.tabLabel, index === 1 && styles.tabLabelActive]}
@@ -368,51 +418,21 @@ export default function DistanceVisionTestScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F9FAFB",
   },
-  userHeader: {
+  header: {
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 20,
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 12 : 56,
+    paddingTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-    alignItems: "center",
-  },
-  organization: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A4D8F",
-    marginBottom: 4,
-  },
-  userName: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 2,
-  },
-  userRole: {
-    fontSize: 14,
-    color: "#666666",
-    fontWeight: "500",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 100,
-  },
-  progressSection: {
-    marginBottom: 20,
+    borderBottomColor: "#E5E7EB",
   },
   screenTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 12,
-    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: 8,
   },
   progressRow: {
     flexDirection: "row",
@@ -420,9 +440,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   progressText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A4D8F",
+    fontSize: 14,
+    color: "#6B7280",
   },
   progressBar: {
     flex: 1,
@@ -434,14 +453,22 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#1A4D8F",
+    backgroundColor: "#2E7D32",
     borderRadius: 3,
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 120, // Extra padding for bottom nav and tab bar
+  },
   stepTitle: {
-    fontSize: 26,
-    fontWeight: "800",
+    fontSize: 24,
+    fontWeight: "700",
     color: "#111827",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   infoBadge: {
     flexDirection: "row",
@@ -451,58 +478,56 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     alignSelf: "flex-start",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   infoBadgeText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#1A4D8F",
+    color: "#1565C0",
     marginLeft: 8,
   },
   prerequisitesCard: {
-    backgroundColor: "#FFF7ED",
+    backgroundColor: "#FEF3C7",
     borderRadius: 12,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#FDBA74",
-  },
-  prerequisitesHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    padding: 16,
     marginBottom: 16,
+    borderWidth: 2,
+    borderColor: "#F59E0B",
   },
   prerequisitesTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "700",
-    color: "#9A3412",
-    marginLeft: 8,
+    color: "#92400E",
+    marginBottom: 8,
+  },
+  prerequisiteList: {
+    marginTop: 4,
   },
   prerequisiteItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 6,
   },
   prerequisiteText: {
-    fontSize: 16,
-    color: "#9A3412",
-    fontWeight: "500",
-    marginLeft: 12,
-    flex: 1,
+    fontSize: 14,
+    color: "#92400E",
+    marginLeft: 8,
   },
   testingSection: {
-    marginBottom: 24,
-  },
-  testingHeader: {
-    flexDirection: "row",
-    alignItems: "center",
     marginBottom: 16,
   },
-  testingTitle: {
-    fontSize: 22,
+  testingBadge: {
+    backgroundColor: "#1565C0",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  testingBadgeText: {
+    fontSize: 18,
     fontWeight: "700",
-    color: "#111827",
-    marginLeft: 12,
+    color: "#FFFFFF",
   },
   setupCard: {
     backgroundColor: "#FFFFFF",
@@ -533,16 +558,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   instructionNumber: {
-    width: 32,
-    height: 32,
-    backgroundColor: "#1A4D8F",
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    backgroundColor: "#1565C0",
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
   },
   instructionNumberText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
     color: "#FFFFFF",
   },
@@ -552,23 +577,26 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     flex: 1,
   },
+  boldText: {
+    fontWeight: "700",
+    color: "#1565C0",
+  },
+  italicText: {
+    fontStyle: "italic",
+    color: "#4B5563",
+  },
   eChartCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    padding: 24,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: "#1F2937",
   },
   eChartTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6B7280",
     marginBottom: 20,
     textAlign: "center",
   },
@@ -577,46 +605,44 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   lineLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A4D8F",
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#6B7280",
     marginBottom: 16,
   },
-  lettersContainer: {
+  eContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: 12,
-    gap: 12,
-  },
-  letterBox: {
-    width: 50,
-    height: 50,
+    alignItems: "center",
+    gap: 16,
+    marginBottom: 8,
     backgroundColor: "#F3F4F6",
+    padding: 16,
     borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#D1D5DB",
+  },
+  smallEContainer: {
+    gap: 8,
+  },
+  rotatedEBox: {
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
   },
-  letterText: {
-    fontSize: 24,
+  rotatedEText: {
     fontWeight: "700",
     color: "#111827",
-  },
-  letterText1: {
-    fontSize: 44,
-    fontWeight: "700",
-    color: "#111827",
+    fontFamily: "monospace",
   },
   lettersNote: {
     fontSize: 14,
     color: "#6B7280",
-    fontStyle: "italic",
+    textAlign: "center",
   },
   scoringCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    padding: 24,
+    padding: 20,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: "#F3F4F6",
@@ -639,31 +665,36 @@ const styles = StyleSheet.create({
   },
   scoreButtonsRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  scoreButtonsRowLarge: {
+    flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 12,
+    justifyContent: "space-between",
+    marginBottom: 8,
   },
   scoreButton: {
-    width: 60,
-    height: 60,
-    backgroundColor: "#F3F4F6",
+    width: (width - 100) / 4, // Adjusted for padding
+    height: 56,
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#E5E7EB",
+    borderColor: "#D1D5DB",
   },
   scoreButtonSelected: {
-    backgroundColor: "#EFF6FF",
-    borderColor: "#1A4D8F",
+    backgroundColor: "#E0F2FE",
+    borderColor: "#1565C0",
   },
   scoreButtonText: {
     fontSize: 20,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#6B7280",
   },
   scoreButtonTextSelected: {
-    color: "#1A4D8F",
+    color: "#1565C0",
   },
   warningBox: {
     flexDirection: "row",
@@ -680,20 +711,34 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#DC2626",
     marginLeft: 8,
-    flex: 1,
+  },
+  successBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F0FDF4",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: "#BBF7D0",
+  },
+  successText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#10B981",
+    marginLeft: 8,
   },
   passCriteriaCard: {
-    backgroundColor: "#EFF6FF",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 75,
+    backgroundColor: "#E0F2FE",
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 24,
     borderWidth: 1,
-    borderColor: "#BFDBFE",
+    borderColor: "#BAE6FD",
   },
   passCriteriaText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A4D8F",
+    fontSize: 14,
+    color: "#1565C0",
     textAlign: "center",
   },
   spacer: {
@@ -701,7 +746,7 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     position: "absolute",
-    bottom: 70,
+    bottom: 70, // Position above tab bar
     left: 0,
     right: 0,
     flexDirection: "row",
@@ -733,11 +778,14 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     flex: 1,
-    backgroundColor: "#1A4D8F",
+    backgroundColor: "#1565C0", // Updated to match Figma blue
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: "center",
     marginLeft: 12,
+  },
+  nextButtonDisabled: {
+    backgroundColor: "#9CA3AF",
   },
   nextButtonText: {
     fontSize: 18,
@@ -774,7 +822,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   tabLabelActive: {
-    color: "#1A4D8F",
+    color: "#1565C0",
     fontWeight: "700",
   },
 });

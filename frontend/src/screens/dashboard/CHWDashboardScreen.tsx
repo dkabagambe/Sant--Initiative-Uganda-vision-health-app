@@ -13,7 +13,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 type RootStackParamList = {
   CHWDashboard: undefined;
-  VisionScreeningStep1: undefined;
+  VisionScreen1: undefined;
   StartScreening: undefined;
   MyClients: undefined;
   Inventory: undefined;
@@ -74,7 +74,7 @@ export default function CHWDashboardScreen() {
           {/* Start New Screening - Blue Primary Card */}
           <TouchableOpacity
             style={styles.primaryCard}
-            onPress={() => navigation.navigate("VisionScreeningStep1")} // Update this line
+            onPress={() => navigation.navigate("VisionScreen1")} // Update this line
           >
             <View style={styles.cardHeader}>
               <Text style={[styles.cardTitle, styles.primaryCardText]}>

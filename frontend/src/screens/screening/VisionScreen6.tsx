@@ -10,370 +10,434 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 
-export default function NearVisionTestScreen() {
-  const navigation = useNavigation<any>();
-  const [testResult, setTestResult] = useState<"pass" | "fail" | null>(null);
-  const [selectedAgeGroup, setSelectedAgeGroup] = useState<
-    "40plus" | "6to39" | null
-  >(null);
+const { width } = Dimensions.get("window");
 
-  const handleTestResult = (result: "pass" | "fail") => {
-    setTestResult(result);
-  };
+interface VisionScreen6Props {
+  clientAge: number;
+  onComplete: (passed: boolean) => void;
+  onRefer?: () => void;
+}
 
-  const handleAgeGroupSelection = (group: "40plus" | "6to39") => {
-    setSelectedAgeGroup(group);
-  };
+export default function VisionScreen6({
+  clientAge,
+  onComplete,
+  onRefer,
+}: VisionScreen6Props) {
+  const [canRead, setCanRead] = useState<boolean | null>(null);
+  const [showRecording, setShowRecording] = useState(false);
 
-  const handleComplete = () => {
-    if (testResult === "pass") {
-      // End visit - No glasses needed
-      navigation.navigate("ScreeningComplete");
-    } else if (testResult === "fail" && selectedAgeGroup) {
-      // Navigate based on age group
-      if (selectedAgeGroup === "40plus") {
-        navigation.navigate("ReadingGlassesSelection");
-      } else {
-        // Age 6-39: Refer to health facility
-        navigation.navigate("ReferralScreen");
-      }
+  const handleTestComplete = (passed: boolean) => {
+    setCanRead(passed);
+    if (!passed && clientAge >= 40) {
+      // Immediately proceed to glasses selection for presbyopia (age 40+)
+      onComplete(false);
     } else {
-      alert("Please complete all selections before proceeding.");
+      setShowRecording(true);
     }
   };
+
+  if (showRecording) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <View style={styles.headerRow}>
+              <Text style={styles.headerTitle}>VHT Eye Screening</Text>
+              <Text style={styles.headerStep}>Step 6 of 6</Text>
+            </View>
+            <View style={styles.progressBar}>
+              <View
+                style={[styles.progressFill, { width: `${(6 / 6) * 100}%` }]}
+              />
+            </View>
+          </View>
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.recordingContent}
+        >
+          {/* Result Card */}
+          <View
+            style={[
+              styles.resultCard,
+              canRead ? styles.passedCard : styles.failedCard,
+            ]}
+          >
+            <View style={styles.resultHeader}>
+              <Ionicons
+                name={canRead ? "checkmark-circle" : "alert-circle"}
+                size={32}
+                color={canRead ? "#10B981" : "#F59E0B"}
+              />
+              <View style={styles.resultTextContainer}>
+                <Text style={styles.resultTitle}>
+                  {canRead
+                    ? "✅ Near Vision Test - Passed"
+                    : "⚠️ Near Vision Test - Failed"}
+                </Text>
+                <Text style={styles.resultSubtitle}>
+                  {canRead
+                    ? "Client can read close up clearly"
+                    : "Client has difficulty reading - needs assessment"}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Recording Card */}
+          <View style={styles.recordingCard}>
+            <Text style={styles.recordingTitle}>
+              📝 Record Result in VHT Register:
+            </Text>
+
+            <View style={styles.recordInfo}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Test Name:</Text>
+                <Text style={styles.infoValue}>Near Vision (N8 at 40cm)</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Both Eyes:</Text>
+                <Text style={styles.infoValue}>Tested Together</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Client Age:</Text>
+                <Text style={styles.infoValue}>{clientAge} years</Text>
+              </View>
+            </View>
+
+            <View style={styles.divider} />
+
+            <Text style={styles.recordQuestion}>Near Vision Test - Pass?</Text>
+            <View style={styles.recordButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.recordButton,
+                  canRead === true && styles.recordButtonSelected,
+                ]}
+                onPress={() => onComplete(true)}
+              >
+                <Text
+                  style={[
+                    styles.recordButtonText,
+                    canRead === true && styles.recordButtonTextSelected,
+                  ]}
+                >
+                  ✓ Yes - Pass
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.recordButton,
+                  canRead === false && styles.recordButtonSelectedRed,
+                ]}
+                onPress={() => {
+                  onComplete(false);
+                  if (canRead === false && clientAge < 40 && onRefer) {
+                    onRefer();
+                  }
+                }}
+              >
+                <Text
+                  style={[
+                    styles.recordButtonText,
+                    canRead === false && styles.recordButtonTextSelectedRed,
+                  ]}
+                >
+                  ✗ No - Fail
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {canRead === false && (
+              <View style={styles.referralAlert}>
+                {clientAge >= 40 ? (
+                  <>
+                    <Text style={styles.referralTitle}>
+                      👓 Presbyopia Pathway (Age 40+)
+                    </Text>
+                    <Text style={styles.referralText}>
+                      This is likely{" "}
+                      <Text style={styles.boldText}>presbyopia</Text> - normal
+                      age-related vision change. Clicking "No - Fail" will take
+                      you to reading glasses selection.
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.referralTitle}>
+                      🏥 Referral Required (Age 6-39)
+                    </Text>
+                    <Text style={styles.referralText}>
+                      Near vision problems in people under 40 are{" "}
+                      <Text style={styles.boldText}>not normal</Text>. Clicking
+                      "No - Fail" will automatically open a pre-filled referral
+                      form for comprehensive eye examination.
+                    </Text>
+                  </>
+                )}
+              </View>
+            )}
+          </View>
+        </ScrollView>
+
+        {/* Bottom Button */}
+        <View style={styles.recordingBottomContainer}>
+          <TouchableOpacity
+            style={styles.recordingBottomButton}
+            onPress={() => {
+              if (canRead === false && clientAge < 40 && onRefer) {
+                onRefer();
+              } else {
+                onComplete(false);
+              }
+            }}
+          >
+            <Text style={styles.recordingBottomButtonText}>
+              Complete & Save
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
-      {/* Top Header with User Info */}
-
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Progress Section */}
-        <View style={styles.progressSection}>
-          <Text style={styles.screenTitle}>VHT Eye Screening</Text>
-          <View style={styles.progressRow}>
-            <Text style={styles.progressText}>Step 6 of 6</Text>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: "100%" }]} />
-            </View>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerRow}>
+            <Text style={styles.headerTitle}>VHT Eye Screening</Text>
+            <Text style={styles.headerStep}>Step 6 of 6</Text>
+          </View>
+          <View style={styles.progressBar}>
+            <View
+              style={[styles.progressFill, { width: `${(6 / 6) * 100}%` }]}
+            />
           </View>
         </View>
+      </View>
 
-        {/* Step Title */}
-        <Text style={styles.stepTitle}>Step 6: Near Vision Test</Text>
+      {/* Main Content Area */}
+      <View style={styles.contentContainer}>
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Step Title Card */}
+          <View style={styles.titleCard}>
+            <View style={styles.titleContent}>
+              <Ionicons name="eye" size={28} color="#9333EA" />
+              <View style={styles.titleTextContainer}>
+                <Text style={styles.stepTitle}>Step 6: Near Vision Test</Text>
+                <Text style={styles.stepSubtitle}>
+                  Reading Test • Ages 6+ Only
+                </Text>
+              </View>
+            </View>
+          </View>
 
-        {/* Test Info Badge */}
-        <View style={styles.infoBadge}>
-          <Ionicons name="book" size={16} color="#1A4D8F" />
-          <Text style={styles.infoBadgeText}>Reading Test • Ages 6+ Only</Text>
-        </View>
-
-        {/* Prerequisites Section */}
-        <View style={styles.prerequisitesCard}>
-          <View style={styles.prerequisitesHeader}>
-            <Ionicons name="warning" size={20} color="#EAB308" />
+          {/* Prerequisites Card */}
+          <View style={styles.prerequisitesCard}>
             <Text style={styles.prerequisitesTitle}>
-              Prerequisites Confirmed:
+              ⚠️ Prerequisites Confirmed:
             </Text>
-          </View>
-
-          <View style={styles.prerequisiteItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-            <Text style={styles.prerequisiteText}>
-              Torch Light Test - Passed
-            </Text>
-          </View>
-
-          <View style={styles.prerequisiteItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-            <Text style={styles.prerequisiteText}>
-              Distance Vision Test - Passed
-            </Text>
-          </View>
-
-          <View style={styles.prerequisiteItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-            <Text style={styles.prerequisiteText}>
-              Client Age - 88 years (≥6)
-            </Text>
-          </View>
-        </View>
-
-        {/* Test Instructions */}
-        <View style={styles.instructionsCard}>
-          <View style={styles.instructionsHeader}>
-            <Ionicons name="book" size={20} color="#1A4D8F" />
-            <Text style={styles.instructionsTitle}>Test Instructions:</Text>
-          </View>
-
-          <View style={styles.instructionItem}>
-            <View style={styles.instructionNumber}>
-              <Text style={styles.instructionNumberText}>1</Text>
-            </View>
-            <Text style={styles.instructionText}>
-              Test both eyes together (no covering)
-            </Text>
-          </View>
-
-          <View style={styles.instructionItem}>
-            <View style={styles.instructionNumber}>
-              <Text style={styles.instructionNumberText}>2</Text>
-            </View>
-            <Text style={styles.instructionText}>
-              Hold chart at 40 cm (about arm's length)
-            </Text>
-          </View>
-
-          <View style={styles.instructionItem}>
-            <View style={styles.instructionNumber}>
-              <Text style={styles.instructionNumberText}>3</Text>
-            </View>
-            <Text style={styles.instructionText}>
-              Ask client to read N8 row (smallest line)
-            </Text>
-          </View>
-
-          <View style={styles.instructionItem}>
-            <View style={styles.instructionNumber}>
-              <Text style={styles.instructionNumberText}>4</Text>
-            </View>
-            <Text style={styles.instructionText}>
-              Make sure there is good lighting
-            </Text>
-          </View>
-        </View>
-
-        {/* Near Vision Chart */}
-        <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Near Vision Chart (40cm)</Text>
-
-          {/* N48 Line */}
-          <View style={styles.chartLine}>
-            <Text style={styles.chartLineLabel}>N48 (Largest)</Text>
-            <Text style={styles.chartLineText}>The quick brown</Text>
-          </View>
-
-          {/* N24 Line */}
-          <View style={styles.chartLine}>
-            <Text style={styles.chartLineLabel}>N24</Text>
-            <Text style={styles.chartLineText}>The quick brown fox</Text>
-          </View>
-
-          {/* N12 Line */}
-          <View style={styles.chartLine}>
-            <Text style={styles.chartLineLabel}>N12</Text>
-            <Text style={styles.chartLineText}>The quick brown fox jumps</Text>
-          </View>
-
-          {/* N8 Line - Highlighted */}
-          <View style={styles.highlightedLine}>
-            <View style={styles.highlightedLabelRow}>
-              <Ionicons name="star" size={20} color="#9333EA" />
-              <Text style={styles.highlightedLabel}>N8 ROW (TEST THIS)</Text>
-            </View>
-            <Text style={styles.highlightedText}>
-              The quick brown fox jumps over the lazy dog
-            </Text>
-          </View>
-        </View>
-
-        {/* Client Question */}
-        <View style={styles.questionCard}>
-          <View style={styles.questionHeader}>
-            <Ionicons name="chatbubble" size={20} color="#1A4D8F" />
-            <Text style={styles.questionTitle}>Ask the Client:</Text>
-          </View>
-          <Text style={styles.questionText}>
-            "Please read the purple highlighted line (N8 row) out loud."
-          </Text>
-        </View>
-
-        {/* Test Result Question */}
-        <View style={styles.resultCard}>
-          <Text style={styles.resultQuestion}>
-            Can client read N8 row clearly?
-          </Text>
-
-          <View style={styles.resultButtons}>
-            {/* Pass Button */}
-            <TouchableOpacity
-              style={[
-                styles.resultButton,
-                styles.passButton,
-                testResult === "pass" && styles.resultButtonSelected,
-              ]}
-              onPress={() => handleTestResult("pass")}
-              activeOpacity={0.7}
-            >
-              <View style={styles.resultButtonContent}>
-                <Text style={styles.resultEmoji}>✓</Text>
-                <View style={styles.resultTextContainer}>
-                  <Text style={styles.resultButtonLabel}>Yes - Pass</Text>
-                  <Text style={styles.resultButtonSubtitle}>
-                    Can read clearly
-                  </Text>
-                </View>
+            <View style={styles.prerequisiteList}>
+              <View style={styles.prerequisiteItem}>
+                <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                <Text style={styles.prerequisiteText}>
+                  Torch Light Test - Passed
+                </Text>
               </View>
-            </TouchableOpacity>
-
-            {/* Fail Button */}
-            <TouchableOpacity
-              style={[
-                styles.resultButton,
-                styles.failButton,
-                testResult === "fail" && styles.resultButtonSelected,
-              ]}
-              onPress={() => handleTestResult("fail")}
-              activeOpacity={0.7}
-            >
-              <View style={styles.resultButtonContent}>
-                <Text style={styles.resultEmoji}>✗</Text>
-                <View style={styles.resultTextContainer}>
-                  <Text style={styles.resultButtonLabel}>No - Fail</Text>
-                  <Text style={styles.resultButtonSubtitle}>Cannot read</Text>
-                </View>
+              <View style={styles.prerequisiteItem}>
+                <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                <Text style={styles.prerequisiteText}>
+                  Distance Vision Test - Passed
+                </Text>
               </View>
-            </TouchableOpacity>
+              <View style={styles.prerequisiteItem}>
+                <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                <Text style={styles.prerequisiteText}>
+                  Client Age - {clientAge} years (≥6)
+                </Text>
+              </View>
+            </View>
           </View>
-        </View>
 
-        {/* Outcome Instructions - Based on Result */}
-        {testResult === "pass" ? (
-          <View style={styles.outcomeCard}>
-            <Text style={styles.outcomeTitle}>If Pass:</Text>
-            <View style={styles.outcomeItem}>
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-              <Text style={styles.outcomeText}>
-                End visit - No glasses needed
+          {/* Test Instructions Card */}
+          <View style={styles.instructionsCard}>
+            <Text style={styles.instructionsTitle}>📖 Test Instructions:</Text>
+
+            <View style={styles.instructionsList}>
+              <View style={styles.instructionItem}>
+                <View style={styles.instructionNumber}>
+                  <Text style={styles.instructionNumberText}>1</Text>
+                </View>
+                <Text style={styles.instructionText}>
+                  Test <Text style={styles.boldText}>both eyes together</Text>{" "}
+                  (no covering)
+                </Text>
+              </View>
+
+              <View style={styles.instructionItem}>
+                <View style={styles.instructionNumber}>
+                  <Text style={styles.instructionNumberText}>2</Text>
+                </View>
+                <Text style={styles.instructionText}>
+                  Hold chart at <Text style={styles.boldText}>40 cm</Text>{" "}
+                  (about arm's length)
+                </Text>
+              </View>
+
+              <View style={styles.instructionItem}>
+                <View style={styles.instructionNumber}>
+                  <Text style={styles.instructionNumberText}>3</Text>
+                </View>
+                <Text style={styles.instructionText}>
+                  Ask client to read <Text style={styles.boldText}>N8 row</Text>{" "}
+                  (smallest line)
+                </Text>
+              </View>
+
+              <View style={styles.instructionItem}>
+                <View style={styles.instructionNumber}>
+                  <Text style={styles.instructionNumberText}>4</Text>
+                </View>
+                <Text style={styles.instructionText}>
+                  Make sure there is{" "}
+                  <Text style={styles.boldText}>good lighting</Text>
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* N8 Reading Chart */}
+          <View style={styles.chartCard}>
+            <Text style={styles.chartTitle}>Near Vision Chart (40cm)</Text>
+
+            {/* N48 - Largest */}
+            <View style={styles.chartRow}>
+              <Text style={styles.chartRowLabel}>N48 (Largest)</Text>
+              <Text style={styles.chartRowTextLarge}>The quick brown</Text>
+            </View>
+
+            {/* N24 */}
+            <View style={styles.chartRow}>
+              <Text style={styles.chartRowLabel}>N24</Text>
+              <Text style={styles.chartRowTextMedium}>The quick brown fox</Text>
+            </View>
+
+            {/* N12 */}
+            <View style={styles.chartRow}>
+              <Text style={styles.chartRowLabel}>N12</Text>
+              <Text style={styles.chartRowTextSmall}>
+                The quick brown fox jumps
+              </Text>
+            </View>
+
+            {/* N8 - Target */}
+            <View style={styles.targetRow}>
+              <Text style={styles.targetRowLabel}>⭐ N8 ROW (TEST THIS)</Text>
+              <Text style={styles.targetRowText}>
+                The quick brown fox jumps over the lazy dog
               </Text>
             </View>
           </View>
-        ) : testResult === "fail" ? (
-          <View style={styles.outcomeCard}>
-            <Text style={styles.outcomeTitle}>If Fail:</Text>
 
-            {/* Age Group Selection */}
-            <Text style={styles.ageGroupTitle}>Select Client Age Group:</Text>
-            <View style={styles.ageGroupButtons}>
+          {/* Client Instructions */}
+          <View style={styles.clientInstructionsCard}>
+            <Text style={styles.clientInstructionsTitle}>
+              📝 Ask the Client:
+            </Text>
+            <Text style={styles.clientInstructionsText}>
+              "Please read the purple highlighted line (N8 row) out loud."
+            </Text>
+          </View>
+
+          {/* Test Result Buttons */}
+          <View style={styles.testButtonsCard}>
+            <Text style={styles.testButtonsTitle}>
+              Can client read N8 row clearly?
+            </Text>
+            <View style={styles.testButtonsContainer}>
               <TouchableOpacity
-                style={[
-                  styles.ageGroupButton,
-                  selectedAgeGroup === "40plus" &&
-                    styles.ageGroupButtonSelected,
-                ]}
-                onPress={() => handleAgeGroupSelection("40plus")}
-                activeOpacity={0.7}
+                style={styles.passButton}
+                onPress={() => handleTestComplete(true)}
               >
-                <Text
-                  style={[
-                    styles.ageGroupButtonText,
-                    selectedAgeGroup === "40plus" &&
-                      styles.ageGroupButtonTextSelected,
-                  ]}
-                >
-                  Age 40+
-                </Text>
+                <Text style={styles.passButtonIcon}>✓</Text>
+                <Text style={styles.passButtonText}>Yes - Pass</Text>
+                <Text style={styles.passButtonSubtext}>Can read clearly</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
-                style={[
-                  styles.ageGroupButton,
-                  selectedAgeGroup === "6to39" && styles.ageGroupButtonSelected,
-                ]}
-                onPress={() => handleAgeGroupSelection("6to39")}
-                activeOpacity={0.7}
+                style={styles.failButton}
+                onPress={() => handleTestComplete(false)}
               >
-                <Text
-                  style={[
-                    styles.ageGroupButtonText,
-                    selectedAgeGroup === "6to39" &&
-                      styles.ageGroupButtonTextSelected,
-                  ]}
-                >
-                  Age 6-39
-                </Text>
+                <Text style={styles.failButtonIcon}>✗</Text>
+                <Text style={styles.failButtonText}>No - Fail</Text>
+                <Text style={styles.failButtonSubtext}>Cannot read</Text>
               </TouchableOpacity>
             </View>
-
-            {/* Outcome Based on Age Group */}
-            {selectedAgeGroup === "40plus" && (
-              <View style={styles.outcomeItem}>
-                <Ionicons name="glasses" size={20} color="#1A4D8F" />
-                <Text style={styles.outcomeText}>
-                  Presbyopia - Proceed to reading glasses selection
-                </Text>
-              </View>
-            )}
-
-            {selectedAgeGroup === "6to39" && (
-              <View style={styles.outcomeItem}>
-                <Ionicons name="medical" size={20} color="#DC2626" />
-                <Text style={styles.outcomeText}>
-                  Abnormal - Refer to health facility
-                </Text>
-              </View>
-            )}
           </View>
-        ) : null}
 
-        {/* Spacer for bottom buttons */}
-        <View style={styles.spacer} />
-      </ScrollView>
+          {/* Pathway Information */}
+          <View style={styles.pathwayContainer}>
+            <View style={styles.pathwayItemGreen}>
+              <Text style={styles.pathwayText}>
+                <Text style={styles.boldText}>If Pass:</Text> End visit - No
+                glasses needed
+              </Text>
+            </View>
 
-      {/* Bottom Navigation Buttons */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
+            <View style={styles.pathwayItemBlue}>
+              <Text style={styles.pathwayText}>
+                <Text style={styles.boldText}>If Fail & Age 40+:</Text>{" "}
+                Presbyopia - Proceed to reading glasses selection
+              </Text>
+            </View>
 
-        <TouchableOpacity
-          style={styles.nextButton}
-          onPress={handleComplete}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.nextButtonText}>
-            {testResult === "pass" ? "Complete Visit" : "Continue"}
-          </Text>
-        </TouchableOpacity>
+            <View style={styles.pathwayItemRed}>
+              <Text style={styles.pathwayText}>
+                <Text style={styles.boldText}>If Fail & Age 6-39:</Text>{" "}
+                Abnormal - Refer to health facility
+              </Text>
+            </View>
+          </View>
+
+          {/* Spacer for bottom button */}
+          <View style={styles.spacer} />
+        </ScrollView>
       </View>
 
-      {/* Bottom Tab Bar */}
-      <View style={styles.tabBar}>
-        {[
-          { icon: "home-outline", label: "Home" },
-          { icon: "eye-outline", label: "Screen" },
-          { icon: "cube-outline", label: "Stock" },
-          { icon: "cash-outline", label: "Payments" },
-          { icon: "share-social-outline", label: "Referrals" },
-        ].map((tab, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.tabItem}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={tab.icon as any}
-              size={22}
-              color={index === 1 ? "#1A4D8F" : "#6B7280"}
-            />
-            <Text
-              style={[styles.tabLabel, index === 1 && styles.tabLabelActive]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      {/* Bottom Button */}
+      <View style={styles.bottomContainer}>
+        <TouchableOpacity
+          style={[
+            styles.bottomButton,
+            canRead === null && styles.bottomButtonDisabled,
+          ]}
+          onPress={() => {
+            if (canRead !== null) {
+              handleTestComplete(canRead);
+            }
+          }}
+          disabled={canRead === null}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.bottomButtonText}>
+            Complete Test & Record Result
+          </Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -382,455 +446,536 @@ export default function NearVisionTestScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F9FAFB",
   },
-  userHeader: {
+  contentContainer: {
+    flex: 1,
+  },
+  header: {
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 20,
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 12 : 56,
+    paddingHorizontal: 16,
+    paddingTop: 12,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-    alignItems: "center",
+    borderBottomColor: "#E5E7EB",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  organization: {
+  headerContent: {
+    gap: 12,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1A4D8F",
-    marginBottom: 4,
+    color: "#111827",
   },
-  userName: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 2,
-  },
-  userRole: {
+  headerStep: {
     fontSize: 14,
-    color: "#666666",
-    fontWeight: "500",
+    color: "#6B7280",
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#2E7D32",
+    borderRadius: 3,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 140,
-  },
-  progressSection: {
-    marginBottom: 20,
-  },
-  screenTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  progressRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  progressText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A4D8F",
-  },
-  progressBar: {
-    flex: 1,
-    height: 6,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 3,
-    overflow: "hidden",
-    marginLeft: 16,
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#1A4D8F",
-    borderRadius: 3,
-  },
-  stepTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#111827",
-    marginBottom: 12,
-  },
-  infoBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EFF6FF",
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-    marginBottom: 24,
+    paddingTop: 16,
+    paddingBottom: 100,
   },
-  infoBadgeText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1A4D8F",
-    marginLeft: 8,
-  },
-  prerequisitesCard: {
-    backgroundColor: "#FFF7ED",
+  // Step Title Card
+  titleCard: {
+    backgroundColor: "#FAF5FF", // Purple-50 equivalent
     borderRadius: 12,
     padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#FDBA74",
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: "#9333EA", // Purple-600
   },
-  prerequisitesHeader: {
+  titleContent: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  titleTextContainer: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  stepTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 4,
+  },
+  stepSubtitle: {
+    fontSize: 14,
+    color: "#374151",
+  },
+  // Prerequisites Card
+  prerequisitesCard: {
+    backgroundColor: "#FEF3C7", // Amber-50
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 16,
+    borderWidth: 2,
+    borderColor: "#F59E0B", // Amber-500
   },
   prerequisitesTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "700",
-    color: "#9A3412",
-    marginLeft: 8,
+    color: "#92400E", // Amber-900
+    marginBottom: 12,
+  },
+  prerequisiteList: {
+    gap: 8,
   },
   prerequisiteItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
   },
   prerequisiteText: {
-    fontSize: 16,
-    color: "#9A3412",
-    fontWeight: "500",
-    marginLeft: 12,
-    flex: 1,
+    fontSize: 14,
+    color: "#92400E",
+    marginLeft: 8,
   },
+  // Instructions Card
   instructionsCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    padding: 24,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  instructionsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: "#C084FC", // Purple-400
   },
   instructionsTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
-    marginLeft: 8,
+    color: "#9333EA", // Purple-600
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  instructionsList: {
+    gap: 16,
   },
   instructionItem: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
+    alignItems: "flex-start",
   },
   instructionNumber: {
-    width: 32,
-    height: 32,
-    backgroundColor: "#1A4D8F",
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    backgroundColor: "#9333EA", // Purple-600
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
+    marginRight: 12,
   },
   instructionNumberText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
     color: "#FFFFFF",
   },
   instructionText: {
     fontSize: 16,
     color: "#374151",
-    fontWeight: "500",
     flex: 1,
+    lineHeight: 24,
   },
+  boldText: {
+    fontWeight: "700",
+    color: "#9333EA", // Purple-600
+  },
+  // Chart Card
   chartCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    padding: 24,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: "#1F2937",
   },
   chartTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  chartLine: {
-    marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  chartLineLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: "#6B7280",
-    marginBottom: 8,
-  },
-  chartLineText: {
-    fontSize: 16,
-    color: "#374151",
-    fontWeight: "500",
-  },
-  highlightedLine: {
-    backgroundColor: "#FAF5FF",
-    borderRadius: 10,
-    padding: 20,
-    borderWidth: 2,
-    borderColor: "#9333EA",
-  },
-  highlightedLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  highlightedLabel: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#9333EA",
-    marginLeft: 8,
-  },
-  highlightedText: {
-    fontSize: 16,
-    color: "#9333EA",
-    fontWeight: "600",
-    lineHeight: 24,
-  },
-  questionCard: {
-    backgroundColor: "#F0F9FF",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#E0F2FE",
-  },
-  questionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  questionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#0C4A6E",
-    marginLeft: 8,
-  },
-  questionText: {
-    fontSize: 16,
-    color: "#0C4A6E",
-    fontWeight: "500",
-    fontStyle: "italic",
-    lineHeight: 22,
-  },
-  resultCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 24,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-  },
-  resultQuestion: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
     marginBottom: 20,
     textAlign: "center",
   },
-  resultButtons: {
-    gap: 16,
+  chartRow: {
+    marginBottom: 16,
   },
-  resultButton: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 2,
-  },
-  resultButtonSelected: {
-    backgroundColor: "#F8FAFC",
-  },
-  passButton: {
-    borderColor: "#10B981",
-  },
-  failButton: {
-    borderColor: "#DC2626",
-  },
-  resultButtonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  resultEmoji: {
-    fontSize: 28,
-    marginRight: 16,
-  },
-  resultTextContainer: {
-    flex: 1,
-  },
-  resultButtonLabel: {
-    fontSize: 18,
-    fontWeight: "700",
+  chartRowLabel: {
+    fontSize: 12,
+    color: "#6B7280",
     marginBottom: 4,
   },
-  resultButtonSubtitle: {
-    fontSize: 14,
-    color: "#6B7280",
+  chartRowTextLarge: {
+    fontSize: 24,
+    fontWeight: "400",
+    color: "#111827",
+    lineHeight: 32,
   },
-  outcomeCard: {
-    backgroundColor: "#F8FAFC",
+  chartRowTextMedium: {
+    fontSize: 18,
+    fontWeight: "400",
+    color: "#111827",
+    lineHeight: 28,
+  },
+  chartRowTextSmall: {
+    fontSize: 16,
+    fontWeight: "400",
+    color: "#111827",
+    lineHeight: 24,
+  },
+  targetRow: {
+    backgroundColor: "#FAF5FF", // Purple-50
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: "#C084FC", // Purple-400
+  },
+  targetRowLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#9333EA", // Purple-600
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  targetRowText: {
+    fontSize: 14,
+    fontWeight: "400",
+    color: "#111827",
+    lineHeight: 20,
+    textAlign: "center",
+  },
+  // Client Instructions
+  clientInstructionsCard: {
+    backgroundColor: "#E0F2FE", // Blue-50
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#BAE6FD", // Blue-200
+  },
+  clientInstructionsTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1E40AF", // Blue-800
+    marginBottom: 8,
+  },
+  clientInstructionsText: {
+    fontSize: 14,
+    fontStyle: "italic",
+    color: "#1E40AF", // Blue-800
+  },
+  // Test Buttons
+  testButtonsCard: {
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    padding: 24,
-    marginBottom: 24,
+    padding: 20,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: "#E5E7EB",
   },
-  outcomeTitle: {
-    fontSize: 18,
-    fontWeight: "700",
+  testButtonsTitle: {
+    fontSize: 16,
+    fontWeight: "500",
     color: "#111827",
     marginBottom: 16,
+    textAlign: "center",
   },
-  outcomeItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  outcomeText: {
-    fontSize: 16,
-    color: "#374151",
-    fontWeight: "500",
-    marginLeft: 12,
-    flex: 1,
-  },
-  ageGroupTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  ageGroupButtons: {
+  testButtonsContainer: {
     flexDirection: "row",
     gap: 12,
-    marginBottom: 20,
   },
-  ageGroupButton: {
+  passButton: {
     flex: 1,
-    backgroundColor: "#F3F4F6",
-    paddingVertical: 14,
+    paddingVertical: 20,
     borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
     alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#10B981", // Green-500
+    backgroundColor: "#F0FDF4", // Green-50
   },
-  ageGroupButtonSelected: {
-    backgroundColor: "#EFF6FF",
-    borderColor: "#1A4D8F",
+  passButtonIcon: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#10B981", // Green-600
+    marginBottom: 4,
   },
-  ageGroupButtonText: {
+  passButtonText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#6B7280",
+    fontWeight: "700",
+    color: "#10B981", // Green-600
   },
-  ageGroupButtonTextSelected: {
-    color: "#1A4D8F",
+  passButtonSubtext: {
+    fontSize: 12,
+    fontWeight: "400",
+    color: "#10B981", // Green-600
+    marginTop: 2,
+  },
+  failButton: {
+    flex: 1,
+    paddingVertical: 20,
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#DC2626", // Red-600
+    backgroundColor: "#FEF2F2", // Red-50
+  },
+  failButtonIcon: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#DC2626", // Red-600
+    marginBottom: 4,
+  },
+  failButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#DC2626", // Red-600
+  },
+  failButtonSubtext: {
+    fontSize: 12,
+    fontWeight: "400",
+    color: "#DC2626", // Red-600
+    marginTop: 2,
+  },
+  // Pathway Information
+  pathwayContainer: {
+    gap: 8,
+    marginBottom: 24,
+  },
+  pathwayItemGreen: {
+    backgroundColor: "#F0FDF4", // Green-50
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#BBF7D0", // Green-200
+  },
+  pathwayItemBlue: {
+    backgroundColor: "#E0F2FE", // Blue-50
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#BAE6FD", // Blue-200
+  },
+  pathwayItemRed: {
+    backgroundColor: "#FEF2F2", // Red-50
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#FECACA", // Red-200
+  },
+  pathwayText: {
+    fontSize: 12,
+    color: "#111827",
   },
   spacer: {
-    height: 20,
+    height: 80,
   },
-  bottomNav: {
-    position: "absolute",
-    bottom: 70,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  backButton: {
-    flex: 1,
-    backgroundColor: "#F3F4F6",
-    paddingVertical: 16,
-    borderRadius: 10,
-    alignItems: "center",
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  backButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#666666",
-  },
-  nextButton: {
-    flex: 1,
-    backgroundColor: "#1A4D8F",
-    paddingVertical: 16,
-    borderRadius: 10,
-    alignItems: "center",
-    marginLeft: 12,
-  },
-  nextButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  tabBar: {
+  // Bottom Container
+  bottomContainer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    flexDirection: "row",
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 8,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 6,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  tabItem: {
-    flex: 1,
+  bottomButton: {
+    backgroundColor: "#9333EA", // Purple-600
+    paddingVertical: 16,
+    borderRadius: 8,
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 6,
   },
-  tabLabel: {
-    fontSize: 11,
-    color: "#6B7280",
-    marginTop: 4,
-    fontWeight: "500",
+  bottomButtonDisabled: {
+    backgroundColor: "#9CA3AF",
   },
-  tabLabelActive: {
-    color: "#1A4D8F",
+  bottomButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  // Recording Screen Styles
+  recordingContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 100,
+  },
+  resultCard: {
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+  },
+  passedCard: {
+    backgroundColor: "#F0FDF4", // Green-50
+    borderWidth: 2,
+    borderColor: "#10B981", // Green-500
+  },
+  failedCard: {
+    backgroundColor: "#FEF3C7", // Amber-100
+    borderWidth: 2,
+    borderColor: "#F59E0B", // Amber-500
+  },
+  resultHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  resultTextContainer: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  resultTitle: {
+    fontSize: 20,
     fontWeight: "700",
+    color: "#111827",
+    marginBottom: 4,
+  },
+  resultSubtitle: {
+    fontSize: 16,
+    color: "#374151",
+  },
+  recordingCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  recordingTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  recordInfo: {
+    gap: 12,
+    marginBottom: 20,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    padding: 12,
+    borderRadius: 8,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: "#6B7280",
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#E5E7EB",
+    marginVertical: 20,
+  },
+  recordQuestion: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: 16,
+  },
+  recordButtons: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 16,
+  },
+  recordButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#D1D5DB",
+  },
+  recordButtonSelected: {
+    borderColor: "#10B981", // Green-500
+    backgroundColor: "#F0FDF4", // Green-50
+  },
+  recordButtonSelectedRed: {
+    borderColor: "#DC2626", // Red-600
+    backgroundColor: "#FEF2F2", // Red-50
+  },
+  recordButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#374151",
+  },
+  recordButtonTextSelected: {
+    color: "#10B981", // Green-600
+  },
+  recordButtonTextSelectedRed: {
+    color: "#DC2626", // Red-600
+  },
+  referralAlert: {
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 2,
+  },
+  referralTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  referralText: {
+    fontSize: 12,
+  },
+  recordingBottomContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  recordingBottomButton: {
+    backgroundColor: "#9333EA", // Purple-600
+    paddingVertical: 16,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  recordingBottomButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 });

@@ -21,7 +21,7 @@ type RootStackParamList = {
   Loans: undefined;
   Reports: undefined;
   Settings: undefined;
-  VisionScreeningStep1: undefined;
+  VisionScreen1: undefined;
 };
 
 type DashboardScreenNavigationProp = NativeStackNavigationProp<
@@ -301,7 +301,7 @@ export default function VSLADashboardScreen() {
         {/* NEW: Screen Tab - according to Figma design */}
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate("VisionScreeningStep1")}
+          onPress={() => navigation.navigate("VisionScreen1")}
         >
           <Ionicons name="eye-outline" size={24} color="#6B7280" />
           <Text style={styles.navText}>Screen</Text>

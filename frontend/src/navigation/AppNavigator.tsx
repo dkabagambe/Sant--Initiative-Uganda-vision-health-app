@@ -22,7 +22,7 @@ import VSLARegistrationStep2 from "../screens/auth/VSLARegistrationStep2";
 import VSLARegistrationStep3 from "../screens/auth/VSLARegistrationStep3";
 import VSLARegistrationStep4 from "../screens/auth/VSLARegistrationStep4";
 
-// Dashboard Screens - Use CHWDashboard from chw folder
+// Dashboard Screens
 import CHWDashboard from "../screens/chw/CHWDashboard";
 import OutletDashboard from "../screens/outlet/OutletDashboard";
 import VSLADashboardScreen from "../screens/dashboard/VSLADashboardScreen";
@@ -51,12 +51,28 @@ import VisionScreen6 from "../screens/screening/VisionScreen6";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// Define types for Screening Stack
+export type ScreeningStackParamList = {
+  VisionScreen1: undefined;
+  VisionScreen2: undefined;
+  VisionScreen3: undefined;
+  VisionScreen4: undefined;
+  VisionScreen5: undefined;
+  VisionScreen6: undefined;
+  GlassesSelection: undefined;
+  ReadingGlassesSelection: undefined;
+  ReferralManagement: undefined;
+  Completion: undefined;
+};
+
 // Create a separate stack for NEW Screening Flow (within the Screen tab)
 function ScreeningStack() {
   return (
     <Stack.Navigator
+      initialRouteName="VisionScreen1"
       screenOptions={{
         headerShown: false,
+        animation: "slide_from_right",
       }}
     >
       <Stack.Screen name="VisionScreen1" component={VisionScreen1} />
@@ -75,6 +91,7 @@ function CHWHomeStack() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
+        animation: "slide_from_right",
       }}
     >
       <Stack.Screen name="CHWDashboard" component={CHWDashboard} />
