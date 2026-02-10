@@ -8,9 +8,9 @@ import {
   SafeAreaView,
   StatusBar,
   TextInput,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 
 export default function VisionScreen1() {
@@ -22,22 +22,10 @@ export default function VisionScreen1() {
     phoneNumber: "",
     sex: "",
     district: "",
+    county: "",
+    subCounty: "",
+    parish: "",
   });
-
-  const districts = [
-    "Select district",
-    "Luweero",
-    "Kampala",
-    "Wakiso",
-    "Mukono",
-    "Masaka",
-    "Mbarara",
-    "Gulu",
-    "Lira",
-    "Mbale",
-    "Jinja",
-    "Others",
-  ];
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
@@ -52,9 +40,9 @@ export default function VisionScreen1() {
       !formData.fullName.trim() ||
       !formData.age.trim() ||
       !formData.sex ||
-      formData.district === "Select district"
+      !formData.district.trim()
     ) {
-      alert("Please fill in all required fields");
+      alert("Please fill in all required fields (marked with *)");
       return;
     }
     navigation.navigate("VisionScreen2");
@@ -83,14 +71,8 @@ export default function VisionScreen1() {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* User Info Section */}
-        {/* <View style={styles.userSection}>
-          <Text style={styles.organization}>Santé Initiative Uganda</Text>
-          <Text style={styles.userName}>Jane Nambi</Text>
-          <Text style={styles.userRole}>CHW - Luweero</Text>
-        </View> */}
-
         {/* Progress Indicator */}
         <View style={styles.progressSection}>
           <Text style={styles.progressText}>Step 1 of 6</Text>
@@ -199,23 +181,49 @@ export default function VisionScreen1() {
             <Text style={styles.label}>
               District <Text style={styles.required}>*</Text>
             </Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={formData.district}
-                onValueChange={(value) => handleInputChange("district", value)}
-                style={styles.picker}
-                dropdownIconColor="#1A4D8F"
-              >
-                {districts.map((district, index) => (
-                  <Picker.Item
-                    key={index}
-                    label={district}
-                    value={district}
-                    color={index === 0 ? "#999" : "#000"}
-                  />
-                ))}
-              </Picker>
-            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Kampala, Luweero, Wakiso"
+              value={formData.district}
+              onChangeText={(text) => handleInputChange("district", text)}
+              placeholderTextColor="#999"
+            />
+          </View>
+
+          {/* County/Municipality/Division */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>County/Municipality/Division</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Kawempe Division, Luweero County"
+              value={formData.county}
+              onChangeText={(text) => handleInputChange("county", text)}
+              placeholderTextColor="#999"
+            />
+          </View>
+
+          {/* Sub-county/Division/Town Council */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Sub-county/Division/Town Council</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Mpererwe Parish, Wobulenzi Sub-County"
+              value={formData.subCounty}
+              onChangeText={(text) => handleInputChange("subCounty", text)}
+              placeholderTextColor="#999"
+            />
+          </View>
+
+          {/* Parish/Ward */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Parish/Ward</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Bombo Parish, City Ward"
+              value={formData.parish}
+              onChangeText={(text) => handleInputChange("parish", text)}
+              placeholderTextColor="#999"
+            />
           </View>
         </View>
 
@@ -232,7 +240,10 @@ export default function VisionScreen1() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  container: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+  },
   topHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -240,42 +251,47 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 44,
+    paddingTop:
+      Platform.OS === "android"
+        ? StatusBar.currentHeight
+          ? StatusBar.currentHeight + 10
+          : 44
+        : 44,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
     elevation: 2,
-  },
-  headerLeft: { flex: 1 },
-  headerCenter: { flex: 1, alignItems: "center" },
-  headerTitle: { fontSize: 18, fontWeight: "600", color: "#1A1A1A" },
-  headerRight: { flex: 1 },
-  scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 90 }, // 90px for tab bar
-  userSection: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
   },
-  organization: {
-    fontSize: 14,
-    color: "#666666",
-    marginBottom: 4,
-    fontWeight: "500",
+  headerLeft: {
+    flex: 1,
+    alignItems: "flex-start",
   },
-  userName: {
-    fontSize: 20,
-    fontWeight: "700",
+  headerCenter: {
+    flex: 2,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
     color: "#1A1A1A",
-    marginBottom: 2,
   },
-  userRole: { fontSize: 16, color: "#666666" },
-  progressSection: { marginBottom: 20 },
+  headerRight: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 90,
+  },
+  progressSection: {
+    marginBottom: 20,
+  },
   progressText: {
     fontSize: 16,
     color: "#1A4D8F",
@@ -288,19 +304,39 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     overflow: "hidden",
   },
-  progressFill: { height: "100%", backgroundColor: "#1A4D8F", borderRadius: 3 },
-  formHeader: { marginBottom: 24 },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#2E7D32",
+    borderRadius: 3,
+  },
+  formHeader: {
+    marginBottom: 24,
+  },
   formTitle: {
     fontSize: 24,
     fontWeight: "700",
     color: "#1A1A1A",
     marginBottom: 8,
   },
-  formSubtitle: { fontSize: 16, color: "#666666" },
-  formContainer: { marginBottom: 30 },
-  inputGroup: { marginBottom: 20 },
-  label: { fontSize: 16, color: "#1A1A1A", fontWeight: "600", marginBottom: 8 },
-  required: { color: "#EF4444" },
+  formSubtitle: {
+    fontSize: 16,
+    color: "#666666",
+  },
+  formContainer: {
+    marginBottom: 30,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    color: "#1A1A1A",
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  required: {
+    color: "#EF4444",
+  },
   input: {
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
@@ -316,7 +352,10 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontStyle: "italic",
   },
-  sexButtons: { flexDirection: "row", gap: 12 },
+  sexButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
   sexButton: {
     flex: 1,
     backgroundColor: "#F3F4F6",
@@ -326,24 +365,36 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E5E7EB",
   },
-  sexButtonActive: { backgroundColor: "#1A4D8F", borderColor: "#1A4D8F" },
-  sexButtonText: { fontSize: 16, color: "#666666", fontWeight: "500" },
-  sexButtonTextActive: { color: "#FFFFFF" },
-  pickerContainer: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  picker: { height: 50 },
-  nextButton: {
+  sexButtonActive: {
     backgroundColor: "#1A4D8F",
+    borderColor: "#1A4D8F",
+  },
+  sexButtonText: {
+    fontSize: 16,
+    color: "#666666",
+    fontWeight: "500",
+  },
+  sexButtonTextActive: {
+    color: "#FFFFFF",
+  },
+  nextButton: {
+    backgroundColor: "#2E7D32",
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: "center",
     marginBottom: 20,
+    shadowColor: "#1A4D8F",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  nextButtonText: { color: "#FFFFFF", fontSize: 18, fontWeight: "600" },
-  spacer: { height: 20 },
+  nextButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  spacer: {
+    height: 20,
+  },
 });

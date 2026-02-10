@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#1A4D8F",
+    backgroundColor: "#2E7D32",
     borderRadius: 3,
   },
   divider: {
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   questionsTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#111827",
+    color: "#0439ac",
     marginBottom: 8,
   },
   questionsSubtitle: {
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   },
   answerButtonSelected: {
     backgroundColor: "#EFF6FF",
-    borderColor: "#1A4D8F",
+    borderColor: "#2E7D32",
   },
   answerButtonText: {
     fontSize: 16,
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     flex: 1,
-    backgroundColor: "#1A4D8F",
+    backgroundColor: "#2E7D32",
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: "center",

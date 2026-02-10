@@ -93,12 +93,6 @@ export default function CHWDashboard() {
       icon: "👁️",
       onPress: () => navigation.navigate("StartScreening"),
     },
-    {
-      title: "Quick Screening",
-      subtitle: "Simple version",
-      icon: "⚡",
-      onPress: () => navigation.navigate("VisionScreeningStep1"),
-    },
   ];
 
   return (
@@ -146,13 +140,13 @@ export default function CHWDashboard() {
 
         {/* This Week Stats */}
         <View style={styles.weekStatsSection}>
-          <Text style={styles.sectionTitle}>This Week</Text>
+          <Text style={styles.sectionTitle}>statistics</Text>
           <View style={styles.weekStatsRow}>
             <View style={styles.weekStatCard}>
               <View style={styles.statIconContainer}>
                 <FontAwesome5 name="users" size={20} color="#FFFFFF" />
               </View>
-              <Text style={styles.weekStatNumber}>28</Text>
+              <Text style={styles.weekStatNumber}>420</Text>
               <Text style={styles.weekStatLabel}>Screened</Text>
             </View>
 
@@ -165,8 +159,8 @@ export default function CHWDashboard() {
               >
                 <MaterialIcons name="school" size={20} color="#FFFFFF" />
               </View>
-              <Text style={styles.weekStatNumber}>15</Text>
-              <Text style={styles.weekStatLabel}>Classes Given</Text>
+              <Text style={styles.weekStatNumber}>168</Text>
+              <Text style={styles.weekStatLabel}>Glasses Given</Text>
             </View>
           </View>
         </View>

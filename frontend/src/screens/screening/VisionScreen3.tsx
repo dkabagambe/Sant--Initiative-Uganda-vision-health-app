@@ -17,32 +17,32 @@ export default function SafetyInformationScreen() {
 
   const warnings = [
     {
-      icon: "hand-left-outline",
+      emoji: "✋",
       text: "DO NOT touch the client's eyes with your hands or any objects",
-      color: "#DC2626",
+      color: "#EF4444",
     },
     {
-      icon: "flashlight-outline",
+      emoji: "🔦",
       text: "DO NOT use phone flashlight - use only a small hand torch",
-      color: "#DC2626",
+      color: "#EF4444",
     },
     {
-      icon: "warning-outline",
+      emoji: "⚠️",
       text: "If you see pus, blood, or serious injury - STOP and refer immediately",
-      color: "#DC2626",
+      color: "#EF4444",
     },
     {
-      icon: "medical-outline",
+      emoji: "🏥",
       text: "Do not try to treat any eye problems yourself - always refer",
-      color: "#DC2626",
+      color: "#EF4444",
     },
   ];
 
   const reminders = [
-    "You are screening, not treating",
-    "When in doubt, refer to health facility",
-    "Keep your tools clean",
-    "Wash hands before and after",
+    { emoji: "👁️", text: "You are screening, not treating" },
+    { emoji: "🚨", text: "When in doubt, refer to health facility" },
+    { emoji: "🧼", text: "Keep your tools clean" },
+    { emoji: "🧽", text: "Wash hands before and after" },
   ];
 
   const handleStartTest = () => {
@@ -60,7 +60,7 @@ export default function SafetyInformationScreen() {
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="arrow-back" size={24} color="#2C3E50" />
+          <Ionicons name="arrow-back" size={24} color="#1A4D8F" />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
@@ -82,34 +82,34 @@ export default function SafetyInformationScreen() {
           </View>
         </View>
 
-        {/* Divider */}
-        <View style={styles.divider} />
-
         {/* Safety Information Section */}
         <View style={styles.safetySection}>
-          <Text style={styles.sectionTitle}>Important Safety Information</Text>
-          <Text style={styles.sectionSubtitle}>
-            Read these warnings before starting tests.
-          </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionIcon}>🚨</Text>
+            <View>
+              <Text style={styles.sectionTitle}>
+                Important Safety Information
+              </Text>
+              <Text style={styles.sectionSubtitle}>
+                Read these warnings before starting tests.
+              </Text>
+            </View>
+          </View>
 
           <View style={styles.warningsContainer}>
             {warnings.map((warning, index) => (
               <View key={index} style={styles.warningItem}>
-                <View style={styles.warningIconContainer}>
-                  <Ionicons
-                    name={warning.icon as any}
-                    size={22}
-                    color={warning.color}
-                  />
+                <View style={styles.warningEmojiContainer}>
+                  <Text style={styles.warningEmoji}>{warning.emoji}</Text>
                 </View>
                 <Text style={styles.warningText}>
                   <Text style={styles.boldText}>
                     {warning.text.split(" - ")[0]}
                     {warning.text.includes(" - ") ? " - " : ""}
                   </Text>
-                  {warning.text.split(" - ")[1] ? (
+                  {warning.text.split(" - ")[1] && (
                     <Text>{warning.text.split(" - ")[1]}</Text>
-                  ) : null}
+                  )}
                 </Text>
               </View>
             ))}
@@ -118,18 +118,16 @@ export default function SafetyInformationScreen() {
 
         {/* Remember Section */}
         <View style={styles.rememberSection}>
-          <View style={styles.rememberTitleContainer}>
-            <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+          <View style={styles.rememberHeader}>
+            <Text style={styles.rememberIcon}>✅</Text>
             <Text style={styles.rememberTitle}>Remember:</Text>
           </View>
 
           <View style={styles.rememberList}>
             {reminders.map((reminder, index) => (
               <View key={index} style={styles.reminderItem}>
-                <View style={styles.bulletPoint}>
-                  <Text style={styles.bulletText}>•</Text>
-                </View>
-                <Text style={styles.reminderText}>{reminder}</Text>
+                <Text style={styles.reminderEmoji}>{reminder.emoji}</Text>
+                <Text style={styles.reminderText}>{reminder.text}</Text>
               </View>
             ))}
           </View>
@@ -146,7 +144,7 @@ export default function SafetyInformationScreen() {
           onPress={() => navigation.goBack()}
           activeOpacity={0.8}
         >
-          <Text style={styles.backButtonText}>Back</Text>
+          <Text style={styles.backButtonText}>👈 Back</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -155,7 +153,7 @@ export default function SafetyInformationScreen() {
           activeOpacity={0.8}
         >
           <View style={styles.startButtonContent}>
-            <Ionicons name="flashlight" size={22} color="#FFFFFF" />
+            <Text style={styles.startButtonEmoji}>🔦</Text>
             <Text style={styles.startButtonText}>Start Torch Light Test</Text>
           </View>
         </TouchableOpacity>
@@ -164,11 +162,11 @@ export default function SafetyInformationScreen() {
       {/* Bottom Tab Bar */}
       <View style={styles.tabBar}>
         {[
-          { icon: "home-outline", label: "Home" },
-          { icon: "phone-portrait-outline", label: "Screenshot" },
-          { icon: "cube-outline", label: "Stock" },
-          { icon: "cash-outline", label: "Payments" },
-          { icon: "share-social-outline", label: "Referrals" },
+          { emoji: "🏠", label: "Home", isActive: false },
+          { emoji: "📱", label: "Screenshot", isActive: true },
+          { emoji: "📦", label: "Stock", isActive: false },
+          { emoji: "💰", label: "Payments", isActive: false },
+          { emoji: "🔗", label: "Referrals", isActive: false },
         ].map((tab, index) => (
           <TouchableOpacity
             key={index}
@@ -179,13 +177,13 @@ export default function SafetyInformationScreen() {
               // Add navigation for other tabs
             }}
           >
-            <Ionicons
-              name={tab.icon as any}
-              size={22}
-              color={index === 1 ? "#1A4D8F" : "#6B7280"}
-            />
             <Text
-              style={[styles.tabLabel, index === 1 && styles.tabLabelActive]}
+              style={[styles.tabEmoji, tab.isActive && styles.tabEmojiActive]}
+            >
+              {tab.emoji}
+            </Text>
+            <Text
+              style={[styles.tabLabel, tab.isActive && styles.tabLabelActive]}
             >
               {tab.label}
             </Text>
@@ -211,12 +209,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: "#E8EAED",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   backButton: {
     width: 40,
@@ -231,8 +229,8 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#1F2937",
-    letterSpacing: 0.5,
+    color: "#1A4D8F",
+    letterSpacing: -0.3,
   },
   headerRightPlaceholder: {
     width: 40,
@@ -243,54 +241,58 @@ const styles = StyleSheet.create({
     paddingBottom: 140,
   },
   progressContainer: {
-    marginBottom: 20,
+    marginBottom: 28,
   },
   progressText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#1A4D8F",
-    marginBottom: 8,
-    letterSpacing: 0.3,
+    marginBottom: 10,
+    letterSpacing: -0.3,
   },
   progressBar: {
     height: 6,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#E8EAED",
     borderRadius: 3,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#1A4D8F",
+    backgroundColor: "#2E7D32",
     borderRadius: 3,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#E5E7EB",
-    marginBottom: 24,
   },
   safetySection: {
     marginBottom: 30,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 20,
+  },
+  sectionIcon: {
+    fontSize: 28,
+    marginRight: 12,
+    marginTop: 2,
+  },
   sectionTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "800",
-    color: "#111827",
-    marginBottom: 8,
-    letterSpacing: 0.5,
+    color: "#1A1A1A",
+    marginBottom: 4,
+    letterSpacing: -0.5,
   },
   sectionSubtitle: {
     fontSize: 16,
-    color: "#6B7280",
-    marginBottom: 24,
-    lineHeight: 24,
+    color: "#666666",
     fontWeight: "500",
+    lineHeight: 22,
   },
   warningsContainer: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#F3F4F6",
-    padding: 20,
+    borderColor: "#FFE4E6",
+    padding: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -300,66 +302,75 @@ const styles = StyleSheet.create({
   warningItem: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: 18,
+    marginBottom: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F8FAFC",
   },
-  warningIconContainer: {
-    width: 30,
+  warningItemLast: {
+    marginBottom: 0,
+    paddingBottom: 0,
+    borderBottomWidth: 0,
+  },
+  warningEmojiContainer: {
+    width: 36,
     alignItems: "center",
     marginRight: 12,
     marginTop: 2,
   },
+  warningEmoji: {
+    fontSize: 22,
+  },
   warningText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     color: "#374151",
     lineHeight: 22,
     fontWeight: "500",
   },
   boldText: {
     fontWeight: "700",
-    color: "#DC2626",
+    color: "#EF4444",
   },
   rememberSection: {
     backgroundColor: "#F0F9FF",
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#E0F2FE",
-    padding: 20,
+    padding: 24,
     marginBottom: 20,
   },
-  rememberTitleContainer: {
+  rememberHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 20,
+  },
+  rememberIcon: {
+    fontSize: 24,
+    marginRight: 12,
   },
   rememberTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
     color: "#0369A1",
-    marginLeft: 10,
-    letterSpacing: 0.5,
+    letterSpacing: -0.3,
   },
   rememberList: {
     paddingLeft: 4,
   },
   reminderItem: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  bulletPoint: {
-    width: 24,
     alignItems: "center",
-    marginTop: 2,
+    marginBottom: 16,
   },
-  bulletText: {
-    fontSize: 18,
-    color: "#0369A1",
-    fontWeight: "700",
+  reminderEmoji: {
+    fontSize: 20,
+    marginRight: 12,
+    width: 32,
   },
   reminderText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     color: "#0C4A6E",
     lineHeight: 22,
     fontWeight: "500",
@@ -374,56 +385,60 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: "row",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 20,
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    borderTopColor: "#E8EAED",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 8,
   },
   backButtonNav: {
     flex: 1,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 10,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 12,
     paddingVertical: 16,
     alignItems: "center",
     marginRight: 12,
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
+    borderWidth: 1.5,
+    borderColor: "#E8EAED",
   },
   backButtonText: {
     fontSize: 17,
     fontWeight: "600",
-    color: "#4B5563",
-    letterSpacing: 0.5,
+    color: "#666666",
   },
   startButton: {
     flex: 2,
-    backgroundColor: "#1A4D8F",
-    borderRadius: 10,
+    backgroundColor: "#2E7D32",
+    borderRadius: 12,
     paddingVertical: 16,
+    paddingHorizontal: 20,
     alignItems: "center",
     marginLeft: 12,
     shadowColor: "#1A4D8F",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: "#0D3A6F",
   },
   startButtonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
   },
+  startButtonEmoji: {
+    fontSize: 18,
+    marginRight: 10,
+  },
   startButtonText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "700",
     color: "#FFFFFF",
-    marginLeft: 10,
-    letterSpacing: 0.5,
   },
   tabBar: {
     position: "absolute",
@@ -433,25 +448,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 8,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    borderTopColor: "#E8EAED",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
-    elevation: 6,
+    elevation: 8,
   },
   tabItem: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 6,
+    paddingVertical: 4,
+  },
+  tabEmoji: {
+    fontSize: 20,
+    color: "#666666",
+    marginBottom: 4,
+  },
+  tabEmojiActive: {
+    color: "#1A4D8F",
   },
   tabLabel: {
     fontSize: 11,
-    color: "#6B7280",
-    marginTop: 4,
+    color: "#666666",
     fontWeight: "500",
     letterSpacing: 0.3,
   },
