@@ -74,7 +74,9 @@ export default function PreScreeningQuestionsScreen() {
 
           {/* Questions Header */}
           <View style={styles.questionsHeader}>
-            <Text style={styles.questionsTitle}>Pre-Screening Questions</Text>
+            <Text style={styles.questionsTitle}>
+              📋 Pre-Screening Questions
+            </Text>
             <Text style={styles.questionsSubtitle}>
               Ask these questions before examination
             </Text>

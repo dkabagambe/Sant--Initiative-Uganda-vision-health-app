@@ -15,145 +15,362 @@ import { useNavigation } from "@react-navigation/native";
 
 export default function TorchLightStepScreen() {
   const navigation = useNavigation<any>();
-  const [screenState, setScreenState] = useState<
-    "instructions" | "test" | "abnormalities" | "result" | "passed"
-  >("instructions");
-  const [selectedAbnormalities, setSelectedAbnormalities] = useState<string[]>([
-    "Redness",
-    "Discharge/Pus",
-    "Eye Injury",
-    "Swelling",
-    "Growth/Lump",
-  ]);
-  const [testResult, setTestResult] = useState<"pass" | "fail" | null>(null);
+  const [currentSubStep, setCurrentSubStep] = useState<1 | 2 | 3 | 4 | 4.5>(1);
+  const [abnormalSigns, setAbnormalSigns] = useState<string[]>([]);
+  const [testPassed, setTestPassed] = useState<boolean | null>(null);
 
-  const testPurposes = [
-    "Check for visible eye problems",
-    "Look for signs of infection or injury",
-    "Identify abnormalities that need referral",
+  // Abnormal signs options from Figma
+  const abnormalSignOptions = [
+    { id: "redness", label: "Redness", icon: "🔴" },
+    { id: "discharge", label: "Discharge/Pus", icon: "💧" },
+    { id: "white_pupil", label: "White Pupil", icon: "⚪" },
+    { id: "injury", label: "Eye Injury", icon: "🩹" },
+    { id: "swelling", label: "Swelling", icon: "🌊" },
+    { id: "cloudiness", label: "Cloudiness", icon: "☁️" },
+    { id: "growth", label: "Growth/Lump", icon: "📈" },
+    { id: "squint", label: "Squint/Turned Eye", icon: "↔️" },
   ];
 
-  const instructions = [
-    {
-      number: "1",
-      title: "Get Your Torch Ready",
-      description: "Use a small hand-held torch (flashlight)",
-      warning: "DO NOT USE PHONE FLASHLIGHT",
-    },
-    {
-      number: "2",
-      title: "Look at Each Eye",
-      description: "Check both eyes for:",
-      items: [
-        "Redness",
-        "Discharge or pus",
-        "Swelling",
-        "Cloudiness or white spots",
-      ],
-    },
-    {
-      number: "3",
-      title: "Shine Torch from Side",
-      description: "Move torch slowly across the eye from the side",
-      note: "Maximum 5 seconds per eye",
-    },
-  ];
-
-  const abnormalities = [
-    "Redness",
-    "Discharge/Pus",
-    "White Pupil",
-    "Eye Injury",
-    "Swelling",
-    "Cloudiness",
-    "Growth/Lump",
-    "Squint/Turned Eye",
-  ];
-
-  const handleStartTest = () => {
-    setScreenState("test");
-  };
-
-  const handleBackToInstructions = () => {
-    setScreenState("instructions");
-  };
-
-  const handleTestCompleted = () => {
-    setScreenState("abnormalities");
-  };
-
-  const handleAbnormalityToggle = (abnormality: string) => {
-    setSelectedAbnormalities((prev) => {
-      if (prev.includes(abnormality)) {
-        return prev.filter((item) => item !== abnormality);
-      } else {
-        return [...prev, abnormality];
-      }
-    });
-  };
-
-  const handleNoAbnormalSigns = () => {
-    setSelectedAbnormalities([]);
-    // Directly go to passed state if no abnormalities
-    setTimeout(() => {
-      setScreenState("passed");
-    }, 300);
-  };
-
-  const handleContinueToResults = () => {
-    if (selectedAbnormalities.length === 0) {
-      setScreenState("passed");
+  const handleAbnormalSignToggle = (id: string) => {
+    if (id === "none") {
+      // If "No Abnormal Signs" is selected, clear all other signs
+      setAbnormalSigns(["none"]);
     } else {
-      setScreenState("result");
+      // Remove "none" if it exists
+      const newSigns = abnormalSigns.filter((sign) => sign !== "none");
+
+      if (newSigns.includes(id)) {
+        // Remove the sign if already selected
+        setAbnormalSigns(newSigns.filter((sign) => sign !== id));
+      } else {
+        // Add the sign
+        setAbnormalSigns([...newSigns, id]);
+      }
     }
   };
 
-  const handleTestResult = (result: "pass" | "fail") => {
-    setTestResult(result);
+  const handleTestComplete = (passed: boolean) => {
+    setTestPassed(passed);
 
-    if (result === "fail") {
+    if (!passed) {
       Alert.alert(
         "Referral Required",
         "A referral has been automatically generated for the health facility. Do NOT proceed with other vision tests.",
         [
           {
-            text: "Generate Referral",
+            text: "OK",
             onPress: () => {
-              // Generate referral logic here
-              setTimeout(() => {
-                // Stay on this screen with referral generated
-                // In real app, you would navigate to referral screen
-              }, 500);
+              // Stay on this screen - don't proceed to next test
+              // In a real app, you would navigate to referral screen
             },
             style: "default",
           },
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
         ],
       );
-    } else if (result === "pass") {
-      setScreenState("passed");
+    } else {
+      // Move to transition step (4.5)
+      setCurrentSubStep(4.5);
     }
   };
 
-  const handleContinueToStep5 = () => {
-    // Navigate to Step 5
+  const handleContinueToDistanceVision = () => {
+    // Navigate to Step 5 (Distance Vision Test)
     navigation.navigate("VisionScreen5");
   };
 
   const handleGoBack = () => {
-    if (screenState === "test") {
-      setScreenState("instructions");
-    } else if (screenState === "abnormalities") {
-      setScreenState("test");
-    } else if (screenState === "result" || screenState === "passed") {
-      setScreenState("abnormalities");
+    if (currentSubStep === 2) {
+      setCurrentSubStep(1);
+    } else if (currentSubStep === 3) {
+      setCurrentSubStep(2);
+    } else if (currentSubStep === 4) {
+      setCurrentSubStep(3);
+    } else if (currentSubStep === 4.5) {
+      setCurrentSubStep(4);
     } else {
       navigation.goBack();
     }
   };
+
+  const renderSubStep1 = () => (
+    <View style={styles.contentContainer}>
+      <View style={styles.gradientCard}>
+        <Ionicons name="bulb-outline" size={28} color="#D97706" />
+        <Text style={styles.gradientTitle}>
+          Step 4: Simple Eye Check with Torch Light
+        </Text>
+        <Text style={styles.gradientSubtitle}>
+          Test for: All Ages (Children & Adults)
+        </Text>
+      </View>
+
+      <View style={styles.purposeCard}>
+        <Text style={styles.purposeTitle}>📋 Purpose of This Test:</Text>
+        <View style={styles.purposeList}>
+          <View style={styles.purposeItem}>
+            <Text style={styles.bullet}>•</Text>
+            <Text style={styles.purposeText}>
+              Check for visible eye problems
+            </Text>
+          </View>
+          <View style={styles.purposeItem}>
+            <Text style={styles.bullet}>•</Text>
+            <Text style={styles.purposeText}>
+              Look for signs of infection or injury
+            </Text>
+          </View>
+          <View style={styles.purposeItem}>
+            <Text style={styles.bullet}>•</Text>
+            <Text style={styles.purposeText}>
+              Identify abnormalities that need referral
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderSubStep2 = () => (
+    <View style={styles.contentContainer}>
+      <View style={styles.instructionCard}>
+        <Text style={styles.instructionTitle}>🔦 Torch Light Instructions</Text>
+
+        <View style={styles.instructionStep}>
+          <View style={styles.stepHeader}>
+            <Text style={styles.stepNumber}>1️⃣</Text>
+            <Text style={styles.stepTitle}>Get Your Torch Ready</Text>
+          </View>
+          <Text style={styles.stepDescription}>
+            Use a small hand-held torch (flashlight)
+          </Text>
+          <View style={styles.warningBox}>
+            <Ionicons name="warning" size={20} color="#DC2626" />
+            <Text style={styles.warningText}>
+              ⚠️ DO NOT USE PHONE FLASHLIGHT
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.instructionStep}>
+          <View style={styles.stepHeader}>
+            <Text style={styles.stepNumber}>2️⃣</Text>
+            <Text style={styles.stepTitle}>Look at Each Eye</Text>
+          </View>
+          <Text style={styles.stepDescription}>Check both eyes for:</Text>
+          <View style={styles.checkList}>
+            <Text style={styles.checkItem}>• Redness</Text>
+            <Text style={styles.checkItem}>• Discharge or pus</Text>
+            <Text style={styles.checkItem}>• Swelling</Text>
+            <Text style={styles.checkItem}>• Cloudiness or white spots</Text>
+          </View>
+        </View>
+
+        <View style={styles.instructionStep}>
+          <View style={styles.stepHeader}>
+            <Text style={styles.stepNumber}>3️⃣</Text>
+            <Text style={styles.stepTitle}>Shine Torch from Side</Text>
+          </View>
+          <Text style={styles.stepDescription}>
+            Move torch slowly across the eye from the side
+          </Text>
+          <View style={styles.noteBox}>
+            <Ionicons name="timer-outline" size={20} color="#1A4D8F" />
+            <Text style={styles.noteText}>⏱️ Maximum 5 seconds per eye</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderSubStep3 = () => (
+    <View style={styles.contentContainer}>
+      <View style={styles.abnormalitiesCard}>
+        <Text style={styles.abnormalitiesTitle}>
+          Did you see any abnormal signs?
+        </Text>
+        <Text style={styles.abnormalitiesSubtitle}>Select all that apply:</Text>
+
+        <View style={styles.signsGrid}>
+          {abnormalSignOptions.map((sign) => (
+            <TouchableOpacity
+              key={sign.id}
+              style={[
+                styles.signButton,
+                abnormalSigns.includes(sign.id) && styles.signButtonSelected,
+              ]}
+              onPress={() => handleAbnormalSignToggle(sign.id)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.signIcon}>{sign.icon}</Text>
+              <Text
+                style={[
+                  styles.signLabel,
+                  abnormalSigns.includes(sign.id) && styles.signLabelSelected,
+                ]}
+              >
+                {sign.label}
+              </Text>
+              {abnormalSigns.includes(sign.id) && (
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color="#DC2626"
+                  style={styles.checkIcon}
+                />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles.normalButton,
+            abnormalSigns.includes("none") && styles.normalButtonSelected,
+          ]}
+          onPress={() => handleAbnormalSignToggle("none")}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.normalIcon}>✅</Text>
+          <Text style={styles.normalText}>
+            No Abnormal Signs - Eyes Look Normal
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.reminderBox}>
+        <Text style={styles.reminderText}>
+          <Text style={styles.bold}>Remember:</Text> If you see any abnormal
+          signs, you must refer the client to a health facility. Do not proceed
+          with other vision tests.
+        </Text>
+      </View>
+    </View>
+  );
+
+  const renderSubStep4 = () => {
+    const hasAbnormalSigns =
+      abnormalSigns.length > 0 && !abnormalSigns.includes("none");
+
+    return (
+      <View style={styles.contentContainer}>
+        <View
+          style={[
+            styles.resultCard,
+            hasAbnormalSigns ? styles.resultCardFail : styles.resultCardPass,
+          ]}
+        >
+          {hasAbnormalSigns ? (
+            <>
+              <Ionicons name="warning-outline" size={32} color="#DC2626" />
+              <Text style={styles.resultTitleFail}>
+                ❌ Torch Light Test - Failed
+              </Text>
+              <Text style={styles.resultSubtitle}>
+                Abnormal signs detected - referral required
+              </Text>
+            </>
+          ) : (
+            <>
+              <Ionicons name="checkmark-circle" size={32} color="#10B981" />
+              <Text style={styles.resultTitlePass}>
+                ✅ Torch Light Test - Passed
+              </Text>
+              <Text style={styles.resultSubtitle}>
+                Eyes look normal - no abnormal signs detected
+              </Text>
+            </>
+          )}
+        </View>
+
+        <View style={styles.recordCard}>
+          <Text style={styles.recordTitle}>
+            📝 Record Result in VHT Register:
+          </Text>
+
+          <View style={styles.testInfoBox}>
+            <Text style={styles.infoLabel}>Test Name:</Text>
+            <Text style={styles.infoValue}>Eye Exam with Torch Light</Text>
+          </View>
+
+          {hasAbnormalSigns && (
+            <View style={styles.abnormalBox}>
+              <Text style={styles.abnormalTitle}>Abnormal Signs Found:</Text>
+              <Text style={styles.abnormalList}>
+                {abnormalSignOptions
+                  .filter((opt) => abnormalSigns.includes(opt.id))
+                  .map((opt) => opt.label)
+                  .join(", ")}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.divider} />
+
+          <Text style={styles.passQuestion}>
+            Eye Exam with Torch Light - Pass?
+          </Text>
+
+          <View style={styles.passButtons}>
+            <TouchableOpacity
+              style={[styles.passButton, styles.passButtonYes]}
+              onPress={() => handleTestComplete(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.passButtonEmoji}>✓</Text>
+              <Text style={styles.passButtonText}>Yes - Pass</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.passButton, styles.passButtonNo]}
+              onPress={() => handleTestComplete(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.passButtonEmoji}>✗</Text>
+              <Text style={styles.passButtonText}>No - Fail</Text>
+            </TouchableOpacity>
+          </View>
+
+          {hasAbnormalSigns && (
+            <View style={styles.referralWarning}>
+              <Text style={styles.warningTitle}>
+                ⚠️ Automatic Referral Required
+              </Text>
+              <Text style={styles.warningText}>
+                Clicking "No - Fail" will automatically generate a referral to a
+                health facility. Do NOT proceed with other vision tests.
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
+
+  const renderSubStep4_5 = () => (
+    <View style={styles.contentContainer}>
+      <View style={styles.passedCard}>
+        <View style={styles.passedIcon}>
+          <Ionicons name="checkmark-circle" size={40} color="#10B981" />
+        </View>
+        <Text style={styles.passedTitle}>Torch Test Passed ✅</Text>
+        <Text style={styles.passedSubtitle}>No abnormal signs detected</Text>
+      </View>
+
+      <View style={styles.waitCard}>
+        <Text style={styles.waitTitle}>⏱️ Next Step:</Text>
+        <View style={styles.waitInfo}>
+          <Ionicons name="timer" size={24} color="#1A4D8F" />
+          <Text style={styles.waitText}>
+            Wait <Text style={styles.waitHighlight}>2 minutes</Text> before
+            testing distance vision
+          </Text>
+        </View>
+        <Text style={styles.waitNote}>
+          This allows the client's eyes to adjust before the next test
+        </Text>
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -166,7 +383,7 @@ export default function TorchLightStepScreen() {
           onPress={handleGoBack}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
+          <Ionicons name="arrow-back" size={24} color="#1A4D8F" />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
@@ -180,332 +397,49 @@ export default function TorchLightStepScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Progress Section - Always Visible */}
+        {/* Progress Section */}
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
-            {screenState === "passed" ? "Step 4.5 of 6" : "Step 4 of 6"}
+            {currentSubStep === 4.5 ? "Step 4.5 of 6" : "Step 4 of 6"}
           </Text>
           <View style={styles.progressBar}>
             <View
               style={[
                 styles.progressFill,
-                { width: screenState === "passed" ? "75%" : "66.67%" },
+                { width: currentSubStep === 4.5 ? "75%" : "66.67%" },
               ]}
             />
           </View>
         </View>
 
-        {/* Divider */}
         <View style={styles.divider} />
 
         {/* Conditional Content */}
-        {screenState === "instructions" ? (
-          /* State 1: Initial Instructions */
-          <View style={styles.contentContainer}>
-            {/* Test Title */}
-            <View style={styles.testTitleContainer}>
-              <Text style={styles.testTitle}>
-                Step 4: Simple Eye Check with Torch Light
-              </Text>
-              <View style={styles.testAgeBadge}>
-                <Ionicons name="people" size={18} color="#FFFFFF" />
-                <Text style={styles.testAgeText}>
-                  Test for: All Ages (Children & Adults)
-                </Text>
-              </View>
-            </View>
+        {currentSubStep === 1 && renderSubStep1()}
+        {currentSubStep === 2 && renderSubStep2()}
+        {currentSubStep === 3 && renderSubStep3()}
+        {currentSubStep === 4 && renderSubStep4()}
+        {currentSubStep === 4.5 && renderSubStep4_5()}
 
-            {/* Purpose Section */}
-            <View style={styles.purposeSection}>
-              <Text style={styles.purposeTitle}>Purpose of This Test:</Text>
-              <View style={styles.purposeList}>
-                {testPurposes.map((purpose, index) => (
-                  <View key={index} style={styles.purposeItem}>
-                    <View style={styles.purposeBullet}>
-                      <Text style={styles.bulletText}>•</Text>
-                    </View>
-                    <Text style={styles.purposeText}>{purpose}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </View>
-        ) : screenState === "test" ? (
-          /* State 2: Detailed Instructions */
-          <View style={styles.contentContainer}>
-            <View style={styles.instructionsTitleContainer}>
-              <Ionicons name="flashlight" size={32} color="#1A4D8F" />
-              <Text style={styles.instructionsMainTitle}>
-                Torch Light Instructions
-              </Text>
-            </View>
-
-            <View style={styles.detailedInstructions}>
-              {instructions.map((instruction, index) => (
-                <View key={index} style={styles.instructionCard}>
-                  <View style={styles.instructionHeaderRow}>
-                    <View style={styles.instructionNumber}>
-                      <Text style={styles.instructionNumberText}>
-                        {instruction.number}
-                      </Text>
-                    </View>
-                    <Text style={styles.instructionCardTitle}>
-                      {instruction.title}
-                    </Text>
-                  </View>
-
-                  <Text style={styles.instructionCardDescription}>
-                    {instruction.description}
-                  </Text>
-
-                  {instruction.warning && (
-                    <View style={styles.warningBox}>
-                      <Ionicons name="warning" size={20} color="#DC2626" />
-                      <Text style={styles.warningText}>
-                        {instruction.warning}
-                      </Text>
-                    </View>
-                  )}
-
-                  {instruction.note && (
-                    <View style={styles.noteBox}>
-                      <Ionicons
-                        name="timer-outline"
-                        size={20}
-                        color="#1A4D8F"
-                      />
-                      <Text style={styles.noteText}>{instruction.note}</Text>
-                    </View>
-                  )}
-
-                  {instruction.items && (
-                    <View style={styles.itemsList}>
-                      {instruction.items.map((item, itemIndex) => (
-                        <View key={itemIndex} style={styles.listItem}>
-                          <View style={styles.listBullet}>
-                            <Text style={styles.listBulletText}>•</Text>
-                          </View>
-                          <Text style={styles.listItemText}>{item}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              ))}
-            </View>
-
-            <View style={styles.safetyReminder}>
-              <Ionicons name="shield-checkmark" size={22} color="#10B981" />
-              <Text style={styles.safetyText}>
-                Important: Maintain safe distance. Do not touch the client's
-                eyes.
-              </Text>
-            </View>
-          </View>
-        ) : screenState === "abnormalities" ? (
-          /* State 3: Abnormalities Checklist */
-          <View style={styles.contentContainer}>
-            <Text style={styles.abnormalitiesTitle}>
-              Did you see any abnormal signs?
-            </Text>
-            <Text style={styles.abnormalitiesSubtitle}>
-              Select all that apply:
-            </Text>
-
-            <View style={styles.checklistGrid}>
-              {abnormalities.map((abnormality, index) => (
-                <View key={index} style={styles.checklistRow}>
-                  <TouchableOpacity
-                    style={styles.checkboxEmojiContainer}
-                    onPress={() => handleAbnormalityToggle(abnormality)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.checkboxEmoji}>
-                      {selectedAbnormalities.includes(abnormality) ? "☑️" : "☐"}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <Text
-                    style={[
-                      styles.checklistText,
-                      selectedAbnormalities.includes(abnormality) &&
-                        styles.checklistTextSelected,
-                    ]}
-                  >
-                    {abnormality}
-                  </Text>
-                </View>
-              ))}
-            </View>
-
-            <View style={styles.divider} />
-
-            <TouchableOpacity
-              style={styles.normalButton}
-              onPress={handleNoAbnormalSigns}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.checkmark}>✓</Text>
-              <Text style={styles.normalButtonText}>
-                No Abnormal Signs - Eyes Look Normal
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : screenState === "result" ? (
-          /* State 4: Failure Result */
-          <View style={styles.contentContainer}>
-            {/* User Info */}
-
-            {/* Error Message */}
-            <View style={styles.errorMessageBox}>
-              <Ionicons name="warning" size={28} color="#DC2626" />
-              <Text style={styles.errorMessageTitle}>
-                Torch Light Test - Failed
-              </Text>
-              <Text style={styles.errorMessageText}>
-                Abnormal signs detected - referral required
-              </Text>
-            </View>
-
-            {/* Record Result */}
-            <View style={styles.resultSection}>
-              <Text style={styles.resultTitle}>
-                Record Result in VHT Register:
-              </Text>
-              <View style={styles.testNameBox}>
-                <Text style={styles.testNameLabel}>Test Name:</Text>
-                <Text style={styles.testNameText}>
-                  Eye Exam with Torch Light
-                </Text>
-              </View>
-
-              <View style={styles.abnormalSignsBox}>
-                <Text style={styles.abnormalSignsTitle}>
-                  Abnormal Signs Found:
-                </Text>
-                <View style={styles.abnormalSignsList}>
-                  {selectedAbnormalities.map((sign, index) => (
-                    <Text key={index} style={styles.abnormalSignItem}>
-                      {sign}
-                    </Text>
-                  ))}
-                </View>
-              </View>
-            </View>
-
-            {/* Pass/Fail Question */}
-            <View style={styles.passFailSection}>
-              <Text style={styles.passFailQuestion}>
-                Eye Exam with Torch Light - Pass?
-              </Text>
-
-              <View style={styles.passFailButtons}>
-                <TouchableOpacity
-                  style={[styles.passFailButton, styles.passButton]}
-                  onPress={() => handleTestResult("pass")}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.passFailEmoji}>✔️</Text>
-                  <Text style={styles.passFailText}>Yes - Pass</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.passFailButton, styles.failButton]}
-                  onPress={() => handleTestResult("fail")}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.passFailEmoji}>❌</Text>
-                  <Text style={styles.passFailText}>No - Fail</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Referral Warning */}
-            <View style={styles.referralWarning}>
-              <Ionicons name="medical" size={20} color="#DC2626" />
-              <Text style={styles.referralWarningText}>
-                Clicking "No - Fail" will automatically generate a referral to a
-                health facility. Do NOT proceed with other vision tests.
-              </Text>
-            </View>
-          </View>
-        ) : (
-          /* State 5: Passed Result */
-          <View style={styles.contentContainer}>
-            {/* Passed Message */}
-            <View style={styles.passedMessageBox}>
-              <View style={styles.passedIconContainer}>
-                <Ionicons name="checkmark-circle" size={40} color="#10B981" />
-              </View>
-              <Text style={styles.passedTitle}>Torch Test Passed ✔️</Text>
-              <Text style={styles.passedSubtitle}>
-                No abnormal signs detected
-              </Text>
-            </View>
-
-            {/* Next Step */}
-            <View style={styles.nextStepSection}>
-              <Text style={styles.nextStepTitle}>Next Step:</Text>
-              <View style={styles.waitTimeBox}>
-                <Ionicons name="timer" size={24} color="#1A4D8F" />
-                <Text style={styles.waitTimeText}>
-                  Wait <Text style={styles.waitTimeHighlight}>2 minutes</Text>{" "}
-                  before testing distance vision
-                </Text>
-              </View>
-              <Text style={styles.waitDescription}>
-                This allows the client's eyes to adjust before the next test
-              </Text>
-            </View>
-
-            {/* Instructions for Waiting */}
-            <View style={styles.waitingInstructions}>
-              <Text style={styles.waitingInstructionsTitle}>
-                While waiting:
-              </Text>
-              <View style={styles.waitingList}>
-                <View style={styles.waitingItem}>
-                  <Text style={styles.waitingBullet}>•</Text>
-                  <Text style={styles.waitingText}>
-                    Keep client comfortable
-                  </Text>
-                </View>
-                <View style={styles.waitingItem}>
-                  <Text style={styles.waitingBullet}>•</Text>
-                  <Text style={styles.waitingText}>Avoid bright lights</Text>
-                </View>
-                <View style={styles.waitingItem}>
-                  <Text style={styles.waitingBullet}>•</Text>
-                  <Text style={styles.waitingText}>
-                    Prepare distance vision chart
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </View>
-        )}
+        {/* Spacer for bottom buttons */}
+        <View style={styles.spacer} />
       </ScrollView>
 
       {/* Bottom Action Buttons */}
       <View style={styles.bottomActions}>
-        {screenState === "instructions" ? (
+        {currentSubStep === 1 ? (
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={handleStartTest}
+            onPress={() => setCurrentSubStep(2)}
             activeOpacity={0.8}
           >
-            <View style={styles.buttonContent}>
-              <Ionicons name="flashlight" size={24} color="#FFFFFF" />
-              <Text style={styles.primaryButtonText}>
-                Begin Torch Light Test
-              </Text>
-            </View>
+            <Text style={styles.primaryButtonText}>Begin Torch Light Test</Text>
           </TouchableOpacity>
-        ) : screenState === "test" ? (
+        ) : currentSubStep === 2 ? (
           <>
             <TouchableOpacity
               style={styles.primaryButton}
-              onPress={handleTestCompleted}
+              onPress={() => setCurrentSubStep(3)}
               activeOpacity={0.8}
             >
               <Text style={styles.primaryButtonText}>
@@ -515,7 +449,7 @@ export default function TorchLightStepScreen() {
 
             <TouchableOpacity
               style={styles.secondaryButton}
-              onPress={handleBackToInstructions}
+              onPress={() => setCurrentSubStep(1)}
               activeOpacity={0.8}
             >
               <Ionicons name="arrow-back" size={20} color="#1A4D8F" />
@@ -524,46 +458,55 @@ export default function TorchLightStepScreen() {
               </Text>
             </TouchableOpacity>
           </>
-        ) : screenState === "abnormalities" ? (
+        ) : currentSubStep === 3 ? (
           <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={handleContinueToResults}
+            style={[
+              styles.primaryButton,
+              abnormalSigns.length === 0 && styles.disabledButton,
+            ]}
+            onPress={() => setCurrentSubStep(4)}
+            disabled={abnormalSigns.length === 0}
             activeOpacity={0.8}
           >
             <Text style={styles.primaryButtonText}>
               Continue to Record Result
             </Text>
           </TouchableOpacity>
-        ) : screenState === "result" ? (
+        ) : currentSubStep === 4 ? (
           <TouchableOpacity
             style={[
               styles.primaryButton,
-              testResult === "fail" && styles.disabledButton,
+              testPassed === false && styles.disabledButton,
             ]}
             onPress={() => {
-              if (testResult === "pass") {
-                setScreenState("passed");
+              if (testPassed === true) {
+                setCurrentSubStep(4.5);
               }
             }}
-            disabled={testResult === "fail"}
+            disabled={testPassed === false}
             activeOpacity={0.8}
           >
             <Text style={styles.primaryButtonText}>
-              {testResult === "fail"
+              {testPassed === false
                 ? "Referral Generated"
                 : "Continue to Next Step"}
             </Text>
           </TouchableOpacity>
         ) : (
-          /* Passed State */
+          /* SubStep 4.5 */
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={handleContinueToStep5}
+            onPress={handleContinueToDistanceVision}
             activeOpacity={0.8}
           >
-            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+            <Ionicons
+              name="arrow-forward"
+              size={20}
+              color="#FFFFFF"
+              style={styles.buttonIcon}
+            />
             <Text style={styles.primaryButtonText}>
-              Continue to Distance Vision Test{" "}
+              Continue to Distance Vision Test
             </Text>
           </TouchableOpacity>
         )}
@@ -576,14 +519,14 @@ export default function TorchLightStepScreen() {
           {
             icon: "eye-outline",
             label: "Screen",
-            active: screenState !== "passed",
+            active: currentSubStep !== 4.5,
           },
           { icon: "cube-outline", label: "Stock" },
           { icon: "cash-outline", label: "Payments" },
           {
             icon: "share-social-outline",
             label: "Referrals",
-            active: screenState === "result" && testResult === "fail",
+            active: testPassed === false,
           },
         ].map((tab, index) => (
           <TouchableOpacity
@@ -594,7 +537,7 @@ export default function TorchLightStepScreen() {
             <Ionicons
               name={tab.icon as any}
               size={22}
-              color={tab.active ? "#1A4D8F" : "#6B7280"}
+              color={tab.active ? "#1A4D8F" : "#666666"}
             />
             <Text
               style={[styles.tabLabel, tab.active && styles.tabLabelActive]}
@@ -607,6 +550,8 @@ export default function TorchLightStepScreen() {
     </SafeAreaView>
   );
 }
+
+const { width } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
   container: {
@@ -621,7 +566,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: "#E8EAED",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 3,
   },
   backButton: {
     width: 40,
@@ -636,7 +586,8 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#1F2937",
+    color: "#1A4D8F",
+    letterSpacing: -0.3,
   },
   headerRightPlaceholder: {
     width: 40,
@@ -651,13 +602,14 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#1A4D8F",
-    marginBottom: 8,
+    marginBottom: 10,
+    letterSpacing: -0.3,
   },
   progressBar: {
     height: 6,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#E8EAED",
     borderRadius: 3,
     overflow: "hidden",
   },
@@ -668,7 +620,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "#E8EAED",
     marginVertical: 20,
   },
   contentContainer: {
@@ -676,48 +628,40 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
 
-  /* State 1: Initial Instructions */
-  testTitleContainer: {
-    marginBottom: 28,
+  /* SubStep 1 Styles */
+  gradientCard: {
+    backgroundColor: "#FEF3C7",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#F59E0B",
+    padding: 20,
+    marginBottom: 20,
+    alignItems: "flex-start",
   },
-  testTitle: {
-    fontSize: 26,
+  gradientTitle: {
+    fontSize: 20,
     fontWeight: "800",
-    color: "#111827",
-    marginBottom: 12,
-    lineHeight: 32,
+    color: "#1A1A1A",
+    marginTop: 12,
+    marginBottom: 4,
+    letterSpacing: -0.5,
   },
-  testAgeBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1A4D8F",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-  },
-  testAgeText: {
+  gradientSubtitle: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#FFFFFF",
-    marginLeft: 8,
+    color: "#666666",
+    fontWeight: "500",
   },
-  purposeSection: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+  purposeCard: {
+    backgroundColor: "#DBEAFE",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#60A5FA",
     padding: 24,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   purposeTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
-    color: "#111827",
+    color: "#1A4D8F",
     marginBottom: 16,
   },
   purposeList: {
@@ -727,393 +671,359 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
   },
-  purposeBullet: {
-    width: 24,
-    marginTop: 2,
-  },
-  bulletText: {
-    fontSize: 20,
+  bullet: {
+    fontSize: 18,
     color: "#1A4D8F",
     fontWeight: "700",
+    marginRight: 12,
+    marginTop: 2,
   },
   purposeText: {
     flex: 1,
     fontSize: 16,
-    color: "#374151",
-    lineHeight: 24,
+    color: "#1A4D8F",
+    lineHeight: 22,
     fontWeight: "500",
   },
 
-  /* State 2: Detailed Instructions */
-  instructionsTitleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 28,
-  },
-  instructionsMainTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#111827",
-    marginLeft: 12,
-  },
-  detailedInstructions: {
-    gap: 20,
-    marginBottom: 24,
-  },
+  /* SubStep 2 Styles */
   instructionCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#1A4D8F",
     padding: 24,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
   },
-  instructionHeaderRow: {
+  instructionTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#1A1A1A",
+    marginBottom: 20,
+    textAlign: "center",
+    letterSpacing: -0.5,
+  },
+  instructionStep: {
+    marginBottom: 24,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#E8EAED",
+  },
+  stepHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  instructionNumber: {
-    width: 36,
-    height: 36,
-    backgroundColor: "#1A4D8F",
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
+  stepNumber: {
+    fontSize: 20,
+    marginRight: 12,
   },
-  instructionNumberText: {
+  stepTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#FFFFFF",
-  },
-  instructionCardTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
+    color: "#1A1A1A",
     flex: 1,
   },
-  instructionCardDescription: {
+  stepDescription: {
     fontSize: 16,
-    color: "#374151",
-    marginBottom: 16,
-    lineHeight: 24,
+    color: "#666666",
+    marginBottom: 12,
     fontWeight: "500",
   },
   warningBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEF2F2",
-    padding: 16,
-    borderRadius: 10,
+    backgroundColor: "#FEE2E2",
+    padding: 12,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#FECACA",
-    marginBottom: 16,
+    borderColor: "#FCA5A5",
   },
   warningText: {
-    fontSize: 15,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "800",
     color: "#DC2626",
-    marginLeft: 12,
+    marginLeft: 8,
     flex: 1,
+  },
+  checkList: {
+    paddingLeft: 8,
+  },
+  checkItem: {
+    fontSize: 14,
+    color: "#666666",
+    marginBottom: 6,
+    fontWeight: "500",
   },
   noteBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#EFF6FF",
-    padding: 16,
-    borderRadius: 10,
+    backgroundColor: "#E0F2FE",
+    padding: 12,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#BFDBFE",
-    marginBottom: 16,
+    borderColor: "#7DD3FC",
   },
   noteText: {
-    fontSize: 15,
+    fontSize: 14,
+    color: "#0369A1",
     fontWeight: "600",
-    color: "#1A4D8F",
-    marginLeft: 12,
+    marginLeft: 8,
     flex: 1,
-  },
-  itemsList: {
-    paddingLeft: 8,
-  },
-  listItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  listBullet: {
-    width: 24,
-  },
-  listBulletText: {
-    fontSize: 18,
-    color: "#1A4D8F",
-    fontWeight: "700",
-  },
-  listItemText: {
-    fontSize: 15,
-    color: "#374151",
-    fontWeight: "500",
-    flex: 1,
-  },
-  safetyReminder: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#D1FAE5",
-    padding: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#A7F3D0",
-  },
-  safetyText: {
-    flex: 1,
-    fontSize: 15,
-    color: "#065F46",
-    fontWeight: "500",
-    marginLeft: 12,
-    lineHeight: 22,
   },
 
-  /* State 3: Abnormalities Checklist */
+  /* SubStep 3 Styles */
+  abnormalitiesCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#E8EAED",
+    padding: 24,
+    marginBottom: 20,
+  },
   abnormalitiesTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
-    color: "#111827",
+    color: "#1A1A1A",
     marginBottom: 8,
     textAlign: "center",
   },
   abnormalitiesSubtitle: {
     fontSize: 16,
-    color: "#6B7280",
+    color: "#666666",
     marginBottom: 24,
     textAlign: "center",
+    fontWeight: "500",
   },
-  checklistGrid: {
+  signsGrid: {
     gap: 12,
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  checklistRow: {
+  signButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#E8EAED",
   },
-  checkboxEmojiContainer: {
-    marginRight: 16,
+  signButtonSelected: {
+    backgroundColor: "#FEE2E2",
+    borderColor: "#FCA5A5",
   },
-  checkboxEmoji: {
-    fontSize: 20,
+  signIcon: {
+    fontSize: 24,
+    marginRight: 12,
   },
-  checklistText: {
-    fontSize: 16,
-    color: "#374151",
-    fontWeight: "500",
+  signLabel: {
     flex: 1,
+    fontSize: 16,
+    color: "#1A1A1A",
+    fontWeight: "500",
   },
-  checklistTextSelected: {
-    color: "#1A4D8F",
+  signLabelSelected: {
+    color: "#DC2626",
     fontWeight: "600",
+  },
+  checkIcon: {
+    marginLeft: 8,
   },
   normalButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#D1FAE5",
+    backgroundColor: "#FFFFFF",
     padding: 16,
-    borderRadius: 10,
-    borderWidth: 1,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#E8EAED",
+    marginTop: 12,
+  },
+  normalButtonSelected: {
+    backgroundColor: "#D1FAE5",
     borderColor: "#A7F3D0",
   },
-  checkmark: {
-    fontSize: 18,
-    color: "#10B981",
+  normalIcon: {
+    fontSize: 20,
     marginRight: 12,
-    fontWeight: "bold",
   },
-  normalButtonText: {
+  normalText: {
+    flex: 1,
     fontSize: 16,
     fontWeight: "600",
-    color: "#065F46",
-    flex: 1,
+    color: "#1A1A1A",
+  },
+  reminderBox: {
+    backgroundColor: "#FEF3C7",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#FDE68A",
+    padding: 16,
+  },
+  reminderText: {
+    fontSize: 14,
+    color: "#92400E",
+    lineHeight: 20,
+    fontWeight: "500",
+  },
+  bold: {
+    fontWeight: "700",
   },
 
-  /* State 4: Failure Result */
-  userInfo: {
+  /* SubStep 4 Styles */
+  resultCard: {
+    borderRadius: 16,
+    padding: 32,
     alignItems: "center",
     marginBottom: 24,
+    borderWidth: 2,
   },
-  organization: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1A4D8F",
-    marginBottom: 4,
+  resultCardPass: {
+    backgroundColor: "#D1FAE5",
+    borderColor: "#A7F3D0",
   },
-  userName: {
+  resultCardFail: {
+    backgroundColor: "#FEE2E2",
+    borderColor: "#FCA5A5",
+  },
+  resultTitlePass: {
     fontSize: 22,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 2,
-  },
-  userRole: {
-    fontSize: 16,
-    color: "#6B7280",
-  },
-  errorMessageBox: {
-    backgroundColor: "#FEF2F2",
-    borderRadius: 12,
-    padding: 24,
-    alignItems: "center",
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-  errorMessageTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#DC2626",
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  errorMessageText: {
-    fontSize: 16,
-    color: "#DC2626",
-    fontWeight: "500",
+    fontWeight: "800",
+    color: "#065F46",
+    marginTop: 16,
+    marginBottom: 8,
     textAlign: "center",
   },
-  resultSection: {
+  resultTitleFail: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#DC2626",
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  resultSubtitle: {
+    fontSize: 16,
+    color: "#666666",
+    textAlign: "center",
+    fontWeight: "500",
+  },
+  recordCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#E8EAED",
+    padding: 24,
   },
-  resultTitle: {
+  recordTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 16,
+    fontWeight: "700",
+    color: "#1A1A1A",
+    marginBottom: 20,
+    textAlign: "center",
   },
-  testNameBox: {
+  testInfoBox: {
     backgroundColor: "#F8FAFC",
     padding: 16,
     borderRadius: 8,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "#E8EAED",
   },
-  testNameLabel: {
+  infoLabel: {
     fontSize: 14,
-    color: "#6B7280",
+    color: "#666666",
     marginBottom: 4,
   },
-  testNameText: {
+  infoValue: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#111827",
+    color: "#1A1A1A",
   },
-  abnormalSignsBox: {
-    backgroundColor: "#FEF2F2",
+  abnormalBox: {
+    backgroundColor: "#FEE2E2",
     padding: 16,
     borderRadius: 8,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: "#FCA5A5",
   },
-  abnormalSignsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+  abnormalTitle: {
+    fontSize: 14,
+    fontWeight: "700",
     color: "#DC2626",
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  abnormalSignsList: {
-    gap: 8,
-  },
-  abnormalSignItem: {
-    fontSize: 15,
-    color: "#374151",
+  abnormalList: {
+    fontSize: 14,
+    color: "#DC2626",
     fontWeight: "500",
   },
-  passFailSection: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 24,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-  },
-  passFailQuestion: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 20,
+  passQuestion: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1A1A1A",
+    marginBottom: 16,
     textAlign: "center",
   },
-  passFailButtons: {
+  passButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 12,
   },
-  passFailButton: {
+  passButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 10,
+    paddingVertical: 18,
+    borderRadius: 12,
     borderWidth: 2,
   },
-  passButton: {
+  passButtonYes: {
     backgroundColor: "#D1FAE5",
     borderColor: "#10B981",
   },
-  failButton: {
-    backgroundColor: "#FEF2F2",
+  passButtonNo: {
+    backgroundColor: "#FEE2E2",
     borderColor: "#DC2626",
   },
-  passFailEmoji: {
+  passButtonEmoji: {
     fontSize: 20,
     marginRight: 8,
   },
-  passFailText: {
+  passButtonText: {
     fontSize: 16,
     fontWeight: "600",
   },
   referralWarning: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: "#FEF2F2",
-    padding: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#FECACA",
+    backgroundColor: "#FEE2E2",
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#FCA5A5",
+    padding: 16,
+    marginTop: 20,
   },
-  referralWarningText: {
-    flex: 1,
+  warningTitle: {
     fontSize: 14,
-    color: "#991B1B",
-    fontWeight: "500",
-    marginLeft: 12,
-    lineHeight: 20,
+    fontWeight: "800",
+    color: "#DC2626",
+    marginBottom: 8,
   },
 
-  /* State 5: Passed Result */
-  passedMessageBox: {
+  /* SubStep 4.5 Styles */
+  passedCard: {
     backgroundColor: "#D1FAE5",
     borderRadius: 16,
     padding: 32,
     alignItems: "center",
     marginBottom: 24,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: "#A7F3D0",
   },
-  passedIconContainer: {
+  passedIcon: {
     marginBottom: 16,
   },
   passedTitle: {
@@ -1129,95 +1039,63 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
   },
-  nextStepSection: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+  waitCard: {
+    backgroundColor: "#DBEAFE",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#60A5FA",
     padding: 24,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
   },
-  nextStepTitle: {
-    fontSize: 20,
+  waitTitle: {
+    fontSize: 18,
     fontWeight: "700",
-    color: "#111827",
+    color: "#1A4D8F",
     marginBottom: 16,
   },
-  waitTimeBox: {
+  waitInfo: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#E0F2FE",
     padding: 16,
-    borderRadius: 10,
+    borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#BFDBFE",
+    borderColor: "#7DD3FC",
   },
-  waitTimeText: {
+  waitText: {
     fontSize: 17,
     color: "#1A4D8F",
     fontWeight: "600",
     marginLeft: 12,
     flex: 1,
   },
-  waitTimeHighlight: {
+  waitHighlight: {
     color: "#1A4D8F",
     fontWeight: "700",
   },
-  waitDescription: {
+  waitNote: {
     fontSize: 15,
-    color: "#6B7280",
+    color: "#1A4D8F",
     lineHeight: 22,
-  },
-  waitingInstructions: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  waitingInstructionsTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 12,
-  },
-  waitingList: {
-    gap: 8,
-  },
-  waitingItem: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  waitingBullet: {
-    fontSize: 18,
-    color: "#1A4D8F",
-    fontWeight: "700",
-    marginRight: 12,
-  },
-  waitingText: {
-    fontSize: 15,
-    color: "#374151",
     fontWeight: "500",
-    flex: 1,
   },
 
-  /* Bottom Action Buttons */
+  /* Bottom Actions */
   bottomActions: {
     position: "absolute",
     bottom: 70,
     left: 0,
     right: 0,
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 20,
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    borderTopColor: "#E8EAED",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 8,
   },
   primaryButton: {
     backgroundColor: "#1A4D8F",
@@ -1227,21 +1105,21 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     shadowColor: "#1A4D8F",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 4,
-  },
-  buttonContent: {
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: "#0D3A6F",
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "center",
   },
   primaryButtonText: {
     fontSize: 18,
     fontWeight: "700",
     color: "#FFFFFF",
-    marginLeft: 12,
-    letterSpacing: 0.5,
+  },
+  buttonIcon: {
+    marginRight: 8,
   },
   secondaryButton: {
     flexDirection: "row",
@@ -1257,6 +1135,10 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: "#9CA3AF",
+    borderColor: "#6B7280",
+  },
+  spacer: {
+    height: 20,
   },
 
   /* Tab Bar */
@@ -1268,26 +1150,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 8,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    borderTopColor: "#E8EAED",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
-    elevation: 6,
+    elevation: 8,
   },
   tabItem: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
   tabLabel: {
     fontSize: 11,
-    color: "#6B7280",
-    marginTop: 4,
+    color: "#666666",
     fontWeight: "500",
+    letterSpacing: 0.3,
+    marginTop: 4,
   },
   tabLabelActive: {
     color: "#1A4D8F",

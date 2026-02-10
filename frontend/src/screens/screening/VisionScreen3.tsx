@@ -17,7 +17,7 @@ export default function SafetyInformationScreen() {
 
   const warnings = [
     {
-      emoji: "✋",
+      emoji: "⛔",
       text: "DO NOT touch the client's eyes with your hands or any objects",
       color: "#EF4444",
     },
@@ -27,22 +27,22 @@ export default function SafetyInformationScreen() {
       color: "#EF4444",
     },
     {
-      emoji: "⚠️",
+      emoji: "🚨",
       text: "If you see pus, blood, or serious injury - STOP and refer immediately",
       color: "#EF4444",
     },
     {
-      emoji: "🏥",
+      emoji: "👨‍⚕️",
       text: "Do not try to treat any eye problems yourself - always refer",
       color: "#EF4444",
     },
   ];
 
   const reminders = [
-    { emoji: "👁️", text: "You are screening, not treating" },
-    { emoji: "🚨", text: "When in doubt, refer to health facility" },
-    { emoji: "🧼", text: "Keep your tools clean" },
-    { emoji: "🧽", text: "Wash hands before and after" },
+    { text: "• You are screening, not treating" },
+    { text: "• When in doubt, refer to health facility" },
+    { text: "• Keep your tools clean" },
+    { text: "• Wash hands before and after" },
   ];
 
   const handleStartTest = () => {
@@ -85,7 +85,7 @@ export default function SafetyInformationScreen() {
         {/* Safety Information Section */}
         <View style={styles.safetySection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionIcon}>🚨</Text>
+            <Text style={styles.sectionIcon}> ⚠️ </Text>
             <View>
               <Text style={styles.sectionTitle}>
                 Important Safety Information
@@ -126,7 +126,6 @@ export default function SafetyInformationScreen() {
           <View style={styles.rememberList}>
             {reminders.map((reminder, index) => (
               <View key={index} style={styles.reminderItem}>
-                <Text style={styles.reminderEmoji}>{reminder.emoji}</Text>
                 <Text style={styles.reminderText}>{reminder.text}</Text>
               </View>
             ))}
@@ -266,8 +265,10 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     marginBottom: 20,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
   },
   sectionIcon: {
     fontSize: 28,
@@ -277,15 +278,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 26,
     fontWeight: "800",
-    color: "#1A1A1A",
+    color: "#3f1d1d",
     marginBottom: 4,
     letterSpacing: -0.5,
   },
   sectionSubtitle: {
-    fontSize: 16,
-    color: "#666666",
+    fontSize: 14,
+    color: "#a11414",
     fontWeight: "500",
-    lineHeight: 22,
+    lineHeight: 20,
+    textAlign: "left",
   },
   warningsContainer: {
     backgroundColor: "#FFFFFF",
