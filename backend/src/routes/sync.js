@@ -1,12 +1,8 @@
 const express = require("express");
 const router = express.Router();
+const syncController = require("../controllers/syncController");
+const { authenticate } = require("../middleware/auth");
 
-// Temporary basic route
-router.post("/", (req, res) => {
-  res.json({
-    message: "Sync endpoint - Under construction",
-    note: "Offline data synchronization coming soon",
-  });
-});
+router.post("/", authenticate, syncController.sync);
 
 module.exports = router;

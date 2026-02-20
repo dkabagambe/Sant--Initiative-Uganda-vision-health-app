@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,11 +9,14 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
-  Alert, // Added Alert import
+  Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { apiService } from "../../services/api";
 
 type RootStackParamList = {
   InventoryScreen: undefined;
@@ -146,72 +149,43 @@ const SaleItem = ({
 export default function InventoryScreen() {
   const navigation = useNavigation<InventoryScreenNavigationProp>();
   const [showAddStockModal, setShowAddStockModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [inventory, setInventory] = useState<any[]>([]);
+  const [totals, setTotals] = useState({ total_pairs: 0 });
 
-  const stockData: StockItemProps[] = [
-    {
-      power: "+1.00D",
-      totalPairs: 20,
-      breakdown: { standard: 12, metal: 5, fashion: 3 },
-    },
-    {
-      power: "+1.50D",
-      totalPairs: 14,
-      breakdown: { standard: 8, metal: 4, fashion: 2 },
-    },
-    {
-      power: "+2.00D",
-      totalPairs: 9,
-      status: "low",
-      breakdown: { standard: 6, metal: 2, fashion: 1 },
-    },
-    {
-      power: "+2.50D",
-      totalPairs: 4,
-      status: "critical",
-      breakdown: { standard: 3, metal: 1, fashion: 0 },
-    },
-    {
-      power: "+3.00D",
-      totalPairs: 10,
-      breakdown: { standard: 5, metal: 3, fashion: 2 },
-    },
-    {
-      power: "+3.50D",
-      totalPairs: 7,
-      breakdown: { standard: 4, metal: 2, fashion: 1 },
-    },
-  ];
+  useEffect(() => {
+    loadInventory();
+  }, []);
 
-  const recentSales: SaleItemProps[] = [
-    {
-      clientName: "Nakato Grace",
-      power: "+2.50D",
-      frameType: "Standard",
-      amount: "UGX 15,000",
-      time: "Today, 10:30 AM",
-    },
-    {
-      clientName: "Musoke Peter",
-      power: "+2.00D",
-      frameType: "Metal",
-      amount: "UGX 18,000",
-      time: "Today, 9:15 AM",
-    },
-    {
-      clientName: "Nambi Sarah",
-      power: "+1.50D",
-      frameType: "Standard",
-      amount: "UGX 15,000",
-      time: "Yesterday",
-    },
-    {
-      clientName: "Okello James",
-      power: "+3.00D",
-      frameType: "Fashion",
-      amount: "UGX 20,000",
-      time: "Yesterday",
-    },
-  ];
+  const loadInventory = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getInventorySummary();
+      if (response.success) {
+        setInventory(response.data.products);
+        setTotals(response.data.totals);
+      }
+    } catch (error) {
+      console.error("Failed to load inventory:", error);
+      Alert.alert("Error", "Failed to load inventory");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadInventory();
+    setRefreshing(false);
+  };
+
+  const getStatus = (quantity: number): "normal" | "low" | "critical" | undefined => {
+    if (quantity === 0) return "critical";
+    if (quantity < 20) return "critical";
+    if (quantity < 50) return "low";
+    return undefined;
+  };
 
   const handleAddStock = () => {
     setShowAddStockModal(true);
@@ -225,6 +199,17 @@ export default function InventoryScreen() {
     );
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1E40AF" />
+          <Text style={styles.loadingText}>Loading inventory...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FFF8" />
@@ -235,7 +220,6 @@ export default function InventoryScreen() {
           <View style={styles.headerInfo}>
             <Text style={styles.organization}>Santé Initiative Uganda</Text>
             <Text style={styles.userName}>VHT</Text>
-            {/* <Text style={styles.userRole}>CHW - Luweero</Text> */}
           </View>
           <TouchableOpacity style={styles.profileButton}>
             <Ionicons name="person-circle-outline" size={44} color="#1E40AF" />
@@ -245,6 +229,9 @@ export default function InventoryScreen() {
 
       <ScrollView
         style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
@@ -292,8 +279,18 @@ export default function InventoryScreen() {
           </View>
 
           <View style={styles.stockList}>
-            {stockData.map((item, index) => (
-              <StockItem key={index} {...item} />
+            {inventory.map((item, index) => (
+              <StockItem 
+                key={item.id || index}
+                power={item.power}
+                totalPairs={item.stock_quantity}
+                status={getStatus(item.stock_quantity)}
+                breakdown={{
+                  standard: item.stock_standard || 0,
+                  metal: item.stock_metal || 0,
+                  fashion: item.stock_fashion || 0,
+                }}
+              />
             ))}
           </View>
         </View>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,10 +11,13 @@ import {
   Alert,
   Modal,
   TextInput,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { apiService } from "../../services/api";
 
 type RootStackParamList = {
   PaymentsScreen: undefined;
@@ -48,168 +51,174 @@ export default function PaymentsScreen() {
   const [activeTab, setActiveTab] = useState<"pending" | "completed">(
     "pending",
   );
-  const [selectedPayment, setSelectedPayment] = useState<PaymentItem | null>(
-    null,
-  );
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredPayments, setFilteredPayments] = useState<PaymentItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [payments, setPayments] = useState<any[]>([]);
 
-  // Sample data
-  const paymentData: PaymentItem[] = [
-    {
-      id: "1",
-      clientName: "Nakato Grace",
-      phoneNumber: "0700123456",
-      status: "pending",
-      date: "Jan 10, 2026",
-      dueDate: "Jan 15, 2026",
-      method: "MTN Money",
-      amount: "UGX 10,000",
-      progress: "Installation 2 of 3",
-      isOverdue: false,
-    },
-    {
-      id: "2",
-      clientName: "Musoke Peter",
-      phoneNumber: "0700234567",
-      status: "pending",
-      date: "Jan 5, 2026",
-      dueDate: "Jan 10, 2026",
-      method: "Airtel Money",
-      amount: "UGX 15,000",
-      progress: "Installation 1 of 3",
-      isOverdue: true,
-    },
-    {
-      id: "3",
-      clientName: "Nambi Sarah",
-      phoneNumber: "0700345678",
-      status: "completed",
-      date: "Jan 20, 2026",
-      method: "Cash",
-      amount: "UGX 15,000",
-      progress: "Installation 3 of 3",
-      isOverdue: false,
-    },
-    {
-      id: "4",
-      clientName: "Okello James",
-      phoneNumber: "0700456789",
-      status: "completed",
-      date: "Jan 5, 2026",
-      method: "MTN Money",
-      amount: "UGX 15,000",
-      isOverdue: false,
-    },
-  ];
+  useEffect(() => {
+    loadPayments();
+  }, []);
 
-  // Filter payments based on active tab and search
-  const pendingPayments = paymentData.filter(
-    (p) =>
-      p.status === "pending" &&
-      p.clientName.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-  const completedPayments = paymentData.filter(
-    (p) =>
-      p.status === "completed" &&
-      p.clientName.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const loadPayments = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getPayments();
+      if (response.success) {
+        setPayments(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to load payments:", error);
+      Alert.alert("Error", "Failed to load payments");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const currentPayments =
-    activeTab === "pending" ? pendingPayments : completedPayments;
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadPayments();
+    setRefreshing(false);
+  };
 
-  const handleMarkAsPaid = (payment: PaymentItem) => {
+  const filteredPayments = payments.filter((p) => {
+    const matchesTab =
+      activeTab === "pending"
+        ? p.status === "pending" || p.status === "overdue"
+        : p.status === "completed";
+    const matchesSearch =
+      searchQuery === "" ||
+      p.client_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.client_phone?.includes(searchQuery);
+    return matchesTab && matchesSearch;
+  });
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1E40AF" />
+          <Text style={styles.loadingText}>Loading payments...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const handleMarkAsPaid = async (payment: any) => {
     setSelectedPayment(payment);
     setModalVisible(true);
   };
 
-  const confirmPayment = () => {
-    Alert.alert(
-      "Payment Confirmed",
-      `Successfully marked payment for ${selectedPayment?.clientName} as paid.`,
-      [{ text: "OK", onPress: () => setModalVisible(false) }],
+  const confirmPayment = async () => {
+    try {
+      await apiService.updatePaymentStatus(selectedPayment.id, "completed");
+      Alert.alert(
+        "Success",
+        `Payment marked as paid for ${selectedPayment?.client_name}`,
+      );
+      setModalVisible(false);
+      loadPayments(); // Reload data
+    } catch (error) {
+      Alert.alert("Error", "Failed to update payment");
+    }
+  };
+
+  const PaymentItemCard = ({ payment }: { payment: any }) => {
+    const isOverdue = payment.status === "overdue";
+    const isPending = payment.status === "pending" || isOverdue;
+
+    return (
+      <TouchableOpacity
+        style={[styles.paymentCard, isOverdue && styles.overdueCard]}
+      >
+        <View style={styles.paymentHeader}>
+          <View style={styles.clientInfo}>
+            <View style={styles.avatar}>
+              <Ionicons
+                name="person-circle-outline"
+                size={40}
+                color="#4B5563"
+              />
+            </View>
+            <View style={styles.clientDetails}>
+              <Text style={styles.clientName}>{payment.client_name}</Text>
+              <Text style={styles.phoneNumber}>
+                <Ionicons name="call-outline" size={12} color="#6B7280" />{" "}
+                {payment.client_phone}
+              </Text>
+              {payment.installment_number && (
+                <Text style={styles.installationProgress}>
+                  Installment {payment.installment_number} of{" "}
+                  {payment.total_installments}
+                </Text>
+              )}
+            </View>
+          </View>
+          <View style={styles.amountContainer}>
+            <Text style={styles.amount}>
+              UGX {payment.amount?.toLocaleString()}
+            </Text>
+            {isOverdue && <Text style={styles.overdueBadge}>OVERDUE</Text>}
+          </View>
+        </View>
+
+        <View style={styles.paymentFooter}>
+          <View style={styles.statusContainer}>
+            <View style={[
+              styles.statusDot,
+              payment.status === 'pending' && styles.pendingDot,
+              payment.status === 'completed' && styles.completedDot,
+              payment.status === 'overdue' && styles.overdueDot,
+            ]} />
+            <Text style={[
+              payment.status === 'pending' && styles.pendingText,
+              payment.status === 'completed' && styles.completedText,
+              payment.status === 'overdue' && styles.overdueText,
+            ]}>
+              {isPending
+                ? `Due: ${payment.due_date || "N/A"}`
+                : `Paid: ${new Date(payment.payment_date).toLocaleDateString()}`}
+            </Text>
+          </View>
+
+          {isPending && (
+            <TouchableOpacity
+              style={[styles.payButton, isOverdue && styles.overdueButton]}
+              onPress={() => handleMarkAsPaid(payment)}
+            >
+              <Text style={styles.payButtonText}>MARK PAID</Text>
+            </TouchableOpacity>
+          )}
+
+          {payment.status === "completed" && (
+            <View style={styles.completedBadge}>
+              <Ionicons name="checkmark-circle" size={16} color="#059669" />
+              <Text style={styles.completedText}>PAID</Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
     );
   };
 
-  const PaymentItemCard = ({ payment }: { payment: PaymentItem }) => (
-    <TouchableOpacity
-      style={[styles.paymentCard, payment.isOverdue && styles.overdueCard]}
-      onPress={() =>
-        navigation.navigate("PaymentDetails", { paymentId: payment.id })
-      }
-    >
-      <View style={styles.paymentHeader}>
-        <View style={styles.clientInfo}>
-          <View style={styles.avatar}>
-            <Ionicons name="person-circle-outline" size={40} color="#4B5563" />
-          </View>
-          <View style={styles.clientDetails}>
-            <Text style={styles.clientName}>{payment.clientName}</Text>
-            <Text style={styles.phoneNumber}>
-              <Ionicons name="call-outline" size={12} color="#6B7280" />{" "}
-              {payment.phoneNumber}
-            </Text>
-            {payment.progress && (
-              <Text style={styles.installationProgress}>
-                {payment.progress}
-              </Text>
-            )}
-          </View>
-        </View>
-        <View style={styles.amountContainer}>
-          <Text style={styles.amount}>{payment.amount}</Text>
-          {payment.isOverdue && (
-            <Text style={styles.overdueBadge}>OVERDUE</Text>
-          )}
-        </View>
-      </View>
-
-      <View style={styles.paymentFooter}>
-        <View style={styles.statusContainer}>
-          <View style={[styles.statusDot, styles[`${payment.status}Dot`]]} />
-          <Text style={styles[`${payment.status}Text`]}>
-            {payment.status === "pending"
-              ? `Due: ${payment.dueDate}`
-              : `Paid: ${payment.date}`}
-          </Text>
-        </View>
-
-        {payment.status === "pending" && (
-          <TouchableOpacity
-            style={[
-              styles.payButton,
-              payment.isOverdue && styles.overdueButton,
-            ]}
-            onPress={() => handleMarkAsPaid(payment)}
-          >
-            <Text style={styles.payButtonText}>
-              {payment.isOverdue ? "MARK PAID" : "MARK PAID"}
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {payment.status === "completed" && (
-          <View style={styles.completedBadge}>
-            <Ionicons name="checkmark-circle" size={16} color="#059669" />
-            <Text style={styles.completedText}>PAID</Text>
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-
   // Statistics
+  const pendingPayments = payments.filter(
+    (p) => p.status === "pending" || p.status === "overdue",
+  );
+  const completedPayments = payments.filter((p) => p.status === "completed");
+
   const stats = {
     pending: pendingPayments.length,
-    overdue: pendingPayments.filter((p) => p.isOverdue).length,
+    overdue: payments.filter((p) => p.status === "overdue").length,
     completed: completedPayments.length,
     totalAmount: pendingPayments.reduce(
-      (sum, p) => sum + parseInt(p.amount.replace(/\D/g, "")),
+      (sum, p) => sum + (parseFloat(p.amount) || 0),
       0,
     ),
     collectedAmount: completedPayments.reduce(
-      (sum, p) => sum + parseInt(p.amount.replace(/\D/g, "")),
+      (sum, p) => sum + (parseFloat(p.amount) || 0),
       0,
     ),
   };
@@ -228,7 +237,6 @@ export default function PaymentsScreen() {
             <View style={styles.headerInfo}>
               <Text style={styles.organization}>Santé Initiative</Text>
               <Text style={styles.userName}>VHT</Text>
-              {/* <Text style={styles.userRole}>CHW - Luweero</Text> */}
             </View>
           </View>
           <TouchableOpacity style={styles.notificationButton}>
@@ -334,7 +342,7 @@ export default function PaymentsScreen() {
 
         {/* Payment List */}
         <View style={styles.section}>
-          {currentPayments.length === 0 ? (
+          {filteredPayments.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="receipt-outline" size={64} color="#D1D5DB" />
               <Text style={styles.emptyStateTitle}>No payments found</Text>
@@ -345,7 +353,7 @@ export default function PaymentsScreen() {
               </Text>
             </View>
           ) : (
-            currentPayments.map((payment) => (
+            filteredPayments.map((payment) => (
               <PaymentItemCard key={payment.id} payment={payment} />
             ))
           )}
@@ -535,6 +543,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F9FAFB",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F9FAFB",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#6B7280",
   },
   header: {
     backgroundColor: "#FFFFFF",

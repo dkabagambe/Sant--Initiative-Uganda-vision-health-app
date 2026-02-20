@@ -8,19 +8,20 @@ import {
 } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
 import * as DocumentPicker from "expo-document-picker";
+import { apiService } from "../../services/api";
 
 type RootStackParamList = {
   Login: undefined;
-  OTP: { phone: string; role: string };
+  OTP: { phone: string; role: string; formData?: any };
   Register: undefined;
   CHWRegistrationStep1: undefined;
   CHWRegistrationStep2: undefined;
   CHWRegistrationStep3: undefined;
-  CHWRegistrationStep4: undefined;
+  CHWRegistrationStep4: { formData: any; phone: string; otp: string };
   AppTabs: { role: string };
 };
 
@@ -28,6 +29,8 @@ type CHWRegistrationStep4NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "CHWRegistrationStep4"
 >;
+
+type CHWRegistrationStep4RouteProp = RouteProp<RootStackParamList, "CHWRegistrationStep4">;
 
 interface SelectedFile {
   name: string;
@@ -38,6 +41,8 @@ interface SelectedFile {
 
 export default function CHWRegistrationStep4() {
   const navigation = useNavigation<CHWRegistrationStep4NavigationProp>();
+  const route = useRoute<CHWRegistrationStep4RouteProp>();
+  const { formData: registrationData, phone, otp } = route.params || {};
 
   const [agreements, setAgreements] = useState({
     infoAccurate: false,
@@ -47,6 +52,11 @@ export default function CHWRegistrationStep4() {
     approvalTime: false,
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState<
+    "certificate" | "recommendation" | null
+  >(null);
+
   const [selectedFiles, setSelectedFiles] = useState<{
     certificate: SelectedFile | null;
     recommendation: SelectedFile | null;
@@ -54,11 +64,6 @@ export default function CHWRegistrationStep4() {
     certificate: null,
     recommendation: null,
   });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploading, setIsUploading] = useState<
-    "certificate" | "recommendation" | null
-  >(null);
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -162,58 +167,28 @@ export default function CHWRegistrationStep4() {
     setIsSubmitting(true);
 
     try {
-      // Prepare form data for submission
-      const formData = new FormData();
+      const completeRegistrationData = {
+        ...registrationData,
+        role: "health_worker",
+        trainingCertificate: selectedFiles.certificate?.name || null,
+      };
 
-      // Add agreements
-      formData.append("agreements", JSON.stringify(agreements));
+      const result = await apiService.verifyOTP(phone, otp, completeRegistrationData);
 
-      // Add certificate file if exists
-      if (selectedFiles.certificate) {
-        formData.append("certificate", {
-          uri: selectedFiles.certificate.uri,
-          type: selectedFiles.certificate.mimeType,
-          name: selectedFiles.certificate.name,
-        } as any);
+      if (result.success) {
+        Alert.alert(
+          "🎉 Registration Successful!",
+          "Your account has been created successfully. You can now login and start screening clients.",
+          [
+            {
+              text: "Go to Dashboard",
+              onPress: () => navigation.navigate("AppTabs", { role: "CHW" }),
+            },
+          ],
+        );
+      } else {
+        Alert.alert("Registration Failed", result.error || "Please try again");
       }
-
-      // Add recommendation file if exists
-      if (selectedFiles.recommendation) {
-        formData.append("recommendation", {
-          uri: selectedFiles.recommendation.uri,
-          type: selectedFiles.recommendation.mimeType,
-          name: selectedFiles.recommendation.name,
-        } as any);
-      }
-
-      // Simulate API call (replace with your actual API endpoint)
-      console.log("Submitting form data:", {
-        agreements,
-        certificate: selectedFiles.certificate?.name,
-        recommendation: selectedFiles.recommendation?.name,
-      });
-
-      // In real app, you would do:
-      // const response = await fetch('YOUR_API_ENDPOINT', {
-      //   method: 'POST',
-      //   body: formData,
-      //   headers: {
-      //     'Content-Type': 'multipart/form-data',
-      //   },
-      // });
-
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate network delay
-
-      Alert.alert(
-        "🎉 Registration Submitted Successfully!",
-        "Your registration has been received. Our team will review your application within 24-48 hours. You'll receive an SMS notification once approved.",
-        [
-          {
-            text: "Return to Login",
-            onPress: () => navigation.navigate("Login"),
-          },
-        ],
-      );
     } catch (error) {
       console.error("Submission error:", error);
       Alert.alert(

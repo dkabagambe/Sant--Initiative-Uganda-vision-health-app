@@ -9,12 +9,15 @@ import {
   StatusBar,
   TextInput,
   Platform,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useScreening } from "../../context/ScreeningContext";
 
 export default function VisionScreen1() {
   const navigation = useNavigation<any>();
+  const { updateScreeningData } = useScreening();
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -35,16 +38,29 @@ export default function VisionScreen1() {
   };
 
   const handleNext = () => {
-    // Basic validation
     if (
       !formData.fullName.trim() ||
       !formData.age.trim() ||
       !formData.sex ||
       !formData.district.trim()
     ) {
-      alert("Please fill in all required fields (marked with *)");
+      Alert.alert("Required Fields", "Please fill in all required fields (marked with *)");
       return;
     }
+
+    // Save to context
+    updateScreeningData({
+      clientName: formData.fullName,
+      clientPhone: formData.phoneNumber,
+      clientAge: parseInt(formData.age),
+      clientGender: formData.sex,
+      clientVillage: formData.parish,
+      district: formData.district,
+      county: formData.county,
+      subCounty: formData.subCounty,
+      parish: formData.parish,
+    });
+
     navigation.navigate("VisionScreen2");
   };
 

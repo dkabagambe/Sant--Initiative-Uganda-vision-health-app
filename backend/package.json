@@ -14,16 +14,19 @@
     "vision",
     "mobile-money"
   ],
-  "author": "Your Name",
+  "author": "daniel kabagambe",
   "license": "MIT",
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "africastalking": "^0.7.9",
     "axios": "^1.5.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.18.0"
+    "pg": "^8.18.0",
+    "twilio": "^5.12.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

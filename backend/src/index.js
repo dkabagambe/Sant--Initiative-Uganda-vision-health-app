@@ -1,30 +1,28 @@
+// src/index.js
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
+const { neon } = require("@neondatabase/serverless");
 
 const app = express();
 
-// Middleware
+// Initialize Neon SQL client with DATABASE_URL
+const sql = neon(process.env.DATABASE_URL);
+app.locals.sql = sql;
+
+// --- Middleware ---
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Log requests
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
-  next();
-});
-
-// Health check with database status
+// --- Health check ---
 app.get("/api/health", async (req, res) => {
-  const db = require("./config/database");
-
-  let dbStatus = "unknown";
+  let dbStatus = "disconnected";
   try {
-    await db.query("SELECT 1");
-    dbStatus = "connected";
-  } catch (error) {
-    dbStatus = "disconnected";
+    const result = await sql`SELECT NOW()`;
+    if (result && result[0] && result[0].now) dbStatus = "connected";
+  } catch (err) {
+    console.error("DB health check error:", err.message);
   }
 
   res.json({
@@ -39,28 +37,51 @@ app.get("/api/health", async (req, res) => {
       "POST /api/auth/verify-otp",
       "GET  /api/auth/check",
       "GET  /api/products",
+      "GET  /api/products/:id",
+      "PATCH /api/products/:id/stock",
       "POST /api/screenings",
+      "GET  /api/screenings",
+      "GET  /api/screenings/stats",
+      "GET  /api/screenings/:id",
       "POST /api/payments",
+      "GET  /api/payments",
+      "GET  /api/payments/stats",
+      "GET  /api/payments/:id",
+      "PATCH /api/payments/:id/status",
+      "GET  /api/payments/client/:clientPhone/installments",
+      "POST /api/referrals",
+      "GET  /api/referrals",
+      "GET  /api/referrals/stats",
+      "GET  /api/referrals/:id",
+      "PATCH /api/referrals/:id/status",
+      "GET  /api/dashboard/stats",
+      "GET  /api/dashboard/inventory",
+      "GET  /api/dashboard/reports",
+      "GET  /api/dashboard/clients",
       "POST /api/sync",
     ],
   });
 });
 
-// Import routes
+// --- Import Routes ---
 const authRoutes = require("./routes/auth");
 const productRoutes = require("./routes/products");
 const screeningRoutes = require("./routes/screenings");
 const paymentRoutes = require("./routes/payments");
 const syncRoutes = require("./routes/sync");
+const referralRoutes = require("./routes/referrals");
+const dashboardRoutes = require("./routes/dashboard");
 
-// Use routes
+// --- Use Routes ---
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/screenings", screeningRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/sync", syncRoutes);
+app.use("/api/referrals", referralRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
-// 404 handler
+// --- 404 Handler ---
 app.use("*", (req, res) => {
   res.status(404).json({
     success: false,
@@ -69,7 +90,7 @@ app.use("*", (req, res) => {
   });
 });
 
-// Error handling middleware
+// --- Global Error Handler ---
 app.use((err, req, res, next) => {
   console.error("Server error:", err.stack);
   res.status(500).json({
@@ -79,18 +100,21 @@ app.use((err, req, res, next) => {
   });
 });
 
+// --- Start Server ---
 const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`
 🚀 Santé Initiative Uganda Backend
 📂 Environment: ${process.env.NODE_ENV || "development"}
 🌐 Server running on port ${PORT}
 📊 Health check: http://localhost:${PORT}/api/health
-🔐 Auth: http://localhost:${PORT}/api/auth/login
-👓 Products: http://localhost:${PORT}/api/products
-👁️ Screenings: http://localhost:${PORT}/api/screenings
-💰 Payments: http://localhost:${PORT}/api/payments
-🔄 Sync: http://localhost:${PORT}/api/sync
   `);
+  
+  // Test database connection
+  try {
+    const result = await sql`SELECT NOW()`;
+    console.log("✅ Database connected successfully");
+  } catch (err) {
+    console.error("❌ Database connection failed:", err.message);
+  }
 });

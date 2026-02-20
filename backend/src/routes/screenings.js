@@ -1,16 +1,11 @@
 const express = require("express");
 const router = express.Router();
+const screeningController = require("../controllers/screeningController");
+const { authenticate } = require("../middleware/auth");
 
-// Temporary basic route - we'll build this properly later
-router.get("/", (req, res) => {
-  res.json({ message: "Screenings endpoint - Under construction" });
-});
-
-router.post("/", (req, res) => {
-  res.json({
-    message: "Screening saved (offline mode)",
-    note: "This will connect to database later",
-  });
-});
+router.post("/", authenticate, screeningController.createScreening);
+router.get("/", authenticate, screeningController.getScreenings);
+router.get("/stats", authenticate, screeningController.getScreeningStats);
+router.get("/:id", authenticate, screeningController.getScreeningById);
 
 module.exports = router;

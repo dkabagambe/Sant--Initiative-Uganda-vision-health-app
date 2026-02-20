@@ -10,13 +10,14 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  SafeAreaView,
   Image,
 } from "react-native";
 import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
+import { apiService } from "../../services/api";
 
-// Update RootStackParamList to include AppTabs
 type RootStackParamList = {
   OTP: { phone: string; role: string };
   AppTabs: { role: string };
@@ -29,82 +30,24 @@ type OTPScreenNavigationProp = NativeStackNavigationProp<
   "OTP"
 >;
 
-// Simple validation for 4-digit OTP
-const Validation = {
-  validateOTP: (otp: string): { isValid: boolean; message?: string } => {
-    if (!otp) return { isValid: false, message: "OTP is required" };
-    if (otp.length !== 4)
-      return { isValid: false, message: "OTP must be 4 digits" };
-    if (!/^\d+$/.test(otp))
-      return { isValid: false, message: "OTP must contain only numbers" };
-    return { isValid: true };
-  },
-};
-
-// Simple OTP verification
-const OTPService = {
-  verifyOTP: async (
-    phone: string,
-    userOTP: string,
-  ): Promise<{
-    success: boolean;
-    message: string;
-    token?: string;
-  }> => {
-    try {
-      console.log(`Verifying OTP ${userOTP} for ${phone}`);
-
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // For demo, always succeed with any 4-digit code
-      return {
-        success: true,
-        message: "OTP verified successfully",
-        token: `demo_token_${Date.now()}`,
-      };
-    } catch (error) {
-      console.error("OTP verification error:", error);
-      return { success: false, message: "Verification failed" };
-    }
-  },
-
-  resendOTP: async (
-    phone: string,
-  ): Promise<{ success: boolean; message: string }> => {
-    try {
-      console.log(`Resending OTP to ${phone}`);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return { success: true, message: "New OTP sent via SMS" };
-    } catch (error) {
-      return { success: false, message: "Failed to resend OTP" };
-    }
-  },
-};
-
 export default function OTPScreen() {
   const route = useRoute<OTPScreenRouteProp>();
   const navigation = useNavigation<OTPScreenNavigationProp>();
   const { phone, role } = route.params;
 
-  // Change to 4-digit OTP
-  const [otp, setOtp] = useState(["", "", "", ""]);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Create refs for 4 OTP input fields
-  const inputRefs = useRef<(TextInput | null)[]>(Array(4).fill(null));
+  const inputRefs = useRef<(TextInput | null)[]>(Array(6).fill(null));
 
-  // Format phone for display as shown in design
-  const formattedPhone = `+256 ${phone.substring(0, 3)} ${phone.substring(3, 6)} ${phone.substring(6)}`;
+  const formattedPhone = `+256 ${phone.substring(1, 4)} ${phone.substring(4, 7)} ${phone.substring(7)}`;
 
-  // Countdown timer for resend
   useEffect(() => {
     let timer: NodeJS.Timeout;
-
     if (countdown > 0 && !canResend) {
       timer = setInterval(() => {
         setCountdown((prev) => {
@@ -116,59 +59,41 @@ export default function OTPScreen() {
         });
       }, 1000);
     }
-
     return () => {
       if (timer) clearInterval(timer);
     };
   }, [countdown, canResend]);
 
-  // Handle OTP digit input (4-digit)
   const handleOtpChange = (value: string, index: number) => {
-    // Only allow numbers
     if (value && !/^\d+$/.test(value)) return;
 
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // Clear error when user types
-    if (errorMessage) {
-      setErrorMessage(null);
-    }
+    if (errorMessage) setErrorMessage(null);
 
-    // Auto-focus next input
-    if (value && index < 3) {
+    if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Auto-verify if last digit entered
-    if (value && index === 3) {
+    if (value && index === 5) {
       inputRefs.current[index]?.blur();
       setTimeout(() => handleVerifyOTP(), 100);
     }
   };
 
-  // Handle backspace
-  const handleKeyPress = (event: any, index: number) => {
-    if (event.nativeEvent.key === "Backspace") {
-      if (!otp[index] && index > 0) {
-        // Move focus to previous input
-        const newOtp = [...otp];
-        newOtp[index - 1] = "";
-        setOtp(newOtp);
-        inputRefs.current[index - 1]?.focus();
-      }
+  const handleKeyPress = (e: any, index: number) => {
+    if (e.nativeEvent.key === "Backspace" && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
     }
   };
 
-  // Verify OTP
   const handleVerifyOTP = async () => {
     const otpString = otp.join("");
 
-    // Validate OTP format (4 digits)
-    const validation = Validation.validateOTP(otpString);
-    if (!validation.isValid) {
-      setErrorMessage(validation.message || "Invalid OTP");
+    if (otpString.length !== 6) {
+      setErrorMessage("Please enter complete 6-digit OTP");
       return;
     }
 
@@ -176,22 +101,14 @@ export default function OTPScreen() {
     setErrorMessage(null);
 
     try {
-      const result = await OTPService.verifyOTP(phone, otpString);
+      const result = await apiService.verifyOTP(phone, otpString);
 
       if (result.success) {
-        // Navigate directly to AppTabs with the role
-        navigation.navigate("AppTabs", { role: role });
+        navigation.navigate("AppTabs", { role });
       } else {
-        setErrorMessage(result.message);
-
-        // If no attempts left, clear OTP
-        if (
-          result.message.includes("No attempts") ||
-          result.message.includes("expired")
-        ) {
-          setOtp(["", "", "", ""]);
-          inputRefs.current[0]?.focus();
-        }
+        setErrorMessage(result.error || "Invalid OTP");
+        setOtp(["", "", "", "", "", ""]);
+        inputRefs.current[0]?.focus();
       }
     } catch (error) {
       setErrorMessage("Verification failed. Please try again.");
@@ -200,7 +117,6 @@ export default function OTPScreen() {
     }
   };
 
-  // Resend OTP
   const handleResendOTP = async () => {
     if (!canResend) return;
 
@@ -208,381 +124,268 @@ export default function OTPScreen() {
     setErrorMessage(null);
 
     try {
-      const result = await OTPService.resendOTP(phone);
-
+      const result = await apiService.login(phone);
       if (result.success) {
-        Alert.alert(
-          "OTP Resent",
-          "A new OTP has been sent to your phone via SMS.",
-        );
-
-        // Reset OTP fields and countdown
-        setOtp(["", "", "", ""]);
+        Alert.alert("OTP Resent", `New OTP: ${result.otp}`);
         setCountdown(60);
         setCanResend(false);
+        setOtp(["", "", "", "", "", ""]);
         inputRefs.current[0]?.focus();
       } else {
-        setErrorMessage(result.message);
+        setErrorMessage("Failed to resend OTP");
       }
     } catch (error) {
-      setErrorMessage("Failed to resend OTP.");
+      setErrorMessage("Failed to resend OTP");
     } finally {
       setResendLoading(false);
     }
   };
 
-  // Go back to login (Change Phone Number)
-  const handleChangePhone = () => {
-    navigation.goBack();
-  };
-
-  // Handle focus on OTP input
-  const handleOtpFocus = (index: number) => {
-    // Clear from current position onward
-    const newOtp = [...otp];
-    let shouldClear = false;
-
-    for (let i = index; i < 4; i++) {
-      if (shouldClear || newOtp[i]) {
-        newOtp[i] = "";
-        shouldClear = true;
-      }
-    }
-
-    if (shouldClear) {
-      setOtp(newOtp);
-    }
-  };
-
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
       >
-        {/* Logo */}
-        <View style={styles.logoBox}>
-          <Image
-            source={require("../../../assets/logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
-
-        {/* Title */}
-        <Text style={styles.title}>Santé Initiative Uganda</Text>
-        <Text style={styles.subtitle}>
-          Bringing vision health services closer to communities
-        </Text>
-
-        {/* OTP Sent Message */}
-        <View style={styles.messageContainer}>
-          <Text style={styles.otpSentText}>OTP sent to {formattedPhone}</Text>
-          <Text style={styles.instructionText}>
-            Enter the 4-digit code sent via SMS
-          </Text>
-        </View>
-
-        {/* OTP Input Label */}
-        <Text style={styles.otpLabel}>Enter OTP</Text>
-
-        {/* 4-Digit OTP Boxes */}
-        <View style={styles.otpContainer}>
-          {otp.map((digit, index) => (
-            <TextInput
-              key={`otp-input-${index}`}
-              ref={(ref) => {
-                inputRefs.current[index] = ref;
-              }}
-              style={[
-                styles.otpBox,
-                digit ? styles.otpBoxFilled : styles.otpBoxEmpty,
-              ]}
-              value={digit}
-              onChangeText={(value) => handleOtpChange(value, index)}
-              onKeyPress={(e) => handleKeyPress(e, index)}
-              onFocus={() => handleOtpFocus(index)}
-              keyboardType="number-pad"
-              maxLength={1}
-              textAlign="center"
-              selectTextOnFocus
-              editable={!loading}
-              autoFocus={index === 0}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Logo */}
+          <View style={styles.logoBox}>
+            <Image
+              source={require("../../../assets/logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
             />
-          ))}
-        </View>
-
-        {/* Error Message */}
-        {errorMessage && (
-          <View style={styles.errorContainer}>
-            <Ionicons name="alert-circle-outline" size={16} color="#EF4444" />
-            <Text style={styles.errorText}>{errorMessage}</Text>
           </View>
-        )}
 
-        {/* Verify & Login Button */}
-        <View style={styles.buttonContainer}>
+          {/* Title */}
+          <Text style={styles.title}>Santé Initiative Uganda</Text>
+          <Text style={styles.subtitle}>
+            Bringing vision health services closer to communities
+          </Text>
+
+          {/* OTP Instruction */}
+          <View style={styles.instructionBox}>
+            <Ionicons name="mail-outline" size={24} color="#1E40AF" />
+            <Text style={styles.instructionText}>
+              Enter the 6-digit code sent to{"\n"}
+              <Text style={styles.phoneNumber}>{formattedPhone}</Text>
+            </Text>
+          </View>
+
+          {/* OTP Input Boxes */}
+          <View style={styles.otpContainer}>
+            {otp.map((digit, index) => (
+              <TextInput
+                key={index}
+                ref={(ref) => { inputRefs.current[index] = ref; }}
+                style={[
+                  styles.otpInput,
+                  digit && styles.otpInputFilled,
+                  errorMessage && styles.otpInputError,
+                ]}
+                value={digit}
+                onChangeText={(value) => handleOtpChange(value, index)}
+                onKeyPress={(e) => handleKeyPress(e, index)}
+                keyboardType="number-pad"
+                maxLength={1}
+                selectTextOnFocus
+                autoFocus={index === 0}
+              />
+            ))}
+          </View>
+
+          {/* Error Message */}
+          {errorMessage && (
+            <View style={styles.errorContainer}>
+              <Ionicons name="alert-circle" size={20} color="#EF4444" />
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          )}
+
+          {/* Verify Button */}
           <TouchableOpacity
-            style={[
-              styles.verifyButton,
-              (otp.join("").length !== 4 || loading) &&
-                styles.verifyButtonDisabled,
-            ]}
+            style={[styles.verifyButton, loading && styles.verifyButtonDisabled]}
             onPress={handleVerifyOTP}
-            disabled={otp.join("").length !== 4 || loading}
+            disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.verifyButtonText}>Verify & Login</Text>
+              <Text style={styles.verifyButtonText}>Verify OTP</Text>
             )}
           </TouchableOpacity>
-        </View>
 
-        {/* Resend OTP Button */}
-        <View style={styles.buttonContainer}>
+          {/* Resend OTP */}
+          <View style={styles.resendContainer}>
+            <Text style={styles.resendText}>Didn't receive the code?</Text>
+            <TouchableOpacity
+              onPress={handleResendOTP}
+              disabled={!canResend || resendLoading}
+            >
+              {resendLoading ? (
+                <ActivityIndicator size="small" color="#1E40AF" />
+              ) : (
+                <Text
+                  style={[
+                    styles.resendButton,
+                    !canResend && styles.resendButtonDisabled,
+                  ]}
+                >
+                  {canResend ? "Resend OTP" : `Resend in ${countdown}s`}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Back to Login */}
           <TouchableOpacity
-            style={[
-              styles.resendButton,
-              (!canResend || resendLoading) && styles.resendButtonDisabled,
-            ]}
-            onPress={handleResendOTP}
-            disabled={!canResend || resendLoading}
+            style={styles.backButton}
+            onPress={() => navigation.navigate("Login")}
           >
-            {resendLoading ? (
-              <ActivityIndicator size="small" color="#1E40AF" />
-            ) : (
-              <Text style={styles.resendButtonText}>
-                {canResend ? "Resend OTP" : `Resend OTP (${countdown}s)`}
-              </Text>
-            )}
+            <Ionicons name="arrow-back" size={20} color="#6B7280" />
+            <Text style={styles.backButtonText}>Back to Login</Text>
           </TouchableOpacity>
-        </View>
-
-        {/* Change Phone Number Link */}
-        <TouchableOpacity
-          style={styles.changePhoneContainer}
-          onPress={handleChangePhone}
-        >
-          <Text style={styles.changePhoneText}>Change Phone Number</Text>
-        </TouchableOpacity>
-
-        {/* Divider */}
-        <View style={styles.divider}>
-          <Text style={styles.offlineText}>Works offline for screening</Text>
-        </View>
-
-        {/* Language Switch */}
-        <View style={styles.languageRow}>
-          <TouchableOpacity style={styles.langActive}>
-            <Text style={styles.langActiveText}>English</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.langInactive}>
-            <Text style={styles.langInactiveText}>Luganda</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Footer */}
-        <Text style={styles.footerText}>Santé Initiative Uganda © 2026</Text>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FFF8",
+    backgroundColor: "#FFFFFF",
+  },
+  keyboardView: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 24,
+    padding: 24,
+    justifyContent: "center",
   },
   logoBox: {
-    alignSelf: "center",
-    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 24,
   },
   logo: {
     width: 80,
     height: 80,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#1F2937",
     textAlign: "center",
-    color: "#333",
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
+    color: "#6B7280",
     textAlign: "center",
-    color: "#666",
-    marginTop: 4,
     marginBottom: 32,
-    lineHeight: 20,
   },
-  messageContainer: {
+  instructionBox: {
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 24,
-  },
-  otpSentText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    textAlign: "center",
-    marginBottom: 4,
+    backgroundColor: "#EFF6FF",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 32,
   },
   instructionText: {
+    flex: 1,
+    marginLeft: 12,
     fontSize: 14,
-    color: "#666",
-    textAlign: "center",
+    color: "#1F2937",
     lineHeight: 20,
   },
-  otpLabel: {
-    fontSize: 14,
+  phoneNumber: {
     fontWeight: "600",
-    color: "#333",
-    marginBottom: 12,
+    color: "#1E40AF",
   },
   otpContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 24,
   },
-  otpBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 10,
+  otpInput: {
+    width: 48,
+    height: 56,
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    textAlign: "center",
     fontSize: 24,
     fontWeight: "600",
-    borderWidth: 2,
+    color: "#1F2937",
   },
-  otpBoxEmpty: {
-    borderColor: "#D1D5DB",
-    backgroundColor: "#fff",
-    color: "#333",
-  },
-  otpBoxFilled: {
+  otpInputFilled: {
     borderColor: "#1E40AF",
-    backgroundColor: "#fff",
-    color: "#1E40AF",
+    backgroundColor: "#EFF6FF",
+  },
+  otpInputError: {
+    borderColor: "#EF4444",
   },
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-    paddingHorizontal: 16,
+    backgroundColor: "#FEF2F2",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
   },
   errorText: {
+    flex: 1,
+    marginLeft: 8,
     fontSize: 14,
     color: "#EF4444",
-    marginLeft: 6,
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  buttonContainer: {
-    marginBottom: 12,
   },
   verifyButton: {
     backgroundColor: "#1E40AF",
     paddingVertical: 16,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: "center",
-    justifyContent: "center",
+    marginBottom: 24,
   },
   verifyButtonDisabled: {
-    backgroundColor: "#93C5FD",
+    opacity: 0.6,
   },
   verifyButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
   },
-  resendButton: {
-    backgroundColor: "transparent",
-    paddingVertical: 16,
-    borderRadius: 10,
+  resendContainer: {
     alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: "#1E40AF",
+    marginBottom: 24,
   },
-  resendButtonDisabled: {
-    borderColor: "#93C5FD",
-  },
-  resendButtonText: {
-    color: "#1E40AF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  changePhoneContainer: {
-    alignItems: "center",
-    marginTop: 8,
-    marginBottom: 32,
-  },
-  changePhoneText: {
+  resendText: {
     fontSize: 14,
-    color: "#1E40AF",
-    fontWeight: "500",
-    textDecorationLine: "underline",
-  },
-  divider: {
-    marginTop: 16,
-    paddingVertical: 12,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  offlineText: {
-    textAlign: "center",
-    fontSize: 12,
-    color: "#666",
-    fontWeight: "500",
-  },
-  languageRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 16,
+    color: "#6B7280",
     marginBottom: 8,
   },
-  langActive: {
-    backgroundColor: "#1E40AF",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  langActiveText: {
-    color: "#fff",
-    fontSize: 12,
+  resendButton: {
+    fontSize: 14,
     fontWeight: "600",
+    color: "#1E40AF",
   },
-  langInactive: {
-    backgroundColor: "#E5E7EB",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  langInactiveText: {
-    fontSize: 12,
-    color: "#333",
-    fontWeight: "500",
-  },
-  footerText: {
-    textAlign: "center",
-    fontSize: 11,
+  resendButtonDisabled: {
     color: "#9CA3AF",
-    marginTop: 12,
-    paddingBottom: 20,
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+  },
+  backButtonText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: "#6B7280",
   },
 });

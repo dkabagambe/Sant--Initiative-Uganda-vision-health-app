@@ -1,38 +1,26 @@
-const db = require("../../config/database");
-
+// src/models/Product.js
 class Product {
-  // Get all products
-  static async getAll() {
-    const result = await db.query("SELECT * FROM products ORDER BY power");
-    return result.rows;
+  static async getAll(sql) {
+    return await sql`SELECT * FROM products ORDER BY power`;
   }
 
-  // Get product by ID
-  static async findById(id) {
-    const result = await db.query("SELECT * FROM products WHERE id = $1", [id]);
-    return result.rows[0];
+  static async findById(sql, id) {
+    const result = await sql`SELECT * FROM products WHERE id = ${id}`;
+    return result[0];
   }
 
-  // Get products by category
-  static async findByCategory(category) {
-    const result = await db.query(
-      "SELECT * FROM products WHERE category = $1 ORDER BY power",
-      [category],
-    );
-    return result.rows;
+  static async findByCategory(sql, category) {
+    return await sql`SELECT * FROM products WHERE category = ${category} ORDER BY power`;
   }
 
-  // Update product stock
-  static async updateStock(id, quantityChange) {
-    const result = await db.query(
-      `UPDATE products 
-       SET stock_quantity = stock_quantity + $1,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2
-       RETURNING id, name, stock_quantity`,
-      [quantityChange, id],
-    );
-    return result.rows[0];
+  static async updateStock(sql, id, quantityChange) {
+    const result = await sql`
+      UPDATE products
+      SET stock_quantity = stock_quantity + ${quantityChange}, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${id}
+      RETURNING id, name, stock_quantity
+    `;
+    return result[0];
   }
 }
 

@@ -1,16 +1,13 @@
 const express = require("express");
 const router = express.Router();
+const paymentController = require("../controllers/paymentController");
+const { authenticate } = require("../middleware/auth");
 
-// Temporary basic route
-router.get("/", (req, res) => {
-  res.json({ message: "Payments endpoint - Under construction" });
-});
-
-router.post("/", (req, res) => {
-  res.json({
-    message: "Payment recorded (offline mode)",
-    note: "Mobile money integration coming soon",
-  });
-});
+router.post("/", authenticate, paymentController.createPayment);
+router.get("/", authenticate, paymentController.getPayments);
+router.get("/stats", authenticate, paymentController.getPaymentStats);
+router.get("/client/:clientPhone/installments", authenticate, paymentController.getClientInstallments);
+router.get("/:id", authenticate, paymentController.getPaymentById);
+router.patch("/:id/status", authenticate, paymentController.updatePaymentStatus);
 
 module.exports = router;

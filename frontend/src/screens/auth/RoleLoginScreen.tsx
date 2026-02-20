@@ -17,6 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import RoleTabs from "../../components/RoleTabs";
 import AppButton from "../../components/AppButton";
+import { apiService } from "../../services/api";
 
 type RootStackParamList = {
   Login: undefined;
@@ -30,57 +31,6 @@ type RoleLoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "Login"
 >;
-
-// Simple validation functions (if you haven't created validation.ts yet)
-const Validation = {
-  validatePhone: (phone: string): { isValid: boolean; message?: string } => {
-    const cleaned = phone.replace(/\D/g, "");
-    if (!cleaned)
-      return { isValid: false, message: "Phone number is required" };
-    if (cleaned.length !== 9)
-      return { isValid: false, message: "Phone number must be 9 digits" };
-    const prefix = cleaned.substring(0, 2);
-    const validPrefixes = [
-      "70",
-      "71",
-      "72",
-      "73",
-      "74",
-      "75",
-      "76",
-      "77",
-      "78",
-      "79",
-      "20",
-      "39",
-    ];
-    if (!validPrefixes.includes(prefix)) {
-      return { isValid: false, message: "Invalid Ugandan mobile number" };
-    }
-    return { isValid: true };
-  },
-};
-
-// Simple OTP service (if you haven't created otpService.ts yet)
-const OTPService = {
-  generateOTP: async (
-    phone: string,
-  ): Promise<{ success: boolean; message: string }> => {
-    try {
-      // Generate 6-digit OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      // In real app, save to AsyncStorage
-      // For now, we'll just log it
-      console.log(`📱 OTP for ${phone}: ${otp}`);
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return { success: true, message: `OTP sent to ${phone}` };
-    } catch (error) {
-      console.error("OTP generation error:", error);
-      return { success: false, message: "Failed to send OTP" };
-    }
-  },
-};
 
 export default function RoleLoginScreen() {
   const [role, setRole] = useState<"CHW" | "Outlet" | "VSLA">("CHW");
@@ -97,29 +47,29 @@ export default function RoleLoginScreen() {
 
   const handleSendOTP = async () => {
     setPhoneError(null);
-    // Validate phone number
-    const phoneValidation = Validation.validatePhone(phone.trim());
-    if (!phoneValidation.isValid) {
-      setPhoneError(phoneValidation.message || "Invalid phone number");
+    
+    const cleaned = phone.replace(/\D/g, "");
+    if (cleaned.length !== 9) {
+      setPhoneError("Phone number must be 9 digits");
       return;
     }
 
+    const fullPhone = `0${cleaned}`;
     setIsLoading(true);
 
     try {
-      // Send OTP
-      const result = await OTPService.generateOTP(phone.trim());
+      const result = await apiService.login(fullPhone);
       if (result.success) {
-        // Navigate to OTP screen
-        navigation.navigate("OTP", {
-          phone: phone.trim(),
-          role: role,
-        });
+        Alert.alert(
+          "OTP Sent", 
+          `Your OTP is: ${result.otp}\n\nThis is shown in development mode only.`,
+          [{ text: "OK", onPress: () => navigation.navigate("OTP", { phone: fullPhone, role }) }]
+        );
       } else {
-        Alert.alert("OTP Error", result.message);
+        Alert.alert("Error", result.error || "Failed to send OTP");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to send OTP. Please try again.");
+      Alert.alert("Error", "Failed to connect to server. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -130,31 +80,23 @@ export default function RoleLoginScreen() {
   };
 
   const formatPhoneInput = (text: string) => {
-    // Remove all non-digits
     let digits = text.replace(/\D/g, "");
-    // Limit to 9 digits
     if (digits.length > 9) {
       digits = digits.substring(0, 9);
     }
-    // Format with spaces: XXX XXX XXX
     let formatted = digits;
     if (digits.length > 6) {
-      formatted = `${digits.substring(0, 3)} ${digits.substring(
-        3,
-        6,
-      )} ${digits.substring(6)}`;
+      formatted = `${digits.substring(0, 3)} ${digits.substring(3, 6)} ${digits.substring(6)}`;
     } else if (digits.length > 3) {
       formatted = `${digits.substring(0, 3)} ${digits.substring(3)}`;
     }
     setPhone(formatted);
-    // Clear error when user starts typing
     if (phoneError && text.length > 0) {
       setPhoneError(null);
     }
   };
 
   const handlePhoneSubmit = () => {
-    // When user presses enter/next on keyboard
     handleSendOTP();
   };
 

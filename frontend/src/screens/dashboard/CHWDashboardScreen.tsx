@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { apiService } from "../../services/api";
 
 type RootStackParamList = {
   CHWDashboard: undefined;
@@ -29,6 +31,50 @@ type DashboardScreenNavigationProp = NativeStackNavigationProp<
 
 export default function CHWDashboardScreen() {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    screenings_this_week: 0,
+    clients_needing_glasses: 0,
+    total_screenings: 0,
+    clients_referred: 0,
+  });
+  const [user, setUser] = useState({ fullName: "VHT", village: "" });
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [dashboardData, userData] = await Promise.all([
+        apiService.getDashboardStats(),
+        apiService.getCurrentUser(),
+      ]);
+
+      if (dashboardData.success) {
+        setStats(dashboardData.data.screenings);
+      }
+      if (userData) {
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error("Failed to load dashboard:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1E40AF" />
+          <Text style={styles.loadingText}>Loading dashboard...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -41,8 +87,7 @@ export default function CHWDashboardScreen() {
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.organization}>Santé Initiative Uganda</Text>
-              <Text style={styles.userName}>VHT</Text>
-              {/* <Text style={styles.userRole}>CHW - Luweero</Text> */}
+              <Text style={styles.userName}>{user.fullName}</Text>
             </View>
             <TouchableOpacity style={styles.profileButton}>
               <Ionicons name="person-circle" size={40} color="#1E40AF" />
@@ -50,7 +95,7 @@ export default function CHWDashboardScreen() {
           </View>
 
           <Text style={styles.welcomeText}>Welcome,</Text>
-          <Text style={styles.roleDistrict}>VHT</Text>
+          <Text style={styles.roleDistrict}>{user.fullName}</Text>
           <Text style={styles.readyText}>Ready to screen today?</Text>
         </View>
 
@@ -59,11 +104,11 @@ export default function CHWDashboardScreen() {
           <Text style={styles.sectionTitle}>This Week</Text>
           <View style={styles.weekStats}>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>28</Text>
+              <Text style={styles.statNumber}>{stats.screenings_this_week}</Text>
               <Text style={styles.statLabel}>Screened</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>15</Text>
+              <Text style={styles.statNumber}>{stats.clients_needing_glasses}</Text>
               <Text style={styles.statLabel}>Glasses Given</Text>
             </View>
           </View>
@@ -74,7 +119,7 @@ export default function CHWDashboardScreen() {
           {/* Start New Screening - Blue Primary Card */}
           <TouchableOpacity
             style={styles.primaryCard}
-            onPress={() => navigation.navigate("VisionScreen1")} // Update this line
+            onPress={() => navigation.navigate("VisionScreen1")}
           >
             <View style={styles.cardHeader}>
               <Text style={[styles.cardTitle, styles.primaryCardText]}>
