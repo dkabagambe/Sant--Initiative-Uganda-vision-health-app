@@ -25,7 +25,7 @@ const twilioService = initializeClient();
 /**
  * Send OTP via Twilio Verify API
  * @param {string} phoneNumber - Phone number in format: 0700123456 or +256700123456
- * @param {string} otp - Ignored, Twilio generates the OTP
+ * @param {string} otp - Ignored, Twilio Verify generates its own OTP
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 exports.sendOTP = async (phoneNumber, otp) => {
@@ -59,7 +59,6 @@ exports.sendOTP = async (phoneNumber, otp) => {
     return { success: true, verification };
   } catch (error) {
     console.error('❌ SMS sending failed:', error.message);
-    console.log('SMS failed:', error.message);
     return { success: false, error: error.message };
   }
 };
@@ -91,7 +90,7 @@ exports.verifyOTP = async (phoneNumber, code) => {
         code: code,
       });
 
-    console.log('✅ OTP verified:', {
+    console.log('✅ OTP verified via Twilio:', {
       phone: formattedPhone,
       status: verificationCheck.status,
     });
@@ -102,46 +101,6 @@ exports.verifyOTP = async (phoneNumber, code) => {
     };
   } catch (error) {
     console.error('❌ OTP verification failed:', error.message);
-    return { success: false, error: error.message };
-  }
-};
-
-/**
- * Send general SMS using Twilio (for non-OTP messages)
- * @param {string} phoneNumber - Phone number
- * @param {string} message - Message to send
- * @returns {Promise<{success: boolean, error?: string}>}
- */
-exports.sendSMS = async (phoneNumber, message) => {
-  const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
-  
-  if (!twilioService || !twilioPhoneNumber) {
-    console.log(`📱 [DEV MODE] SMS to ${phoneNumber}: ${message}`);
-    return { success: true, devMode: true };
-  }
-
-  try {
-    let formattedPhone = phoneNumber;
-    if (phoneNumber.startsWith('0')) {
-      formattedPhone = `+256${phoneNumber.substring(1)}`;
-    } else if (!phoneNumber.startsWith('+')) {
-      formattedPhone = `+256${phoneNumber}`;
-    }
-
-    const result = await twilioService.client.messages.create({
-      body: message,
-      from: twilioPhoneNumber,
-      to: formattedPhone,
-    });
-
-    console.log('✅ SMS sent successfully:', {
-      phone: formattedPhone,
-      sid: result.sid,
-    });
-
-    return { success: true, result };
-  } catch (error) {
-    console.error('❌ SMS sending failed:', error.message);
     return { success: false, error: error.message };
   }
 };

@@ -68,7 +68,7 @@ export default function RoleLoginScreen() {
       if (result.success) {
         Alert.alert(
           "OTP Sent", 
-          `Your OTP is: ${result.otp}\n\nThis is shown in development mode only.`,
+          "Please check your phone for the verification code.",
           [{ text: "OK", onPress: () => navigation.navigate("OTP", { phone: fullPhone, role }) }]
         );
       } else {

@@ -1,9 +1,10 @@
-// For development - connects to your local backend
-const API_BASE_URL = "http://localhost:5000/api";
+// For development - use your computer's IP address
+const API_BASE_URL = "http://20.20.42.133:5000/api";
 
-// If testing on physical device or emulator, use:
+// Alternative options:
+// const API_BASE_URL = "http://localhost:5000/api"; // iOS simulator only
 // const API_BASE_URL = 'http://10.0.2.2:5000/api'; // Android emulator
-// const API_BASE_URL = 'http://192.168.1.X:5000/api'; // Your computer's IP
+// const API_BASE_URL = 'http://192.168.1.X:5000/api'; // Physical device on same WiFi
 
 export const API_ENDPOINTS = {
   // Health check

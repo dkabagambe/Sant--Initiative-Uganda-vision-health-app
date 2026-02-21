@@ -5,9 +5,9 @@ require("dotenv").config();
 
 const app = express();
 
-// Use local SQLite for development (Neon blocked by firewall)
-console.log("📦 Using local SQLite database");
-const { sql } = require("./db-local");
+// Database setup - local SQLite only
+const dbLocal = require("./db-local");
+const sql = dbLocal.sql;
 
 app.locals.sql = sql;
 

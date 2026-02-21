@@ -43,13 +43,15 @@ export interface Screening {
 }
 
 // Base URL configuration
-// Production API
-const API_BASE_URL = "https://sante-production-app-42dca70009b0.herokuapp.com/api";
+// Development API (local testing)
+const API_BASE_URL = "http://20.20.42.133:5000/api"; // Physical device/emulator
 
-// Development APIs (uncomment for local testing)
+// Production API (uncomment for production)
+// const API_BASE_URL = "https://sante-production-app-42dca70009b0.herokuapp.com/api";
+
+// Other options:
 // const API_BASE_URL = "http://10.0.2.2:5000/api"; // Android emulator
 // const API_BASE_URL = "http://localhost:5000/api"; // iOS simulator
-// const API_BASE_URL = "http://20.20.42.133:5000/api"; // Physical device
 
 // Create axios instance
 const api = axios.create({
@@ -159,6 +161,18 @@ export const apiService = {
       const err = error as Error;
       console.error("Get current user error:", err);
       return null;
+    }
+  },
+
+  async storeUserData(user: User, token: string) {
+    try {
+      await AsyncStorage.setItem("authToken", token);
+      await AsyncStorage.setItem("user", JSON.stringify(user));
+      return { success: true };
+    } catch (error) {
+      const err = error as Error;
+      console.error("Store user data error:", err);
+      return { success: false, error: err.message };
     }
   },
 

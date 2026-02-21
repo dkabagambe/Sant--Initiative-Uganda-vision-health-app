@@ -163,19 +163,24 @@ exports.updatePaymentStatus = async (req, res) => {
       return res.status(400).json({ success: false, error: "Invalid status" });
     }
 
-    const verifiedAt = status === 'completed' ? "datetime('now')" : null;
+    const currentTime = new Date().toISOString();
     
-    const query = `
-      UPDATE payments 
-      SET status = ?,
-          verified_at = ${status === 'completed' ? "datetime('now')" : 'NULL'}
-      WHERE id = ?
-    `;
-    
-    await sql(query, [status, id]);
+    if (status === 'completed') {
+      await sql`
+        UPDATE payments 
+        SET status = ${status}, verified_at = ${currentTime}
+        WHERE id = ${id}
+      `;
+    } else {
+      await sql`
+        UPDATE payments 
+        SET status = ${status}
+        WHERE id = ${id}
+      `;
+    }
     
     // Fetch updated record
-    const updated = await sql(`SELECT * FROM payments WHERE id = ?`, [id]);
+    const updated = await sql`SELECT * FROM payments WHERE id = ${id}`;
 
     if (updated.length === 0) {
       return res.status(404).json({ success: false, error: "Payment not found" });

@@ -16,42 +16,35 @@ exports.login = async (req, res) => {
       return res.status(400).json({ success: false, error: "Phone number required" });
     }
 
-    const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
-
-    // Check if user exists
+    // Check if user exists or create new user
     const existingUser = await sql`
       SELECT id, phone_number, full_name, role FROM users WHERE phone_number = ${phoneNumber}
     `;
 
-    if (existingUser.length > 0) {
-      // Update OTP for existing user
+    if (existingUser.length === 0) {
+      // Create new user
       await sql`
-        UPDATE users 
-        SET otp_code = ${otp}, otp_expires_at = ${expiresAt}
-        WHERE phone_number = ${phoneNumber}
-      `;
-    } else {
-      // Create new user with OTP
-      await sql`
-        INSERT INTO users (phone_number, otp_code, otp_expires_at)
-        VALUES (${phoneNumber}, ${otp}, ${expiresAt})
+        INSERT INTO users (phone_number)
+        VALUES (${phoneNumber})
       `;
     }
 
-    // Send SMS
-    const smsResult = await smsService.sendOTP(phoneNumber, otp);
+    // Send OTP via Twilio Verify (Twilio generates the OTP)
+    const smsResult = await smsService.sendOTP(phoneNumber, null);
     
     if (!smsResult.success) {
       console.error("SMS failed:", smsResult.error);
+      return res.status(500).json({ 
+        success: false, 
+        error: "Failed to send OTP",
+        details: smsResult.error 
+      });
     }
 
-    // Always show OTP until SMS is fully configured
     res.json({
       success: true,
-      message: smsResult.success ? "OTP sent successfully" : "OTP generated (SMS unavailable)",
+      message: "OTP sent successfully",
       phoneNumber,
-      otp: otp, // Always return OTP for testing
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -69,16 +62,25 @@ exports.verifyOTP = async (req, res) => {
       return res.status(400).json({ success: false, error: "Phone number and OTP required" });
     }
 
-    // Verify OTP
+    // Verify OTP with Twilio Verify API
+    const verifyResult = await smsService.verifyOTP(phoneNumber, otp);
+    
+    if (!verifyResult.success) {
+      return res.status(401).json({ 
+        success: false, 
+        error: "Invalid or expired OTP",
+        details: verifyResult.error 
+      });
+    }
+
+    // Get user from database
     const user = await sql`
       SELECT * FROM users 
-      WHERE phone_number = ${phoneNumber} 
-      AND otp_code = ${otp}
-      AND otp_expires_at > datetime('now')
+      WHERE phone_number = ${phoneNumber}
     `;
 
     if (user.length === 0) {
-      return res.status(401).json({ success: false, error: "Invalid or expired OTP" });
+      return res.status(401).json({ success: false, error: "User not found" });
     }
 
     let userData = user[0];
@@ -107,6 +109,7 @@ exports.verifyOTP = async (req, res) => {
       } = registrationData;
 
       const fullName = `${firstName || ""} ${lastName || ""}`.trim();
+      const currentTime = new Date().toISOString();
 
       await sql`
         UPDATE users SET
@@ -131,7 +134,7 @@ exports.verifyOTP = async (req, res) => {
           tin_number = ${tinNumber || null},
           otp_code = NULL,
           otp_expires_at = NULL,
-          last_login = datetime('now')
+          last_login = ${currentTime}
         WHERE phone_number = ${phoneNumber}
       `;
 
@@ -142,11 +145,13 @@ exports.verifyOTP = async (req, res) => {
       userData = updatedUser[0];
     } else {
       // Just clear OTP and update last login
+      const currentTime = new Date().toISOString();
+      
       await sql`
         UPDATE users SET
           otp_code = NULL,
           otp_expires_at = NULL,
-          last_login = datetime('now')
+          last_login = ${currentTime}
         WHERE phone_number = ${phoneNumber}
       `;
       

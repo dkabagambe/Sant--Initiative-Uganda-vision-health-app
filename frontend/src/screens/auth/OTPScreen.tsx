@@ -107,12 +107,8 @@ export default function OTPScreen() {
       console.log("OTP verification result:", result);
 
       if (result.success && result.user) {
-        // Store token and user data
-        console.log("Storing user data:", result.user);
-        await apiService.storeUserData(result.user);
-        if (result.token) {
-          await AsyncStorage.setItem("authToken", result.token);
-        }
+        // Data is already stored by verifyOTP
+        console.log("User logged in successfully:", result.user);
         
         // Map database role to navigation role
         const roleMap: { [key: string]: string } = {
