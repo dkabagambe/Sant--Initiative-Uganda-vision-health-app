@@ -35,6 +35,11 @@ export default function PreScreeningQuestionsScreen() {
   };
 
   const handleNext = () => {
+    // Check if all questions are answered
+    if (answers.some(answer => answer === null)) {
+      alert("Please answer all questions before proceeding");
+      return;
+    }
     // Navigate to next screen
     navigation.navigate("VisionScreen3");
   };

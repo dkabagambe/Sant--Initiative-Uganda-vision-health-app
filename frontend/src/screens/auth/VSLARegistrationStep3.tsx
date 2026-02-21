@@ -9,17 +9,21 @@ import {
   SafeAreaView,
   Modal,
   FlatList,
+  Alert,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { apiService } from "../../services/api";
 
 // Define navigation types
 type RootStackParamList = {
   VSLARegistrationStep2: undefined;
-  VSLARegistrationStep4: undefined;
+  VSLARegistrationStep3: { step1Data?: any; step2Data?: any };
+  VSLARegistrationStep4: { formData: any; phone: string; otp: string };
 };
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
+type VSLAStep3RouteProp = RouteProp<RootStackParamList, "VSLARegistrationStep3">;
 
 // Define types for ProgressBar props
 interface ProgressBarProps {
@@ -29,6 +33,10 @@ interface ProgressBarProps {
 
 const VSLARegistrationStep3 = () => {
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<VSLAStep3RouteProp>();
+  const step1Data = route.params?.step1Data || {};
+  const step2Data = route.params?.step2Data || {};
+  
   const [totalMembers, setTotalMembers] = useState("");
   const [femaleMembers, setFemaleMembers] = useState("");
   const [maleMembers, setMaleMembers] = useState("");
@@ -59,8 +67,57 @@ const VSLARegistrationStep3 = () => {
     navigation.goBack();
   };
 
-  const handleNext = () => {
-    navigation.navigate("VSLARegistrationStep4");
+  const validateForm = () => {
+    if (!totalMembers || parseInt(totalMembers) < 1) {
+      Alert.alert("Missing Information", "Please enter total number of members");
+      return false;
+    }
+    if (!meetingFrequency || meetingFrequency === "Select frequency") {
+      Alert.alert("Missing Information", "Please select meeting frequency");
+      return false;
+    }
+    return true;
+  };
+
+  const handleNext = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    const step3Data = {
+      totalMembers,
+      femaleMembers,
+      maleMembers,
+      meetingFrequency,
+    };
+
+    const completeFormData = {
+      ...step1Data,
+      ...step2Data,
+      ...step3Data,
+    };
+
+    const phone = step2Data?.primaryPhoneNumber || step2Data?.phoneNumber || "";
+    if (!phone) {
+      Alert.alert("Error", "Phone number is required");
+      return;
+    }
+
+    try {
+      const result = await apiService.login(phone);
+      
+      if (result.success) {
+        navigation.navigate("VSLARegistrationStep4", {
+          formData: completeFormData,
+          phone,
+          otp: result.otp || "",
+        });
+      } else {
+        Alert.alert("Error", "Failed to send OTP. Please try again.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to send OTP. Please check your connection.");
+    }
   };
 
   const toggleBenefit = (id: number) => {

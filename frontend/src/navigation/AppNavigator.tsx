@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 // Auth Screens
 import RoleLoginScreen from "../screens/auth/RoleLoginScreen";
+import RoleSelectionScreen from "../screens/auth/RoleSelectionScreen";
 import OTPScreen from "../screens/auth/OTPScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
 
@@ -392,6 +393,7 @@ export default function AppNavigator() {
     >
       {/* Auth Screens */}
       <Stack.Screen name="Login" component={RoleLoginScreen} />
+      <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
       <Stack.Screen name="OTP" component={OTPScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
 

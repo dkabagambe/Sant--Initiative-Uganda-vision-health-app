@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,16 +6,62 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { apiService } from "../../services/api";
 
 export default function MyClientsScreen() {
   const navigation = useNavigation();
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadClients();
+  }, []);
+
+  const loadClients = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getClients();
+      if (response.success) {
+        setClients(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to load clients:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadClients();
+    setRefreshing(false);
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+          <ActivityIndicator size="large" color="#2E7D32" />
+          <Text style={{ marginTop: 12, color: "#666" }}>Loading clients...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView 
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#2E7D32"]} />
+        }
+      >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="#1E40AF" />
@@ -29,12 +75,12 @@ export default function MyClientsScreen() {
         <View style={styles.content}>
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>47</Text>
-              <Text style={styles.statLabel}>Active Clients</Text>
+              <Text style={styles.statNumber}>{clients.length}</Text>
+              <Text style={styles.statLabel}>Total Clients</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>8</Text>
-              <Text style={styles.statLabel}>Due for Repayment</Text>
+              <Text style={styles.statNumber}>{clients.filter(c => c.age >= 50).length}</Text>
+              <Text style={styles.statLabel}>Age 50+</Text>
             </View>
           </View>
 
@@ -42,53 +88,31 @@ export default function MyClientsScreen() {
             <Text style={styles.sectionTitle}>Recent Clients</Text>
 
             <View style={styles.clientList}>
-              <View style={styles.clientItem}>
-                <View style={styles.clientAvatar}>
-                  <Ionicons name="person-circle" size={40} color="#6B7280" />
+              {clients.map((client) => (
+                <View key={client.id} style={styles.clientItem}>
+                  <View style={styles.clientAvatar}>
+                    <Ionicons name="person-circle" size={40} color="#6B7280" />
+                  </View>
+                  <View style={styles.clientInfo}>
+                    <Text style={styles.clientName}>{client.full_name}</Text>
+                    <Text style={styles.clientDetails}>
+                      {client.age ? `Age ${client.age}` : ""} • {client.village || "No village"}
+                    </Text>
+                    <Text style={styles.clientStatus}>
+                      {client.phone_number || "No phone"}
+                    </Text>
+                  </View>
+                  <TouchableOpacity style={styles.viewButton}>
+                    <Text style={styles.viewButtonText}>View</Text>
+                  </TouchableOpacity>
                 </View>
-                <View style={styles.clientInfo}>
-                  <Text style={styles.clientName}>Nakato Grace</Text>
-                  <Text style={styles.clientDetails}>
-                    +2.50D • Last seen: 2 days ago
-                  </Text>
-                  <Text style={styles.clientStatus}>
-                    Payment due: UGX 5,000
-                  </Text>
-                </View>
-                <TouchableOpacity style={styles.viewButton}>
-                  <Text style={styles.viewButtonText}>View</Text>
-                </TouchableOpacity>
-              </View>
+              ))}
 
-              <View style={styles.clientItem}>
-                <View style={styles.clientAvatar}>
-                  <Ionicons name="person-circle" size={40} color="#6B7280" />
-                </View>
-                <View style={styles.clientInfo}>
-                  <Text style={styles.clientName}>Musoke Peter</Text>
-                  <Text style={styles.clientDetails}>
-                    +1.75D • Last seen: 1 week ago
-                  </Text>
-                  <Text style={styles.clientStatusPaid}>Payment received</Text>
-                </View>
-                <TouchableOpacity style={styles.viewButton}>
-                  <Text style={styles.viewButtonText}>View</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.clientItem}>
-                <View style={styles.clientAvatar}>
-                  <Ionicons name="person-circle" size={40} color="#6B7280" />
-                </View>
-                <View style={styles.clientInfo}>
-                  <Text style={styles.clientName}>Nansubuga Sarah</Text>
-                  <Text style={styles.clientDetails}>Referred to hospital</Text>
-                  <Text style={styles.clientStatus}>Follow up needed</Text>
-                </View>
-                <TouchableOpacity style={styles.viewButton}>
-                  <Text style={styles.viewButtonText}>View</Text>
-                </TouchableOpacity>
-              </View>
+              {clients.length === 0 && (
+                <Text style={{ textAlign: "center", color: "#666", marginTop: 20 }}>
+                  No clients yet
+                </Text>
+              )}
             </View>
           </View>
 
@@ -103,6 +127,8 @@ export default function MyClientsScreen() {
           >
             <Text style={styles.backButtonText}>Back to Dashboard</Text>
           </TouchableOpacity>
+
+          <View style={styles.bottomSpacer} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -258,5 +284,8 @@ const styles = StyleSheet.create({
     color: "#374151",
     fontSize: 16,
     fontWeight: "600",
+  },
+  bottomSpacer: {
+    height: 100,
   },
 });

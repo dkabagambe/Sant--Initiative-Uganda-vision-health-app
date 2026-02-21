@@ -43,7 +43,7 @@ export default function CHWRegistrationStep1() {
 
   const handleNextPress = () => {
     if (isFormValid()) {
-      navigation.navigate("CHWRegistrationStep2");
+      navigation.navigate("CHWRegistrationStep2", { step1Data: formData });
     }
   };
 

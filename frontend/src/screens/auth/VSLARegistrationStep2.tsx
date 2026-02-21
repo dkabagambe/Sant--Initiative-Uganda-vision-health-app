@@ -8,17 +8,20 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Platform,
+  Alert,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 
 // Define navigation types
 type RootStackParamList = {
   VSLARegistrationStep1: undefined;
-  VSLARegistrationStep3: undefined;
+  VSLARegistrationStep2: { step1Data: any };
+  VSLARegistrationStep3: { step1Data: any; step2Data: any };
 };
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
+type VSLAStep2RouteProp = RouteProp<RootStackParamList, "VSLARegistrationStep2">;
 
 // Progress Bar Component - Updated for Figma design
 const ProgressBar = ({
@@ -78,6 +81,8 @@ const ProgressBar = ({
 
 const VSLARegistrationStep2 = () => {
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<VSLAStep2RouteProp>();
+  const step1Data = route.params?.step1Data || {};
 
   // Leadership Information State
   const [chairperson, setChairperson] = useState({
@@ -105,8 +110,42 @@ const VSLARegistrationStep2 = () => {
     navigation.goBack();
   };
 
+  const validateForm = () => {
+    // Validate required fields
+    if (!chairperson.name || !chairperson.phone || !chairperson.nationalId) {
+      Alert.alert("Missing Information", "Please fill in all Chairperson details");
+      return false;
+    }
+    if (!primaryContact) {
+      Alert.alert("Missing Information", "Primary contact phone number is required");
+      return false;
+    }
+    if (!district) {
+      Alert.alert("Missing Information", "District is required");
+      return false;
+    }
+    return true;
+  };
+
   const handleNext = () => {
-    navigation.navigate("VSLARegistrationStep3");
+    if (!validateForm()) {
+      return;
+    }
+
+    const step2Data = {
+      chairperson,
+      treasurer,
+      secretary,
+      phoneNumber: primaryContact, // Use phoneNumber for consistency
+      primaryContact,
+      alternatePhone,
+      email,
+      district,
+      county,
+      subcounty,
+      parish,
+    };
+    navigation.navigate("VSLARegistrationStep3", { step1Data, step2Data });
   };
 
   const renderPhoneInput = (
@@ -232,9 +271,12 @@ const VSLARegistrationStep2 = () => {
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>District *</Text>
-            <View style={styles.selectContainer}>
-              <Text style={styles.selectPlaceholder}>Select District</Text>
-            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Luweero"
+              value={district}
+              onChangeText={setDistrict}
+            />
           </View>
 
           <View style={styles.inputGroup}>

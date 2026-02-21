@@ -11,6 +11,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -18,12 +19,16 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import RoleTabs from "../../components/RoleTabs";
 import AppButton from "../../components/AppButton";
 import { apiService } from "../../services/api";
+import { useLanguage } from "../../context/LanguageContext";
 
 type RootStackParamList = {
   Login: undefined;
+  RoleSelection: undefined;
   OTP: { phone: string; role: string };
   Register: undefined;
   CHWRegistrationStep1: undefined;
+  OutletRegistrationStep1: undefined;
+  VSLARegistrationStep1: undefined;
   AppTabs: { role: string };
 };
 
@@ -38,6 +43,7 @@ export default function RoleLoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const navigation = useNavigation<RoleLoginScreenNavigationProp>();
+  const { language, setLanguage, t } = useLanguage();
 
   const handleRoleChange = (newRole: string) => {
     if (newRole === "CHW" || newRole === "Outlet" || newRole === "VSLA") {
@@ -76,7 +82,7 @@ export default function RoleLoginScreen() {
   };
 
   const handleRegisterPress = () => {
-    navigation.navigate("Register");
+    navigation.navigate("RoleSelection");
   };
 
   const formatPhoneInput = (text: string) => {
@@ -101,11 +107,7 @@ export default function RoleLoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-    >
+    <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -121,16 +123,16 @@ export default function RoleLoginScreen() {
         </View>
 
         {/* Title */}
-        <Text style={styles.title}>Santé Initiative Uganda</Text>
+        <Text style={styles.title}>{t("appTitle")}</Text>
         <Text style={styles.subtitle}>
-          Bringing vision health services closer to communities
+          {t("appSubtitle")}
         </Text>
 
         {/* Role Tabs */}
         <RoleTabs value={role} onChange={handleRoleChange} />
 
         {/* Phone Number Section */}
-        <Text style={styles.label}>Phone Number</Text>
+        <Text style={styles.label}>{t("phoneNumber")}</Text>
         <View
           style={[styles.phoneRow, phoneError ? styles.phoneRowError : null]}
         >
@@ -172,7 +174,7 @@ export default function RoleLoginScreen() {
         )}
 
         <Text style={styles.helperText}>
-          Enter your registered mobile number
+          {t("enterPhone")}
         </Text>
 
         {/* Send OTP Button */}
@@ -188,7 +190,7 @@ export default function RoleLoginScreen() {
             {isLoading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={styles.sendButtonText}>Send OTP</Text>
+              <Text style={styles.sendButtonText}>{t("sendOTP")}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -220,20 +222,30 @@ export default function RoleLoginScreen() {
           <Text style={styles.offlineText}>Works offline for screening</Text>
         </View>
 
-        {/* Language Switch */}
-        <View style={styles.languageRow}>
-          <TouchableOpacity style={styles.langActive}>
-            <Text style={styles.langActiveText}>English</Text>
+        {/* Language Buttons */}
+        <View style={styles.languageContainer}>
+          <TouchableOpacity
+            style={[styles.langButton, language === "en" && styles.langButtonActive]}
+            onPress={() => setLanguage("en")}
+          >
+            <Text style={[styles.langText, language === "en" && styles.langTextActive]}>
+              English
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.langInactive}>
-            <Text style={styles.langInactiveText}>Luganda</Text>
+          <TouchableOpacity
+            style={[styles.langButton, language === "lg" && styles.langButtonActive]}
+            onPress={() => setLanguage("lg")}
+          >
+            <Text style={[styles.langText, language === "lg" && styles.langTextActive]}>
+              Luganda
+            </Text>
           </TouchableOpacity>
         </View>
 
         {/* Footer */}
         <Text style={styles.footerText}>Santé Initiative Uganda © 2026</Text>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -243,20 +255,46 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8FFF8",
   },
   scrollContent: {
-    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 24,
+    paddingTop: 40,
+    paddingBottom: 20,
+  },
+  languageContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 12,
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  langButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "#E5E7EB",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+  },
+  langButtonActive: {
+    backgroundColor: "#2E7D32",
+    borderColor: "#2E7D32",
+  },
+  langText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#6B7280",
+  },
+  langTextActive: {
+    color: "#FFFFFF",
   },
   logoBox: {
     alignSelf: "center",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   logo: {
-    width: 80,
-    height: 80,
+    width: 70,
+    height: 70,
   },
   title: {
     fontSize: 22,
@@ -269,7 +307,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#666",
     marginTop: 4,
-    marginBottom: 24,
+    marginBottom: 20,
     lineHeight: 20,
   },
   label: {
@@ -370,8 +408,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "#EAF2FF",
     borderRadius: 10,
-    padding: 12,
-    marginTop: 16,
+    padding: 10,
+    marginTop: 12,
     gap: 8,
   },
   infoText: {
@@ -425,9 +463,9 @@ const styles = StyleSheet.create({
   },
   footerText: {
     textAlign: "center",
-    fontSize: 11,
-    color: "#9CA3AF",
-    marginTop: 12,
-    paddingBottom: 50,
+    fontSize: 13,
+    color: "#6B7280",
+    marginTop: 16,
+    marginBottom: 0,
   },
 });

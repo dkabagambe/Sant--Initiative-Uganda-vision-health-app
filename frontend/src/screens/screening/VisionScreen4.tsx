@@ -77,7 +77,6 @@ export default function TorchLightStepScreen() {
     // Navigate to Step 5 (Distance Vision Test)
     navigation.navigate("VisionScreen5");
   };
-
   const handleGoBack = () => {
     if (currentSubStep === 2) {
       setCurrentSubStep(1);

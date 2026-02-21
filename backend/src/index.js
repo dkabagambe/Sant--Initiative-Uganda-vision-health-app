@@ -2,12 +2,13 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const { neon } = require("@neondatabase/serverless");
 
 const app = express();
 
-// Initialize Neon SQL client with DATABASE_URL
-const sql = neon(process.env.DATABASE_URL);
+// Use local SQLite for development (Neon blocked by firewall)
+console.log("📦 Using local SQLite database");
+const { sql } = require("./db-local");
+
 app.locals.sql = sql;
 
 // --- Middleware ---

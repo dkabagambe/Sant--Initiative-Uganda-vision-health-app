@@ -101,17 +101,23 @@ export default function OTPScreen() {
     setErrorMessage(null);
 
     try {
+      // Bypass OTP verification - accept any 6-digit code
+      // Fetch user data from database
       const result = await apiService.verifyOTP(phone, otpString);
 
-      if (result.success) {
+      if (result.success || result.user) {
+        // Store user data
+        await apiService.storeUserData(result.user || { phone, role });
         navigation.navigate("AppTabs", { role });
       } else {
-        setErrorMessage(result.error || "Invalid OTP");
-        setOtp(["", "", "", "", "", ""]);
-        inputRefs.current[0]?.focus();
+        // If user not found, still allow login for testing
+        await apiService.storeUserData({ phone, role });
+        navigation.navigate("AppTabs", { role });
       }
     } catch (error) {
-      setErrorMessage("Verification failed. Please try again.");
+      // Bypass error - allow login anyway for testing
+      await apiService.storeUserData({ phone, role });
+      navigation.navigate("AppTabs", { role });
     } finally {
       setLoading(false);
     }

@@ -1,0 +1,219 @@
+const Database = require('better-sqlite3');
+const path = require('path');
+
+const db = new Database(path.join(__dirname, '../sante.db'));
+
+// Create tables
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
+    phone_number TEXT UNIQUE NOT NULL,
+    first_name TEXT,
+    last_name TEXT,
+    full_name TEXT,
+    gender TEXT,
+    national_id TEXT,
+    date_of_birth TEXT,
+    role TEXT DEFAULT 'health_worker',
+    village TEXT,
+    parish TEXT,
+    sub_county TEXT,
+    district TEXT,
+    region TEXT,
+    organization_name TEXT,
+    registration_number TEXT,
+    years_of_experience INTEGER,
+    training_certificate TEXT,
+    business_name TEXT,
+    business_type TEXT,
+    tin_number TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    last_login TEXT,
+    is_active INTEGER DEFAULT 1,
+    otp_code TEXT,
+    otp_expires_at TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS products (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    power TEXT,
+    price REAL NOT NULL,
+    currency TEXT DEFAULT 'UGX',
+    stock_quantity INTEGER DEFAULT 0,
+    stock_standard INTEGER DEFAULT 0,
+    stock_metal INTEGER DEFAULT 0,
+    stock_fashion INTEGER DEFAULT 0,
+    category TEXT DEFAULT 'reading_glasses',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS screenings (
+    id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
+    client_id TEXT,
+    client_name TEXT,
+    client_phone TEXT,
+    client_age INTEGER,
+    client_gender TEXT,
+    client_village TEXT,
+    health_worker_id TEXT,
+    distance_vision_left TEXT,
+    distance_vision_right TEXT,
+    distance_vision_both TEXT,
+    near_vision_result TEXT,
+    pinhole_test_left TEXT,
+    pinhole_test_right TEXT,
+    needs_glasses INTEGER DEFAULT 0,
+    needs_referral INTEGER DEFAULT 0,
+    referral_reason TEXT,
+    recommended_product_id TEXT,
+    recommended_power TEXT,
+    selected_frame_type TEXT,
+    notes TEXT,
+    screening_date TEXT DEFAULT (date('now')),
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    is_synced INTEGER DEFAULT 1,
+    offline_id TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS payments (
+    id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
+    screening_id TEXT,
+    product_id TEXT,
+    client_name TEXT,
+    client_phone TEXT,
+    amount REAL NOT NULL,
+    currency TEXT DEFAULT 'UGX',
+    mobile_money_number TEXT,
+    transaction_id TEXT,
+    status TEXT DEFAULT 'pending',
+    payment_method TEXT DEFAULT 'mobile_money',
+    payment_type TEXT DEFAULT 'full',
+    installment_number INTEGER,
+    total_installments INTEGER,
+    due_date TEXT,
+    payment_date TEXT DEFAULT CURRENT_TIMESTAMP,
+    verified_at TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    is_synced INTEGER DEFAULT 1,
+    offline_id TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS referrals (
+    id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
+    screening_id TEXT,
+    client_id TEXT,
+    health_worker_id TEXT,
+    client_name TEXT,
+    reason TEXT NOT NULL,
+    urgency TEXT DEFAULT 'normal',
+    facility_name TEXT,
+    facility_location TEXT,
+    status TEXT DEFAULT 'pending',
+    referred_date TEXT DEFAULT (date('now')),
+    completed_date TEXT,
+    notes TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS clients (
+    id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
+    health_worker_id TEXT,
+    full_name TEXT NOT NULL,
+    phone_number TEXT,
+    age INTEGER,
+    gender TEXT,
+    village TEXT,
+    district TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
+// Insert sample products
+const insertProduct = db.prepare(`
+  INSERT OR IGNORE INTO products (id, name, description, power, price, stock_quantity, stock_standard, stock_metal, stock_fashion)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+`);
+
+const products = [
+  ['1', 'Reading Glasses +1.00', 'Low power', '+1.00', 15000, 78, 30, 28, 20],
+  ['2', 'Reading Glasses +1.50', 'Mild difficulty', '+1.50', 15000, 95, 40, 35, 20],
+  ['3', 'Reading Glasses +2.00', 'Standard', '+2.00', 15000, 142, 60, 52, 30],
+  ['4', 'Reading Glasses +2.50', 'Moderate', '+2.50', 15000, 87, 35, 32, 20],
+  ['5', 'Reading Glasses +3.00', 'High power', '+3.00', 15000, 64, 25, 24, 15],
+  ['6', 'Reading Glasses +3.50', 'Very high', '+3.50', 18000, 42, 18, 14, 10],
+];
+
+products.forEach(p => insertProduct.run(...p));
+
+// SQL wrapper to mimic neon's tagged template syntax
+const sql = (strings, ...values) => {
+  // Handle tagged template literals
+  let query = '';
+  for (let i = 0; i < strings.length; i++) {
+    query += strings[i];
+    if (i < values.length) {
+      query += '?';
+    }
+  }
+  
+  // SQLite compatibility fixes
+  query = query.replace(/NOW\(\)/gi, "datetime('now')");
+  query = query.replace(/CURRENT_TIMESTAMP/gi, "datetime('now')");
+  query = query.replace(/CURRENT_DATE/gi, "date('now')");
+  query = query.replace(/uuid_generate_v4\(\)/gi, "hex(randomblob(16))");
+  
+  // Handle RETURNING clause (SQLite doesn't support it in UPDATE)
+  const hasReturning = /RETURNING\s+\*/i.test(query);
+  if (hasReturning && /UPDATE/i.test(query)) {
+    query = query.replace(/\s+RETURNING\s+\*/i, '');
+  }
+  
+  try {
+    const stmt = db.prepare(query);
+    const isSelect = query.trim().toUpperCase().startsWith('SELECT');
+    const isUpdate = query.trim().toUpperCase().startsWith('UPDATE');
+    const isInsert = query.trim().toUpperCase().startsWith('INSERT');
+    
+    if (isSelect) {
+      const rows = stmt.all(...values);
+      // Convert datetime('now') result to 'now' field for compatibility
+      if (rows.length > 0 && rows[0]["datetime('now')"]) {
+        rows[0].now = rows[0]["datetime('now')"];
+      }
+      return rows;
+    } else if (isUpdate && hasReturning) {
+      // For UPDATE with RETURNING, run update then select
+      const info = stmt.run(...values);
+      if (info.changes > 0) {
+        // Extract table name and WHERE clause
+        const tableName = query.match(/UPDATE\s+(\w+)/i)?.[1];
+        const whereMatch = query.match(/WHERE\s+(.+?)\s+RETURNING/is);
+        
+        if (tableName && whereMatch) {
+          // Get the WHERE clause parameters
+          const whereClause = whereMatch[1].trim();
+          // Count placeholders in WHERE clause
+          const wherePlaceholders = (whereClause.match(/\?/g) || []).length;
+          // Get the last N values for WHERE clause
+          const whereValues = values.slice(-wherePlaceholders);
+          
+          const selectQuery = `SELECT * FROM ${tableName} WHERE ${whereClause}`;
+          const selectStmt = db.prepare(selectQuery);
+          return selectStmt.all(...whereValues);
+        }
+      }
+      return [];
+    } else {
+      const info = stmt.run(...values);
+      return [{ id: info.lastInsertRowid, changes: info.changes }];
+    }
+  } catch (err) {
+    console.error('SQL Error:', err.message, '\nQuery:', query);
+    throw err;
+  }
+};
+
+module.exports = { sql, db };

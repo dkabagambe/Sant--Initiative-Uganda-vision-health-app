@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   StatusBar,
   Dimensions,
   Image,
+  Alert,
 } from "react-native";
 import {
   Ionicons,
@@ -18,6 +19,8 @@ import {
 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiService } from "../../services/api";
 
 type RootStackParamList = {
   CHWDashboard: undefined;
@@ -40,47 +43,178 @@ const { width } = Dimensions.get("window");
 
 export default function CHWDashboard() {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
+  const [offlineCount, setOfflineCount] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+  const [stats, setStats] = useState({
+    weekScreenings: 0,
+    glassesGiven: 0,
+    clients: 0,
+    inventory: 0,
+    referrals: 0,
+    paymentsDue: 0,
+  });
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
-  const recentActivities = [
-    {
-      name: "Nakato Grace",
-      action: "Screening completed +2.50D",
-      time: "2h ago",
-    },
-    {
-      name: "Musoke Peter",
-      action: "Payment received +UGX 5,000",
-      time: "5h ago",
-    },
-    {
-      name: "Nansubuga Sarah",
-      action: "Referred to Luweero Hospital",
-      time: "1d ago",
-    },
-  ];
+  useEffect(() => {
+    checkOfflineData();
+    syncOfflineData();
+    loadUserData();
+    loadDashboardStats();
+    loadRecentActivity();
+  }, []);
+
+  const loadDashboardStats = async () => {
+    try {
+      const response = await apiService.getDashboardStats();
+      if (response.success) {
+        setStats(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to load stats:", error);
+    }
+  };
+
+  const loadRecentActivity = async () => {
+    try {
+      // Fetch recent screenings, payments, and referrals
+      const [screenings, payments, referrals] = await Promise.all([
+        apiService.getScreenings(),
+        apiService.getPayments(),
+        apiService.getReferrals(),
+      ]);
+
+      const activities: any[] = [];
+
+      // Add recent screenings
+      if (screenings.data) {
+        screenings.data.slice(0, 1).forEach((s: any) => {
+          activities.push({
+            name: s.client_name,
+            action: `Screening completed • ${s.recommended_power || 'N/A'}`,
+            time: getTimeAgo(s.created_at),
+          });
+        });
+      }
+
+      // Add recent payments
+      if (payments.data) {
+        payments.data.slice(0, 1).forEach((p: any) => {
+          activities.push({
+            name: p.client_name,
+            action: `Payment received • UGX ${p.amount.toLocaleString()}`,
+            time: getTimeAgo(p.created_at),
+          });
+        });
+      }
+
+      // Add recent referrals
+      if (referrals.data) {
+        referrals.data.slice(0, 1).forEach((r: any) => {
+          activities.push({
+            name: r.client_name,
+            action: `Referred to ${r.facility_name}`,
+            time: getTimeAgo(r.created_at),
+          });
+        });
+      }
+
+      setRecentActivities(activities);
+    } catch (error) {
+      console.error("Failed to load recent activity:", error);
+    }
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffDays > 0) return `${diffDays}d ago`;
+    if (diffHours > 0) return `${diffHours}h ago`;
+    return 'Just now';
+  };
+
+  const loadUserData = async () => {
+    try {
+      const user = await apiService.getCurrentUser();
+      setUserData(user);
+    } catch (error) {
+      console.error("Failed to load user data:", error);
+    }
+  };
+
+  const checkOfflineData = async () => {
+    try {
+      const offlineQueue = await AsyncStorage.getItem("offlineScreenings");
+      const queue = offlineQueue ? JSON.parse(offlineQueue) : [];
+      setOfflineCount(queue.length);
+    } catch (error) {
+      console.error("Failed to check offline data:", error);
+    }
+  };
+
+  const syncOfflineData = async () => {
+    try {
+      const offlineQueue = await AsyncStorage.getItem("offlineScreenings");
+      const queue = offlineQueue ? JSON.parse(offlineQueue) : [];
+      
+      if (queue.length === 0) return;
+
+      setSyncing(true);
+      let synced = 0;
+
+      for (const screening of queue) {
+        try {
+          await apiService.createScreening(screening);
+          synced++;
+        } catch (error) {
+          console.error("Failed to sync screening:", error);
+          break; // Stop if sync fails
+        }
+      }
+
+      if (synced > 0) {
+        // Remove synced items
+        const remaining = queue.slice(synced);
+        await AsyncStorage.setItem("offlineScreenings", JSON.stringify(remaining));
+        setOfflineCount(remaining.length);
+        
+        if (remaining.length === 0) {
+          Alert.alert("✅ Sync Complete", `${synced} screening(s) synced successfully!`);
+        }
+      }
+    } catch (error) {
+      console.error("Sync error:", error);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const dashboardStats = [
     {
       label: "My Clients",
-      value: "47",
+      value: stats.clients.toString(),
       subtitle: "Active clients",
       subValue: "8 due for repayment",
     },
     {
       label: "Inventory",
-      value: "45",
+      value: stats.inventory.toString(),
       subtitle: "Glasses in stock",
       subValue: "Good stock level",
     },
     {
       label: "Referrals",
-      value: "3",
+      value: stats.referrals.toString(),
       subtitle: "Pending referrals",
       subValue: "1 outstanding",
     },
     {
       label: "Payments Due",
-      value: "3",
+      value: stats.paymentsDue.toString(),
       subtitle: "Clients due today",
       subValue: "UGX 15,000 expected",
     },
@@ -99,6 +233,21 @@ export default function CHWDashboard() {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
+      {/* Offline Sync Banner */}
+      {offlineCount > 0 && (
+        <View style={styles.syncBanner}>
+          <Ionicons name="cloud-offline" size={16} color="#F59E0B" />
+          <Text style={styles.syncText}>
+            {syncing ? "Syncing..." : `${offlineCount} screening(s) pending sync`}
+          </Text>
+          {!syncing && (
+            <TouchableOpacity onPress={syncOfflineData}>
+              <Text style={styles.syncButton}>Sync Now</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       {/* Top Header with Logo and Menu - Fixed at top */}
       <View style={styles.topHeader}>
         <View style={styles.headerLeft}>
@@ -112,7 +261,12 @@ export default function CHWDashboard() {
         </View>
 
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}></Text>
+          <Text style={styles.headerTitle}>
+            {userData?.full_name || "Santé Initiative Uganda"}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {userData?.district ? `VHT - ${userData.district} District` : ""}
+          </Text>
         </View>
 
         <View style={styles.headerRight}>
@@ -129,8 +283,12 @@ export default function CHWDashboard() {
       >
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitle}>Welcome</Text>
-          <Text style={styles.userRole}>VHT - Luweero District</Text>
+          <Text style={styles.welcomeTitle}>
+            Welcome, {userData?.full_name || userData?.first_name || "User"}
+          </Text>
+          <Text style={styles.userRole}>
+            VHT - {userData?.district ? `${userData.district} District` : "District"}
+          </Text>
 
           <View style={styles.readyCard}>
             <MaterialIcons name="access-time" size={20} color="#1A4D8F" />
@@ -140,13 +298,13 @@ export default function CHWDashboard() {
 
         {/* This Week Stats */}
         <View style={styles.weekStatsSection}>
-          <Text style={styles.sectionTitle}>statistics</Text>
+          <Text style={styles.sectionTitle}>This Week</Text>
           <View style={styles.weekStatsRow}>
             <View style={styles.weekStatCard}>
               <View style={styles.statIconContainer}>
                 <FontAwesome5 name="users" size={20} color="#FFFFFF" />
               </View>
-              <Text style={styles.weekStatNumber}>420</Text>
+              <Text style={styles.weekStatNumber}>{stats.weekScreenings}</Text>
               <Text style={styles.weekStatLabel}>Screened</Text>
             </View>
 
@@ -159,7 +317,7 @@ export default function CHWDashboard() {
               >
                 <MaterialIcons name="school" size={20} color="#FFFFFF" />
               </View>
-              <Text style={styles.weekStatNumber}>168</Text>
+              <Text style={styles.weekStatNumber}>{stats.glassesGiven}</Text>
               <Text style={styles.weekStatLabel}>Glasses Given</Text>
             </View>
           </View>
@@ -315,6 +473,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8FAFC",
   },
+  syncBanner: {
+    backgroundColor: "#FEF3C7",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  syncText: {
+    color: "#92400E",
+    fontSize: 13,
+    fontWeight: "500",
+    flex: 1,
+  },
+  syncButton: {
+    color: "#F59E0B",
+    fontSize: 13,
+    fontWeight: "600",
+  },
   // Top Header Styles
   topHeader: {
     flexDirection: "row",
@@ -355,9 +533,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#1A1A1A",
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 2,
   },
   headerRight: {
     flex: 1,
@@ -617,7 +800,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   spacer: {
-    height: 20,
+    height: 100,
   },
   // Bottom Navigation
   bottomNav: {

@@ -45,7 +45,7 @@ export interface Screening {
 // Base URL configuration
 // const API_BASE_URL = "http://10.0.2.2:5000/api"; // Android emulator
 // const API_BASE_URL = "http://localhost:5000/api"; // iOS simulator
-const API_BASE_URL = "http://192.168.137.123:5000/api"; // Physical device
+const API_BASE_URL = "http://20.20.42.133:5000/api"; // Physical device
 
 // Create axios instance
 const api = axios.create({
@@ -253,6 +253,18 @@ export const apiService = {
     return response.data;
   },
 
+  // ============ CLIENTS ============
+  async getClients() {
+    const response = await api.get("/dashboard/clients");
+    return response.data;
+  },
+
+  // ============ REPORTS ============
+  async getReports() {
+    const response = await api.get("/dashboard/reports");
+    return response.data;
+  },
+
   // ============ DASHBOARD ============
   async getDashboardStats() {
     const response = await api.get("/dashboard/stats");
@@ -293,6 +305,23 @@ export const apiService = {
         error: err.message,
       };
     }
+  },
+
+  // ============ USER DATA ============
+  async storeUserData(userData: any) {
+    try {
+      await AsyncStorage.setItem("user", JSON.stringify(userData));
+      return { success: true };
+    } catch (error) {
+      console.error("Store user data error:", error);
+      return { success: false };
+    }
+  },
+
+  // ============ DASHBOARD STATS ============
+  async getDashboardStats() {
+    const response = await api.get("/dashboard/stats");
+    return response.data;
   },
 };
 

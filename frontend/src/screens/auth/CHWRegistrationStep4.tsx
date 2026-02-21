@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  TextInput,
 } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -42,8 +43,9 @@ interface SelectedFile {
 export default function CHWRegistrationStep4() {
   const navigation = useNavigation<CHWRegistrationStep4NavigationProp>();
   const route = useRoute<CHWRegistrationStep4RouteProp>();
-  const { formData: registrationData, phone, otp } = route.params || {};
+  const { formData: registrationData, phone, otp: devOtp } = route.params || {};
 
+  const [otpInput, setOtpInput] = useState(devOtp || "");
   const [agreements, setAgreements] = useState({
     infoAccurate: false,
     dataProtection: false,
@@ -164,6 +166,11 @@ export default function CHWRegistrationStep4() {
       return;
     }
 
+    if (!otpInput || otpInput.length !== 6) {
+      Alert.alert("OTP Required", "Please enter the 6-digit OTP sent to your phone");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -173,16 +180,16 @@ export default function CHWRegistrationStep4() {
         trainingCertificate: selectedFiles.certificate?.name || null,
       };
 
-      const result = await apiService.verifyOTP(phone, otp, completeRegistrationData);
+      const result = await apiService.verifyOTP(phone, otpInput, completeRegistrationData);
 
       if (result.success) {
         Alert.alert(
           "🎉 Registration Successful!",
-          "Your account has been created successfully. You can now login and start screening clients.",
+          "Your account has been created successfully. You can now login.",
           [
             {
-              text: "Go to Dashboard",
-              onPress: () => navigation.navigate("AppTabs", { role: "CHW" }),
+              text: "Go to Login",
+              onPress: () => navigation.navigate("Login"),
             },
           ],
         );
@@ -236,8 +243,22 @@ export default function CHWRegistrationStep4() {
           </View>
         </View>
 
+        {/* OTP Verification */}
+        <Text style={styles.sectionTitle}>Verify Phone Number</Text>
+        <Text style={styles.sectionSubtitle}>
+          Enter the 6-digit code sent to {phone}
+        </Text>
+        <TextInput
+          style={styles.otpInput}
+          placeholder="Enter 6-digit OTP"
+          value={otpInput}
+          onChangeText={setOtpInput}
+          keyboardType="number-pad"
+          maxLength={6}
+        />
+
         {/* Form Title */}
-        <Text style={styles.sectionTitle}>Required Documents</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Required Documents</Text>
         <Text style={styles.sectionSubtitle}>
           Upload supporting documents (both optional)
         </Text>
@@ -597,7 +618,20 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     color: "#000000",
+    marginBottom: 24,
+  },
+  otpInput: {
+    backgroundColor: "#F5F5F5",
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 24,
+    fontWeight: "600",
+    textAlign: "center",
+    letterSpacing: 8,
+    marginTop: 12,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
   },
   sectionSubtitle: {
     fontSize: 14,
@@ -609,9 +643,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#333333",
     marginBottom: 12,
-  },
-  marginTop: {
-    marginTop: 24,
   },
   documentCard: {
     backgroundColor: "#F8F8F8",

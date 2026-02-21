@@ -7,21 +7,23 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
+  Alert,
 } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
+import { apiService } from "../../services/api";
 
 type RootStackParamList = {
   Login: undefined;
-  OTP: { phone: string; role: string };
+  OTP: { phone: string; role: string; formData?: any };
   Register: undefined;
   CHWRegistrationStep1: undefined;
-  CHWRegistrationStep2: undefined;
-  CHWRegistrationStep3: undefined;
-  CHWRegistrationStep4: undefined;
+  CHWRegistrationStep2: { step1Data?: any };
+  CHWRegistrationStep3: { step1Data?: any; step2Data?: any };
+  CHWRegistrationStep4: { formData: any; phone: string; otp: string };
   AppTabs: { role: string };
 };
 
@@ -30,8 +32,16 @@ type CHWRegistrationStep3NavigationProp = NativeStackNavigationProp<
   "CHWRegistrationStep3"
 >;
 
+type CHWRegistrationStep3RouteProp = RouteProp<
+  RootStackParamList,
+  "CHWRegistrationStep3"
+>;
+
 export default function CHWRegistrationStep3() {
   const navigation = useNavigation<CHWRegistrationStep3NavigationProp>();
+  const route = useRoute<CHWRegistrationStep3RouteProp>();
+  const step1Data = route.params?.step1Data || {};
+  const step2Data = route.params?.step2Data || {};
 
   const [formData, setFormData] = useState({
     healthFacility: "",
@@ -50,9 +60,33 @@ export default function CHWRegistrationStep3() {
     navigation.navigate("CHWRegistrationStep2");
   };
 
-  const handleNextPress = () => {
-    if (isFormValid()) {
-      navigation.navigate("CHWRegistrationStep4");
+  const handleNextPress = async () => {
+    if (!isFormValid()) return;
+
+    // Combine all form data
+    const completeFormData = {
+      ...step1Data,
+      ...step2Data,
+      ...formData,
+    };
+
+    // Request OTP
+    try {
+      const phone = step2Data.phoneNumber || "";
+      const result = await apiService.login(phone);
+      
+      if (result.success) {
+        // Navigate to step 4 with all data and OTP info
+        navigation.navigate("CHWRegistrationStep4", {
+          formData: completeFormData,
+          phone,
+          otp: result.otp || "", // Dev mode shows OTP
+        });
+      } else {
+        Alert.alert("Error", "Failed to send OTP. Please try again.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to send OTP. Please check your connection.");
     }
   };
 

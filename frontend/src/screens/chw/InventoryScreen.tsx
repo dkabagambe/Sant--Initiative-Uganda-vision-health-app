@@ -153,10 +153,21 @@ export default function InventoryScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [inventory, setInventory] = useState<any[]>([]);
   const [totals, setTotals] = useState({ total_pairs: 0 });
+  const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
     loadInventory();
+    loadUserData();
   }, []);
+
+  const loadUserData = async () => {
+    try {
+      const user = await apiService.getCurrentUser();
+      setUserData(user);
+    } catch (error) {
+      console.error("Failed to load user data:", error);
+    }
+  };
 
   const loadInventory = async () => {
     try {
@@ -219,7 +230,8 @@ export default function InventoryScreen() {
         <View style={styles.headerTop}>
           <View style={styles.headerInfo}>
             <Text style={styles.organization}>Santé Initiative Uganda</Text>
-            <Text style={styles.userName}>VHT</Text>
+            <Text style={styles.userName}>{userData?.full_name || "User"}</Text>
+            <Text style={styles.userRole}>VHT - {userData?.district || "District"}</Text>
           </View>
           <TouchableOpacity style={styles.profileButton}>
             <Ionicons name="person-circle-outline" size={44} color="#1E40AF" />
@@ -751,7 +763,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   bottomSpacer: {
-    height: 40,
+    height: 100,
   },
   bottomNav: {
     position: "absolute",

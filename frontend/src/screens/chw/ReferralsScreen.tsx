@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,13 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
+  RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { apiService } from "../../services/api";
 
 type RootStackParamList = {
   CHWDashboard: undefined;
@@ -28,105 +31,87 @@ type ReferralsScreenNavigationProp = NativeStackNavigationProp<
 
 interface ReferralItem {
   id: string;
-  patientName: string;
-  age: number;
-  phoneNumber: string;
+  client_name: string;
   reason: string;
-  referredTo: string;
-  referredDate: string;
-  status: "active" | "completed";
-}
-
-interface PartnerFacility {
-  id: string;
-  name: string;
-  contact?: string;
-  distance?: string;
+  facility_name: string;
+  referred_date: string;
+  status: string;
+  urgency: string;
 }
 
 export default function ReferralsScreen() {
   const navigation = useNavigation<ReferralsScreenNavigationProp>();
-  const [activeTab, setActiveTab] = useState<"active" | "completed">("active");
-
-  // Referrals Data
-  const referralsData: ReferralItem[] = [
-    {
-      id: "1",
-      patientName: "Nansubuga Sarah",
-      age: 58,
-      phoneNumber: "0700111222",
-      reason: "Suspected cataract, vision loss",
-      referredTo: "Luweero Hospital Eye Clinic",
-      referredDate: "Jan 12, 2026",
-      status: "active",
-    },
-    {
-      id: "2",
-      patientName: "Okello David",
-      age: 62,
-      phoneNumber: "0700222333",
-      reason: "High blood pressure, diabetes",
-      referredTo: "Bombo Health Center IV",
-      referredDate: "Jan 10, 2026",
-      status: "active",
-    },
-    {
-      id: "3",
-      patientName: "Nabirye Joyce",
-      age: 55,
-      phoneNumber: "0700333444",
-      reason: "Eye pain and redness",
-      referredTo: "Luweero Hospital Eye Clinic",
-      referredDate: "Jan 8, 2026",
-      status: "completed",
-    },
-  ];
-
-  const activeReferrals = referralsData.filter((r) => r.status === "active");
-  const completedReferrals = referralsData.filter(
-    (r) => r.status === "completed",
+  const [activeTab, setActiveTab] = useState<"pending" | "completed">(
+    "pending",
   );
+  const [referrals, setReferrals] = useState<ReferralItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    loadReferrals();
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const user = await apiService.getCurrentUser();
+      setUserData(user);
+    } catch (error) {
+      console.error("Failed to load user data:", error);
+    }
+  };
+
+  const loadReferrals = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getReferrals();
+      if (response.success) {
+        setReferrals(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to load referrals:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadReferrals();
+    setRefreshing(false);
+  };
+
+  const pendingReferrals = referrals.filter((r) => r.status === "pending");
+  const completedReferrals = referrals.filter((r) => r.status === "completed");
 
   const currentReferrals =
-    activeTab === "active" ? activeReferrals : completedReferrals;
-
-  // Partner Facilities
-  const partnerFacilities: PartnerFacility[] = [
-    {
-      id: "1",
-      name: "Luweero Hospital Eye Clinic",
-      contact: "0414-123456",
-      distance: "5.2 km",
-    },
-    {
-      id: "2",
-      name: "Bombo Health Center IV",
-      contact: "0414-234567",
-      distance: "8.7 km",
-    },
-    {
-      id: "3",
-      name: "Kiwoko Hospital",
-      contact: "0414-345678",
-      distance: "12.5 km",
-    },
-  ];
-
-  // Statistics
-  const stats = {
-    active: 12,
-    highPriority: 5,
-    completed: 28,
-  };
+    activeTab === "pending" ? pendingReferrals : completedReferrals;
 
   const ReferralCard = ({ referral }: { referral: ReferralItem }) => (
     <View style={styles.outlinedCard}>
       {/* Patient Header */}
       <View style={styles.patientHeader}>
-        <Text style={styles.patientName}>{referral.patientName}</Text>
-        <Text style={styles.patientDetails}>
-          Age {referral.age} • {referral.phoneNumber}
-        </Text>
+        <Text style={styles.patientName}>{referral.client_name}</Text>
+        <View
+          style={[
+            styles.statusBadge,
+            {
+              backgroundColor:
+                referral.urgency === "urgent" ? "#FEE2E2" : "#E0F2FE",
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.statusText,
+              { color: referral.urgency === "urgent" ? "#DC2626" : "#0284C7" },
+            ]}
+          >
+            {referral.urgency}
+          </Text>
+        </View>
       </View>
 
       {/* Referral Details */}
@@ -137,16 +122,20 @@ export default function ReferralsScreen() {
 
       <View style={styles.detailSection}>
         <Text style={styles.detailLabel}>Referred to</Text>
-        <Text style={styles.detailValue}>{referral.referredTo}</Text>
+        <Text style={styles.detailValue}>
+          {referral.facility_name || "Not specified"}
+        </Text>
       </View>
 
       <View style={styles.detailSection}>
         <Text style={styles.detailLabel}>Referred on</Text>
-        <Text style={styles.detailValue}>{referral.referredDate}</Text>
+        <Text style={styles.detailValue}>
+          {new Date(referral.referred_date).toLocaleDateString()}
+        </Text>
       </View>
 
       {/* Action Button */}
-      {referral.status === "active" && (
+      {referral.status === "pending" && (
         <TouchableOpacity style={styles.markCompleteButton}>
           <Text style={styles.markCompleteButtonText}>Mark Complete</Text>
         </TouchableOpacity>
@@ -154,27 +143,23 @@ export default function ReferralsScreen() {
     </View>
   );
 
-  const PartnerFacilityCard = ({ facility }: { facility: PartnerFacility }) => (
-    <View style={styles.facilityCard}>
-      <Ionicons
-        name="business"
-        size={18}
-        color="#2563EB"
-        style={styles.facilityIcon}
-      />
-      <View style={styles.facilityInfo}>
-        <Text style={styles.facilityName}>{facility.name}</Text>
-        {facility.contact && facility.distance && (
-          <Text style={styles.facilityDetails}>
-            {facility.contact} • {facility.distance}
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View
+          style={[
+            styles.container,
+            { justifyContent: "center", alignItems: "center" },
+          ]}
+        >
+          <ActivityIndicator size="large" color="#2E7D32" />
+          <Text style={{ marginTop: 12, color: "#666" }}>
+            Loading referrals...
           </Text>
-        )}
-      </View>
-      <TouchableOpacity style={styles.facilityButton}>
-        <Ionicons name="call-outline" size={18} color="#2563EB" />
-      </TouchableOpacity>
-    </View>
-  );
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -187,29 +172,18 @@ export default function ReferralsScreen() {
             <Ionicons name="arrow-back" size={24} color="#374151" />
           </TouchableOpacity>
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>Referral Management</Text>
+            <Text style={styles.headerTitle}>
+              {userData?.full_name || "Referral Management"}
+            </Text>
             <Text style={styles.headerSubtitle}>
-              Advanced eye care & NCD screening
+              VHT -{" "}
+              {userData?.district
+                ? `${userData.district} District`
+                : "Advanced eye care"}
             </Text>
           </View>
           <TouchableOpacity>
             <Ionicons name="ellipsis-vertical" size={24} color="#374151" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Top Actions */}
-        <View style={styles.topActions}>
-          <TouchableOpacity style={styles.actionButton}>
-            <MaterialIcons name="insights" size={20} color="#2563EB" />
-            <Text style={styles.actionText}>Impact</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="download-outline" size={20} color="#2563EB" />
-            <Text style={styles.actionText}>Export</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="add-circle" size={20} color="#2563EB" />
-            <Text style={styles.actionText}>New</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -218,40 +192,47 @@ export default function ReferralsScreen() {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#2E7D32"]}
+          />
+        }
       >
         {/* Statistics Cards */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.active}</Text>
-            <Text style={styles.statLabel}>Active</Text>
+            <Text style={styles.statNumber}>{pendingReferrals.length}</Text>
+            <Text style={styles.statLabel}>Pending</Text>
           </View>
 
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.highPriority}</Text>
-            <Text style={styles.statLabel}>High Priority</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.completed}</Text>
+            <Text style={styles.statNumber}>{completedReferrals.length}</Text>
             <Text style={styles.statLabel}>Completed</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{referrals.length}</Text>
+            <Text style={styles.statLabel}>Total</Text>
           </View>
         </View>
 
         {/* Tabs */}
         <View style={styles.tabsContainer}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === "active" && styles.activeTab]}
-            onPress={() => setActiveTab("active")}
+            style={[styles.tab, activeTab === "pending" && styles.activeTab]}
+            onPress={() => setActiveTab("pending")}
           >
             <Text
               style={[
                 styles.tabText,
-                activeTab === "active" && styles.activeTabText,
+                activeTab === "pending" && styles.activeTabText,
               ]}
             >
-              Active Referrals
+              Pending Referrals
             </Text>
-            {activeTab === "active" && (
+            {activeTab === "pending" && (
               <View style={styles.activeTabIndicator} />
             )}
           </TouchableOpacity>
@@ -302,61 +283,8 @@ export default function ReferralsScreen() {
           <Text style={styles.createNewText}>Create New Referral</Text>
         </TouchableOpacity>
 
-        {/* Partner Facilities Section */}
-        <View style={styles.partnerFacilitiesSection}>
-          <Text style={styles.sectionTitle}>Partner Facilities</Text>
-
-          <View style={styles.facilitiesList}>
-            {partnerFacilities.map((facility) => (
-              <PartnerFacilityCard key={facility.id} facility={facility} />
-            ))}
-          </View>
-        </View>
-
         <View style={styles.bottomSpacer} />
       </ScrollView>
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate("CHWDashboard")}
-        >
-          <Ionicons name="home-outline" size={24} color="#6B7280" />
-          <Text style={styles.navText}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate("VisionScreeningStep1")}
-        >
-          <Ionicons name="eye-outline" size={24} color="#6B7280" />
-          <Text style={styles.navText}>Screen</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate("InventoryScreen")}
-        >
-          <Ionicons name="cube-outline" size={24} color="#6B7280" />
-          <Text style={styles.navText}>Stock</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate("PaymentsScreen")}
-        >
-          <Ionicons name="cash-outline" size={24} color="#6B7280" />
-          <Text style={styles.navText}>Payments</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItemActive}>
-          <View style={styles.activeNavIcon}>
-            <Ionicons name="document-text" size={24} color="#FFFFFF" />
-          </View>
-          <Text style={styles.navTextActive}>Referrals</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
@@ -499,12 +427,25 @@ const styles = StyleSheet.create({
   },
   patientHeader: {
     marginBottom: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   patientName: {
     fontSize: 18,
     fontWeight: "700",
     color: "#1F2937",
-    marginBottom: 4,
+    flex: 1,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "capitalize",
   },
   patientDetails: {
     fontSize: 14,
@@ -633,7 +574,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   bottomSpacer: {
-    height: 20,
+    height: 100,
   },
   // Bottom Navigation
   bottomNav: {

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import VisionScreen6 from "./VisionScreen6";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
@@ -9,6 +10,23 @@ export default function VisionScreen6Wrapper() {
   const navigation = useNavigation<any>();
   const { screeningData, resetScreeningData } = useScreening();
   const [submitting, setSubmitting] = useState(false);
+
+  const saveOffline = async (data: any) => {
+    try {
+      const offlineQueue = await AsyncStorage.getItem("offlineScreenings");
+      const queue = offlineQueue ? JSON.parse(offlineQueue) : [];
+      queue.push({
+        ...data,
+        offlineId: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+      });
+      await AsyncStorage.setItem("offlineScreenings", JSON.stringify(queue));
+      return true;
+    } catch (error) {
+      console.error("Failed to save offline:", error);
+      return false;
+    }
+  };
 
   const handleComplete = async (passed: boolean) => {
     setSubmitting(true);
@@ -24,28 +42,50 @@ export default function VisionScreen6Wrapper() {
           : null,
       };
 
-      const result = await apiService.createScreening(completeData);
+      try {
+        const result = await apiService.createScreening(completeData);
 
-      if (result.success) {
-        Alert.alert(
-          "Success",
-          "Screening completed and saved successfully!",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                resetScreeningData();
-                navigation.navigate("CHWDashboard");
+        if (result.success) {
+          Alert.alert(
+            "✅ Success",
+            "Screening completed and saved successfully!",
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  resetScreeningData();
+                  navigation.navigate("CHWDashboard");
+                },
               },
-            },
-          ]
-        );
-      } else {
-        Alert.alert("Error", "Failed to save screening. Please try again.");
+            ]
+          );
+        } else {
+          throw new Error("API returned error");
+        }
+      } catch (apiError) {
+        // Save offline if API fails
+        const saved = await saveOffline(completeData);
+        if (saved) {
+          Alert.alert(
+            "📱 Saved Offline",
+            "No internet connection. Screening saved locally and will sync when online.",
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  resetScreeningData();
+                  navigation.navigate("CHWDashboard");
+                },
+              },
+            ]
+          );
+        } else {
+          Alert.alert("Error", "Failed to save screening. Please try again.");
+        }
       }
     } catch (error) {
       console.error("Screening submission error:", error);
-      Alert.alert("Error", "Failed to save screening. Data saved locally for sync.");
+      Alert.alert("Error", "An unexpected error occurred.");
     } finally {
       setSubmitting(false);
     }
@@ -61,25 +101,49 @@ export default function VisionScreen6Wrapper() {
         referralReason: "Failed vision tests - requires specialist examination",
       };
 
-      const result = await apiService.createScreening(completeData);
+      try {
+        const result = await apiService.createScreening(completeData);
 
-      if (result.success) {
-        Alert.alert(
-          "Referral Created",
-          "Client has been referred for specialist examination.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                resetScreeningData();
-                navigation.navigate("CHWDashboard");
+        if (result.success) {
+          Alert.alert(
+            "Referral Created",
+            "Client has been referred for specialist examination.",
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  resetScreeningData();
+                  navigation.navigate("CHWDashboard");
+                },
               },
-            },
-          ]
-        );
+            ]
+          );
+        } else {
+          throw new Error("API returned error");
+        }
+      } catch (apiError) {
+        // Save offline if API fails
+        const saved = await saveOffline(completeData);
+        if (saved) {
+          Alert.alert(
+            "📱 Saved Offline",
+            "Referral saved locally and will sync when online.",
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  resetScreeningData();
+                  navigation.navigate("CHWDashboard");
+                },
+              },
+            ]
+          );
+        } else {
+          Alert.alert("Error", "Failed to create referral.");
+        }
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to create referral.");
+      Alert.alert("Error", "An unexpected error occurred.");
     } finally {
       setSubmitting(false);
     }

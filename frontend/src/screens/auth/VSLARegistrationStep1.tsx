@@ -16,7 +16,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 
 // Define navigation types
 type RootStackParamList = {
-  VSLARegistrationStep2: undefined;
+  VSLARegistrationStep2: { step1Data: any };
   // Add other screens as needed
 };
 
@@ -97,6 +97,7 @@ const VSLARegistrationStep1Screen = () => {
   const [groupType, setGroupType] = useState("");
   const [registrationStatus, setRegistrationStatus] =
     useState("Not Registered");
+  const [registrationNumber, setRegistrationNumber] = useState("");
   const [yearFormed, setYearFormed] = useState("");
 
   // Dropdown state
@@ -155,7 +156,14 @@ const VSLARegistrationStep1Screen = () => {
 
   const handleNext = () => {
     if (validateForm()) {
-      navigation.navigate("VSLARegistrationStep2");
+      const step1Data = {
+        groupName,
+        groupType,
+        registrationStatus,
+        yearFormed,
+        registrationNumber,
+      };
+      navigation.navigate("VSLARegistrationStep2", { step1Data });
     }
   };
 

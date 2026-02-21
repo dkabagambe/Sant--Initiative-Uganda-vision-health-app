@@ -10,18 +10,18 @@ import {
 } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
 
 type RootStackParamList = {
   Login: undefined;
-  OTP: { phone: string; role: string };
+  OTP: { phone: string; role: string; formData?: any };
   Register: undefined;
   CHWRegistrationStep1: undefined;
-  CHWRegistrationStep2: undefined;
-  CHWRegistrationStep3: undefined;
-  CHWRegistrationStep4: undefined;
+  CHWRegistrationStep2: { step1Data?: any };
+  CHWRegistrationStep3: { step1Data?: any; step2Data?: any };
+  CHWRegistrationStep4: { formData: any; phone: string; otp: string };
   AppTabs: { role: string };
 };
 
@@ -30,8 +30,15 @@ type CHWRegistrationStep2NavigationProp = NativeStackNavigationProp<
   "CHWRegistrationStep2"
 >;
 
+type CHWRegistrationStep2RouteProp = RouteProp<
+  RootStackParamList,
+  "CHWRegistrationStep2"
+>;
+
 export default function CHWRegistrationStep2() {
   const navigation = useNavigation<CHWRegistrationStep2NavigationProp>();
+  const route = useRoute<CHWRegistrationStep2RouteProp>();
+  const step1Data = route.params?.step1Data || {};
 
   const [formData, setFormData] = useState({
     phoneNumber: "",
@@ -81,7 +88,10 @@ export default function CHWRegistrationStep2() {
 
   const handleNextPress = () => {
     if (isFormValid()) {
-      navigation.navigate("CHWRegistrationStep3");
+      navigation.navigate("CHWRegistrationStep3", { 
+        step1Data, 
+        step2Data: formData 
+      });
     }
   };
 

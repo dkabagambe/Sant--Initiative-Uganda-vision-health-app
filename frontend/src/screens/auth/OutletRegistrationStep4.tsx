@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
   SafeAreaView,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -15,10 +16,11 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
+import { apiService } from "../../services/api";
 
 type RootStackParamList = {
   OutletRegistrationStep3: { step1Data: any; step2Data: any };
-  OutletRegistrationStep4: { step1Data: any; step2Data: any; step3Data: any };
+  OutletRegistrationStep4: { formData: any; phone: string; otp: string };
   AppTabs: { role: string };
   [key: string]: any;
 };
@@ -42,8 +44,9 @@ interface SelectedFile {
 const OutletRegistrationStep4 = () => {
   const navigation = useNavigation<OutletRegistrationStep4NavigationProp>();
   const route = useRoute<OutletRegistrationStep4RouteProp>();
-  const { step1Data, step2Data, step3Data } = route.params || {};
+  const { formData: registrationData, phone, otp: devOtp } = route.params || {};
 
+  const [otpInput, setOtpInput] = useState(devOtp || "");
   const [agreements, setAgreements] = useState({
     infoAccurate: false,
     partnershipTerms: false,
@@ -202,59 +205,35 @@ const OutletRegistrationStep4 = () => {
       return;
     }
 
-    if (!selectedFiles.shopFront || !selectedFiles.ownerId) {
-      Alert.alert(
-        "Required Photos",
-        "Please upload both Shop Front Photo and Owner National ID Photo",
-        [{ text: "OK" }],
-      );
+    if (!otpInput || otpInput.length !== 6) {
+      Alert.alert("OTP Required", "Please enter the 6-digit OTP sent to your phone");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Prepare form data for submission
-      const formData = new FormData();
+      const completeRegistrationData = {
+        ...registrationData,
+        role: "outlet",
+      };
 
-      // Add all previous steps data
-      formData.append("step1Data", JSON.stringify(step1Data));
-      formData.append("step2Data", JSON.stringify(step2Data));
-      formData.append("step3Data", JSON.stringify(step3Data));
-      formData.append("agreements", JSON.stringify(agreements));
+      const result = await apiService.verifyOTP(phone, otpInput, completeRegistrationData);
 
-      // Add files if they exist
-      if (selectedFiles.shopFront) {
-        const file = selectedFiles.shopFront;
-        formData.append("shopFront", {
-          uri: file.uri,
-          type: file.type,
-          name: file.name,
-        } as any);
+      if (result.success) {
+        Alert.alert(
+          "🎉 Registration Successful!",
+          "Your outlet has been registered successfully. You can now login.",
+          [
+            {
+              text: "Go to Login",
+              onPress: () => navigation.navigate("Login"),
+            },
+          ],
+        );
+      } else {
+        Alert.alert("Registration Failed", result.error || "Please try again");
       }
-
-      if (selectedFiles.ownerId) {
-        const file = selectedFiles.ownerId;
-        formData.append("ownerId", {
-          uri: file.uri,
-          type: file.type,
-          name: file.name,
-        } as any);
-      }
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Success - navigate to home page
-      Alert.alert(
-        "🎉 Registration Submitted Successfully!",
-        "Your outlet registration has been received. Our team will review your application within 24-48 hours. You'll receive an SMS notification once approved.",
-        [
-          {
-            onPress: () => navigation.navigate("Login"),
-          },
-        ],
-      );
     } catch (error) {
       console.error("Submission error:", error);
       Alert.alert(
@@ -306,8 +285,22 @@ const OutletRegistrationStep4 = () => {
           </View>
         </View>
 
+        {/* OTP Verification */}
+        <Text style={styles.sectionTitle}>Verify Phone Number</Text>
+        <Text style={styles.sectionSubtitle}>
+          Enter the 6-digit code sent to {phone}
+        </Text>
+        <TextInput
+          style={styles.otpInput}
+          placeholder="Enter 6-digit OTP"
+          value={otpInput}
+          onChangeText={setOtpInput}
+          keyboardType="number-pad"
+          maxLength={6}
+        />
+
         {/* Form Title */}
-        <Text style={styles.sectionTitle}>Required Documents</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Required Documents</Text>
 
         {/* Shop Front Photo */}
         <Text style={styles.documentLabel}>Shop Front Photo *</Text>
@@ -667,6 +660,24 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#000000",
     marginBottom: 24,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: -16,
+    marginBottom: 12,
+  },
+  otpInput: {
+    backgroundColor: "#F5F5F5",
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 24,
+    fontWeight: "600",
+    textAlign: "center",
+    letterSpacing: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
   },
   documentLabel: {
     fontSize: 14,

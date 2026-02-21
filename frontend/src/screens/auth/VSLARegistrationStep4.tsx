@@ -7,19 +7,24 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
+  TextInput,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
+import { apiService } from "../../services/api";
 
 // Define navigation types
 type RootStackParamList = {
   VSLARegistrationStep3: undefined;
+  VSLARegistrationStep4: { formData: any; phone: string; otp: string };
+  AppTabs: { role: string };
   Login: undefined;
 };
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
+type VSLAStep4RouteProp = RouteProp<RootStackParamList, "VSLARegistrationStep4">;
 
 // Define types for ProgressBar props
 interface ProgressBarProps {
@@ -56,6 +61,10 @@ type DocumentPickerResult =
 
 const VSLARegistrationStep4 = () => {
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<VSLAStep4RouteProp>();
+  const { formData: registrationData, phone, otp: devOtp } = route.params || {};
+
+  const [otpInput, setOtpInput] = useState(devOtp || "");
   const [documents, setDocuments] = useState<Document[]>([
     {
       id: 1,
@@ -135,13 +144,15 @@ const VSLARegistrationStep4 = () => {
         copyToCacheDirectory: true,
       });
 
-      // Type guard to check if result has success properties
-      if ("type" in result && result.type === "success") {
-        const successResult = result as any; // Use any to bypass TypeScript errors
+      console.log("Document picker result:", result);
+
+      // Check if document was selected (not cancelled)
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
         const fileData: DocumentFile = {
-          name: successResult.name || `document_${Date.now()}`,
-          uri: successResult.uri || "",
-          type: successResult.mimeType || "document",
+          name: asset.name || `document_${Date.now()}`,
+          uri: asset.uri || "",
+          type: asset.mimeType || "document",
         };
 
         updateDocumentFile(id, fileData);
@@ -187,31 +198,71 @@ const VSLARegistrationStep4 = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (!validateForm()) {
-      Alert.alert(
-        "Missing Required Document",
-        "Please upload the Group Photo before submitting.",
-      );
+  const validateForm = () => {
+    const newErrors: { [key: number]: string } = {};
+    let isValid = true;
+
+    documents.forEach((doc) => {
+      if (doc.required && !doc.file) {
+        newErrors[doc.id] = `${doc.label} is required`;
+        isValid = false;
+      }
+    });
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleSubmit = async () => {
+    if (!otpInput || otpInput.length !== 6) {
+      Alert.alert("OTP Required", "Please enter the 6-digit OTP sent to your phone");
       return;
     }
 
-    // Handle form submission
-    console.log("VSLA Registration Submitted with files:", documents);
+    // Validate required documents
+    if (!validateForm()) {
+      Alert.alert("Missing Documents", "Please upload all required documents");
+      return;
+    }
 
-    // Show success message
-    Alert.alert(
-      "Registration Submitted",
-      "Your VSLA/SACCO registration has been submitted successfully. You will receive a confirmation within 24-48 hours.",
-      [
-        {
-          text: "OK",
-          onPress: () => {
-            navigation.navigate("Login");
-          },
-        },
-      ],
-    );
+    try {
+      // Collect document file names
+      const documentFiles = documents.reduce((acc, doc) => {
+        if (doc.file) {
+          acc[`document_${doc.id}`] = doc.file.name;
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
+      const completeRegistrationData = {
+        ...registrationData,
+        role: "vsla",
+        ...documentFiles, // Include document file names
+      };
+
+      const result = await apiService.verifyOTP(phone, otpInput, completeRegistrationData);
+
+      if (result.success) {
+        Alert.alert(
+          "🎉 Registration Successful!",
+          "Your VSLA/SACCO has been registered successfully. You can now login.",
+          [
+            {
+              text: "Go to Login",
+              onPress: () => navigation.navigate("Login"),
+            },
+          ],
+        );
+      } else {
+        Alert.alert("Registration Failed", result.error || "Please try again");
+      }
+    } catch (error) {
+      console.error("Submission error:", error);
+      Alert.alert(
+        "Submission Failed",
+        "There was an error submitting your registration. Please check your connection and try again.",
+      );
+    }
   };
 
   // Progress bar component
@@ -278,6 +329,22 @@ const VSLARegistrationStep4 = () => {
         {/* Progress Bar */}
         <View style={styles.progressWrapper}>
           <ProgressBar currentStep={4} totalSteps={4} />
+        </View>
+
+        {/* OTP Verification */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Verify Phone Number</Text>
+          <Text style={styles.sectionSubtitle}>
+            Enter the 6-digit code sent to {phone}
+          </Text>
+          <TextInput
+            style={styles.otpInput}
+            placeholder="Enter 6-digit OTP"
+            value={otpInput}
+            onChangeText={setOtpInput}
+            keyboardType="number-pad"
+            maxLength={6}
+          />
         </View>
 
         <View style={styles.section}>
@@ -487,6 +554,23 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#1A1A1A",
     marginBottom: 20,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 12,
+  },
+  otpInput: {
+    backgroundColor: "#F5F5F5",
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 24,
+    fontWeight: "600",
+    textAlign: "center",
+    letterSpacing: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
   },
   documentItem: {
     marginBottom: 24,

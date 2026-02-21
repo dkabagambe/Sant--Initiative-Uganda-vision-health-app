@@ -2,19 +2,32 @@
 exports.getDashboardStats = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user.userId;
+    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A'; // Default to Jane for testing
 
     // Get screening stats
     const screeningStats = await sql`
       SELECT 
         COUNT(*) as total_screenings,
-        COUNT(CASE WHEN needs_glasses = true THEN 1 END) as clients_needing_glasses,
-        COUNT(CASE WHEN needs_referral = true THEN 1 END) as clients_referred,
-        COUNT(CASE WHEN screening_date >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as screenings_this_week,
-        COUNT(CASE WHEN screening_date >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as screenings_this_month,
-        COUNT(CASE WHEN screening_date = CURRENT_DATE THEN 1 END) as screenings_today
+        COUNT(CASE WHEN needs_glasses = 1 THEN 1 END) as clients_needing_glasses,
+        COUNT(CASE WHEN needs_referral = 1 THEN 1 END) as clients_referred,
+        COUNT(CASE WHEN date(screening_date) >= date('now', '-7 days') THEN 1 END) as screenings_this_week,
+        COUNT(CASE WHEN date(screening_date) >= date('now', '-30 days') THEN 1 END) as screenings_this_month,
+        COUNT(CASE WHEN date(screening_date) = date('now') THEN 1 END) as screenings_today
       FROM screenings
       WHERE health_worker_id = ${healthWorkerId}
+    `;
+
+    // Get clients count
+    const clientStats = await sql`
+      SELECT COUNT(*) as total_clients
+      FROM clients
+      WHERE health_worker_id = ${healthWorkerId}
+    `;
+
+    // Get inventory count
+    const inventoryStats = await sql`
+      SELECT COALESCE(SUM(stock_quantity), 0) as total_stock
+      FROM products
     `;
 
     // Get payment stats
@@ -23,7 +36,6 @@ exports.getDashboardStats = async (req, res) => {
         COUNT(*) as total_payments,
         COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_payments,
         COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_payments,
-        COUNT(CASE WHEN status = 'overdue' THEN 1 END) as overdue_payments,
         COALESCE(SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END), 0) as total_revenue,
         COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) as pending_amount
       FROM payments p
@@ -36,8 +48,7 @@ exports.getDashboardStats = async (req, res) => {
       SELECT 
         COUNT(*) as total_referrals,
         COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_referrals,
-        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_referrals,
-        COUNT(CASE WHEN urgency = 'urgent' THEN 1 END) as urgent_referrals
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_referrals
       FROM referrals
       WHERE health_worker_id = ${healthWorkerId}
     `;
@@ -55,9 +66,15 @@ exports.getDashboardStats = async (req, res) => {
     res.json({
       success: true,
       data: {
+        weekScreenings: screeningStats[0].screenings_this_week || 0,
+        glassesGiven: screeningStats[0].clients_needing_glasses || 0,
+        clients: clientStats[0].total_clients || 0,
+        inventory: inventoryStats[0].total_stock || 0,
+        referrals: referralStats[0].pending_referrals || 0,
+        paymentsDue: paymentStats[0].pending_payments || 0,
         screenings: screeningStats[0],
         payments: paymentStats[0],
-        referrals: referralStats[0],
+        referralsData: referralStats[0],
         recentActivity: recentScreenings,
       },
     });

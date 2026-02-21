@@ -9,16 +9,18 @@ import {
   Modal,
   FlatList,
   SafeAreaView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
+import { apiService } from "../../services/api";
 
 type RootStackParamList = {
   OutletRegistrationStep2: { step1Data: any };
   OutletRegistrationStep3: { step1Data: any; step2Data: any };
-  OutletRegistrationStep4: { step1Data: any; step2Data: any; step3Data: any };
+  OutletRegistrationStep4: { formData: any; phone: string; otp: string };
   [key: string]: any;
 };
 
@@ -66,12 +68,34 @@ const OutletRegistrationStep3 = () => {
     }));
   };
 
-  const handleNext = () => {
-    navigation.navigate("OutletRegistrationStep4", {
-      step1Data,
-      step2Data,
-      step3Data: formData,
-    });
+  const handleNext = async () => {
+    const completeFormData = {
+      ...step1Data,
+      ...step2Data,
+      ...formData,
+    };
+
+    const phone = step2Data?.primaryPhoneNumber || "";
+    if (!phone) {
+      Alert.alert("Error", "Phone number is required");
+      return;
+    }
+
+    try {
+      const result = await apiService.login(phone);
+      
+      if (result.success) {
+        navigation.navigate("OutletRegistrationStep4", {
+          formData: completeFormData,
+          phone,
+          otp: result.otp || "",
+        });
+      } else {
+        Alert.alert("Error", "Failed to send OTP. Please try again.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to send OTP. Please check your connection.");
+    }
   };
 
   const handleBack = () => {

@@ -17,7 +17,7 @@ exports.login = async (req, res) => {
     }
 
     const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
 
     // Check if user exists
     const existingUser = await sql`
@@ -74,7 +74,7 @@ exports.verifyOTP = async (req, res) => {
       SELECT * FROM users 
       WHERE phone_number = ${phoneNumber} 
       AND otp_code = ${otp}
-      AND otp_expires_at > NOW()
+      AND otp_expires_at > datetime('now')
     `;
 
     if (user.length === 0) {
@@ -108,7 +108,7 @@ exports.verifyOTP = async (req, res) => {
 
       const fullName = `${firstName || ""} ${lastName || ""}`.trim();
 
-      const updated = await sql`
+      await sql`
         UPDATE users SET
           first_name = ${firstName || null},
           last_name = ${lastName || null},
@@ -131,23 +131,39 @@ exports.verifyOTP = async (req, res) => {
           tin_number = ${tinNumber || null},
           otp_code = NULL,
           otp_expires_at = NULL,
-          last_login = NOW()
+          last_login = datetime('now')
         WHERE phone_number = ${phoneNumber}
-        RETURNING *
       `;
 
-      userData = updated[0];
+      // Fetch the updated user
+      const updatedUser = await sql`
+        SELECT * FROM users WHERE phone_number = ${phoneNumber}
+      `;
+      userData = updatedUser[0];
     } else {
       // Just clear OTP and update last login
-      const updated = await sql`
+      await sql`
         UPDATE users SET
           otp_code = NULL,
           otp_expires_at = NULL,
-          last_login = NOW()
+          last_login = datetime('now')
         WHERE phone_number = ${phoneNumber}
-        RETURNING *
       `;
-      userData = updated[0];
+      
+      // Fetch the updated user
+      const updatedUser = await sql`
+        SELECT * FROM users WHERE phone_number = ${phoneNumber}
+      `;
+      userData = updatedUser[0];
+    }
+
+    // Verify userData exists
+    if (!userData || !userData.id) {
+      console.error("userData is undefined or missing id:", userData);
+      return res.status(500).json({ 
+        success: false, 
+        error: "Failed to retrieve user data after update" 
+      });
     }
 
     // Generate JWT
@@ -174,7 +190,17 @@ exports.verifyOTP = async (req, res) => {
     });
   } catch (error) {
     console.error("Verify OTP error:", error);
-    res.status(500).json({ success: false, error: "Failed to verify OTP" });
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      phoneNumber,
+      hasRegistrationData: !!registrationData
+    });
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to verify OTP",
+      details: error.message 
+    });
   }
 };
 

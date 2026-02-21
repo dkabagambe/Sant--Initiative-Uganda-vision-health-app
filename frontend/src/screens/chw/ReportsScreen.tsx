@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,13 @@ import {
   SafeAreaView,
   StatusBar,
   Dimensions,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { apiService } from "../../services/api";
 
 type RootStackParamList = {
   CHWDashboard: undefined;
@@ -29,6 +32,9 @@ const { width } = Dimensions.get("window");
 export default function ReportsScreen() {
   const navigation = useNavigation<ReportsScreenNavigationProp>();
   const [selectedPeriod, setSelectedPeriod] = useState("Monthly");
+  const [reports, setReports] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const periods = [
     "Daily",
@@ -39,25 +45,45 @@ export default function ReportsScreen() {
     "Yearly",
   ];
 
-  const salesByPower = [
-    { power: "+2.50D", sales: "23 sales", revenue: "UGX 345,000" },
-    { power: "+2.00D", sales: "18 sales", revenue: "UGX 270,000" },
-    { power: "+3.00D", sales: "15 sales", revenue: "UGX 225,000" },
-    { power: "+1.50D", sales: "14 sales", revenue: "UGX 210,000" },
-    { power: "+3.50D", sales: "10 sales", revenue: "UGX 150,000" },
-    { power: "+1.00D", sales: "7 sales", revenue: "UGX 45,000" },
-  ];
+  useEffect(() => {
+    loadReports();
+  }, []);
 
-  const salesByFrameType = [
-    { type: "Standard", sales: "52 sales", revenue: "UGX 780,000" },
-    { type: "Metal", sales: "25 sales", revenue: "UGX 375,000" },
-    { type: "Fashion", sales: "10 sales", revenue: "UGX 90,000" },
-  ];
+  const loadReports = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getReports();
+      if (response.success) {
+        setReports(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to load reports:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadReports();
+    setRefreshing(false);
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+          <ActivityIndicator size="large" color="#2E7D32" />
+          <Text style={{ marginTop: 12, color: "#666" }}>Loading reports...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const summaryCards = [
-    { label: "Sales", value: "87", subtitle: "total sales" },
-    { label: "Hire-Purchase", value: "32", subtitle: "active plans" },
-    { label: "Stock", value: "45", subtitle: "glasses available" },
+    { label: "Screenings", value: reports?.totalScreenings || "0", subtitle: "total screenings" },
+    { label: "Payments", value: reports?.totalPayments || "0", subtitle: "transactions" },
+    { label: "Referrals", value: reports?.totalReferrals || "0", subtitle: "referrals made" },
     { label: "Referrals", value: "15", subtitle: "total referrals" },
   ];
 
@@ -88,6 +114,9 @@ export default function ReportsScreen() {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#2E7D32"]} />
+        }
       >
         {/* Reports Header */}
         <View style={styles.reportsHeader}>
@@ -170,72 +199,8 @@ export default function ReportsScreen() {
           </View>
         </View>
 
-        {/* Sales by Power Section */}
-        <View style={styles.powerSection}>
-          <Text style={styles.sectionTitle}>Sales by Power</Text>
-          <View style={styles.powerGrid}>
-            {salesByPower.map((item, index) => (
-              <View key={index} style={styles.powerItem}>
-                <Text style={styles.powerLabel}>{item.power}</Text>
-                <View style={styles.powerDetails}>
-                  <Text style={styles.powerSales}>{item.sales}</Text>
-                  <Text style={styles.powerRevenue}>{item.revenue}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Sales by Frame Type Section */}
-        <View style={styles.frameSection}>
-          <Text style={styles.sectionTitle}>Sales by Frame Type</Text>
-          <View style={styles.frameGrid}>
-            {salesByFrameType.map((item, index) => (
-              <View key={index} style={styles.frameItem}>
-                <Text style={styles.frameLabel}>{item.type}</Text>
-                <View style={styles.frameDetails}>
-                  <Text style={styles.frameSales}>{item.sales}</Text>
-                  <Text style={styles.frameRevenue}>{item.revenue}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Spacer for bottom navigation */}
-        <View style={styles.spacer} />
+        <View style={styles.bottomSpacer} />
       </ScrollView>
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        {[
-          { name: "Home", icon: "home", screen: "CHWDashboard" },
-          { name: "Screen", icon: "eye", screen: "StartScreening" },
-          { name: "Stock", icon: "cube", screen: "Inventory" },
-          { name: "Payments", icon: "cash", screen: "Payments" },
-          { name: "Referrals", icon: "share", screen: "Referrals" },
-        ].map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.navItem}
-            onPress={() => navigation.navigate(item.screen as any)}
-          >
-            <Ionicons
-              name={item.icon as any}
-              size={22}
-              color={item.name === "Home" ? "#1A4D8F" : "#8E8E93"}
-            />
-            <Text
-              style={[
-                styles.navText,
-                item.name === "Home" && styles.navTextActive,
-              ]}
-            >
-              {item.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
     </SafeAreaView>
   );
 }
@@ -571,5 +536,8 @@ const styles = StyleSheet.create({
   navTextActive: {
     color: "#1A4D8F",
     fontWeight: "600",
+  },
+  bottomSpacer: {
+    height: 100,
   },
 });

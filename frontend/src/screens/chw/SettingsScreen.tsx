@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,13 +7,35 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Switch,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { apiService } from "../../services/api";
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
   const [offlineSync, setOfflineSync] = React.useState(true);
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const user = await apiService.getCurrentUser();
+      setUserData(user);
+    } catch (error) {
+      console.error("Failed to load user data:", error);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    const parts = name.split(" ");
+    return parts.map(p => p[0]).join("").toUpperCase().slice(0, 2);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -21,6 +43,24 @@ export default function SettingsScreen() {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
+        {/* Top Header with Logo */}
+        <View style={styles.topHeader}>
+          <View style={styles.logoBox}>
+            <Image
+              source={require("../../../assets/logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+          <View style={styles.topHeaderText}>
+            <Text style={styles.topHeaderTitle}>Santé Initiative Uganda</Text>
+            <Text style={styles.topHeaderName}>{userData?.full_name || "User"}</Text>
+            <Text style={styles.topHeaderRole}>
+              CHW - {userData?.district || "District"}
+            </Text>
+          </View>
+        </View>
+
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -36,12 +76,18 @@ export default function SettingsScreen() {
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>VHT</Text>
+              <Text style={styles.avatarText}>
+                {getInitials(userData?.full_name || "User")}
+              </Text>
             </View>
           </View>
-          {/* <Text style={styles.userName}>Jane Nambi</Text> */}
-          <Text style={styles.userId}>CHW ID: CHW-LU-2024-089</Text>
-          {/* <Text style={styles.userLocation}>Luweero District</Text> */}
+          <Text style={styles.userName}>{userData?.full_name || "User"}</Text>
+          <Text style={styles.userId}>
+            CHW ID: CHW-{userData?.district?.substring(0, 2).toUpperCase() || "XX"}-2024-089
+          </Text>
+          <Text style={styles.userLocation}>
+            {userData?.district ? `${userData.district} District` : "District"}
+          </Text>
           <TouchableOpacity style={styles.editButton}>
             <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
@@ -285,6 +331,42 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     paddingHorizontal: 16,
+  },
+  topHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+    marginBottom: 16,
+  },
+  logoBox: {
+    width: 50,
+    height: 50,
+    marginRight: 12,
+  },
+  logo: {
+    width: "100%",
+    height: "100%",
+  },
+  topHeaderText: {
+    flex: 1,
+  },
+  topHeaderTitle: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginBottom: 4,
+  },
+  topHeaderName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 2,
+  },
+  topHeaderRole: {
+    fontSize: 13,
+    color: "#6B7280",
   },
   header: {
     flexDirection: "row",

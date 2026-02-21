@@ -57,10 +57,21 @@ export default function PaymentsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [payments, setPayments] = useState<any[]>([]);
+  const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
     loadPayments();
+    loadUserData();
   }, []);
+
+  const loadUserData = async () => {
+    try {
+      const user = await apiService.getCurrentUser();
+      setUserData(user);
+    } catch (error) {
+      console.error("Failed to load user data:", error);
+    }
+  };
 
   const loadPayments = async () => {
     try {
@@ -235,8 +246,9 @@ export default function PaymentsScreen() {
               <Ionicons name="arrow-back" size={24} color="#374151" />
             </TouchableOpacity>
             <View style={styles.headerInfo}>
-              <Text style={styles.organization}>Santé Initiative</Text>
-              <Text style={styles.userName}>VHT</Text>
+              <Text style={styles.organization}>Santé Initiative Uganda</Text>
+              <Text style={styles.userName}>{userData?.full_name || "User"}</Text>
+              <Text style={styles.userRole}>VHT - {userData?.district || "District"}</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.notificationButton}>
@@ -933,7 +945,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   bottomSpacer: {
-    height: 20,
+    height: 100,
   },
   bottomNav: {
     position: "absolute",

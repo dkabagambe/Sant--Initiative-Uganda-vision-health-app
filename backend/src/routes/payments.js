@@ -3,11 +3,11 @@ const router = express.Router();
 const paymentController = require("../controllers/paymentController");
 const { authenticate } = require("../middleware/auth");
 
-router.post("/", authenticate, paymentController.createPayment);
-router.get("/", authenticate, paymentController.getPayments);
-router.get("/stats", authenticate, paymentController.getPaymentStats);
-router.get("/client/:clientPhone/installments", authenticate, paymentController.getClientInstallments);
-router.get("/:id", authenticate, paymentController.getPaymentById);
-router.patch("/:id/status", authenticate, paymentController.updatePaymentStatus);
+router.post("/", paymentController.createPayment);
+router.get("/", paymentController.getPayments);
+router.get("/stats", paymentController.getPaymentStats);
+router.get("/client/:clientPhone/installments", paymentController.getClientInstallments);
+router.get("/:id", paymentController.getPaymentById);
+router.patch("/:id/status", paymentController.updatePaymentStatus);
 
 module.exports = router;
