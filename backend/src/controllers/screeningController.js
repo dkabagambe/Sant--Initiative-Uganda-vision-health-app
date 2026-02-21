@@ -3,27 +3,51 @@ exports.createScreening = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     const healthWorkerId = req.user.userId;
+    
+    // Extract and normalize field names (frontend uses camelCase, DB uses snake_case)
     const {
       clientName,
       clientPhone,
       clientAge,
       clientGender,
       clientVillage,
+      district,
+      // Vision test results - handle both old and new field names
       distanceVisionLeft,
       distanceVisionRight,
       distanceVisionBoth,
+      distanceVisionResult,
       nearVisionResult,
       pinholeTestLeft,
       pinholeTestRight,
+      torchTestPassed,
+      torchTestAbnormalSigns,
+      // Results
       needsGlasses,
       needsReferral,
       referralReason,
+      referralStep,
       recommendedProductId,
       recommendedPower,
       selectedFrameType,
       notes,
       offlineId,
     } = req.body;
+
+    // Build notes with all test information
+    let fullNotes = notes || '';
+    if (torchTestPassed !== undefined) {
+      fullNotes += `\nTorch Test: ${torchTestPassed ? 'Passed' : 'Failed'}`;
+      if (torchTestAbnormalSigns) {
+        fullNotes += ` - ${torchTestAbnormalSigns}`;
+      }
+    }
+    if (distanceVisionResult) {
+      fullNotes += `\nDistance Vision: ${distanceVisionResult}`;
+    }
+    if (referralStep) {
+      fullNotes += `\nReferral from: ${referralStep}`;
+    }
 
     // Create screening
     const screening = await sql`
@@ -40,7 +64,7 @@ exports.createScreening = async (req, res) => {
         ${nearVisionResult || null}, ${pinholeTestLeft || null}, ${pinholeTestRight || null},
         ${needsGlasses || false}, ${needsReferral || false}, ${referralReason || null},
         ${recommendedProductId || null}, ${recommendedPower || null}, ${selectedFrameType || null},
-        ${notes || null}, ${offlineId || null}, true
+        ${fullNotes.trim() || null}, ${offlineId || null}, true
       )
       RETURNING *
     `;
@@ -77,7 +101,13 @@ exports.createScreening = async (req, res) => {
     });
   } catch (error) {
     console.error("Create screening error:", error);
-    res.status(500).json({ success: false, error: "Failed to create screening" });
+    console.error("Request body:", req.body);
+    console.error("Error details:", error.message, error.stack);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to create screening",
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
