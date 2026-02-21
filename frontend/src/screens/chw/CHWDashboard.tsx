@@ -5,12 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Dimensions,
   Image,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Ionicons,
   MaterialIcons,
@@ -236,7 +236,7 @@ export default function CHWDashboard() {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
       {/* Offline Sync Banner */}
