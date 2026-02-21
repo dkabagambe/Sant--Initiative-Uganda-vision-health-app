@@ -154,7 +154,7 @@ exports.getInventorySummary = async (req, res) => {
 // Get reports data
 exports.getReports = async (req, res) => {
   try {
-    const sql = req.app.locals.sql;
+    const { sql, db } = req.app.locals;
     const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A';
     const { startDate, endDate, reportType } = req.query;
 
@@ -178,11 +178,12 @@ exports.getReports = async (req, res) => {
       
       query += ` ORDER BY s.screening_date DESC`;
       
-      const data = await sql(query, params);
+      const stmt = db.prepare(query);
+      const data = stmt.all(...params);
       res.json({ success: true, data });
       
     } else if (reportType === 'payments') {
-      let query = `
+      const query = `
         SELECT 
           p.*,
           s.client_name,
@@ -194,11 +195,12 @@ exports.getReports = async (req, res) => {
         ORDER BY p.created_at DESC
       `;
       
-      const data = await sql(query, [healthWorkerId]);
+      const stmt = db.prepare(query);
+      const data = stmt.all(healthWorkerId);
       res.json({ success: true, data });
       
     } else if (reportType === 'referrals') {
-      let query = `
+      const query = `
         SELECT 
           r.*,
           s.client_name,
@@ -209,7 +211,8 @@ exports.getReports = async (req, res) => {
         ORDER BY r.created_at DESC
       `;
       
-      const data = await sql(query, [healthWorkerId]);
+      const stmt = db.prepare(query);
+      const data = stmt.all(healthWorkerId);
       res.json({ success: true, data });
       
     } else {
@@ -233,8 +236,9 @@ exports.getReports = async (req, res) => {
         WHERE s.health_worker_id = ?${dateFilter}
       `;
       
-      const data = await sql(query, params);
-      res.json({ success: true, data: data[0] });
+      const stmt = db.prepare(query);
+      const data = stmt.get(...params);
+      res.json({ success: true, data });
     }
   } catch (error) {
     console.error("Get reports error:", error);
