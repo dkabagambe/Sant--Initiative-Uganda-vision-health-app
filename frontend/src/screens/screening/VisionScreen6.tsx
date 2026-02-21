@@ -30,14 +30,7 @@ export default function VisionScreen6({
 
   const handleTestComplete = (passed: boolean) => {
     setCanRead(passed);
-    if (!passed && clientAge >= 40) {
-      // Immediately proceed to glasses selection for presbyopia (age 40+)
-      if (onComplete) {
-        onComplete(false);
-      }
-    } else {
-      setShowRecording(true);
-    }
+    setShowRecording(true);
   };
 
   if (showRecording) {
@@ -125,7 +118,7 @@ export default function VisionScreen6({
                   styles.recordButton,
                   canRead === true && styles.recordButtonSelected,
                 ]}
-                onPress={() => onComplete && onComplete(true)}
+                onPress={() => handleTestComplete(true)}
               >
                 <Text
                   style={[
@@ -141,14 +134,7 @@ export default function VisionScreen6({
                   styles.recordButton,
                   canRead === false && styles.recordButtonSelectedRed,
                 ]}
-                onPress={() => {
-                  if (onComplete) {
-                    onComplete(false);
-                  }
-                  if (canRead === false && clientAge < 40 && onRefer) {
-                    onRefer();
-                  }
-                }}
+                onPress={() => handleTestComplete(false)}
               >
                 <Text
                   style={[
@@ -198,15 +184,33 @@ export default function VisionScreen6({
           <TouchableOpacity
             style={styles.recordingBottomButton}
             onPress={() => {
-              if (canRead === false && clientAge < 40 && onRefer) {
-                onRefer();
-              } else if (onComplete) {
-                onComplete(false);
+              if (canRead === true) {
+                // Passed - complete screening
+                if (onComplete) {
+                  onComplete(true);
+                }
+              } else if (canRead === false && clientAge >= 40) {
+                // Failed + Age 40+ = Presbyopia, go to glasses selection
+                if (onComplete) {
+                  onComplete(false);
+                }
+              } else if (canRead === false && clientAge < 40) {
+                // Failed + Age < 40 = Referral
+                if (onRefer) {
+                  onRefer();
+                } else if (onComplete) {
+                  onComplete(false);
+                }
               }
             }}
+            disabled={canRead === null}
           >
             <Text style={styles.recordingBottomButtonText}>
-              Complete & Save
+              {canRead === true 
+                ? "Complete Screening" 
+                : canRead === false && clientAge >= 40
+                ? "Select Reading Glasses"
+                : "Create Referral"}
             </Text>
           </TouchableOpacity>
         </View>
