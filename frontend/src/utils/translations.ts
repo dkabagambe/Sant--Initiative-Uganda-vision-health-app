@@ -190,6 +190,18 @@ export const translations = {
     invalidEmail: "Invalid email",
     fieldRequired: "This field is required",
     pleaseWait: "Please wait",
+    requiredFields: "Required Fields",
+    pleaseFillRequired: "Please fill in all required fields (marked with *)",
+    
+    // Form placeholders and hints
+    enterClientName: "Enter client name",
+    enterAge: "Enter age",
+    ageDeterminesTests: "Age determines which tests to perform",
+    enterBasicDetails: "Enter basic details to start VHT screening",
+    enterCounty: "e.g., Kawempe Division, Luweero County",
+    enterSubCounty: "e.g., Mpererwe Parish, Wobulenzi Sub-County",
+    enterParish: "e.g., Bombo Parish, City Ward",
+    county: "County/Municipality/Division",
     
     // Screening
     vhtEyeScreening: "VHT Eye Screening",
@@ -452,6 +464,18 @@ export const translations = {
     invalidEmail: "Email si nnungi",
     fieldRequired: "Kino kyetaagisa",
     pleaseWait: "Lindawo",
+    requiredFields: "Ebintu Ebyetaagisa",
+    pleaseFillRequired: "Jjuza ebintu byonna ebyetaagisa (ebiriiko *)",
+    
+    // Form placeholders and hints
+    enterClientName: "Yingiza erinnya lya mulwadde",
+    enterAge: "Yingiza emyaka",
+    ageDeterminesTests: "Emyaka gisalawo okukebera ki",
+    enterBasicDetails: "Yingiza ebikulu okutandika okukebera",
+    enterCounty: "Okugeza: Kawempe Division, Luweero County",
+    enterSubCounty: "Okugeza: Mpererwe Parish, Wobulenzi Sub-County",
+    enterParish: "Okugeza: Bombo Parish, City Ward",
+    county: "Ssaza/Municipality/Division",
     
     // Screening
     vhtEyeScreening: "Okukebera Amaaso kwa VHT",

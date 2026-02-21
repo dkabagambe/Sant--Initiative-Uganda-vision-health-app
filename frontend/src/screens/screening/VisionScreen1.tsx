@@ -14,10 +14,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function VisionScreen1() {
   const navigation = useNavigation<any>();
   const { updateScreeningData } = useScreening();
+  const { t } = useLanguage();
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -44,7 +46,7 @@ export default function VisionScreen1() {
       !formData.sex ||
       !formData.district.trim()
     ) {
-      Alert.alert("Required Fields", "Please fill in all required fields (marked with *)");
+      Alert.alert(t("requiredFields"), t("pleaseFillRequired"));
       return;
     }
 
@@ -77,7 +79,7 @@ export default function VisionScreen1() {
         </View>
 
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>VHT Eye Screening</Text>
+          <Text style={styles.headerTitle}>{t("vhtEyeScreening")}</Text>
         </View>
 
         <View style={styles.headerRight} />
@@ -91,7 +93,7 @@ export default function VisionScreen1() {
       >
         {/* Progress Indicator */}
         <View style={styles.progressSection}>
-          <Text style={styles.progressText}>Step 1 of 7</Text>
+          <Text style={styles.progressText}>{t("step")} 1 {t("of")} 7</Text>
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: "16.67%" }]} />
           </View>
@@ -99,9 +101,9 @@ export default function VisionScreen1() {
 
         {/* Form Title */}
         <View style={styles.formHeader}>
-          <Text style={styles.formTitle}>Client Information</Text>
+          <Text style={styles.formTitle}>{t("clientInformation")}</Text>
           <Text style={styles.formSubtitle}>
-            Enter basic details to start VHT screening
+            {t("enterBasicDetails")}
           </Text>
         </View>
 
@@ -110,11 +112,11 @@ export default function VisionScreen1() {
           {/* Full Name */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>
-              Full Name <Text style={styles.required}>*</Text>
+              {t("fullName")} <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter client name"
+              placeholder={t("enterClientName")}
               value={formData.fullName}
               onChangeText={(text) => handleInputChange("fullName", text)}
               placeholderTextColor="#999"
@@ -124,27 +126,27 @@ export default function VisionScreen1() {
           {/* Age */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>
-              Age (years) <Text style={styles.required}>*</Text>
+              {t("age")} <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter age"
+              placeholder={t("enterAge")}
               value={formData.age}
               onChangeText={(text) => handleInputChange("age", text)}
               keyboardType="numeric"
               placeholderTextColor="#999"
             />
             <Text style={styles.inputHint}>
-              Age determines which tests to perform
+              {t("ageDeterminesTests")}
             </Text>
           </View>
 
           {/* Phone Number */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Phone Number</Text>
+            <Text style={styles.label}>{t("phoneNumber")}</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g., 0700123456"
+              placeholder="0700123456"
               value={formData.phoneNumber}
               onChangeText={(text) => handleInputChange("phoneNumber", text)}
               keyboardType="phone-pad"
@@ -154,7 +156,7 @@ export default function VisionScreen1() {
 
           {/* Sex */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Sex</Text>
+            <Text style={styles.label}>{t("sex")}</Text>
             <View style={styles.sexButtons}>
               <TouchableOpacity
                 style={[
@@ -169,7 +171,7 @@ export default function VisionScreen1() {
                     formData.sex === "male" && styles.sexButtonTextActive,
                   ]}
                 >
-                  Male
+                  {t("male")}
                 </Text>
               </TouchableOpacity>
 
@@ -186,7 +188,7 @@ export default function VisionScreen1() {
                     formData.sex === "female" && styles.sexButtonTextActive,
                   ]}
                 >
-                  Female
+                  {t("female")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -195,7 +197,7 @@ export default function VisionScreen1() {
           {/* District */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>
-              District <Text style={styles.required}>*</Text>
+              {t("district")} <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               style={styles.input}
@@ -208,10 +210,10 @@ export default function VisionScreen1() {
 
           {/* County/Municipality/Division */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>County/Municipality/Division</Text>
+            <Text style={styles.label}>{t("county")}</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g., Kawempe Division, Luweero County"
+              placeholder={t("enterCounty")}
               value={formData.county}
               onChangeText={(text) => handleInputChange("county", text)}
               placeholderTextColor="#999"
@@ -220,10 +222,10 @@ export default function VisionScreen1() {
 
           {/* Sub-county/Division/Town Council */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Sub-county/Division/Town Council</Text>
+            <Text style={styles.label}>{t("subCounty")}</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g., Mpererwe Parish, Wobulenzi Sub-County"
+              placeholder={t("enterSubCounty")}
               value={formData.subCounty}
               onChangeText={(text) => handleInputChange("subCounty", text)}
               placeholderTextColor="#999"
@@ -232,10 +234,10 @@ export default function VisionScreen1() {
 
           {/* Parish/Ward */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Parish/Ward</Text>
+            <Text style={styles.label}>{t("parish")}</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g., Bombo Parish, City Ward"
+              placeholder={t("enterParish")}
               value={formData.parish}
               onChangeText={(text) => handleInputChange("parish", text)}
               placeholderTextColor="#999"
@@ -245,7 +247,7 @@ export default function VisionScreen1() {
 
         {/* Next Button */}
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>Next</Text>
+          <Text style={styles.nextButtonText}>{t("next")}</Text>
         </TouchableOpacity>
 
         {/* Spacer for bottom tab bar */}
