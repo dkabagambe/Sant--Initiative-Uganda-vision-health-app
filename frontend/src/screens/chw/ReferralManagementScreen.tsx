@@ -26,6 +26,8 @@ interface Referral {
   facilityName: string;
   facilityLocation: string;
   referredDate: string;
+  completedDate?: string;
+  outcome?: string;
   status: "active" | "completed";
 }
 
@@ -196,53 +198,116 @@ export default function ReferralManagementScreen() {
         ) : (
           displayedReferrals.map((referral) => (
             <View key={referral.id} style={styles.referralCard}>
-              <View style={styles.referralHeader}>
-                <View style={styles.referralHeaderLeft}>
-                  <Text style={styles.referralName}>{referral.clientName}</Text>
-                  <Text style={styles.referralInfo}>
-                    Age {referral.clientAge} • {referral.clientPhone}
-                  </Text>
-                </View>
-                {(referral.urgency === "urgent" || referral.urgency === "high") && (
-                  <View style={styles.urgentBadge}>
-                    <Text style={styles.urgentText}>Urgent</Text>
+              {activeTab === "active" ? (
+                // Active Referral Card
+                <>
+                  <View style={styles.referralHeader}>
+                    <View style={styles.referralHeaderLeft}>
+                      <Text style={styles.referralName}>{referral.clientName}</Text>
+                      <Text style={styles.referralInfo}>
+                        Age {referral.clientAge} • {referral.clientPhone}
+                      </Text>
+                    </View>
+                    {(referral.urgency === "urgent" || referral.urgency === "high") && (
+                      <View style={styles.urgentBadge}>
+                        <Text style={styles.urgentText}>Urgent</Text>
+                      </View>
+                    )}
                   </View>
-                )}
-              </View>
 
-              <View style={styles.referralBody}>
-                <View style={styles.referralRow}>
-                  <Text style={styles.referralLabel}>Reason for referral</Text>
-                  <Text style={styles.referralValue}>{referral.reason}</Text>
-                </View>
+                  <View style={styles.referralBody}>
+                    <View style={styles.referralRow}>
+                      <Text style={styles.referralLabel}>Reason for referral</Text>
+                      <Text style={styles.referralValue}>{referral.reason}</Text>
+                    </View>
 
-                <View style={styles.referralRow}>
-                  <Text style={styles.referralLabel}>Referred to</Text>
-                  <Text style={styles.referralValue}>{referral.facilityName}</Text>
-                </View>
+                    <View style={styles.referralRow}>
+                      <Text style={styles.referralLabel}>Referred to</Text>
+                      <Text style={styles.referralValue}>{referral.facilityName}</Text>
+                    </View>
 
-                <View style={styles.referralRow}>
-                  <Text style={styles.referralLabel}>Referred on</Text>
-                  <Text style={styles.referralValue}>
-                    {new Date(referral.referredDate).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </Text>
-                </View>
-              </View>
+                    <View style={styles.referralRow}>
+                      <Text style={styles.referralLabel}>Referred on</Text>
+                      <Text style={styles.referralValue}>
+                        {new Date(referral.referredDate).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </Text>
+                    </View>
+                  </View>
 
-              {activeTab === "active" && (
-                <TouchableOpacity
-                  style={styles.completeButton}
-                  onPress={() => handleMarkComplete(referral.id)}
-                >
-                  <Text style={styles.completeButtonText}>Mark Complete</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.completeButton}
+                    onPress={() => handleMarkComplete(referral.id)}
+                  >
+                    <Text style={styles.completeButtonText}>Mark Complete</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                // Completed Referral Card
+                <>
+                  <View style={styles.completedHeader}>
+                    <Text style={styles.referralName}>{referral.clientName}</Text>
+                    <Text style={styles.referralInfo}>{referral.clientPhone}</Text>
+                  </View>
+
+                  <View style={styles.completedBody}>
+                    <View style={styles.completedRow}>
+                      <Text style={styles.completedLabel}>Reason</Text>
+                      <Text style={styles.completedValue}>{referral.reason}</Text>
+                    </View>
+
+                    <View style={styles.completedRow}>
+                      <Text style={styles.completedLabel}>Facility</Text>
+                      <Text style={styles.completedValue}>{referral.facilityName}</Text>
+                    </View>
+
+                    <View style={styles.completedRow}>
+                      <Text style={styles.completedLabel}>Referred</Text>
+                      <Text style={styles.completedValue}>
+                        {new Date(referral.referredDate).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </Text>
+                    </View>
+
+                    <View style={styles.completedRow}>
+                      <Text style={styles.completedLabel}>Completed</Text>
+                      <Text style={styles.completedValue}>
+                        {referral.completedDate
+                          ? new Date(referral.completedDate).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                          : "N/A"}
+                      </Text>
+                    </View>
+
+                    <View style={styles.completedRow}>
+                      <Text style={styles.completedLabel}>Outcome</Text>
+                      <Text style={styles.completedValue}>
+                        {referral.outcome || "No outcome recorded"}
+                      </Text>
+                    </View>
+                  </View>
+                </>
               )}
             </View>
           ))
+        )}
+
+        {activeTab === "completed" && displayedReferrals.length > 0 && (
+          <View style={styles.historyFooter}>
+            <Text style={styles.historyText}>Showing recent completed referrals</Text>
+            <TouchableOpacity style={styles.viewAllButton}>
+              <Text style={styles.viewAllText}>View All History</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* Partner Facilities */}
@@ -567,5 +632,52 @@ const styles = StyleSheet.create({
   tabLabelActive: {
     color: "#2E7D32",
     fontWeight: "600",
+  },
+  // Completed Referral Styles
+  completedHeader: {
+    marginBottom: 12,
+  },
+  completedBody: {
+    gap: 12,
+  },
+  completedRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  completedLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6B7280",
+    width: 100,
+  },
+  completedValue: {
+    flex: 1,
+    fontSize: 14,
+    color: "#111827",
+    textAlign: "right",
+  },
+  historyFooter: {
+    marginHorizontal: 20,
+    marginTop: 24,
+    marginBottom: 16,
+    alignItems: "center",
+    gap: 12,
+  },
+  historyText: {
+    fontSize: 14,
+    color: "#6B7280",
+    fontStyle: "italic",
+  },
+  viewAllButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 8,
+  },
+  viewAllText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#2E7D32",
   },
 });
