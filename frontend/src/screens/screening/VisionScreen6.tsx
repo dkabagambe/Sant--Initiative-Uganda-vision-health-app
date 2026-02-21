@@ -10,6 +10,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { moderateScale, fontSize as responsiveFontSize } from "../../utils/responsive";
 
 const { width } = Dimensions.get("window");
 
@@ -658,10 +659,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   targetRowText: {
-    fontSize: 14,
+    fontSize: moderateScale(18), // Increased from 14 for better readability
     fontWeight: "400",
     color: "#111827",
-    lineHeight: 20,
+    lineHeight: moderateScale(24),
     textAlign: "center",
   },
   // Client Instructions

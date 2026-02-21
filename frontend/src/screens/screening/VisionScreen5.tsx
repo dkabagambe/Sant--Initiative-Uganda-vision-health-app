@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
+import { moderateScale } from "../../utils/responsive";
 
 const { width } = Dimensions.get("window");
 
@@ -242,9 +243,9 @@ export default function DistanceVisionTestScreen() {
           <View style={styles.eChartLine}>
             <Text style={styles.lineLabel}>Line 1: 6/60 (Largest)</Text>
             <View style={styles.eContainer}>
-              {renderRotatedE("right", 72)}
-              {renderRotatedE("down", 72)}
-              {renderRotatedE("left", 72)}
+              {renderRotatedE("right", moderateScale(72))}
+              {renderRotatedE("down", moderateScale(72))}
+              {renderRotatedE("left", moderateScale(72))}
             </View>
             <Text style={styles.lettersNote}>
               3 letters to read (Right, Down, Left)
@@ -255,11 +256,11 @@ export default function DistanceVisionTestScreen() {
           <View style={styles.eChartLine}>
             <Text style={styles.lineLabel}>Line 2: 6/12 (Smaller)</Text>
             <View style={[styles.eContainer, styles.smallEContainer]}>
-              {renderRotatedE("right", 48)}
-              {renderRotatedE("up", 48)}
-              {renderRotatedE("down", 48)}
-              {renderRotatedE("left", 48)}
-              {renderRotatedE("right", 48)}
+              {renderRotatedE("right", moderateScale(48))}
+              {renderRotatedE("up", moderateScale(48))}
+              {renderRotatedE("down", moderateScale(48))}
+              {renderRotatedE("left", moderateScale(48))}
+              {renderRotatedE("right", moderateScale(48))}
             </View>
             <Text style={styles.lettersNote}>
               5 letters to read (Right, Up, Down, Left, Right)

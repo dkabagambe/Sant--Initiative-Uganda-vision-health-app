@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Alert } from "react-native";
+import { Alert, SafeAreaView, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import VisionScreen6 from "./VisionScreen6";
@@ -322,7 +322,11 @@ export default function VisionScreen6Wrapper() {
   if (submitting && screeningData.needsReferral && 
       (screeningData.referralStep === "Step 4 - Torch Light Test" || 
        screeningData.referralStep === "Step 5 - Distance Vision Test")) {
-    return null;
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <Text>Processing referral...</Text>
+      </SafeAreaView>
+    );
   }
 
   return (
