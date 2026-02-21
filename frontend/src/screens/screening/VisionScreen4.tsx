@@ -69,29 +69,67 @@ export default function TorchLightStepScreen() {
     }
   };
 
-  const handleTestComplete = (passed: boolean) => {
+  const handleTestComplete = async (passed: boolean) => {
     setTestPassed(passed);
 
     if (!passed) {
-      // Abnormal signs detected - STOP and REFER
-      updateScreeningData({
+      // Abnormal signs detected - STOP and REFER immediately
+      const referralData = {
+        ...screeningData,
         torchTestPassed: false,
         torchTestAbnormalSigns: abnormalSigns.join(", "),
+        distanceVisionResult: "not_tested",
+        nearVisionResult: "not_tested",
         needsReferral: true,
+        needsGlasses: false,
         referralReason: `Abnormal eye signs detected: ${abnormalSigns.join(", ")}`,
         referralUrgency: "high",
         referralStep: "Step 4 - Torch Light Test"
-      });
+      };
+
+      updateScreeningData(referralData);
 
       Alert.alert(
         "⚠️ Referral Required",
-        "Abnormal signs detected. Client must be referred to nearest health facility immediately.\n\nDO NOT proceed with other vision tests.",
+        `Abnormal signs detected: ${abnormalSigns.join(", ")}\n\nClient must be referred to health facility immediately.\n\nDO NOT proceed with other vision tests.`,
         [
           {
-            text: "Create Referral & End Screening",
-            onPress: () => {
-              // Navigate directly to completion with referral
-              navigation.navigate("VisionScreen6Wrapper");
+            text: "Create Referral Now",
+            onPress: async () => {
+              try {
+                // Create screening record
+                const result = await apiService.createScreening(referralData);
+                
+                if (result.success) {
+                  // Create referral
+                  const facilities = await apiService.getHealthFacilities(referralData.district);
+                  const facility = facilities.data?.[0];
+                  
+                  await apiService.createReferral({
+                    screeningId: result.data.id,
+                    clientName: referralData.clientName,
+                    reason: referralData.referralReason,
+                    urgency: "high",
+                    facilityName: facility?.name || "Nearest Health Facility",
+                    facilityLocation: facility?.location || referralData.district,
+                    notes: "Referred from Step 4 - Torch Light Test (Abnormal signs)"
+                  });
+
+                  Alert.alert(
+                    "✅ Referral Created",
+                    `Client referred to ${facility?.name || "health facility"}.\n\nScreening ended - no other tests performed.`,
+                    [{ text: "OK", onPress: () => {
+                      updateScreeningData({});
+                      navigation.navigate("CHWDashboard");
+                    }}]
+                  );
+                } else {
+                  throw new Error("Failed to create screening");
+                }
+              } catch (error) {
+                console.error("Referral creation error:", error);
+                Alert.alert("Error", "Failed to create referral. Please try again.");
+              }
             },
             style: "default",
           },

@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { moderateScale } from "../../utils/responsive";
+import { apiService } from "../../services/api";
 
 const { width } = Dimensions.get("window");
 
@@ -34,7 +35,7 @@ export default function DistanceVisionTestScreen() {
     }
   };
 
-  const handleNextEye = () => {
+  const handleNextEye = async () => {
     if (line1Score === null || line2Score === null) {
       alert("Please select scores for both lines before proceeding.");
       return;
@@ -43,22 +44,58 @@ export default function DistanceVisionTestScreen() {
     if (line1Score < 2 || line2Score < 4) {
       const eyeTested = testStage === "rightEye" ? "Right" : "Left";
       
-      // Save referral data to context
-      updateScreeningData({
+      const referralData = {
+        ...screeningData,
+        distanceVisionResult: "failed",
+        nearVisionResult: "not_tested",
         needsReferral: true,
+        needsGlasses: false,
         referralReason: `${eyeTested} eye failed distance vision test. Line 1: ${line1Score}/3, Line 2: ${line2Score}/5`,
         referralUrgency: "normal",
         referralStep: "Step 5 - Distance Vision Test"
-      });
+      };
+
+      updateScreeningData(referralData);
 
       Alert.alert(
-        "Referral Required",
-        `${eyeTested} Eye Test Failed. Client will be referred to nearest health facility.`,
+        "🏥 Referral Required",
+        `${eyeTested} eye failed distance vision test.\n\nClient requires comprehensive eye examination.\n\nNear vision test will NOT be performed.`,
         [
           {
-            text: "Create Referral",
-            onPress: () => {
-              navigation.navigate("VisionScreen6");
+            text: "Create Referral Now",
+            onPress: async () => {
+              try {
+                const result = await apiService.createScreening(referralData);
+                
+                if (result.success) {
+                  const facilities = await apiService.getHealthFacilities(referralData.district);
+                  const facility = facilities.data?.[0];
+                  
+                  await apiService.createReferral({
+                    screeningId: result.data.id,
+                    clientName: referralData.clientName,
+                    reason: referralData.referralReason,
+                    urgency: "normal",
+                    facilityName: facility?.name || "Nearest Health Facility",
+                    facilityLocation: facility?.location || referralData.district,
+                    notes: "Referred from Step 5 - Distance Vision Test Failed"
+                  });
+
+                  Alert.alert(
+                    "✅ Referral Created",
+                    `Client referred to ${facility?.name || "health facility"}.\n\nScreening ended - near vision test not performed.`,
+                    [{ text: "OK", onPress: () => {
+                      updateScreeningData({});
+                      navigation.navigate("CHWDashboard");
+                    }}]
+                  );
+                } else {
+                  throw new Error("Failed to create screening");
+                }
+              } catch (error) {
+                console.error("Referral creation error:", error);
+                Alert.alert("Error", "Failed to create referral. Please try again.");
+              }
             },
           },
         ]

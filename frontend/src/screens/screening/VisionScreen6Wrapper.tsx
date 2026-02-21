@@ -340,17 +340,6 @@ export default function VisionScreen6Wrapper() {
     }
   };
 
-  // Don't show near vision test if already processing referral from torch or distance test
-  if (submitting && screeningData.needsReferral && 
-      (screeningData.referralStep === "Step 4 - Torch Light Test" || 
-       screeningData.referralStep === "Step 5 - Distance Vision Test")) {
-    return (
-      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-        <Text>Processing referral...</Text>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <VisionScreen6
       clientAge={screeningData.clientAge || 0}
