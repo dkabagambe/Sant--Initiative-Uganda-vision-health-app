@@ -162,7 +162,6 @@ export default function VisionScreen6({
                 ? "👓 Select Reading Glasses"
                 : "🏥 Create Referral"}
             </Text>
-            </Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
