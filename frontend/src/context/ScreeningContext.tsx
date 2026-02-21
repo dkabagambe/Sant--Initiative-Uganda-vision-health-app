@@ -12,6 +12,10 @@ interface ScreeningData {
   subCounty: string;
   parish: string;
   
+  // Step 4: Torch Test
+  torchTestPassed: boolean;
+  torchTestAbnormalSigns: string;
+  
   // Step 2-5: Vision Tests
   distanceVisionLeft: string;
   distanceVisionRight: string;

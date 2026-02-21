@@ -1316,8 +1316,6 @@ const styles = StyleSheet.create({
     color: "#1A4D8F",
     fontWeight: "700",
   },
-});
-
   countdownContainer: {
     alignItems: "center",
     justifyContent: "center",
@@ -1360,3 +1358,4 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     textAlign: "center",
   },
+});
