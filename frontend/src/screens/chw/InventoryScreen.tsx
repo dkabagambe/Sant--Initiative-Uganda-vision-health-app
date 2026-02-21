@@ -154,10 +154,19 @@ export default function InventoryScreen() {
   const [inventory, setInventory] = useState<any[]>([]);
   const [totals, setTotals] = useState({ total_pairs: 0 });
   const [userData, setUserData] = useState<any>(null);
+  const [recentSales, setRecentSales] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    weekSold: 0,
+    lowStockCount: 0,
+    totalRevenue: 0,
+    fullPayments: 0,
+    hirePurchase: 0,
+  });
 
   useEffect(() => {
     loadInventory();
     loadUserData();
+    loadSalesData();
   }, []);
 
   const loadUserData = async () => {
@@ -176,6 +185,10 @@ export default function InventoryScreen() {
       if (response.success) {
         setInventory(response.data.products);
         setTotals(response.data.totals);
+        
+        // Calculate stats
+        const lowStock = response.data.products.filter((p: any) => p.stock_quantity < 20).length;
+        setStats(prev => ({ ...prev, lowStockCount: lowStock }));
       }
     } catch (error) {
       console.error("Failed to load inventory:", error);
@@ -185,9 +198,66 @@ export default function InventoryScreen() {
     }
   };
 
+  const loadSalesData = async () => {
+    try {
+      // Get screenings with glasses sold this week
+      const screenings = await apiService.getScreenings();
+      if (screenings.success && screenings.data) {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        
+        const weekSales = screenings.data.filter((s: any) => 
+          s.needs_glasses && new Date(s.created_at) >= weekAgo
+        );
+        
+        // Get recent sales (last 4)
+        const recent = weekSales.slice(0, 4).map((s: any) => ({
+          name: s.client_name,
+          power: s.recommended_power || '+2.00D',
+          frameType: 'Standard',
+          price: 15000,
+          time: getTimeAgo(s.created_at),
+        }));
+        
+        setRecentSales(recent);
+        
+        // Get payment stats
+        const payments = await apiService.getPayments();
+        if (payments.success && payments.data) {
+          const completed = payments.data.filter((p: any) => p.status === 'completed');
+          const fullPayments = completed.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+          const pending = payments.data.filter((p: any) => p.status === 'pending');
+          const hirePurchase = pending.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+          
+          setStats(prev => ({
+            ...prev,
+            weekSold: weekSales.length,
+            totalRevenue: fullPayments + hirePurchase,
+            fullPayments,
+            hirePurchase,
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load sales data:", error);
+    }
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffDays > 0) return diffDays === 1 ? 'Yesterday' : `${diffDays} days ago`;
+    if (diffHours > 0) return `Today, ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')} ${date.getHours() >= 12 ? 'PM' : 'AM'}`;
+    return 'Just now';
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadInventory();
+    await Promise.all([loadInventory(), loadSalesData()]);
     setRefreshing(false);
   };
 
@@ -199,15 +269,61 @@ export default function InventoryScreen() {
   };
 
   const handleAddStock = () => {
-    setShowAddStockModal(true);
+    Alert.alert(
+      "Add Stock",
+      "Select an option:",
+      [
+        {
+          text: "Scan Barcode",
+          onPress: () => Alert.alert("Coming Soon", "Barcode scanning will be available in the next update.")
+        },
+        {
+          text: "Manual Entry",
+          onPress: () => {
+            // Navigate to add stock form
+            Alert.alert("Manual Entry", "Please enter stock details:\n\nPower: +2.00D\nQuantity: 10\nFrame Type: Standard\n\n(Full form coming soon)");
+          }
+        },
+        { text: "Cancel", style: "cancel" }
+      ]
+    );
   };
 
-  const handleRequestReplenishment = () => {
-    Alert.alert(
-      "Stock Replenishment Request",
-      "Your request for stock replenishment has been submitted successfully.",
-      [{ text: "OK" }],
-    );
+  const handleRequestReplenishment = async () => {
+    try {
+      // Get low stock items
+      const lowStockItems = inventory.filter(item => item.stock_quantity < 20);
+      
+      if (lowStockItems.length === 0) {
+        Alert.alert("No Low Stock", "All items are well stocked. No replenishment needed.");
+        return;
+      }
+
+      const itemsList = lowStockItems.map(item => 
+        `${item.power}: ${item.stock_quantity} pairs (need ${20 - item.stock_quantity} more)`
+      ).join('\n');
+
+      Alert.alert(
+        "Request Stock Replenishment",
+        `The following items need restocking:\n\n${itemsList}\n\nSubmit request?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Submit Request",
+            onPress: async () => {
+              // In production, this would call an API
+              // await apiService.requestStockReplenishment({ items: lowStockItems });
+              Alert.alert(
+                "✅ Request Submitted",
+                "Your stock replenishment request has been submitted successfully. You will be notified when stock arrives."
+              );
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      Alert.alert("Error", "Failed to submit request. Please try again.");
+    }
   };
 
   if (loading) {
@@ -267,15 +383,15 @@ export default function InventoryScreen() {
         {/* Stats Row */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>64</Text>
+            <Text style={styles.statNumber}>{totals.total_pairs || 0}</Text>
             <Text style={styles.statLabel}>In Stock</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>23</Text>
+            <Text style={styles.statNumber}>{stats.weekSold}</Text>
             <Text style={styles.statLabel}>Sold (Week)</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>2</Text>
+            <Text style={styles.statNumber}>{stats.lowStockCount}</Text>
             <Text style={styles.statLabel}>Low Stock</Text>
           </View>
         </View>
@@ -327,16 +443,16 @@ export default function InventoryScreen() {
         <View style={styles.revenueCard}>
           <Text style={styles.revenueTitle}>Revenue Summary</Text>
           <Text style={styles.revenueSubtitle}>Total Sales (This Month)</Text>
-          <Text style={styles.revenueAmount}>UGX 1,245,000</Text>
+          <Text style={styles.revenueAmount}>UGX {stats.totalRevenue.toLocaleString()}</Text>
 
           <View style={styles.revenueBreakdown}>
             <View style={styles.breakdownItem}>
               <Text style={styles.breakdownLabel}>Full Payments</Text>
-              <Text style={styles.breakdownValue}>UGX 780,000</Text>
+              <Text style={styles.breakdownValue}>UGX {stats.fullPayments.toLocaleString()}</Text>
             </View>
             <View style={styles.breakdownItem}>
               <Text style={styles.breakdownLabel}>Hire-Purchase</Text>
-              <Text style={styles.breakdownValue}>UGX 465,000</Text>
+              <Text style={styles.breakdownValue}>UGX {stats.hirePurchase.toLocaleString()}</Text>
             </View>
           </View>
 

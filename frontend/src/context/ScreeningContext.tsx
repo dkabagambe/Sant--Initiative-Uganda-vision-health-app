@@ -24,6 +24,8 @@ interface ScreeningData {
   needsGlasses: boolean;
   needsReferral: boolean;
   referralReason: string;
+  referralUrgency: string;
+  referralStep: string;
   recommendedProductId: string;
   recommendedPower: string;
   selectedFrameType: string;

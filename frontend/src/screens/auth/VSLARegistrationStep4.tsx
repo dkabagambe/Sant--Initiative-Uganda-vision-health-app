@@ -187,19 +187,6 @@ const VSLARegistrationStep4 = () => {
 
   const validateForm = () => {
     const newErrors: { [key: number]: string } = {};
-
-    documents.forEach((doc) => {
-      if (doc.required && !doc.file) {
-        newErrors[doc.id] = `${doc.label} is required`;
-      }
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateForm = () => {
-    const newErrors: { [key: number]: string } = {};
     let isValid = true;
 
     documents.forEach((doc) => {

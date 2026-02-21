@@ -72,6 +72,7 @@ const paymentRoutes = require("./routes/payments");
 const syncRoutes = require("./routes/sync");
 const referralRoutes = require("./routes/referrals");
 const dashboardRoutes = require("./routes/dashboard");
+const facilityRoutes = require("./routes/facilities");
 
 // --- Use Routes ---
 app.use("/api/auth", authRoutes);
@@ -81,6 +82,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/sync", syncRoutes);
 app.use("/api/referrals", referralRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/health-facilities", facilityRoutes);
 
 // --- 404 Handler ---
 app.use("*", (req, res) => {

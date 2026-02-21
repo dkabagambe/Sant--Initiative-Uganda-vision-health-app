@@ -2,10 +2,11 @@
 exports.createReferral = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user.userId;
+    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A'; // Default to Jane for testing
     const {
       screeningId,
       clientId,
+      clientName,
       reason,
       urgency,
       facilityName,
@@ -19,10 +20,10 @@ exports.createReferral = async (req, res) => {
 
     const referral = await sql`
       INSERT INTO referrals (
-        screening_id, client_id, health_worker_id,
+        screening_id, client_id, health_worker_id, client_name,
         reason, urgency, facility_name, facility_location, notes
       ) VALUES (
-        ${screeningId || null}, ${clientId || null}, ${healthWorkerId},
+        ${screeningId || null}, ${clientId || null}, ${healthWorkerId}, ${clientName || null},
         ${reason}, ${urgency || 'normal'}, ${facilityName || null}, ${facilityLocation || null}, ${notes || null}
       )
       RETURNING *

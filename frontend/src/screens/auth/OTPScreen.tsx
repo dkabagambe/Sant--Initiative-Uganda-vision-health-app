@@ -16,6 +16,7 @@ import {
 import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiService } from "../../services/api";
 
 type RootStackParamList = {
@@ -101,23 +102,33 @@ export default function OTPScreen() {
     setErrorMessage(null);
 
     try {
-      // Bypass OTP verification - accept any 6-digit code
-      // Fetch user data from database
+      // Verify OTP and get user data from database
       const result = await apiService.verifyOTP(phone, otpString);
+      console.log("OTP verification result:", result);
 
-      if (result.success || result.user) {
-        // Store user data
-        await apiService.storeUserData(result.user || { phone, role });
-        navigation.navigate("AppTabs", { role });
+      if (result.success && result.user) {
+        // Store token and user data
+        console.log("Storing user data:", result.user);
+        await apiService.storeUserData(result.user);
+        if (result.token) {
+          await AsyncStorage.setItem("authToken", result.token);
+        }
+        
+        // Map database role to navigation role
+        const roleMap: { [key: string]: string } = {
+          'health_worker': 'CHW',
+          'outlet': 'Outlet',
+          'vsla': 'VSLA'
+        };
+        const navRole = roleMap[result.user.role] || 'CHW';
+        
+        navigation.navigate("AppTabs", { role: navRole });
       } else {
-        // If user not found, still allow login for testing
-        await apiService.storeUserData({ phone, role });
-        navigation.navigate("AppTabs", { role });
+        setErrorMessage(result.error || "Invalid OTP");
       }
-    } catch (error) {
-      // Bypass error - allow login anyway for testing
-      await apiService.storeUserData({ phone, role });
-      navigation.navigate("AppTabs", { role });
+    } catch (error: any) {
+      console.error("OTP verification error:", error);
+      setErrorMessage(error.response?.data?.error || "Verification failed");
     } finally {
       setLoading(false);
     }

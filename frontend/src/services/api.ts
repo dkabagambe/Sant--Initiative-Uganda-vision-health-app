@@ -248,6 +248,11 @@ export const apiService = {
     return response.data;
   },
 
+  async getHealthFacilities(district?: string) {
+    const response = await api.get("/health-facilities", { params: { district } });
+    return response.data;
+  },
+
   async updateReferralStatus(referralId: string, status: string, notes?: string) {
     const response = await api.patch(`/referrals/${referralId}/status`, { status, notes });
     return response.data;
@@ -315,6 +320,16 @@ export const apiService = {
     } catch (error) {
       console.error("Store user data error:", error);
       return { success: false };
+    }
+  },
+
+  async getCurrentUser() {
+    try {
+      const userData = await AsyncStorage.getItem("user");
+      return userData ? JSON.parse(userData) : null;
+    } catch (error) {
+      console.error("Get user data error:", error);
+      return null;
     }
   },
 

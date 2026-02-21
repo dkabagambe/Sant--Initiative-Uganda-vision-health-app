@@ -8,14 +8,17 @@ import {
   SafeAreaView,
   StatusBar,
   Dimensions,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useScreening } from "../../context/ScreeningContext";
 
 const { width } = Dimensions.get("window");
 
 export default function DistanceVisionTestScreen() {
   const navigation = useNavigation<any>();
+  const { updateScreeningData } = useScreening();
   const [line1Score, setLine1Score] = useState<number | null>(null);
   const [line2Score, setLine2Score] = useState<number | null>(null);
   const [testStage, setTestStage] = useState<"rightEye" | "leftEye">(
@@ -37,10 +40,28 @@ export default function DistanceVisionTestScreen() {
     }
 
     if (line1Score < 2 || line2Score < 4) {
-      alert(
-        `Right Eye Test Failed. Line 1: ${line1Score}/3, Line 2: ${line2Score}/5. Automatic referral required.`,
+      const eyeTested = testStage === "rightEye" ? "Right" : "Left";
+      
+      // Save referral data to context
+      updateScreeningData({
+        needsReferral: true,
+        referralReason: `${eyeTested} eye failed distance vision test. Line 1: ${line1Score}/3, Line 2: ${line2Score}/5`,
+        referralUrgency: "normal",
+        referralStep: "Step 5 - Distance Vision Test"
+      });
+
+      Alert.alert(
+        "Referral Required",
+        `${eyeTested} Eye Test Failed. Client will be referred to nearest health facility.`,
+        [
+          {
+            text: "Create Referral",
+            onPress: () => {
+              navigation.navigate("VisionScreen6");
+            },
+          },
+        ]
       );
-      // In a real app, you would navigate to a referral screen
       return;
     }
 

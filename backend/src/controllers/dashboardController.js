@@ -24,6 +24,16 @@ exports.getDashboardStats = async (req, res) => {
       WHERE health_worker_id = ${healthWorkerId}
     `;
 
+    // Get clients due for repayment
+    const clientsDue = await sql`
+      SELECT COUNT(DISTINCT c.id) as clients_due_repayment
+      FROM clients c
+      JOIN screenings s ON c.id = s.client_id
+      JOIN payments p ON s.id = p.screening_id
+      WHERE c.health_worker_id = ${healthWorkerId}
+      AND p.status = 'pending'
+    `;
+
     // Get inventory count
     const inventoryStats = await sql`
       SELECT COALESCE(SUM(stock_quantity), 0) as total_stock
@@ -36,8 +46,10 @@ exports.getDashboardStats = async (req, res) => {
         COUNT(*) as total_payments,
         COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_payments,
         COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_payments,
+        COUNT(CASE WHEN status = 'pending' AND date(due_date) <= date('now') THEN 1 END) as due_today,
         COALESCE(SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END), 0) as total_revenue,
-        COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) as pending_amount
+        COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) as pending_amount,
+        COALESCE(SUM(CASE WHEN status = 'pending' AND date(due_date) <= date('now') THEN amount ELSE 0 END), 0) as expected_today
       FROM payments p
       JOIN screenings s ON p.screening_id = s.id
       WHERE s.health_worker_id = ${healthWorkerId}
@@ -48,7 +60,8 @@ exports.getDashboardStats = async (req, res) => {
       SELECT 
         COUNT(*) as total_referrals,
         COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_referrals,
-        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_referrals
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_referrals,
+        COUNT(CASE WHEN status = 'pending' AND date(referred_date) < date('now', '-7 days') THEN 1 END) as outstanding_referrals
       FROM referrals
       WHERE health_worker_id = ${healthWorkerId}
     `;
@@ -69,9 +82,12 @@ exports.getDashboardStats = async (req, res) => {
         weekScreenings: screeningStats[0].screenings_this_week || 0,
         glassesGiven: screeningStats[0].clients_needing_glasses || 0,
         clients: clientStats[0].total_clients || 0,
+        clientsDueRepayment: clientsDue[0].clients_due_repayment || 0,
         inventory: inventoryStats[0].total_stock || 0,
         referrals: referralStats[0].pending_referrals || 0,
-        paymentsDue: paymentStats[0].pending_payments || 0,
+        referralsOutstanding: referralStats[0].outstanding_referrals || 0,
+        paymentsDue: paymentStats[0].due_today || 0,
+        expectedAmount: paymentStats[0].expected_today || 0,
         screenings: screeningStats[0],
         payments: paymentStats[0],
         referralsData: referralStats[0],
@@ -129,7 +145,7 @@ exports.getInventorySummary = async (req, res) => {
 exports.getReports = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user.userId;
+    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A'; // Default to Jane for testing
     const { startDate, endDate, reportType } = req.query;
 
     let dateFilter = sql`TRUE`;
@@ -204,7 +220,7 @@ exports.getReports = async (req, res) => {
 exports.getClients = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user.userId;
+    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A'; // Default to Jane for testing
     const { limit = 50, offset = 0 } = req.query;
 
     const clients = await sql`

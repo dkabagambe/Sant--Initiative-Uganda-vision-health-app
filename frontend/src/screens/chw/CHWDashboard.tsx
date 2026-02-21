@@ -21,6 +21,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiService } from "../../services/api";
+import { useLanguage } from "../../context/LanguageContext";
 
 type RootStackParamList = {
   CHWDashboard: undefined;
@@ -43,6 +44,7 @@ const { width } = Dimensions.get("window");
 
 export default function CHWDashboard() {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
+  const { t } = useLanguage();
   const [offlineCount, setOfflineCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [userData, setUserData] = useState<any>(null);
@@ -50,9 +52,12 @@ export default function CHWDashboard() {
     weekScreenings: 0,
     glassesGiven: 0,
     clients: 0,
+    clientsDueRepayment: 0,
     inventory: 0,
     referrals: 0,
+    referralsOutstanding: 0,
     paymentsDue: 0,
+    expectedAmount: 0,
   });
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
@@ -140,6 +145,7 @@ export default function CHWDashboard() {
   const loadUserData = async () => {
     try {
       const user = await apiService.getCurrentUser();
+      console.log("Loaded user data:", user);
       setUserData(user);
     } catch (error) {
       console.error("Failed to load user data:", error);
@@ -198,25 +204,25 @@ export default function CHWDashboard() {
       label: "My Clients",
       value: stats.clients.toString(),
       subtitle: "Active clients",
-      subValue: "8 due for repayment",
+      subValue: stats.clientsDueRepayment ? `${stats.clientsDueRepayment} due for repayment` : "No repayments due",
     },
     {
       label: "Inventory",
       value: stats.inventory.toString(),
       subtitle: "Glasses in stock",
-      subValue: "Good stock level",
+      subValue: stats.inventory === 0 ? "Out of stock" : stats.inventory < 100 ? "Low stock" : "Good stock level",
     },
     {
       label: "Referrals",
       value: stats.referrals.toString(),
       subtitle: "Pending referrals",
-      subValue: "1 outstanding",
+      subValue: stats.referralsOutstanding ? `${stats.referralsOutstanding} outstanding` : "All up to date",
     },
     {
       label: "Payments Due",
       value: stats.paymentsDue.toString(),
       subtitle: "Clients due today",
-      subValue: "UGX 15,000 expected",
+      subValue: stats.expectedAmount ? `UGX ${stats.expectedAmount.toLocaleString()} expected` : "No payments due",
     },
   ];
 
@@ -284,28 +290,28 @@ export default function CHWDashboard() {
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeTitle}>
-            Welcome, {userData?.full_name || userData?.first_name || "User"}
+            {t('welcome')}, {userData?.full_name || userData?.first_name || "User"}
           </Text>
           <Text style={styles.userRole}>
-            VHT - {userData?.district ? `${userData.district} District` : "District"}
+            {userData?.district ? `${userData.district} ${t('district')}` : t('district')}
           </Text>
 
           <View style={styles.readyCard}>
             <MaterialIcons name="access-time" size={20} color="#1A4D8F" />
-            <Text style={styles.readyText}>Ready to screen today?</Text>
+            <Text style={styles.readyText}>{t('readyToScreen')}</Text>
           </View>
         </View>
 
         {/* This Week Stats */}
         <View style={styles.weekStatsSection}>
-          <Text style={styles.sectionTitle}>This Week</Text>
+          <Text style={styles.sectionTitle}>{t('thisWeek')}</Text>
           <View style={styles.weekStatsRow}>
             <View style={styles.weekStatCard}>
               <View style={styles.statIconContainer}>
                 <FontAwesome5 name="users" size={20} color="#FFFFFF" />
               </View>
               <Text style={styles.weekStatNumber}>{stats.weekScreenings}</Text>
-              <Text style={styles.weekStatLabel}>Screened</Text>
+              <Text style={styles.weekStatLabel}>{t('screened')}</Text>
             </View>
 
             <View style={styles.weekStatCard}>
@@ -318,7 +324,7 @@ export default function CHWDashboard() {
                 <MaterialIcons name="school" size={20} color="#FFFFFF" />
               </View>
               <Text style={styles.weekStatNumber}>{stats.glassesGiven}</Text>
-              <Text style={styles.weekStatLabel}>Glasses Given</Text>
+              <Text style={styles.weekStatLabel}>{t('glassesGiven')}</Text>
             </View>
           </View>
         </View>

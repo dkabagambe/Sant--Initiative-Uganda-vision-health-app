@@ -12,9 +12,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useScreening } from "../../context/ScreeningContext";
 
 export default function TorchLightStepScreen() {
   const navigation = useNavigation<any>();
+  const { updateScreeningData } = useScreening();
   const [currentSubStep, setCurrentSubStep] = useState<1 | 2 | 3 | 4 | 4.5>(1);
   const [abnormalSigns, setAbnormalSigns] = useState<string[]>([]);
   const [testPassed, setTestPassed] = useState<boolean | null>(null);
@@ -53,15 +55,23 @@ export default function TorchLightStepScreen() {
     setTestPassed(passed);
 
     if (!passed) {
+      // Save referral data to context
+      updateScreeningData({
+        needsReferral: true,
+        referralReason: `Abnormal eye signs detected: ${abnormalSigns.join(", ")}`,
+        referralUrgency: "high",
+        referralStep: "Step 4 - Torch Light Test"
+      });
+
       Alert.alert(
         "Referral Required",
-        "A referral has been automatically generated for the health facility. Do NOT proceed with other vision tests.",
+        "Abnormal signs detected. Client will be referred to nearest health facility. Do NOT proceed with vision tests.",
         [
           {
-            text: "OK",
+            text: "Create Referral",
             onPress: () => {
-              // Stay on this screen - don't proceed to next test
-              // In a real app, you would navigate to referral screen
+              // Navigate to referral creation screen
+              navigation.navigate("VisionScreen6");
             },
             style: "default",
           },

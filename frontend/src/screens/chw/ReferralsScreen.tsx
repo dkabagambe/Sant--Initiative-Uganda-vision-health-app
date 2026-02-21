@@ -10,6 +10,7 @@ import {
   StatusBar,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -81,6 +82,38 @@ export default function ReferralsScreen() {
     setRefreshing(true);
     await loadReferrals();
     setRefreshing(false);
+  };
+
+  const handleCreateReferral = async () => {
+    try {
+      // Get health facilities from database
+      const facilities = await apiService.getHealthFacilities(userData?.district);
+      
+      Alert.alert(
+        "Create New Referral",
+        "Select referral type:",
+        [
+          {
+            text: "From Screening",
+            onPress: () => {
+              Alert.alert("From Screening", "This will create a referral from the current screening session.\n\nNavigate to screening first.");
+            }
+          },
+          {
+            text: "Manual Referral",
+            onPress: () => {
+              Alert.alert(
+                "Manual Referral",
+                `Client Name: [Enter name]\nReason: [Select reason]\nFacility: ${facilities.data?.[0]?.name || 'Nearest facility'}\nUrgency: Normal\n\n(Full form coming soon)`
+              );
+            }
+          },
+          { text: "Cancel", style: "cancel" }
+        ]
+      );
+    } catch (error) {
+      Alert.alert("Error", "Failed to load facilities. Please try again.");
+    }
   };
 
   const pendingReferrals = referrals.filter((r) => r.status === "pending");
@@ -217,6 +250,15 @@ export default function ReferralsScreen() {
             <Text style={styles.statLabel}>Total</Text>
           </View>
         </View>
+
+        {/* Create New Referral Button */}
+        <TouchableOpacity 
+          style={styles.createReferralButton}
+          onPress={handleCreateReferral}
+        >
+          <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+          <Text style={styles.createReferralText}>Create New Referral</Text>
+        </TouchableOpacity>
 
         {/* Tabs */}
         <View style={styles.tabsContainer}>
@@ -358,6 +400,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 24,
+  },
+  createReferralButton: {
+    backgroundColor: "#DC2626",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    shadowColor: "#DC2626",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  createReferralText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
   },
   statCard: {
     flex: 1,

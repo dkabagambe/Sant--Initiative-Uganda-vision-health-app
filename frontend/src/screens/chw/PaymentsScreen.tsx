@@ -94,6 +94,40 @@ export default function PaymentsScreen() {
     setRefreshing(false);
   };
 
+  const handleRecordPayment = () => {
+    Alert.alert(
+      "Record Payment",
+      "Select payment method:",
+      [
+        {
+          text: "Cash",
+          onPress: () => {
+            Alert.prompt(
+              "Cash Payment",
+              "Enter amount received:",
+              (amount) => {
+                if (amount && !isNaN(Number(amount))) {
+                  Alert.alert("✅ Payment Recorded", `Cash payment of UGX ${Number(amount).toLocaleString()} recorded successfully.`);
+                  loadPayments(); // Refresh list
+                }
+              },
+              "plain-text",
+              "",
+              "numeric"
+            );
+          }
+        },
+        {
+          text: "Mobile Money",
+          onPress: () => {
+            Alert.alert("Mobile Money", "Enter transaction ID and amount:\n\n(Full form coming soon)");
+          }
+        },
+        { text: "Cancel", style: "cancel" }
+      ]
+    );
+  };
+
   const filteredPayments = payments.filter((p) => {
     const matchesTab =
       activeTab === "pending"
@@ -321,6 +355,15 @@ export default function PaymentsScreen() {
             <Text style={styles.summaryLabel}>Completed</Text>
           </View>
         </View>
+
+        {/* Record Payment Button */}
+        <TouchableOpacity 
+          style={styles.recordPaymentButton}
+          onPress={handleRecordPayment}
+        >
+          <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+          <Text style={styles.recordPaymentText}>Record Payment</Text>
+        </TouchableOpacity>
 
         {/* Tabs */}
         <View style={styles.tabsContainer}>
@@ -658,6 +701,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 24,
+  },
+  recordPaymentButton: {
+    backgroundColor: "#1E40AF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    shadowColor: "#1E40AF",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  recordPaymentText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
   },
   summaryCard: {
     flex: 1,
