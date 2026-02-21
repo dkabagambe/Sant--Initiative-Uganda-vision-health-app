@@ -43,13 +43,14 @@ import ReportsScreen from "../screens/chw/ReportsScreen";
 import StartScreeningScreen from "../screens/chw/StartScreeningScreen";
 import SettingsScreen from "../screens/chw/SettingsScreen";
 
-// NEW Vision Screening Flow (6 Steps)
+// NEW Vision Screening Flow (7 Steps)
 import VisionScreen1 from "../screens/screening/VisionScreen1";
 import VisionScreen2 from "../screens/screening/VisionScreen2";
 import VisionScreen3 from "../screens/screening/VisionScreen3";
 import VisionScreen4 from "../screens/screening/VisionScreen4";
 import VisionScreen5 from "../screens/screening/VisionScreen5";
 import VisionScreen6 from "../screens/screening/VisionScreen6";
+import ReadingGlassesSelection from "../screens/screening/ReadingGlassesSelection";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -84,6 +85,7 @@ function ScreeningStack() {
       <Stack.Screen name="VisionScreen4" component={VisionScreen4} />
       <Stack.Screen name="VisionScreen5" component={VisionScreen5} />
       <Stack.Screen name="VisionScreen6" component={VisionScreen6} />
+      <Stack.Screen name="ReadingGlassesSelection" component={ReadingGlassesSelection} />
     </Stack.Navigator>
   );
 }

@@ -206,12 +206,22 @@ export default function VisionScreen6Wrapper() {
     setSubmitting(true);
 
     try {
+      const clientAge = screeningData.clientAge || 0;
+      
+      // Check if presbyopia (age 40+ with failed near vision)
+      if (!passed && clientAge >= 40) {
+        // Navigate to reading glasses selection
+        setSubmitting(false);
+        navigation.navigate("ReadingGlassesSelection");
+        return;
+      }
+
       const completeData = {
         ...screeningData,
         nearVisionResult: passed ? "passed" : "failed",
-        needsGlasses: !passed && (screeningData.clientAge || 0) >= 40,
-        needsReferral: screeningData.needsReferral || (!passed && (screeningData.clientAge || 0) < 40),
-        referralReason: screeningData.referralReason || (!passed && (screeningData.clientAge || 0) < 40 
+        needsGlasses: false,
+        needsReferral: screeningData.needsReferral || (!passed && clientAge < 40),
+        referralReason: screeningData.referralReason || (!passed && clientAge < 40 
           ? "Failed near vision test - requires specialist examination" 
           : null),
       };
