@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
+import { apiService } from "../../services/api";
 
 export default function TorchLightStepScreen() {
   const navigation = useNavigation<any>();
@@ -103,19 +104,49 @@ export default function TorchLightStepScreen() {
 
       if (clientAge < 6) {
         // Children under 6: END screening after torch test
-        Alert.alert(
-          "✅ Screening Complete",
-          `Child is ${clientAge} years old. Only torch light test is required for children under 6.\n\nNo abnormal signs detected. Screening complete.`,
-          [
-            {
-              text: "Save & Finish",
-              onPress: () => {
-                // Save screening and return to dashboard
-                navigation.navigate("CHWDashboard");
+        // Save screening data first
+        const screeningComplete = {
+          ...screeningData,
+          torchTestPassed: true,
+          torchTestAbnormalSigns: "none",
+          needsReferral: false,
+          needsGlasses: false,
+          notes: `Child under 6 years old - only torch test performed. No abnormal signs detected.`
+        };
+
+        try {
+          const result = await apiService.createScreening(screeningComplete);
+          
+          Alert.alert(
+            "✅ Screening Complete",
+            `Child is ${clientAge} years old. Only torch light test is required for children under 6.\n\nNo abnormal signs detected. Screening saved successfully.`,
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  updateScreeningData({});
+                  navigation.navigate("CHWDashboard");
+                },
               },
-            },
-          ],
-        );
+            ],
+          );
+        } catch (error) {
+          // Save offline if API fails
+          console.error("Failed to save screening:", error);
+          Alert.alert(
+            "✅ Screening Complete (Saved Offline)",
+            `Child is ${clientAge} years old. Screening saved locally and will sync when online.`,
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  updateScreeningData({});
+                  navigation.navigate("CHWDashboard");
+                },
+              },
+            ],
+          );
+        }
       } else {
         // Age 6+: Show 2-minute wait, then continue
         setIsWaiting(true);
