@@ -427,27 +427,6 @@ export default function VisionScreen6({
           <View style={styles.spacer} />
         </ScrollView>
       </View>
-
-      {/* Bottom Button */}
-      <View style={styles.bottomContainer}>
-        <TouchableOpacity
-          style={[
-            styles.bottomButton,
-            canRead === null && styles.bottomButtonDisabled,
-          ]}
-          onPress={() => {
-            if (canRead !== null) {
-              handleTestComplete(canRead);
-            }
-          }}
-          disabled={canRead === null}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.bottomButtonText}>
-            Complete Test & Record Result
-          </Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
