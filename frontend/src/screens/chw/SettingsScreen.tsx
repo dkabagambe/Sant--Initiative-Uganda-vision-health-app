@@ -8,15 +8,20 @@ import {
   SafeAreaView,
   Switch,
   Image,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import * as ImagePicker from "expo-image-picker";
 import { apiService } from "../../services/api";
 
 export default function SettingsScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const [offlineSync, setOfflineSync] = React.useState(true);
   const [userData, setUserData] = useState<any>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     loadUserData();
@@ -26,9 +31,114 @@ export default function SettingsScreen() {
     try {
       const user = await apiService.getCurrentUser();
       setUserData(user);
+      // Load profile image if exists
+      if (user?.profile_image) {
+        setProfileImage(user.profile_image);
+      }
     } catch (error) {
       console.error("Failed to load user data:", error);
     }
+  };
+
+  const handlePickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== "granted") {
+        Alert.alert("Permission Required", "Please allow access to your photos to upload a profile picture.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setProfileImage(result.assets[0].uri);
+        Alert.alert("Success", "Profile picture updated!");
+        // TODO: Upload to server
+        // await apiService.uploadProfileImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Image picker error:", error);
+      Alert.alert("Error", "Failed to pick image");
+    }
+  };
+
+  const handleSignOut = async () => {
+    Alert.alert(
+      "Sign Out",
+      "Are you sure you want to sign out?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign Out",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await apiService.logout();
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "Login" }],
+              });
+            } catch (error) {
+              console.error("Sign out error:", error);
+              Alert.alert("Error", "Failed to sign out");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEditProfile = () => {
+    Alert.alert(
+      "Edit Profile",
+      "Choose an option:",
+      [
+        { text: "Change Profile Picture", onPress: handlePickImage },
+        { text: "Edit Personal Info", onPress: () => Alert.alert("Coming Soon", "Profile editing will be available soon") },
+        { text: "Cancel", style: "cancel" },
+      ]
+    );
+  };
+
+  const handleSecuritySettings = () => {
+    Alert.alert(
+      "Security & Privacy",
+      "Manage your security settings:\n\n• Change Password\n• Two-Factor Authentication\n• Data Privacy Settings\n\n(Full settings coming soon)"
+    );
+  };
+
+  const handleNotifications = () => {
+    Alert.alert(
+      "Notification Settings",
+      "Manage notifications:\n\n• Payment Reminders\n• Low Stock Alerts\n• Referral Updates\n• System Notifications\n\n(Full settings coming soon)"
+    );
+  };
+
+  const handleAccessibility = () => {
+    Alert.alert(
+      "Accessibility",
+      "Customize accessibility:\n\n• Text Size\n• High Contrast Mode\n• Screen Reader Support\n• Audio Feedback\n\n(Full settings coming soon)"
+    );
+  };
+
+  const handleMobileMoneySetup = () => {
+    Alert.alert(
+      "Mobile Money Setup",
+      "Configure mobile money:\n\n• MTN Mobile Money\n• Airtel Money\n• Payment Methods\n\n(Integration coming soon)"
+    );
+  };
+
+  const handleHelp = () => {
+    Alert.alert(
+      "Help & Support",
+      "Get help:\n\n• FAQs\n• Contact Support\n• Report an Issue\n• User Guide\n\nEmail: support@santeinitiative.org\nPhone: +256 700 000 000"
+    );
   };
 
   const getInitials = (name: string) => {
@@ -74,13 +184,28 @@ export default function SettingsScreen() {
 
         {/* User Profile Section */}
         <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {getInitials(userData?.full_name || "User")}
-              </Text>
+          <TouchableOpacity 
+            style={styles.avatarContainer}
+            onPress={handlePickImage}
+          >
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {getInitials(userData?.full_name || "User")}
+                </Text>
+              </View>
+            )}
+            <View style={styles.cameraIcon}>
+              <Ionicons name="camera" size={16} color="#FFFFFF" />
             </View>
-          </View>
+            {uploading && (
+              <View style={styles.uploadingOverlay}>
+                <ActivityIndicator color="#FFFFFF" />
+              </View>
+            )}
+          </TouchableOpacity>
           <Text style={styles.userName}>{userData?.full_name || "User"}</Text>
           <Text style={styles.userId}>
             CHW ID: CHW-{userData?.district?.substring(0, 2).toUpperCase() || "XX"}-2024-089
@@ -88,8 +213,8 @@ export default function SettingsScreen() {
           <Text style={styles.userLocation}>
             {userData?.district ? `${userData.district} District` : "District"}
           </Text>
-          <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.editButtonText}>Edit</Text>
+          <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
+            <Text style={styles.editButtonText}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
 
@@ -97,7 +222,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account & Security</Text>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleSecuritySettings}>
             <View style={styles.menuItemLeft}>
               <Ionicons
                 name="shield-checkmark-outline"
@@ -112,7 +237,7 @@ export default function SettingsScreen() {
             Data protection, authentication
           </Text>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleEditProfile}>
             <View style={styles.menuItemLeft}>
               <Ionicons
                 name="person-circle-outline"
@@ -125,7 +250,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
           <Text style={styles.menuSubtitle}>Update personal information</Text>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleNotifications}>
             <View style={styles.menuItemLeft}>
               <Ionicons
                 name="notifications-outline"
@@ -164,7 +289,7 @@ export default function SettingsScreen() {
           </View>
           <Text style={styles.menuSubtitle}>Manage offline data</Text>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleAccessibility}>
             <View style={styles.menuItemLeft}>
               <Ionicons
                 name="accessibility-outline"
@@ -177,7 +302,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
           <Text style={styles.menuSubtitle}>Text size, contrast, audio</Text>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleMobileMoneySetup}>
             <View style={styles.menuItemLeft}>
               <Ionicons
                 name="phone-portrait-outline"
@@ -256,7 +381,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
           <Text style={styles.menuSubtitle}>4 demos • 120 seconds total</Text>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleHelp}>
             <View style={styles.menuItemLeft}>
               <Ionicons name="help-circle-outline" size={20} color="#1E40AF" />
               <Text style={styles.menuItemText}>Help & Support</Text>
@@ -306,7 +431,8 @@ export default function SettingsScreen() {
         </View>
 
         {/* Sign Out Button */}
-        <TouchableOpacity style={styles.signOutButton}>
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <Ionicons name="log-out-outline" size={20} color="#DC2626" style={{ marginRight: 8 }} />
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
 
@@ -406,6 +532,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     marginBottom: 12,
+    position: "relative",
   },
   avatar: {
     width: 80,
@@ -415,10 +542,39 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
   avatarText: {
     color: "#FFFFFF",
     fontSize: 24,
     fontWeight: "600",
+  },
+  cameraIcon: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    backgroundColor: "#1E40AF",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  },
+  uploadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
   userName: {
     fontSize: 20,
@@ -568,6 +724,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
     marginVertical: 24,
     borderWidth: 1,
     borderColor: "#FCA5A5",
