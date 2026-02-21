@@ -242,9 +242,9 @@ export default function DistanceVisionTestScreen() {
           <View style={styles.eChartLine}>
             <Text style={styles.lineLabel}>Line 1: 6/60 (Largest)</Text>
             <View style={styles.eContainer}>
-              {renderRotatedE("right", 44)}
-              {renderRotatedE("down", 44)}
-              {renderRotatedE("left", 44)}
+              {renderRotatedE("right", 72)}
+              {renderRotatedE("down", 72)}
+              {renderRotatedE("left", 72)}
             </View>
             <Text style={styles.lettersNote}>
               3 letters to read (Right, Down, Left)
@@ -255,11 +255,11 @@ export default function DistanceVisionTestScreen() {
           <View style={styles.eChartLine}>
             <Text style={styles.lineLabel}>Line 2: 6/12 (Smaller)</Text>
             <View style={[styles.eContainer, styles.smallEContainer]}>
-              {renderRotatedE("right", 32)}
-              {renderRotatedE("up", 32)}
-              {renderRotatedE("down", 32)}
-              {renderRotatedE("left", 32)}
-              {renderRotatedE("right", 32)}
+              {renderRotatedE("right", 48)}
+              {renderRotatedE("up", 48)}
+              {renderRotatedE("down", 48)}
+              {renderRotatedE("left", 48)}
+              {renderRotatedE("right", 48)}
             </View>
             <Text style={styles.lettersNote}>
               5 letters to read (Right, Up, Down, Left, Right)
