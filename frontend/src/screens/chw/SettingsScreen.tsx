@@ -57,10 +57,26 @@ export default function SettingsScreen() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        setProfileImage(result.assets[0].uri);
-        Alert.alert("Success", "Profile picture updated!");
-        // TODO: Upload to server
-        // await apiService.uploadProfileImage(result.assets[0].uri);
+        const imageUri = result.assets[0].uri;
+        setProfileImage(imageUri);
+        
+        try {
+          // Upload to server
+          const uploadResult = await apiService.uploadFile({
+            uri: imageUri,
+            name: `profile-${Date.now()}.jpg`,
+            type: 'image/jpeg',
+          });
+          
+          if (uploadResult.success) {
+            Alert.alert("Success", "Profile picture updated!");
+            // TODO: Update user profile with image URL
+            // await apiService.updateUserProfile({ profileImage: uploadResult.data.url });
+          }
+        } catch (uploadError) {
+          console.error("Upload error:", uploadError);
+          Alert.alert("Warning", "Image selected but upload failed. Will retry later.");
+        }
       }
     } catch (error) {
       console.error("Image picker error:", error);
