@@ -181,17 +181,3 @@ const styles = StyleSheet.create({
     color: "#10B981",
   },
 });
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    gap: 12,
-    borderWidth: 2,
-    borderColor: "#10B981",
-  },
-  secondaryButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#10B981",
-  },
-});
