@@ -299,6 +299,53 @@ export const apiService = {
     return response.data;
   },
 
+  // ============ FILE UPLOAD ============
+  async uploadFile(file: { uri: string; name: string; type: string }) {
+    try {
+      const formData = new FormData();
+      formData.append('file', {
+        uri: file.uri,
+        name: file.name,
+        type: file.type,
+      } as any);
+
+      const response = await api.post('/upload/single', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('File upload error:', error);
+      throw error;
+    }
+  },
+
+  async uploadMultipleFiles(files: Array<{ uri: string; name: string; type: string }>) {
+    try {
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append('files', {
+          uri: file.uri,
+          name: file.name,
+          type: file.type,
+        } as any);
+      });
+
+      const response = await api.post('/upload/multiple', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Multiple files upload error:', error);
+      throw error;
+    }
+  },
+
   // ============ UTILITIES ============
   async checkConnection() {
     try {

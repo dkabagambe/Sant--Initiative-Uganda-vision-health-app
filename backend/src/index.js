@@ -1,6 +1,7 @@
 // src/index.js
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 require("dotenv").config();
 
 const app = express();
@@ -73,11 +74,16 @@ const syncRoutes = require("./routes/sync");
 const referralRoutes = require("./routes/referrals");
 const dashboardRoutes = require("./routes/dashboard");
 const facilityRoutes = require("./routes/facilities");
+const uploadRoutes = require("./routes/upload");
+
+// --- Serve uploaded files ---
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // --- Use Routes ---
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/screenings", screeningRoutes);
+app.use("/api/upload", uploadRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/sync", syncRoutes);
 app.use("/api/referrals", referralRoutes);

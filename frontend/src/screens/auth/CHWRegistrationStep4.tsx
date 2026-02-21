@@ -38,6 +38,7 @@ interface SelectedFile {
   uri: string;
   size: number;
   mimeType: string;
+  uploadedUrl?: string; // Server URL after upload
 }
 
 export default function CHWRegistrationStep4() {
@@ -87,6 +88,7 @@ export default function CHWRegistrationStep4() {
 
       if (result.canceled) {
         console.log("User cancelled document picker");
+        setIsUploading(null);
         return;
       }
 
@@ -98,22 +100,42 @@ export default function CHWRegistrationStep4() {
         Alert.alert("File Too Large", "Please select a file smaller than 5MB", [
           { text: "OK" },
         ]);
+        setIsUploading(null);
         return;
       }
 
-      setSelectedFiles((prev) => ({
-        ...prev,
-        [type]: {
-          name: file.name,
+      // Upload file to server
+      try {
+        const uploadResult = await apiService.uploadFile({
           uri: file.uri,
-          size: file.size || 0,
-          mimeType: file.mimeType || "application/pdf",
-        },
-      }));
+          name: file.name,
+          type: file.mimeType || "application/pdf",
+        });
 
-      Alert.alert("File Selected", `${file.name} has been selected`, [
-        { text: "OK" },
-      ]);
+        if (uploadResult.success) {
+          setSelectedFiles((prev) => ({
+            ...prev,
+            [type]: {
+              name: file.name,
+              uri: file.uri,
+              size: file.size || 0,
+              mimeType: file.mimeType || "application/pdf",
+              uploadedUrl: uploadResult.data.url, // Store server URL
+            },
+          }));
+
+          Alert.alert("File Uploaded", `${file.name} has been uploaded successfully`, [
+            { text: "OK" },
+          ]);
+        } else {
+          throw new Error("Upload failed");
+        }
+      } catch (uploadError) {
+        console.error("Upload error:", uploadError);
+        Alert.alert("Upload Failed", "Failed to upload file to server. Please try again.", [
+          { text: "OK" },
+        ]);
+      }
     } catch (error) {
       console.error("Error picking document:", error);
       Alert.alert("Error", "Failed to pick document. Please try again.", [
@@ -177,7 +199,8 @@ export default function CHWRegistrationStep4() {
       const completeRegistrationData = {
         ...registrationData,
         role: "health_worker",
-        trainingCertificate: selectedFiles.certificate?.name || null,
+        trainingCertificate: selectedFiles.certificate?.uploadedUrl || null,
+        recommendationLetter: selectedFiles.recommendation?.uploadedUrl || null,
       };
 
       const result = await apiService.verifyOTP(phone, otpInput, completeRegistrationData);
