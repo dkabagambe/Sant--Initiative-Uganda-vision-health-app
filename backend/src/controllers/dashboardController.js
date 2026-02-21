@@ -230,64 +230,12 @@ exports.getReports = async (req, res) => {
     res.status(500).json({ success: false, error: "Failed to fetch reports" });
   }
 };
-        ORDER BY s.screening_date DESC
-      `;
-
-      res.json({ success: true, data });
-    } else if (reportType === 'payments') {
-      const data = await sql`
-        SELECT 
-          p.*,
-          s.client_name,
-          pr.name as product_name
-        FROM payments p
-        JOIN screenings s ON p.screening_id = s.id
-        LEFT JOIN products pr ON p.product_id = pr.id
-        WHERE s.health_worker_id = ${healthWorkerId}
-        ORDER BY p.created_at DESC
-      `;
-
-      res.json({ success: true, data });
-    } else if (reportType === 'referrals') {
-      const data = await sql`
-        SELECT 
-          r.*,
-          s.client_name,
-          s.client_phone
-        FROM referrals r
-        LEFT JOIN screenings s ON r.screening_id = s.id
-        WHERE r.health_worker_id = ${healthWorkerId}
-        ORDER BY r.created_at DESC
-      `;
-
-      res.json({ success: true, data });
-    } else {
-      // Summary report
-      const summary = await sql`
-        SELECT 
-          COUNT(DISTINCT s.id) as total_screenings,
-          COUNT(DISTINCT CASE WHEN s.needs_glasses THEN s.id END) as glasses_sold,
-          COUNT(DISTINCT CASE WHEN s.needs_referral THEN s.id END) as referrals_made,
-          COALESCE(SUM(p.amount), 0) as total_revenue
-        FROM screenings s
-        LEFT JOIN payments p ON s.id = p.screening_id AND p.status = 'completed'
-        WHERE s.health_worker_id = ${healthWorkerId}
-        AND ${dateFilter}
-      `;
-
-      res.json({ success: true, data: summary[0] });
-    }
-  } catch (error) {
-    console.error("Get reports error:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch reports" });
-  }
-};
 
 // Get clients list
 exports.getClients = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A'; // Default to Jane for testing
+    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A';
     const { limit = 50, offset = 0 } = req.query;
 
     const clients = await sql`
