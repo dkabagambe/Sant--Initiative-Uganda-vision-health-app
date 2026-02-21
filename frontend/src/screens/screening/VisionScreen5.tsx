@@ -158,31 +158,39 @@ export default function DistanceVisionTestScreen() {
     }
   };
 
-  // Render rotated E characters like in Figma
+  // Render rotated E characters with consistent sizing
   const renderRotatedE = (rotation: string, size: number) => {
-    let transform: any[] = [];
+    let rotationDeg = "0deg";
 
     switch (rotation) {
       case "right":
-        transform = [{ rotate: "0deg" }];
+        rotationDeg = "0deg";
         break;
       case "down":
-        transform = [{ rotate: "90deg" }];
+        rotationDeg = "90deg";
         break;
       case "left":
-        transform = [{ rotate: "180deg" }];
+        rotationDeg = "180deg";
         break;
       case "up":
-        transform = [{ rotate: "270deg" }];
+        rotationDeg = "270deg";
         break;
       default:
-        transform = [{ rotate: "0deg" }];
+        rotationDeg = "0deg";
     }
 
     return (
-      <View style={[styles.rotatedEBox, { transform }]}>
-        <Text style={[styles.rotatedEText, { fontSize: size }]}>E</Text>
-      </View>
+      <Text
+        style={{
+          fontSize: size,
+          fontWeight: "700",
+          color: "#111827",
+          fontFamily: "monospace",
+          transform: [{ rotate: rotationDeg }],
+        }}
+      >
+        E
+      </Text>
     );
   };
 
@@ -315,7 +323,7 @@ export default function DistanceVisionTestScreen() {
           {/* Line 1 */}
           <View style={styles.eChartLine}>
             <Text style={styles.lineLabel}>Line 1: 6/60 (Largest)</Text>
-            <View style={styles.eContainer}>
+            <View style={[styles.eContainer, { alignItems: 'center' }]}>
               {renderRotatedE("right", moderateScale(72))}
               {renderRotatedE("down", moderateScale(72))}
               {renderRotatedE("left", moderateScale(72))}
@@ -328,7 +336,7 @@ export default function DistanceVisionTestScreen() {
           {/* Line 2 */}
           <View style={styles.eChartLine}>
             <Text style={styles.lineLabel}>Line 2: 6/12 (Smaller)</Text>
-            <View style={[styles.eContainer, styles.smallEContainer]}>
+            <View style={[styles.eContainer, styles.smallEContainer, { alignItems: 'center' }]}>
               {renderRotatedE("right", moderateScale(48))}
               {renderRotatedE("up", moderateScale(48))}
               {renderRotatedE("down", moderateScale(48))}
@@ -719,15 +727,6 @@ const styles = StyleSheet.create({
   },
   smallEContainer: {
     gap: 8,
-  },
-  rotatedEBox: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  rotatedEText: {
-    fontWeight: "700",
-    color: "#111827",
-    fontFamily: "monospace",
   },
   lettersNote: {
     fontSize: 14,
