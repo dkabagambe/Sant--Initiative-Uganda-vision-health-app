@@ -17,6 +17,12 @@ export default function VisionScreen6Wrapper() {
   const [screeningId, setScreeningId] = useState<string | null>(null);
   const [completedData, setCompletedData] = useState<any>(null);
 
+  // Debug: Log screening data
+  React.useEffect(() => {
+    console.log("VisionScreen6Wrapper - Screening Data:", screeningData);
+    console.log("Client Age:", screeningData.clientAge);
+  }, [screeningData]);
+
   // Check if referral already needed (from torch test or distance vision failure)
   React.useEffect(() => {
     if (screeningData.needsReferral) {

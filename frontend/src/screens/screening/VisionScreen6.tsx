@@ -105,49 +105,63 @@ export default function VisionScreen6({
 
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Client Age:</Text>
-                <Text style={styles.infoValue}>{clientAge} years</Text>
+                <Text style={styles.infoValue}>
+                  {clientAge > 0 ? `${clientAge} years` : "Not available"}
+                </Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Result:</Text>
+                <Text style={[styles.infoValue, canRead ? styles.passText : styles.failText]}>
+                  {canRead ? "PASS" : "FAIL"}
+                </Text>
               </View>
             </View>
 
             <View style={styles.divider} />
 
-            <Text style={styles.recordQuestion}>
-              ✅ Result Recorded - Ready to Continue
-            </Text>
+            {!canRead && clientAge >= 40 && (
+              <View style={styles.presbyopiaNote}>
+                <Ionicons name="information-circle" size={20} color="#2E7D32" />
+                <Text style={styles.presbyopiaText}>
+                  Age 40+ with near vision difficulty = Presbyopia (normal aging). 
+                  Will proceed to reading glasses selection.
+                </Text>
+              </View>
+            )}
+
+            {!canRead && clientAge < 40 && clientAge > 0 && (
+              <View style={styles.referralNote}>
+                <Ionicons name="warning" size={20} color="#DC2626" />
+                <Text style={styles.referralText}>
+                  Near vision problem in person under 40 is abnormal. 
+                  Will generate referral for eye examination.
+                </Text>
+              </View>
+            )}
           </View>
         </ScrollView>
 
-        {/* Bottom Button */}
+        {/* Bottom Button - ALWAYS VISIBLE */}
         <View style={styles.recordingBottomContainer}>
           <TouchableOpacity
             style={styles.recordingBottomButton}
             onPress={() => {
+              console.log("Button pressed - canRead:", canRead, "clientAge:", clientAge);
               if (canRead === true) {
-                // Passed - complete screening
-                if (onComplete) {
-                  onComplete(true);
-                }
-              } else if (canRead === false && clientAge >= 40) {
-                // Failed + Age 40+ = Presbyopia, go to glasses selection
-                if (onComplete) {
-                  onComplete(false);
-                }
-              } else if (canRead === false && clientAge < 40) {
-                // Failed + Age < 40 = Referral
-                if (onRefer) {
-                  onRefer();
-                } else if (onComplete) {
-                  onComplete(false);
-                }
+                onComplete(true);
+              } else if (canRead === false) {
+                onComplete(false);
               }
             }}
           >
             <Text style={styles.recordingBottomButtonText}>
               {canRead === true 
-                ? "Complete Screening" 
-                : canRead === false && clientAge >= 40
-                ? "Select Reading Glasses"
-                : "Create Referral"}
+                ? "✅ Complete Screening" 
+                : clientAge >= 40
+                ? "👓 Select Reading Glasses"
+                : "🏥 Create Referral"}
+            </Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -863,6 +877,44 @@ const styles = StyleSheet.create({
   recordButtonTextSelectedRed: {
     color: "#DC2626", // Red-600
   },
+  passText: {
+    color: "#10B981",
+    fontWeight: "700",
+  },
+  failText: {
+    color: "#DC2626",
+    fontWeight: "700",
+  },
+  presbyopiaNote: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#E8F5E9",
+    padding: 12,
+    borderRadius: 8,
+    gap: 8,
+    marginTop: 12,
+  },
+  presbyopiaText: {
+    flex: 1,
+    fontSize: 12,
+    color: "#2E7D32",
+    lineHeight: 18,
+  },
+  referralNote: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#FEE2E2",
+    padding: 12,
+    borderRadius: 8,
+    gap: 8,
+    marginTop: 12,
+  },
+  referralText: {
+    flex: 1,
+    fontSize: 12,
+    color: "#DC2626",
+    lineHeight: 18,
+  },
   referralAlert: {
     borderRadius: 8,
     padding: 16,
@@ -872,9 +924,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 4,
-  },
-  referralText: {
-    fontSize: 12,
   },
   recordingBottomContainer: {
     position: "absolute",
@@ -893,14 +942,14 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   recordingBottomButton: {
-    backgroundColor: "#9333EA", // Purple-600
+    backgroundColor: "#2E7D32",
     paddingVertical: 16,
     borderRadius: 8,
     alignItems: "center",
   },
   recordingBottomButtonText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#FFFFFF",
   },
 });
