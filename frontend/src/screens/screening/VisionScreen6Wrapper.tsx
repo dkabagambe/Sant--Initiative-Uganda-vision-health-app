@@ -404,15 +404,16 @@ export default function VisionScreen6Wrapper() {
     );
   }
 
-  // Navigate to completion screen if screening successful
-  if (showComplete) {
-    navigation.navigate("ScreeningComplete", {
-      glassesDispensed: completedData?.needsGlasses || false,
-      glassesPower: completedData?.recommendedPower || "",
-    });
-    setShowComplete(false);
-    return null;
-  }
+  // Navigate to completion screen when showComplete is true
+  React.useEffect(() => {
+    if (showComplete && completedData) {
+      navigation.navigate("ScreeningComplete", {
+        glassesDispensed: completedData?.needsGlasses || false,
+        glassesPower: completedData?.recommendedPower || "",
+      });
+      setShowComplete(false);
+    }
+  }, [showComplete, completedData]);
 
   return (
     <VisionScreen6

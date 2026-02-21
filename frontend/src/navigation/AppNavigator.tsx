@@ -49,7 +49,7 @@ import VisionScreen2 from "../screens/screening/VisionScreen2";
 import VisionScreen3 from "../screens/screening/VisionScreen3";
 import VisionScreen4 from "../screens/screening/VisionScreen4";
 import VisionScreen5 from "../screens/screening/VisionScreen5";
-import VisionScreen6 from "../screens/screening/VisionScreen6";
+import VisionScreen6Wrapper from "../screens/screening/VisionScreen6Wrapper";
 import ReadingGlassesSelection from "../screens/screening/ReadingGlassesSelection";
 import ScreeningComplete from "../screens/screening/ScreeningComplete";
 import ClientRegistration from "../screens/screening/ClientRegistration";
@@ -85,7 +85,7 @@ function ScreeningStack() {
       <Stack.Screen name="VisionScreen3" component={VisionScreen3} />
       <Stack.Screen name="VisionScreen4" component={VisionScreen4} />
       <Stack.Screen name="VisionScreen5" component={VisionScreen5} />
-      <Stack.Screen name="VisionScreen6" component={VisionScreen6} />
+      <Stack.Screen name="VisionScreen6" component={VisionScreen6Wrapper} />
       <Stack.Screen name="ReadingGlassesSelection" component={ReadingGlassesSelection} />
       <Stack.Screen name="ScreeningComplete" component={ScreeningComplete} />
       <Stack.Screen name="ClientRegistration" component={ClientRegistration} />
@@ -474,7 +474,10 @@ export default function AppNavigator() {
       <Stack.Screen name="VisionScreen3" component={VisionScreen3} />
       <Stack.Screen name="VisionScreen4" component={VisionScreen4} />
       <Stack.Screen name="VisionScreen5" component={VisionScreen5} />
-      <Stack.Screen name="VisionScreen6" component={VisionScreen6} />
+      <Stack.Screen name="VisionScreen6" component={VisionScreen6Wrapper} />
+      <Stack.Screen name="ReadingGlassesSelection" component={ReadingGlassesSelection} />
+      <Stack.Screen name="ScreeningComplete" component={ScreeningComplete} />
+      <Stack.Screen name="ClientRegistration" component={ClientRegistration} />
 
       {/* Old screens for backward compatibility */}
       <Stack.Screen
