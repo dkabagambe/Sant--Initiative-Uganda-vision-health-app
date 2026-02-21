@@ -278,11 +278,9 @@ export default function PaymentsScreen() {
         userRole="VHT"
         district={userData?.district}
       />
-          </TouchableOpacity>
-        </View>
 
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
           <Ionicons
             name="search"
             size={20}
