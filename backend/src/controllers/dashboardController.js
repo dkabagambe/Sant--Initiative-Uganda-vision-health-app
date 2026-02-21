@@ -145,24 +145,91 @@ exports.getInventorySummary = async (req, res) => {
 exports.getReports = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A'; // Default to Jane for testing
+    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A';
     const { startDate, endDate, reportType } = req.query;
 
-    let dateFilter = sql`TRUE`;
-    if (startDate && endDate) {
-      dateFilter = sql`screening_date BETWEEN ${startDate} AND ${endDate}`;
-    }
-
     if (reportType === 'screenings') {
-      const data = await sql`
+      let query = `
         SELECT 
           s.*,
           p.name as product_name,
           p.power as product_power
         FROM screenings s
         LEFT JOIN products p ON s.recommended_product_id = p.id
-        WHERE s.health_worker_id = ${healthWorkerId}
-        AND ${dateFilter}
+        WHERE s.health_worker_id = ?
+      `;
+      
+      const params = [healthWorkerId];
+      
+      if (startDate && endDate) {
+        query += ` AND screening_date BETWEEN ? AND ?`;
+        params.push(startDate, endDate);
+      }
+      
+      query += ` ORDER BY s.screening_date DESC`;
+      
+      const data = await sql(query, params);
+      res.json({ success: true, data });
+      
+    } else if (reportType === 'payments') {
+      let query = `
+        SELECT 
+          p.*,
+          s.client_name,
+          pr.name as product_name
+        FROM payments p
+        JOIN screenings s ON p.screening_id = s.id
+        LEFT JOIN products pr ON p.product_id = pr.id
+        WHERE s.health_worker_id = ?
+        ORDER BY p.created_at DESC
+      `;
+      
+      const data = await sql(query, [healthWorkerId]);
+      res.json({ success: true, data });
+      
+    } else if (reportType === 'referrals') {
+      let query = `
+        SELECT 
+          r.*,
+          s.client_name,
+          s.client_phone
+        FROM referrals r
+        LEFT JOIN screenings s ON r.screening_id = s.id
+        WHERE r.health_worker_id = ?
+        ORDER BY r.created_at DESC
+      `;
+      
+      const data = await sql(query, [healthWorkerId]);
+      res.json({ success: true, data });
+      
+    } else {
+      // Summary report
+      let query = `
+        SELECT 
+          COUNT(DISTINCT s.id) as total_screenings,
+          COUNT(DISTINCT CASE WHEN s.needs_glasses THEN s.id END) as glasses_sold,
+          COUNT(DISTINCT CASE WHEN s.needs_referral THEN s.id END) as referrals_made,
+          COALESCE(SUM(p.amount), 0) as total_revenue
+        FROM screenings s
+        LEFT JOIN payments p ON s.id = p.screening_id AND p.status = 'completed'
+        WHERE s.health_worker_id = ?
+      `;
+      
+      const params = [healthWorkerId];
+      
+      if (startDate && endDate) {
+        query += ` AND s.screening_date BETWEEN ? AND ?`;
+        params.push(startDate, endDate);
+      }
+      
+      const data = await sql(query, params);
+      res.json({ success: true, data: data[0] });
+    }
+  } catch (error) {
+    console.error("Get reports error:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch reports" });
+  }
+};
         ORDER BY s.screening_date DESC
       `;
 
