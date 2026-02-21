@@ -36,6 +36,7 @@ import VisionScreeningStep2 from "../screens/screening/VisionScreeningStep2";
 import MyClientsScreen from "../screens/chw/MyClientsScreen";
 import InventoryScreen from "../screens/chw/InventoryScreen";
 import ReferralsScreen from "../screens/chw/ReferralsScreen";
+import ReferralManagementScreen from "../screens/chw/ReferralManagementScreen";
 import PaymentsScreen from "../screens/chw/PaymentsScreen";
 import ReportsScreen from "../screens/chw/ReportsScreen";
 import StartScreeningScreen from "../screens/chw/StartScreeningScreen";
@@ -99,6 +100,7 @@ function CHWHomeStack() {
       <Stack.Screen name="MyClients" component={MyClientsScreen} />
       <Stack.Screen name="Inventory" component={InventoryScreen} />
       <Stack.Screen name="Referrals" component={ReferralsScreen} />
+      <Stack.Screen name="ReferralManagement" component={ReferralManagementScreen} />
       <Stack.Screen name="Payments" component={PaymentsScreen} />
       <Stack.Screen name="Reports" component={ReportsScreen} />
       <Stack.Screen name="StartScreening" component={StartScreeningScreen} />

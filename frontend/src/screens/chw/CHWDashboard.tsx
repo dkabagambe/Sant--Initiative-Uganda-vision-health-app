@@ -447,7 +447,7 @@ export default function CHWDashboard() {
           },
           { name: "Stock", icon: "cube", screen: "Inventory" },
           { name: "Payments", icon: "cash", screen: "Payments" },
-          { name: "Referrals", icon: "share", screen: "Referrals" },
+          { name: "Referrals", icon: "share", screen: "ReferralManagement" },
         ].map((item, index) => (
           <TouchableOpacity
             key={index}
