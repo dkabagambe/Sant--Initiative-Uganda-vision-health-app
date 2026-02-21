@@ -198,8 +198,11 @@ export default function VisionScreen6Wrapper() {
           : null),
       };
 
+      console.log("Submitting screening data:", completeData);
+
       try {
         const result = await apiService.createScreening(completeData);
+        console.log("Screening result:", result);
 
         if (result.success) {
           // If referral needed, create it
@@ -226,6 +229,7 @@ export default function VisionScreen6Wrapper() {
           throw new Error("API returned error");
         }
       } catch (apiError) {
+        console.error("API Error:", apiError);
         // Save offline if API fails
         const saved = await saveOffline(completeData);
         if (saved) {
@@ -243,12 +247,30 @@ export default function VisionScreen6Wrapper() {
             ]
           );
         } else {
-          Alert.alert("Error", "Failed to save screening. Please try again.");
+          Alert.alert(
+            "Error", 
+            `Failed to save screening. ${apiError.message || 'Please try again.'}`,
+            [
+              {
+                text: "OK",
+                onPress: () => setSubmitting(false),
+              },
+            ]
+          );
         }
       }
     } catch (error) {
       console.error("Screening submission error:", error);
-      Alert.alert("Error", "An unexpected error occurred.");
+      Alert.alert(
+        "Error", 
+        `An unexpected error occurred: ${error.message || 'Unknown error'}`,
+        [
+          {
+            text: "OK",
+            onPress: () => setSubmitting(false),
+          },
+        ]
+      );
     } finally {
       setSubmitting(false);
     }
