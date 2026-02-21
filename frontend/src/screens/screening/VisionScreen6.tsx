@@ -32,7 +32,9 @@ export default function VisionScreen6({
     setCanRead(passed);
     if (!passed && clientAge >= 40) {
       // Immediately proceed to glasses selection for presbyopia (age 40+)
-      onComplete(false);
+      if (onComplete) {
+        onComplete(false);
+      }
     } else {
       setShowRecording(true);
     }
@@ -123,7 +125,7 @@ export default function VisionScreen6({
                   styles.recordButton,
                   canRead === true && styles.recordButtonSelected,
                 ]}
-                onPress={() => onComplete(true)}
+                onPress={() => onComplete && onComplete(true)}
               >
                 <Text
                   style={[
@@ -140,7 +142,9 @@ export default function VisionScreen6({
                   canRead === false && styles.recordButtonSelectedRed,
                 ]}
                 onPress={() => {
-                  onComplete(false);
+                  if (onComplete) {
+                    onComplete(false);
+                  }
                   if (canRead === false && clientAge < 40 && onRefer) {
                     onRefer();
                   }
@@ -196,7 +200,7 @@ export default function VisionScreen6({
             onPress={() => {
               if (canRead === false && clientAge < 40 && onRefer) {
                 onRefer();
-              } else {
+              } else if (onComplete) {
                 onComplete(false);
               }
             }}
