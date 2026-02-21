@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Backend for Santé Initiative Uganda Vision Health App",
   "main": "src/index.js",
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  },
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
