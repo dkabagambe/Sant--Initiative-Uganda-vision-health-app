@@ -262,18 +262,6 @@ export const apiService = {
     return response.data;
   },
 
-  // ============ CLIENTS ============
-  async getClients() {
-    const response = await api.get("/dashboard/clients");
-    return response.data;
-  },
-
-  // ============ REPORTS ============
-  async getReports() {
-    const response = await api.get("/dashboard/reports");
-    return response.data;
-  },
-
   // ============ DASHBOARD ============
   async getDashboardStats() {
     const response = await api.get("/dashboard/stats");
@@ -316,32 +304,6 @@ export const apiService = {
     }
   },
 
-  // ============ USER DATA ============
-  async storeUserData(userData: any) {
-    try {
-      await AsyncStorage.setItem("user", JSON.stringify(userData));
-      return { success: true };
-    } catch (error) {
-      console.error("Store user data error:", error);
-      return { success: false };
-    }
-  },
-
-  async getCurrentUser() {
-    try {
-      const userData = await AsyncStorage.getItem("user");
-      return userData ? JSON.parse(userData) : null;
-    } catch (error) {
-      console.error("Get user data error:", error);
-      return null;
-    }
-  },
-
-  // ============ DASHBOARD STATS ============
-  async getDashboardStats() {
-    const response = await api.get("/dashboard/stats");
-    return response.data;
-  },
 };
 
 export default api;
