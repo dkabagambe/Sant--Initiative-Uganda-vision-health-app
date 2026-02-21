@@ -10,9 +10,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function PreScreeningQuestionsScreen() {
   const navigation = useNavigation<any>();
+  const { t } = useLanguage();
 
   const [answers, setAnswers] = useState<Array<"Yes" | "No" | null>>([
     null,
@@ -22,10 +24,10 @@ export default function PreScreeningQuestionsScreen() {
   ]);
 
   const questions = [
-    "Q1. Do you have difficulty seeing far away objects?",
-    "Q2. Do you have difficulty reading small print?",
-    "Q3. Have you noticed any changes in your vision recently?",
-    "Q4. Do you experience eye pain or discomfort?",
+    t("q1DifficultyFar"),
+    t("q2DifficultyReading"),
+    t("q3VisionChanges"),
+    t("q4EyePain"),
   ];
 
   const handleAnswerSelect = (questionIndex: number, answer: "Yes" | "No") => {
@@ -37,7 +39,7 @@ export default function PreScreeningQuestionsScreen() {
   const handleNext = () => {
     // Check if all questions are answered
     if (answers.some(answer => answer === null)) {
-      alert("Please answer all questions before proceeding");
+      alert(t("answerAllQuestions"));
       return;
     }
     // Navigate to next screen
@@ -65,9 +67,9 @@ export default function PreScreeningQuestionsScreen() {
         <View style={styles.contentContainer}>
           {/* Progress Section */}
           <View style={styles.progressSection}>
-            <Text style={styles.screenTitle}>VHT Eye Screening</Text>
+            <Text style={styles.screenTitle}>{t("vhtEyeScreening")}</Text>
             <View style={styles.progressRow}>
-              <Text style={styles.progressText}>Step 2 of 7</Text>
+              <Text style={styles.progressText}>{t("step")} 2 {t("of")} 7</Text>
               <View style={styles.progressBar}>
                 <View style={[styles.progressFill, { width: "33%" }]} />
               </View>
@@ -80,10 +82,10 @@ export default function PreScreeningQuestionsScreen() {
           {/* Questions Header */}
           <View style={styles.questionsHeader}>
             <Text style={styles.questionsTitle}>
-              📋 Pre-Screening Questions
+              📋 {t("preScreeningQuestions")}
             </Text>
             <Text style={styles.questionsSubtitle}>
-              Ask these questions before examination
+              {t("askTheseQuestions")}
             </Text>
           </View>
 
@@ -119,7 +121,7 @@ export default function PreScreeningQuestionsScreen() {
                           styles.answerButtonTextSelected,
                       ]}
                     >
-                      Yes
+                      {t("yes")}
                     </Text>
                   </TouchableOpacity>
 
@@ -146,7 +148,7 @@ export default function PreScreeningQuestionsScreen() {
                           styles.answerButtonTextSelected,
                       ]}
                     >
-                      No
+                      {t("no")}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -163,7 +165,7 @@ export default function PreScreeningQuestionsScreen() {
           onPress={() => navigation.goBack()}
           activeOpacity={0.8}
         >
-          <Text style={styles.backButtonText}>Back</Text>
+          <Text style={styles.backButtonText}>{t("back")}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -176,7 +178,7 @@ export default function PreScreeningQuestionsScreen() {
           activeOpacity={0.8}
           // disabled={!answers.every(a => a !== null)}
         >
-          <Text style={styles.nextButtonText}>Next</Text>
+          <Text style={styles.nextButtonText}>{t("next")}</Text>
         </TouchableOpacity>
       </View>
 

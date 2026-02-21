@@ -203,6 +203,14 @@ export const translations = {
     enterParish: "e.g., Bombo Parish, City Ward",
     county: "County/Municipality/Division",
     
+    // Pre-screening questions
+    q1DifficultyFar: "Q1. Do you have difficulty seeing far away objects?",
+    q2DifficultyReading: "Q2. Do you have difficulty reading small print?",
+    q3VisionChanges: "Q3. Have you noticed any changes in your vision recently?",
+    q4EyePain: "Q4. Do you experience eye pain or discomfort?",
+    askTheseQuestions: "Ask these questions before examination",
+    answerAllQuestions: "Please answer all questions before proceeding",
+    
     // Screening
     vhtEyeScreening: "VHT Eye Screening",
     step: "Step",
@@ -476,6 +484,14 @@ export const translations = {
     enterSubCounty: "Okugeza: Mpererwe Parish, Wobulenzi Sub-County",
     enterParish: "Okugeza: Bombo Parish, City Ward",
     county: "Ssaza/Municipality/Division",
+    
+    // Pre-screening questions
+    q1DifficultyFar: "E1. Olina obuzibu okulaba ebintu ebiri ewala?",
+    q2DifficultyReading: "E2. Olina obuzibu okusoma ebiwandiike ebitono?",
+    q3VisionChanges: "E3. Olabye enkyukakyuka mu kulaba kwo?",
+    q4EyePain: "E4. Olina obulumi bw'amaaso oba obutali bulungi?",
+    askTheseQuestions: "Buuza ebibuuzo bino nga tonnakebera",
+    answerAllQuestions: "Ddamu ebibuuzo byonna nga tonnagenda mu maaso",
     
     // Screening
     vhtEyeScreening: "Okukebera Amaaso kwa VHT",
