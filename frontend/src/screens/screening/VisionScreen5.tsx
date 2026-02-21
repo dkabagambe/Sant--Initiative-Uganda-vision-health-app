@@ -104,7 +104,10 @@ export default function DistanceVisionTestScreen() {
                     `Client referred to ${facility?.name || "health facility"}.\n\nScreening ended - near vision test not performed.`,
                     [{ text: "OK", onPress: () => {
                       updateScreeningData({});
-                      navigation.navigate("CHWDashboard");
+                      navigation.reset({
+                        index: 0,
+                        routes: [{ name: "CHWTabs" }],
+                      });
                     }}]
                   );
                 } else {
@@ -119,7 +122,10 @@ export default function DistanceVisionTestScreen() {
                     "No internet connection. Referral saved locally and will sync when online.",
                     [{ text: "OK", onPress: () => {
                       updateScreeningData({});
-                      navigation.navigate("CHWDashboard");
+                      navigation.reset({
+                        index: 0,
+                        routes: [{ name: "CHWTabs" }],
+                      });
                     }}]
                   );
                 } else {

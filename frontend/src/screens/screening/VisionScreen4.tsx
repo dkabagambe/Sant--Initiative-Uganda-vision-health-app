@@ -138,7 +138,10 @@ export default function TorchLightStepScreen() {
                     `Client referred to ${facility?.name || "health facility"}.\n\nScreening ended - no other tests performed.`,
                     [{ text: "OK", onPress: () => {
                       updateScreeningData({});
-                      navigation.navigate("CHWDashboard");
+                      navigation.reset({
+                        index: 0,
+                        routes: [{ name: "CHWTabs" }],
+                      });
                     }}]
                   );
                 } else {
@@ -153,7 +156,10 @@ export default function TorchLightStepScreen() {
                     "No internet connection. Referral saved locally and will sync when online.",
                     [{ text: "OK", onPress: () => {
                       updateScreeningData({});
-                      navigation.navigate("CHWDashboard");
+                      navigation.reset({
+                        index: 0,
+                        routes: [{ name: "CHWTabs" }],
+                      });
                     }}]
                   );
                 } else {
@@ -195,7 +201,10 @@ export default function TorchLightStepScreen() {
                 text: "OK",
                 onPress: () => {
                   updateScreeningData({});
-                  navigation.navigate("CHWDashboard");
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "CHWTabs" }],
+                  });
                 },
               },
             ],
@@ -211,7 +220,10 @@ export default function TorchLightStepScreen() {
                 text: "OK",
                 onPress: () => {
                   updateScreeningData({});
-                  navigation.navigate("CHWDashboard");
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "CHWTabs" }],
+                  });
                 },
               },
             ],

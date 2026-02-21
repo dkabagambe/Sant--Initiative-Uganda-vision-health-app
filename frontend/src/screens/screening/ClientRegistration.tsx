@@ -143,7 +143,10 @@ export default function ClientRegistration({
         paymentMethod={saleData.paymentMethod}
         installmentAmount={saleData.installmentAmount}
         nextPaymentDate={saleData.nextPaymentDate}
-        onBackToHome={() => navigation.navigate("CHWDashboard")}
+        onBackToHome={() => navigation.reset({
+          index: 0,
+          routes: [{ name: "CHWTabs" }],
+        })}
         onScreenNext={() => navigation.navigate("VisionScreen1")}
       />
     );
@@ -327,7 +330,10 @@ export default function ClientRegistration({
 
           <TouchableOpacity
             style={styles.cancelButton}
-            onPress={() => navigation.navigate("CHWDashboard")}
+            onPress={() => navigation.reset({
+              index: 0,
+              routes: [{ name: "CHWTabs" }],
+            })}
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>

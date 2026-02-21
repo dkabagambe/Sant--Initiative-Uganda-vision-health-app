@@ -57,7 +57,10 @@ export default function VisionScreen6Wrapper() {
                 text: "OK",
                 onPress: () => {
                   resetScreeningData();
-                  navigation.navigate("CHWDashboard");
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "CHWTabs" }],
+                  });
                 },
               },
             ]
@@ -76,7 +79,10 @@ export default function VisionScreen6Wrapper() {
                 text: "OK",
                 onPress: () => {
                   resetScreeningData();
-                  navigation.navigate("CHWDashboard");
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "CHWTabs" }],
+                  });
                 },
               },
             ]
@@ -117,7 +123,10 @@ export default function VisionScreen6Wrapper() {
                 text: "OK",
                 onPress: () => {
                   resetScreeningData();
-                  navigation.navigate("CHWDashboard");
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "CHWTabs" }],
+                  });
                 },
               },
             ]
@@ -136,7 +145,10 @@ export default function VisionScreen6Wrapper() {
                 text: "OK",
                 onPress: () => {
                   resetScreeningData();
-                  navigation.navigate("CHWDashboard");
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "CHWTabs" }],
+                  });
                 },
               },
             ]
@@ -223,7 +235,10 @@ export default function VisionScreen6Wrapper() {
                   text: "OK",
                   onPress: () => {
                     resetScreeningData();
-                    navigation.navigate("CHWDashboard");
+                    navigation.reset({
+                      index: 0,
+                      routes: [{ name: "CHWTabs" }],
+                    });
                   },
                 },
               ]
@@ -250,7 +265,10 @@ export default function VisionScreen6Wrapper() {
                 text: "OK",
                 onPress: () => {
                   resetScreeningData();
-                  navigation.navigate("CHWDashboard");
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "CHWTabs" }],
+                  });
                 },
               },
             ]
@@ -313,7 +331,10 @@ export default function VisionScreen6Wrapper() {
                 text: "OK",
                 onPress: () => {
                   resetScreeningData();
-                  navigation.navigate("CHWDashboard");
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "CHWTabs" }],
+                  });
                 },
               },
             ]
@@ -333,7 +354,10 @@ export default function VisionScreen6Wrapper() {
                 text: "OK",
                 onPress: () => {
                   resetScreeningData();
-                  navigation.navigate("CHWDashboard");
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "CHWTabs" }],
+                  });
                 },
               },
             ]
