@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { apiService } from "../../services/api";
+import SaleComplete from "./SaleComplete";
 
 interface ClientRegistrationProps {
   clientData: {
@@ -43,6 +44,8 @@ export default function ClientRegistration({
   const [mobileNumber, setMobileNumber] = useState(clientData.clientPhone || "");
   const [merchantCode] = useState(`SAN-UG-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`);
   const [loading, setLoading] = useState(false);
+  const [showSaleComplete, setShowSaleComplete] = useState(false);
+  const [saleData, setSaleData] = useState<any>(null);
 
   useEffect(() => {
     loadProducts();
@@ -96,16 +99,26 @@ export default function ClientRegistration({
       const result = await apiService.createPayment(paymentData);
 
       if (result.success) {
-        Alert.alert(
-          "✅ Sale Confirmed",
-          `Glasses dispensed to ${clientData.clientName}\n\nMerchant Code: ${merchantCode}\n\nClient can use this code for payments.`,
-          [
-            {
-              text: "OK",
-              onPress: () => navigation.navigate("CHWDashboard"),
-            },
-          ]
-        );
+        // Calculate next payment date (30 days from now)
+        const nextDate = new Date();
+        nextDate.setDate(nextDate.getDate() + 30);
+        const nextPaymentDate = nextDate.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+
+        // Save sale data and show completion screen
+        setSaleData({
+          clientName: clientData.clientName,
+          clientPhone: clientData.clientPhone,
+          productName: `${selectedProduct.power} - ${selectedProduct.frameType} Frame`,
+          totalAmount: selectedProduct.price,
+          paymentMethod,
+          installmentAmount,
+          nextPaymentDate,
+        });
+        setShowSaleComplete(true);
       } else {
         throw new Error("Payment creation failed");
       }
@@ -118,6 +131,23 @@ export default function ClientRegistration({
   };
 
   const installmentAmount = selectedProduct ? Math.ceil(selectedProduct.price / 3) : 0;
+
+  // Show sale complete screen
+  if (showSaleComplete && saleData) {
+    return (
+      <SaleComplete
+        clientName={saleData.clientName}
+        clientPhone={saleData.clientPhone}
+        productName={saleData.productName}
+        totalAmount={saleData.totalAmount}
+        paymentMethod={saleData.paymentMethod}
+        installmentAmount={saleData.installmentAmount}
+        nextPaymentDate={saleData.nextPaymentDate}
+        onBackToHome={() => navigation.navigate("CHWDashboard")}
+        onScreenNext={() => navigation.navigate("VisionScreen1")}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
