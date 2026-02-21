@@ -1,8 +1,15 @@
 import { Dimensions, Platform, StatusBar } from 'react-native';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+// Get initial dimensions
+let { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Base dimensions (design reference)
+// Update dimensions on change (for rotation, split screen, etc.)
+Dimensions.addEventListener('change', ({ window }) => {
+  SCREEN_WIDTH = window.width;
+  SCREEN_HEIGHT = window.height;
+});
+
+// Base dimensions (design reference - iPhone 11 Pro)
 const BASE_WIDTH = 375;
 const BASE_HEIGHT = 812;
 
@@ -58,18 +65,37 @@ export const spacing = {
   xxxl: Math.max(32, Math.min(scale(32), 40)),
 };
 
-// Device size categories
+// Device size categories (updated dynamically)
+export const getDeviceSize = () => {
+  const width = Dimensions.get('window').width;
+  return {
+    isSmallDevice: width < 360,
+    isMediumDevice: width >= 360 && width < 400,
+    isLargeDevice: width >= 400 && width < 480,
+    isExtraLargeDevice: width >= 480,
+  };
+};
+
+// Screen height categories
+export const getScreenHeight = () => {
+  const height = Dimensions.get('window').height;
+  return {
+    isShortScreen: height < 700,
+    isMediumScreen: height >= 700 && height < 900,
+    isTallScreen: height >= 900,
+  };
+};
+
+// Legacy exports (for backward compatibility)
 export const isSmallDevice = SCREEN_WIDTH < 360;
 export const isMediumDevice = SCREEN_WIDTH >= 360 && SCREEN_WIDTH < 400;
 export const isLargeDevice = SCREEN_WIDTH >= 400 && SCREEN_WIDTH < 480;
 export const isExtraLargeDevice = SCREEN_WIDTH >= 480;
-
-// Screen height categories
 export const isShortScreen = SCREEN_HEIGHT < 700;
 export const isTallScreen = SCREEN_HEIGHT >= 900;
 
 // Responsive helper
 export const responsive = {
-  width: (percentage: number) => (SCREEN_WIDTH * percentage) / 100,
-  height: (percentage: number) => (SCREEN_HEIGHT * percentage) / 100,
+  width: (percentage: number) => (Dimensions.get('window').width * percentage) / 100,
+  height: (percentage: number) => (Dimensions.get('window').height * percentage) / 100,
 };
