@@ -136,13 +136,7 @@ export default function RoleLoginScreen() {
         </Text>
 
         {/* User Type Selection */}
-        <View style={styles.roleSection}>
-          <Text style={styles.roleSectionTitle}>Select Your Account Type</Text>
-          <Text style={styles.roleSectionSubtitle}>
-            Choose the type that matches your role
-          </Text>
-          <RoleTabs value={role} onChange={handleRoleChange} />
-        </View>
+        <RoleTabs value={role} onChange={handleRoleChange} />
 
         {/* Phone Number Section */}
         <Text style={styles.label}>{t("phoneNumber")}</Text>
@@ -323,22 +317,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 20,
     lineHeight: 20,
-  },
-  roleSection: {
-    marginBottom: 24,
-  },
-  roleSectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
-    textAlign: "center",
-    marginBottom: 4,
-  },
-  roleSectionSubtitle: {
-    fontSize: 13,
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 12,
   },
   label: {
     fontSize: 14,
