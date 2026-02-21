@@ -79,6 +79,16 @@ exports.getDashboardStats = async (req, res) => {
     res.json({
       success: true,
       data: {
+        // Impact Dashboard Stats
+        totalScreenings: screeningStats[0].total_screenings || 0,
+        totalSales: screeningStats[0].clients_needing_glasses || 0,
+        totalReferrals: referralStats[0].total_referrals || 0,
+        ncdDetected: screeningStats[0].clients_referred || 0, // NCD cases detected
+        repaymentRate: paymentStats[0].total_payments > 0 
+          ? Math.round((paymentStats[0].completed_payments / paymentStats[0].total_payments) * 100)
+          : 0,
+        
+        // Dashboard Stats
         weekScreenings: screeningStats[0].screenings_this_week || 0,
         glassesGiven: screeningStats[0].clients_needing_glasses || 0,
         clients: clientStats[0].total_clients || 0,

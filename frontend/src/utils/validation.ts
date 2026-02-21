@@ -1,11 +1,22 @@
 export const Validation = {
   validatePhone: (phone: string): { isValid: boolean; message?: string } => {
-    const cleaned = phone.replace(/\D/g, "");
+    let cleaned = phone.replace(/\D/g, "");
 
     if (!cleaned)
       return { isValid: false, message: "Phone number is required" };
+
+    // Remove leading 0 if present (convert 0700123456 to 700123456)
+    if (cleaned.startsWith("0") && cleaned.length === 10) {
+      cleaned = cleaned.substring(1);
+    }
+
+    // Remove country code if present (convert 256700123456 to 700123456)
+    if (cleaned.startsWith("256") && cleaned.length === 12) {
+      cleaned = cleaned.substring(3);
+    }
+
     if (cleaned.length !== 9)
-      return { isValid: false, message: "Phone number must be 9 digits" };
+      return { isValid: false, message: "Phone number must be 9 digits (e.g., 700123456)" };
 
     const prefix = cleaned.substring(0, 2);
     const validPrefixes = [

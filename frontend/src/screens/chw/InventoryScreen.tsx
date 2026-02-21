@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { apiService } from "../../services/api";
+import AppHeader from "../../components/AppHeader";
 
 type RootStackParamList = {
   InventoryScreen: undefined;
@@ -341,19 +342,11 @@ export default function InventoryScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FFF8" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View style={styles.headerInfo}>
-            <Text style={styles.organization}>Santé Initiative Uganda</Text>
-            <Text style={styles.userName}>{userData?.full_name || "User"}</Text>
-            <Text style={styles.userRole}>VHT - {userData?.district || "District"}</Text>
-          </View>
-          <TouchableOpacity style={styles.profileButton}>
-            <Ionicons name="person-circle-outline" size={44} color="#1E40AF" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <AppHeader 
+        userName={userData?.full_name}
+        userRole="VHT"
+        district={userData?.district}
+      />
 
       <ScrollView
         style={styles.scrollView}

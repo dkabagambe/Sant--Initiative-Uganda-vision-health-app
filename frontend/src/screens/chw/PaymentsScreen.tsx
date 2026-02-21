@@ -18,6 +18,7 @@ import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { apiService } from "../../services/api";
+import AppHeader from "../../components/AppHeader";
 
 type RootStackParamList = {
   PaymentsScreen: undefined;
@@ -272,24 +273,11 @@ export default function PaymentsScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View style={styles.headerLeft}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Ionicons name="arrow-back" size={24} color="#374151" />
-            </TouchableOpacity>
-            <View style={styles.headerInfo}>
-              <Text style={styles.organization}>Santé Initiative Uganda</Text>
-              <Text style={styles.userName}>{userData?.full_name || "User"}</Text>
-              <Text style={styles.userRole}>VHT - {userData?.district || "District"}</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Ionicons name="notifications-outline" size={24} color="#374151" />
-            <View style={styles.notificationBadge}>
-              <Text style={styles.notificationCount}>3</Text>
-            </View>
+      <AppHeader 
+        userName={userData?.full_name}
+        userRole="VHT"
+        district={userData?.district}
+      />
           </TouchableOpacity>
         </View>
 

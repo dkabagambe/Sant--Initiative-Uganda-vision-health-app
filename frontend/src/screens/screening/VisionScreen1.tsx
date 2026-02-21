@@ -93,7 +93,7 @@ export default function VisionScreen1() {
       >
         {/* Progress Indicator */}
         <View style={styles.progressSection}>
-          <Text style={styles.progressText}>{t("step")} 1 {t("of")} 7</Text>
+          <Text style={styles.progressText}>{t("step")} 1 {t("of")} 6</Text>
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: "16.67%" }]} />
           </View>

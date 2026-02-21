@@ -7,7 +7,6 @@ const initializeClient = () => {
   const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
 
   if (!accountSid || !authToken || !verifyServiceSid) {
-    console.warn('⚠️  Twilio credentials not configured. SMS will not be sent.');
     return null;
   }
 

@@ -3,10 +3,10 @@ const router = express.Router();
 const referralController = require("../controllers/referralController");
 const { authenticate } = require("../middleware/auth");
 
-router.post("/", referralController.createReferral);
-router.get("/", referralController.getReferrals);
-router.get("/stats", referralController.getReferralStats);
-router.get("/:id", referralController.getReferralById);
-router.patch("/:id/status", referralController.updateReferralStatus);
+router.post("/", authenticate, referralController.createReferral);
+router.get("/", authenticate, referralController.getReferrals);
+router.get("/stats", authenticate, referralController.getReferralStats);
+router.get("/:id", authenticate, referralController.getReferralById);
+router.patch("/:id/status", authenticate, referralController.updateReferralStatus);
 
 module.exports = router;

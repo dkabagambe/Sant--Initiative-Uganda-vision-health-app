@@ -73,7 +73,12 @@ export default function RoleLoginScreen() {
           [{ text: "OK", onPress: () => navigation.navigate("OTP", { phone: fullPhone, role }) }]
         );
       } else {
-        Alert.alert("Error", result.error || "Failed to send OTP");
+        const errorMsg = result.error || "Failed to send OTP";
+        if (errorMsg.includes("blocked") || errorMsg.includes("fraudulent")) {
+          Alert.alert("Number Blocked", "This phone number is temporarily blocked. Please contact support or use a different number.");
+        } else {
+          Alert.alert("Error", errorMsg);
+        }
       }
     } catch (error) {
       Alert.alert("Error", "Failed to connect to server. Please try again.");

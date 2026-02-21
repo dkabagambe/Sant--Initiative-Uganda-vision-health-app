@@ -202,7 +202,7 @@ export default function DistanceVisionTestScreen() {
       <View style={styles.header}>
         <Text style={styles.screenTitle}>VHT Eye Screening</Text>
         <View style={styles.progressRow}>
-          <Text style={styles.progressText}>Step 5 of 7</Text>
+          <Text style={styles.progressText}>Step 5 of 6</Text>
           <View style={styles.progressBar}>
             <View
               style={[styles.progressFill, { width: `${(5 / 6) * 100}%` }]}

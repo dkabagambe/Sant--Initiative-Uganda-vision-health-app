@@ -582,7 +582,7 @@ export default function TorchLightStepScreen() {
         {/* Progress Section */}
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
-            {currentSubStep === 4.5 ? "Step 4.5 of 7" : "Step 4 of 7"}
+            {currentSubStep === 4.5 ? "Step 4.5 of 6" : "Step 4 of 6"}
           </Text>
           <View style={styles.progressBar}>
             <View

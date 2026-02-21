@@ -47,7 +47,8 @@ export interface Screening {
 const API_BASE_URL = "http://20.20.42.133:5000/api"; // Physical device/emulator
 
 // Production API (uncomment for production)
-// const API_BASE_URL = "https://sante-production-app-42dca70009b0.herokuapp.com/api";
+// const API_BASE_URL =
+//   "https://sante-production-app-42dca70009b0.herokuapp.com/api";
 
 // Other options:
 // const API_BASE_URL = "http://10.0.2.2:5000/api"; // Android emulator
@@ -56,7 +57,7 @@ const API_BASE_URL = "http://20.20.42.133:5000/api"; // Physical device/emulator
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 30000, // Increased to 30 seconds for Heroku cold starts
   headers: {
     "Content-Type": "application/json",
   },
@@ -186,7 +187,11 @@ export const apiService = {
     return response.data;
   },
 
-  async updateProductStock(productId: string, quantityChange: number, frameType?: string) {
+  async updateProductStock(
+    productId: string,
+    quantityChange: number,
+    frameType?: string,
+  ) {
     const response = await api.patch(`/products/${productId}/stock`, {
       quantityChange,
       frameType,
@@ -231,7 +236,9 @@ export const apiService = {
   },
 
   async updatePaymentStatus(paymentId: string, status: string) {
-    const response = await api.patch(`/payments/${paymentId}/status`, { status });
+    const response = await api.patch(`/payments/${paymentId}/status`, {
+      status,
+    });
     return response.data;
   },
 
@@ -267,12 +274,21 @@ export const apiService = {
   },
 
   async getHealthFacilities(district?: string) {
-    const response = await api.get("/health-facilities", { params: { district } });
+    const response = await api.get("/health-facilities", {
+      params: { district },
+    });
     return response.data;
   },
 
-  async updateReferralStatus(referralId: string, status: string, notes?: string) {
-    const response = await api.patch(`/referrals/${referralId}/status`, { status, notes });
+  async updateReferralStatus(
+    referralId: string,
+    status: string,
+    notes?: string,
+  ) {
+    const response = await api.patch(`/referrals/${referralId}/status`, {
+      status,
+      notes,
+    });
     return response.data;
   },
 
@@ -303,45 +319,47 @@ export const apiService = {
   async uploadFile(file: { uri: string; name: string; type: string }) {
     try {
       const formData = new FormData();
-      formData.append('file', {
+      formData.append("file", {
         uri: file.uri,
         name: file.name,
         type: file.type,
       } as any);
 
-      const response = await api.post('/upload/single', formData, {
+      const response = await api.post("/upload/single", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
 
       return response.data;
     } catch (error) {
-      console.error('File upload error:', error);
+      console.error("File upload error:", error);
       throw error;
     }
   },
 
-  async uploadMultipleFiles(files: Array<{ uri: string; name: string; type: string }>) {
+  async uploadMultipleFiles(
+    files: Array<{ uri: string; name: string; type: string }>,
+  ) {
     try {
       const formData = new FormData();
       files.forEach((file) => {
-        formData.append('files', {
+        formData.append("files", {
           uri: file.uri,
           name: file.name,
           type: file.type,
         } as any);
       });
 
-      const response = await api.post('/upload/multiple', formData, {
+      const response = await api.post("/upload/multiple", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
 
       return response.data;
     } catch (error) {
-      console.error('Multiple files upload error:', error);
+      console.error("Multiple files upload error:", error);
       throw error;
     }
   },
@@ -364,7 +382,6 @@ export const apiService = {
       };
     }
   },
-
 };
 
 export default api;

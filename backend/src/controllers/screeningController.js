@@ -82,15 +82,28 @@ exports.createScreening = async (req, res) => {
 
     // Update product stock if glasses recommended
     if (needsGlasses && recommendedProductId && selectedFrameType) {
-      const frameColumn = selectedFrameType === 'standard' ? 'stock_standard' :
-                         selectedFrameType === 'metal' ? 'stock_metal' : 'stock_fashion';
-      
-      await sql`
-        UPDATE products 
-        SET stock_quantity = stock_quantity - 1,
-            ${sql(frameColumn)} = ${sql(frameColumn)} - 1
-        WHERE id = ${recommendedProductId}
-      `;
+      if (selectedFrameType === 'standard') {
+        await sql`
+          UPDATE products 
+          SET stock_quantity = stock_quantity - 1,
+              stock_standard = stock_standard - 1
+          WHERE id = ${recommendedProductId}
+        `;
+      } else if (selectedFrameType === 'metal') {
+        await sql`
+          UPDATE products 
+          SET stock_quantity = stock_quantity - 1,
+              stock_metal = stock_metal - 1
+          WHERE id = ${recommendedProductId}
+        `;
+      } else if (selectedFrameType === 'fashion') {
+        await sql`
+          UPDATE products 
+          SET stock_quantity = stock_quantity - 1,
+              stock_fashion = stock_fashion - 1
+          WHERE id = ${recommendedProductId}
+        `;
+      }
     }
 
     res.json({

@@ -37,6 +37,7 @@ import MyClientsScreen from "../screens/chw/MyClientsScreen";
 import InventoryScreen from "../screens/chw/InventoryScreen";
 import ReferralsScreen from "../screens/chw/ReferralsScreen";
 import ReferralManagementScreen from "../screens/chw/ReferralManagementScreen";
+import CreateReferralScreen from "../screens/chw/CreateReferralScreen";
 import PaymentsScreen from "../screens/chw/PaymentsScreen";
 import ReportsScreen from "../screens/chw/ReportsScreen";
 import StartScreeningScreen from "../screens/chw/StartScreeningScreen";
@@ -457,6 +458,18 @@ export default function AppNavigator() {
         component={AppTabs}
         options={{ headerShown: false }}
       />
+
+      {/* CHW Feature Screens */}
+      <Stack.Screen name="ReferralManagementScreen" component={ReferralManagementScreen} />
+      <Stack.Screen name="CreateReferralScreen" component={CreateReferralScreen} />
+      <Stack.Screen name="InventoryScreen" component={InventoryScreen} />
+      <Stack.Screen name="PaymentsScreen" component={PaymentsScreen} />
+      <Stack.Screen name="VisionScreen1" component={VisionScreen1} />
+      <Stack.Screen name="VisionScreen2" component={VisionScreen2} />
+      <Stack.Screen name="VisionScreen3" component={VisionScreen3} />
+      <Stack.Screen name="VisionScreen4" component={VisionScreen4} />
+      <Stack.Screen name="VisionScreen5" component={VisionScreen5} />
+      <Stack.Screen name="VisionScreen6" component={VisionScreen6} />
 
       {/* Old screens for backward compatibility */}
       <Stack.Screen
