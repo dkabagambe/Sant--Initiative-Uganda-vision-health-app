@@ -3,6 +3,7 @@ import { Alert, SafeAreaView, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import VisionScreen6 from "./VisionScreen6";
+import ScreeningComplete from "./ScreeningComplete";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
 
@@ -10,6 +11,8 @@ export default function VisionScreen6Wrapper() {
   const navigation = useNavigation<any>();
   const { screeningData, resetScreeningData } = useScreening();
   const [submitting, setSubmitting] = useState(false);
+  const [showComplete, setShowComplete] = useState(false);
+  const [screeningId, setScreeningId] = useState<string | null>(null);
 
   // Check if referral already needed (from torch test or distance vision failure)
   React.useEffect(() => {
@@ -208,23 +211,25 @@ export default function VisionScreen6Wrapper() {
           // If referral needed, create it
           if (completeData.needsReferral) {
             await createReferral(result.data.id, completeData);
-          }
-
-          Alert.alert(
-            "✅ Success",
-            completeData.needsReferral 
-              ? "Screening completed. Referral created for nearest health facility."
-              : "Screening completed and saved successfully!",
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  resetScreeningData();
-                  navigation.navigate("CHWDashboard");
+            
+            Alert.alert(
+              "🏥 Referral Created",
+              "Screening completed. Referral created for nearest health facility.",
+              [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    resetScreeningData();
+                    navigation.navigate("CHWDashboard");
+                  },
                 },
-              },
-            ]
-          );
+              ]
+            );
+          } else {
+            // Show completion screen for successful screenings (no referral)
+            setScreeningId(result.data.id);
+            setShowComplete(true);
+          }
         } else {
           throw new Error("API returned error");
         }
@@ -339,6 +344,26 @@ export default function VisionScreen6Wrapper() {
       setSubmitting(false);
     }
   };
+
+  const handleRegisterAndSave = () => {
+    resetScreeningData();
+    navigation.navigate("CHWDashboard");
+  };
+
+  const handleReturnHome = () => {
+    resetScreeningData();
+    navigation.navigate("CHWDashboard");
+  };
+
+  // Show completion screen if screening successful
+  if (showComplete) {
+    return (
+      <ScreeningComplete
+        onRegisterAndSave={handleRegisterAndSave}
+        onReturnHome={handleReturnHome}
+      />
+    );
+  }
 
   return (
     <VisionScreen6
