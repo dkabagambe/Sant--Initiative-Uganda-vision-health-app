@@ -76,7 +76,7 @@ export default function SafetyInformationScreen() {
       >
         {/* Progress Section */}
         <View style={styles.progressContainer}>
-          <Text style={styles.progressText}>Step 3 of 6</Text>
+          <Text style={styles.progressText}>Step 3 of 7</Text>
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: "50%" }]} />
           </View>

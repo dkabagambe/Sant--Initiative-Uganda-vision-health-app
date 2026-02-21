@@ -47,7 +47,7 @@ export default function VisionScreen6({
           <View style={styles.headerContent}>
             <View style={styles.headerRow}>
               <Text style={styles.headerTitle}>VHT Eye Screening</Text>
-              <Text style={styles.headerStep}>Step 6 of 6</Text>
+              <Text style={styles.headerStep}>Step 6 of 7</Text>
             </View>
             <View style={styles.progressBar}>
               <View
@@ -218,7 +218,7 @@ export default function VisionScreen6({
         <View style={styles.headerContent}>
           <View style={styles.headerRow}>
             <Text style={styles.headerTitle}>VHT Eye Screening</Text>
-            <Text style={styles.headerStep}>Step 6 of 6</Text>
+            <Text style={styles.headerStep}>Step 6 of 7</Text>
           </View>
           <View style={styles.progressBar}>
             <View

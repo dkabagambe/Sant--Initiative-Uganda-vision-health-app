@@ -67,7 +67,7 @@ export default function PreScreeningQuestionsScreen() {
           <View style={styles.progressSection}>
             <Text style={styles.screenTitle}>VHT Eye Screening</Text>
             <View style={styles.progressRow}>
-              <Text style={styles.progressText}>Step 2 of 6</Text>
+              <Text style={styles.progressText}>Step 2 of 7</Text>
               <View style={styles.progressBar}>
                 <View style={[styles.progressFill, { width: "33%" }]} />
               </View>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,10 +16,27 @@ import { useScreening } from "../../context/ScreeningContext";
 
 export default function TorchLightStepScreen() {
   const navigation = useNavigation<any>();
-  const { updateScreeningData } = useScreening();
+  const { screeningData, updateScreeningData } = useScreening();
   const [currentSubStep, setCurrentSubStep] = useState<1 | 2 | 3 | 4 | 4.5>(1);
   const [abnormalSigns, setAbnormalSigns] = useState<string[]>([]);
   const [testPassed, setTestPassed] = useState<boolean | null>(null);
+  const [countdown, setCountdown] = useState(120); // 2 minutes = 120 seconds
+  const [isWaiting, setIsWaiting] = useState(false);
+
+  const clientAge = screeningData.clientAge || 0;
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (isWaiting && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (isWaiting && countdown === 0) {
+      // Auto-proceed to distance vision after 2 minutes
+      handleContinueToDistanceVision();
+    }
+  }, [isWaiting, countdown]);
 
   // Abnormal signs options from Figma
   const abnormalSignOptions = [
@@ -55,7 +72,7 @@ export default function TorchLightStepScreen() {
     setTestPassed(passed);
 
     if (!passed) {
-      // Save referral data to context
+      // Abnormal signs detected - STOP and REFER
       updateScreeningData({
         needsReferral: true,
         referralReason: `Abnormal eye signs detected: ${abnormalSigns.join(", ")}`,
@@ -64,22 +81,46 @@ export default function TorchLightStepScreen() {
       });
 
       Alert.alert(
-        "Referral Required",
-        "Abnormal signs detected. Client will be referred to nearest health facility. Do NOT proceed with vision tests.",
+        "⚠️ Referral Required",
+        "Abnormal signs detected. Client must be referred to nearest health facility immediately.\n\nDO NOT proceed with other vision tests.",
         [
           {
-            text: "Create Referral",
+            text: "Create Referral & End Screening",
             onPress: () => {
-              // Navigate to referral creation screen
-              navigation.navigate("VisionScreen6");
+              // Navigate directly to completion with referral
+              navigation.navigate("VisionScreen6Wrapper");
             },
             style: "default",
           },
         ],
       );
     } else {
-      // Move to transition step (4.5)
-      setCurrentSubStep(4.5);
+      // No abnormal signs - check age
+      updateScreeningData({
+        torchTestPassed: true,
+        torchTestAbnormalSigns: "none"
+      });
+
+      if (clientAge < 6) {
+        // Children under 6: END screening after torch test
+        Alert.alert(
+          "✅ Screening Complete",
+          `Child is ${clientAge} years old. Only torch light test is required for children under 6.\n\nNo abnormal signs detected. Screening complete.`,
+          [
+            {
+              text: "Save & Finish",
+              onPress: () => {
+                // Save screening and return to dashboard
+                navigation.navigate("CHWDashboard");
+              },
+            },
+          ],
+        );
+      } else {
+        // Age 6+: Show 2-minute wait, then continue
+        setIsWaiting(true);
+        setCurrentSubStep(4.5);
+      }
     }
   };
 
@@ -355,31 +396,50 @@ export default function TorchLightStepScreen() {
     );
   };
 
-  const renderSubStep4_5 = () => (
-    <View style={styles.contentContainer}>
-      <View style={styles.passedCard}>
-        <View style={styles.passedIcon}>
-          <Ionicons name="checkmark-circle" size={40} color="#10B981" />
+  const renderSubStep4_5 = () => {
+    const minutes = Math.floor(countdown / 60);
+    const seconds = countdown % 60;
+    
+    return (
+      <View style={styles.contentContainer}>
+        <View style={styles.passedCard}>
+          <View style={styles.passedIcon}>
+            <Ionicons name="checkmark-circle" size={40} color="#10B981" />
+          </View>
+          <Text style={styles.passedTitle}>Torch Test Passed ✅</Text>
+          <Text style={styles.passedSubtitle}>No abnormal signs detected</Text>
         </View>
-        <Text style={styles.passedTitle}>Torch Test Passed ✅</Text>
-        <Text style={styles.passedSubtitle}>No abnormal signs detected</Text>
-      </View>
 
-      <View style={styles.waitCard}>
-        <Text style={styles.waitTitle}>⏱️ Next Step:</Text>
-        <View style={styles.waitInfo}>
-          <Ionicons name="timer" size={24} color="#2E7D32" />
-          <Text style={styles.waitText}>
-            Wait <Text style={styles.waitHighlight}>2 minutes</Text> before
-            testing distance vision
-          </Text>
+        <View style={styles.waitCard}>
+          <Text style={styles.waitTitle}>⏱️ 2-Minute Wait Required</Text>
+          <Text style={styles.waitSubtitle}>Allowing eyes to adjust before distance vision test</Text>
+          
+          <View style={styles.countdownContainer}>
+            <Text style={styles.countdownText}>
+              {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+            </Text>
+            <Text style={styles.countdownLabel}>Time Remaining</Text>
+          </View>
+
+          <View style={styles.waitInfo}>
+            <Ionicons name="information-circle" size={20} color="#2E7D32" />
+            <Text style={styles.waitNote}>
+              The test will automatically continue when the timer reaches 0:00
+            </Text>
+          </View>
+
+          {countdown > 0 && (
+            <TouchableOpacity 
+              style={styles.skipButton}
+              onPress={handleContinueToDistanceVision}
+            >
+              <Text style={styles.skipButtonText}>Skip Wait (Not Recommended)</Text>
+            </TouchableOpacity>
+          )}
         </View>
-        <Text style={styles.waitNote}>
-          This allows the client's eyes to adjust before the next test
-        </Text>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -409,7 +469,7 @@ export default function TorchLightStepScreen() {
         {/* Progress Section */}
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
-            {currentSubStep === 4.5 ? "Step 4.5 of 6" : "Step 4 of 6"}
+            {currentSubStep === 4.5 ? "Step 4.5 of 7" : "Step 4 of 7"}
           </Text>
           <View style={styles.progressBar}>
             <View
@@ -1186,3 +1246,46 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+
+  countdownContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F0F9FF",
+    borderRadius: 16,
+    padding: 32,
+    marginVertical: 24,
+    borderWidth: 2,
+    borderColor: "#BFDBFE",
+  },
+  countdownText: {
+    fontSize: 56,
+    fontWeight: "700",
+    color: "#1E40AF",
+    fontFamily: "monospace",
+  },
+  countdownLabel: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginTop: 8,
+    fontWeight: "500",
+  },
+  waitSubtitle: {
+    fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+    marginTop: 8,
+  },
+  skipButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    backgroundColor: "#F9FAFB",
+  },
+  skipButtonText: {
+    fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+  },
