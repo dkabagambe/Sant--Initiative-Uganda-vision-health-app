@@ -10,6 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useLanguage } from "../../context/LanguageContext";
 
 type RootStackParamList = {
   Login: undefined;
@@ -26,6 +27,7 @@ type RoleSelectionScreenNavigationProp = NativeStackNavigationProp<
 
 export default function RoleSelectionScreen() {
   const navigation = useNavigation<RoleSelectionScreenNavigationProp>();
+  const { t } = useLanguage();
 
   const handleRoleSelect = (role: "CHW" | "Outlet" | "VSLA") => {
     if (role === "CHW") {
@@ -51,8 +53,8 @@ export default function RoleSelectionScreen() {
           <Ionicons name="arrow-back" size={24} color="#374151" />
         </TouchableOpacity>
 
-        <Text style={styles.title}>Register Account</Text>
-        <Text style={styles.subtitle}>Choose your account type</Text>
+        <Text style={styles.title}>{t("registerAccount")}</Text>
+        <Text style={styles.subtitle}>{t("chooseAccountType")}</Text>
 
         {/* CHW Card */}
         <TouchableOpacity
@@ -62,28 +64,28 @@ export default function RoleSelectionScreen() {
           <View style={styles.roleHeader}>
             <Ionicons name="medical" size={32} color="#2E7D32" />
             <View style={styles.roleHeaderText}>
-              <Text style={styles.roleTitle}>Community Health Worker</Text>
+              <Text style={styles.roleTitle}>{t("communityHealthWorker")}</Text>
               <Text style={styles.roleSubtitle}>
-                Register as a CHW to conduct vision screenings in your community
+                {t("registerAsCHW")}
               </Text>
             </View>
           </View>
           <View style={styles.featureList}>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#2E7D32" />
-              <Text style={styles.featureText}>Conduct near-vision screenings</Text>
+              <Text style={styles.featureText}>{t("conductScreenings")}</Text>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#2E7D32" />
-              <Text style={styles.featureText}>Distribute reading glasses</Text>
+              <Text style={styles.featureText}>{t("distributeGlasses")}</Text>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#2E7D32" />
-              <Text style={styles.featureText}>Track hire-purchase payments</Text>
+              <Text style={styles.featureText}>{t("trackPayments")}</Text>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#2E7D32" />
-              <Text style={styles.featureText}>Make referrals for advanced care</Text>
+              <Text style={styles.featureText}>{t("makeReferrals")}</Text>
             </View>
           </View>
         </TouchableOpacity>
@@ -96,28 +98,28 @@ export default function RoleSelectionScreen() {
           <View style={styles.roleHeader}>
             <Ionicons name="storefront" size={32} color="#1976D2" />
             <View style={styles.roleHeaderText}>
-              <Text style={styles.roleTitle}>Retail Outlet / Shop</Text>
+              <Text style={styles.roleTitle}>{t("retailOutlet")}</Text>
               <Text style={styles.roleSubtitle}>
-                Register your shop to sell reading glasses in partnership with Santé
+                {t("registerShop")}
               </Text>
             </View>
           </View>
           <View style={styles.featureList}>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#1976D2" />
-              <Text style={styles.featureText}>Sell Santé reading glasses</Text>
+              <Text style={styles.featureText}>{t("sellGlasses")}</Text>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#1976D2" />
-              <Text style={styles.featureText}>Manage inventory & stock</Text>
+              <Text style={styles.featureText}>{t("manageInventory")}</Text>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#1976D2" />
-              <Text style={styles.featureText}>Track sales & revenue</Text>
+              <Text style={styles.featureText}>{t("trackSales")}</Text>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#1976D2" />
-              <Text style={styles.featureText}>Receive stock replenishments</Text>
+              <Text style={styles.featureText}>{t("receiveStock")}</Text>
             </View>
           </View>
         </TouchableOpacity>
@@ -130,65 +132,65 @@ export default function RoleSelectionScreen() {
           <View style={styles.roleHeader}>
             <Ionicons name="people" size={32} color="#FF9800" />
             <View style={styles.roleHeaderText}>
-              <Text style={styles.roleTitle}>VSLA / SACCO Group</Text>
+              <Text style={styles.roleTitle}>{t("vslaGroup")}</Text>
               <Text style={styles.roleSubtitle}>
-                Register your community savings group to support member eye health
+                {t("registerVSLA")}
               </Text>
             </View>
           </View>
           <View style={styles.featureList}>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#FF9800" />
-              <Text style={styles.featureText}>Facilitate hire-purchase for members</Text>
+              <Text style={styles.featureText}>{t("facilitateHirePurchase")}</Text>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#FF9800" />
-              <Text style={styles.featureText}>Bulk purchase discounts</Text>
+              <Text style={styles.featureText}>{t("bulkDiscounts")}</Text>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#FF9800" />
-              <Text style={styles.featureText}>Earn group revenue from sales</Text>
+              <Text style={styles.featureText}>{t("earnRevenue")}</Text>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color="#FF9800" />
-              <Text style={styles.featureText}>Support community eye health</Text>
+              <Text style={styles.featureText}>{t("supportCommunity")}</Text>
             </View>
           </View>
         </TouchableOpacity>
 
         {/* Registration Process */}
         <View style={styles.processCard}>
-          <Text style={styles.processTitle}>Registration Process</Text>
+          <Text style={styles.processTitle}>{t("registrationProcess")}</Text>
           <View style={styles.processList}>
             <View style={styles.processItem}>
               <View style={styles.processNumber}>
                 <Text style={styles.processNumberText}>1</Text>
               </View>
-              <Text style={styles.processText}>Complete registration form</Text>
+              <Text style={styles.processText}>{t("completeForm")}</Text>
             </View>
             <View style={styles.processItem}>
               <View style={styles.processNumber}>
                 <Text style={styles.processNumberText}>2</Text>
               </View>
-              <Text style={styles.processText}>Submit documents for verification</Text>
+              <Text style={styles.processText}>{t("submitDocuments")}</Text>
             </View>
             <View style={styles.processItem}>
               <View style={styles.processNumber}>
                 <Text style={styles.processNumberText}>3</Text>
               </View>
-              <Text style={styles.processText}>Wait for administrator approval (24-48 hours)</Text>
+              <Text style={styles.processText}>{t("waitApproval")}</Text>
             </View>
             <View style={styles.processItem}>
               <View style={styles.processNumber}>
                 <Text style={styles.processNumberText}>4</Text>
               </View>
-              <Text style={styles.processText}>Receive SMS confirmation when approved</Text>
+              <Text style={styles.processText}>{t("receiveSMS")}</Text>
             </View>
             <View style={styles.processItem}>
               <View style={styles.processNumber}>
                 <Text style={styles.processNumberText}>5</Text>
               </View>
-              <Text style={styles.processText}>Login and start helping your community</Text>
+              <Text style={styles.processText}>{t("loginAndStart")}</Text>
             </View>
           </View>
         </View>
