@@ -1,52 +1,36 @@
 import { View, Pressable, Text, StyleSheet } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { colors } from "../theme/colors";
 
 interface Props {
   value: string;
   onChange: (role: string) => void;
 }
 
-const roles = ["CHW", "Outlet", "VSLA"];
-
-const roleColors = {
-  CHW: "#2E7D32",
-  Outlet: "#1976D2",
-  VSLA: "#FF9800",
-};
+const roles = [
+  { key: "CHW", label: "CHW", color: "#2E7D32" },
+  { key: "Outlet", label: "Outlet", color: "#1976D2" },
+  { key: "VSLA", label: "VSLA", color: "#FF9800" },
+];
 
 export default function RoleTabs({ value, onChange }: Props) {
-  const navigation = useNavigation<any>();
-
-  const handleRolePress = (role: string) => {
-    onChange(role);
-    
-    // Navigate directly to registration
-    if (role === "CHW") {
-      navigation.navigate("CHWRegistrationStep1");
-    } else if (role === "Outlet") {
-      navigation.navigate("OutletRegistrationStep1");
-    } else if (role === "VSLA") {
-      navigation.navigate("VSLARegistrationStep1");
-    }
-  };
-
   return (
     <View style={styles.container}>
-      {roles.map((role) => (
-        <Pressable
-          key={role}
-          onPress={() => handleRolePress(role)}
-          style={[
-            styles.tab,
-            value === role && { backgroundColor: roleColors[role as keyof typeof roleColors] }
-          ]}
-        >
-          <Text style={[styles.text, value === role && styles.activeText]}>
-            {role}
-          </Text>
-        </Pressable>
-      ))}
+      {roles.map((role) => {
+        const isActive = value === role.key;
+        return (
+          <Pressable
+            key={role.key}
+            onPress={() => onChange(role.key)}
+            style={[
+              styles.tab,
+              isActive && { backgroundColor: role.color, borderColor: role.color }
+            ]}
+          >
+            <Text style={[styles.text, isActive && styles.activeText]}>
+              {role.label}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -54,24 +38,28 @@ export default function RoleTabs({ value, onChange }: Props) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    marginVertical: 16,
+    marginVertical: 20,
+    gap: 8,
   },
   tab: {
     flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: colors.secondary,
-    marginHorizontal: 4,
-  },
-  activeTab: {
-    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: "#F3F4F6",
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    alignItems: "center",
+    justifyContent: "center",
   },
   text: {
     textAlign: "center",
-    color: "#1E40AF",
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#6B7280",
   },
   activeText: {
     color: "#FFFFFF",
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });
