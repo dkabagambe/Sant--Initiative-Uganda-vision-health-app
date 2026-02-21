@@ -211,6 +211,57 @@ export const translations = {
     askTheseQuestions: "Ask these questions before examination",
     answerAllQuestions: "Please answer all questions before proceeding",
     
+    // Safety Education & Tests
+    safetyEducationTitle: "Safety & Eye Health Education",
+    importantInformation: "Important Information",
+    eyeHealthTips: "Eye Health Tips",
+    protectYourEyes: "Protect your eyes from direct sunlight",
+    regularCheckups: "Get regular eye checkups",
+    cleanHands: "Always wash hands before touching eyes",
+    avoidRubbing: "Avoid rubbing your eyes",
+    eatHealthy: "Eat foods rich in Vitamin A",
+    startTorchTest: "Start Torch Light Test",
+    
+    // Torch Light Test
+    torchTestInstructions: "Torch Light Test Instructions",
+    lookForAbnormalSigns: "Look for abnormal signs",
+    checkBothEyes: "Check both eyes carefully",
+    recordFindings: "Record your findings",
+    abnormalSigns: "Abnormal Signs",
+    discharge: "Discharge",
+    redness: "Redness",
+    swelling: "Swelling",
+    cloudiness: "Cloudiness",
+    selectAbnormalSigns: "Select any abnormal signs observed",
+    
+    // Distance Vision
+    distanceVisionInstructions: "Distance Vision Instructions",
+    standThreeMeters: "Stand 3 meters away",
+    coverOneEye: "Cover one eye",
+    askDirection: "Ask which way E points",
+    line1: "Line 1",
+    line2: "Line 2",
+    howManyCorrect: "How many correct?",
+    mustRead: "Must read at least",
+    toContinue: "to continue",
+    
+    // Near Vision
+    nearVisionInstructions: "Near Vision Instructions",
+    holdAtArmLength: "Hold chart at arm's length (40cm)",
+    testBothEyes: "Test both eyes together",
+    askToRead: "Ask client to read N8 row",
+    goodLighting: "Ensure good lighting",
+    
+    // Common phrases
+    prerequisites: "Prerequisites",
+    confirmed: "Confirmed",
+    testSetup: "Test Setup",
+    instructions: "Instructions",
+    result: "Result",
+    passed: "Passed",
+    failed: "Failed",
+    notTested: "Not Tested",
+    
     // Screening
     vhtEyeScreening: "VHT Eye Screening",
     step: "Step",
@@ -492,6 +543,57 @@ export const translations = {
     q4EyePain: "E4. Olina obulumi bw'amaaso oba obutali bulungi?",
     askTheseQuestions: "Buuza ebibuuzo bino nga tonnakebera",
     answerAllQuestions: "Ddamu ebibuuzo byonna nga tonnagenda mu maaso",
+    
+    // Safety Education & Tests
+    safetyEducationTitle: "Obukuumi n'Okusomesa ku Maaso",
+    importantInformation: "Amakulu Agakulu",
+    eyeHealthTips: "Amagezi ku Bulamu bw'Amaaso",
+    protectYourEyes: "Kuuma amaaso go okuva ku musana ogw'amaanyi",
+    regularCheckups: "Kebera amaaso go buli kiseera",
+    cleanHands: "Naaba emikono nga tonnakwata maaso",
+    avoidRubbing: "Weewale okusiimuula amaaso",
+    eatHealthy: "Lya emmere erimu Vitamin A",
+    startTorchTest: "Tandika Okukebera n'Ettaala",
+    
+    // Torch Light Test
+    torchTestInstructions: "Ebiragiro by'Okukebera n'Ettaala",
+    lookForAbnormalSigns: "Noonya obubonero obubi",
+    checkBothEyes: "Kebera amaaso gombi bulungi",
+    recordFindings: "Wandiika bye wazuula",
+    abnormalSigns: "Obubonero Obubi",
+    discharge: "Amazzi",
+    redness: "Okumyuka",
+    swelling: "Okuzimba",
+    cloudiness: "Ekire",
+    selectAbnormalSigns: "Londa obubonero obubi bw'olabye",
+    
+    // Distance Vision
+    distanceVisionInstructions: "Ebiragiro by'Okulaba Ewala",
+    standThreeMeters: "Yimirira mita 3 ewala",
+    coverOneEye: "Bikka liiso limu",
+    askDirection: "Buuza E eraga wa",
+    line1: "Lunyiriri 1",
+    line2: "Lunyiriri 2",
+    howManyCorrect: "Mmeka ezituufu?",
+    mustRead: "Ateekwa okusoma obungi",
+    toContinue: "okugenda mu maaso",
+    
+    // Near Vision
+    nearVisionInstructions: "Ebiragiro by'Okulaba Okumpi",
+    holdAtArmLength: "Kwata ekipande ku buwanvu bw'omukono (40cm)",
+    testBothEyes: "Kebera amaaso gombi wamu",
+    askToRead: "Saba mulwadde asomeyo lunyiriri N8",
+    goodLighting: "Kakasa nti waliwo omusana omulungi",
+    
+    // Common phrases
+    prerequisites: "Ebisookerwako",
+    confirmed: "Bikakasiddwa",
+    testSetup: "Okutegeka Okukebera",
+    instructions: "Ebiragiro",
+    result: "Ekivudde",
+    passed: "Ayise",
+    failed: "Taayise",
+    notTested: "Teyakeberebwa",
     
     // Screening
     vhtEyeScreening: "Okukebera Amaaso kwa VHT",
