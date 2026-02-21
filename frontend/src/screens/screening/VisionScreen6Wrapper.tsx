@@ -11,6 +11,73 @@ export default function VisionScreen6Wrapper() {
   const { screeningData, resetScreeningData } = useScreening();
   const [submitting, setSubmitting] = useState(false);
 
+  // Check if referral already needed (from distance vision failure)
+  React.useEffect(() => {
+    if (screeningData.needsReferral && screeningData.referralStep === "Step 5 - Distance Vision Test") {
+      // Distance vision failed - END screening immediately, create referral
+      handleDistanceVisionReferral();
+    }
+  }, []);
+
+  const handleDistanceVisionReferral = async () => {
+    setSubmitting(true);
+
+    try {
+      const completeData = {
+        ...screeningData,
+        distanceVisionResult: "failed",
+        nearVisionResult: "not_tested", // Skip near vision
+        needsReferral: true,
+        needsGlasses: false,
+      };
+
+      try {
+        const result = await apiService.createScreening(completeData);
+
+        if (result.success) {
+          await createReferral(result.data.id, completeData);
+
+          Alert.alert(
+            "🏥 Referral Required",
+            "Distance vision test failed. Client referred to health facility.\n\nNear vision test was NOT performed (protocol requirement).",
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  resetScreeningData();
+                  navigation.navigate("CHWDashboard");
+                },
+              },
+            ]
+          );
+        } else {
+          throw new Error("API error");
+        }
+      } catch (apiError) {
+        const saved = await saveOffline(completeData);
+        if (saved) {
+          Alert.alert(
+            "📱 Referral Saved Offline",
+            "Distance vision referral saved locally and will sync when online.",
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  resetScreeningData();
+                  navigation.navigate("CHWDashboard");
+                },
+              },
+            ]
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Referral error:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const saveOffline = async (data: any) => {
     try {
       const offlineQueue = await AsyncStorage.getItem("offlineScreenings");
@@ -184,6 +251,11 @@ export default function VisionScreen6Wrapper() {
       setSubmitting(false);
     }
   };
+
+  // Don't show near vision test if already processing distance vision referral
+  if (submitting && screeningData.needsReferral && screeningData.referralStep === "Step 5 - Distance Vision Test") {
+    return null; // Or a loading spinner
+  }
 
   return (
     <VisionScreen6
