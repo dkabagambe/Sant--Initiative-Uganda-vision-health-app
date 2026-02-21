@@ -15,17 +15,35 @@ import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { moderateScale } from "../../utils/responsive";
 import { apiService } from "../../services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width } = Dimensions.get("window");
 
 export default function DistanceVisionTestScreen() {
   const navigation = useNavigation<any>();
-  const { updateScreeningData } = useScreening();
+  const { screeningData, updateScreeningData } = useScreening();
   const [line1Score, setLine1Score] = useState<number | null>(null);
   const [line2Score, setLine2Score] = useState<number | null>(null);
   const [testStage, setTestStage] = useState<"rightEye" | "leftEye">(
     "rightEye",
   );
+
+  const saveOffline = async (data: any) => {
+    try {
+      const offlineQueue = await AsyncStorage.getItem("offlineScreenings");
+      const queue = offlineQueue ? JSON.parse(offlineQueue) : [];
+      queue.push({
+        ...data,
+        offlineId: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+      });
+      await AsyncStorage.setItem("offlineScreenings", JSON.stringify(queue));
+      return true;
+    } catch (error) {
+      console.error("Failed to save offline:", error);
+      return false;
+    }
+  };
 
   const handleScoreSelection = (line: 1 | 2, score: number) => {
     if (line === 1) {
@@ -94,7 +112,19 @@ export default function DistanceVisionTestScreen() {
                 }
               } catch (error) {
                 console.error("Referral creation error:", error);
-                Alert.alert("Error", "Failed to create referral. Please try again.");
+                const saved = await saveOffline(referralData);
+                if (saved) {
+                  Alert.alert(
+                    "📱 Referral Saved Offline",
+                    "No internet connection. Referral saved locally and will sync when online.",
+                    [{ text: "OK", onPress: () => {
+                      updateScreeningData({});
+                      navigation.navigate("CHWDashboard");
+                    }}]
+                  );
+                } else {
+                  Alert.alert("Error", "Failed to create referral. Please try again.");
+                }
               }
             },
           },

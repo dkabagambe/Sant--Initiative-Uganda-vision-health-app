@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function TorchLightStepScreen() {
   const navigation = useNavigation<any>();
@@ -25,6 +26,23 @@ export default function TorchLightStepScreen() {
   const [isWaiting, setIsWaiting] = useState(false);
 
   const clientAge = screeningData.clientAge || 0;
+
+  const saveOffline = async (data: any) => {
+    try {
+      const offlineQueue = await AsyncStorage.getItem("offlineScreenings");
+      const queue = offlineQueue ? JSON.parse(offlineQueue) : [];
+      queue.push({
+        ...data,
+        offlineId: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+      });
+      await AsyncStorage.setItem("offlineScreenings", JSON.stringify(queue));
+      return true;
+    } catch (error) {
+      console.error("Failed to save offline:", error);
+      return false;
+    }
+  };
 
   // Countdown timer effect
   useEffect(() => {
@@ -128,7 +146,19 @@ export default function TorchLightStepScreen() {
                 }
               } catch (error) {
                 console.error("Referral creation error:", error);
-                Alert.alert("Error", "Failed to create referral. Please try again.");
+                const saved = await saveOffline(referralData);
+                if (saved) {
+                  Alert.alert(
+                    "📱 Referral Saved Offline",
+                    "No internet connection. Referral saved locally and will sync when online.",
+                    [{ text: "OK", onPress: () => {
+                      updateScreeningData({});
+                      navigation.navigate("CHWDashboard");
+                    }}]
+                  );
+                } else {
+                  Alert.alert("Error", "Failed to create referral. Please try again.");
+                }
               }
             },
             style: "default",
