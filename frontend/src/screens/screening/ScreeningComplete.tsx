@@ -12,11 +12,13 @@ import { Ionicons } from "@expo/vector-icons";
 interface ScreeningCompleteProps {
   onRegisterAndSave: () => void;
   onReturnHome: () => void;
+  needsGlasses?: boolean;
 }
 
 export default function ScreeningComplete({
   onRegisterAndSave,
   onReturnHome,
+  needsGlasses = false,
 }: ScreeningCompleteProps) {
   return (
     <SafeAreaView style={styles.container}>
@@ -32,7 +34,11 @@ export default function ScreeningComplete({
         <Text style={styles.title}>Screening Complete! 🎉</Text>
 
         {/* Subtitle */}
-        <Text style={styles.subtitle}>All tests finished successfully</Text>
+        <Text style={styles.subtitle}>
+          {needsGlasses 
+            ? "All tests finished - Client needs reading glasses"
+            : "All tests finished successfully"}
+        </Text>
 
         {/* Buttons */}
         <View style={styles.buttonContainer}>

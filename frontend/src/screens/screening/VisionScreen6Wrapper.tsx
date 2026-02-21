@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import VisionScreen6 from "./VisionScreen6";
 import ScreeningComplete from "./ScreeningComplete";
+import ClientRegistration from "./ClientRegistration";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
 
@@ -12,7 +13,9 @@ export default function VisionScreen6Wrapper() {
   const { screeningData, resetScreeningData } = useScreening();
   const [submitting, setSubmitting] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  const [showRegistration, setShowRegistration] = useState(false);
   const [screeningId, setScreeningId] = useState<string | null>(null);
+  const [completedData, setCompletedData] = useState<any>(null);
 
   // Check if referral already needed (from torch test or distance vision failure)
   React.useEffect(() => {
@@ -228,6 +231,7 @@ export default function VisionScreen6Wrapper() {
           } else {
             // Show completion screen for successful screenings (no referral)
             setScreeningId(result.data.id);
+            setCompletedData(completeData);
             setShowComplete(true);
           }
         } else {
@@ -346,8 +350,9 @@ export default function VisionScreen6Wrapper() {
   };
 
   const handleRegisterAndSave = () => {
-    resetScreeningData();
-    navigation.navigate("CHWDashboard");
+    // Show registration screen
+    setShowComplete(false);
+    setShowRegistration(true);
   };
 
   const handleReturnHome = () => {
@@ -355,12 +360,23 @@ export default function VisionScreen6Wrapper() {
     navigation.navigate("CHWDashboard");
   };
 
+  // Show registration screen
+  if (showRegistration && screeningId && completedData) {
+    return (
+      <ClientRegistration
+        clientData={completedData}
+        screeningId={screeningId}
+      />
+    );
+  }
+
   // Show completion screen if screening successful
   if (showComplete) {
     return (
       <ScreeningComplete
         onRegisterAndSave={handleRegisterAndSave}
         onReturnHome={handleReturnHome}
+        needsGlasses={completedData?.needsGlasses}
       />
     );
   }
