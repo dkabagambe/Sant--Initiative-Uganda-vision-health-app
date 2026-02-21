@@ -75,6 +75,8 @@ export default function TorchLightStepScreen() {
     if (!passed) {
       // Abnormal signs detected - STOP and REFER
       updateScreeningData({
+        torchTestPassed: false,
+        torchTestAbnormalSigns: abnormalSigns.join(", "),
         needsReferral: true,
         referralReason: `Abnormal eye signs detected: ${abnormalSigns.join(", ")}`,
         referralUrgency: "high",

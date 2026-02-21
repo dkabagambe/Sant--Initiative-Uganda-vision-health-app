@@ -11,13 +11,79 @@ export default function VisionScreen6Wrapper() {
   const { screeningData, resetScreeningData } = useScreening();
   const [submitting, setSubmitting] = useState(false);
 
-  // Check if referral already needed (from distance vision failure)
+  // Check if referral already needed (from torch test or distance vision failure)
   React.useEffect(() => {
-    if (screeningData.needsReferral && screeningData.referralStep === "Step 5 - Distance Vision Test") {
-      // Distance vision failed - END screening immediately, create referral
-      handleDistanceVisionReferral();
+    if (screeningData.needsReferral) {
+      if (screeningData.referralStep === "Step 4 - Torch Light Test") {
+        // Torch test abnormal - END screening immediately
+        handleTorchTestReferral();
+      } else if (screeningData.referralStep === "Step 5 - Distance Vision Test") {
+        // Distance vision failed - END screening immediately
+        handleDistanceVisionReferral();
+      }
     }
   }, []);
+
+  const handleTorchTestReferral = async () => {
+    setSubmitting(true);
+
+    try {
+      const completeData = {
+        ...screeningData,
+        torchTestPassed: false,
+        distanceVisionResult: "not_tested",
+        nearVisionResult: "not_tested",
+        needsReferral: true,
+        needsGlasses: false,
+      };
+
+      try {
+        const result = await apiService.createScreening(completeData);
+
+        if (result.success) {
+          await createReferral(result.data.id, completeData);
+
+          Alert.alert(
+            "🏥 Referral Created",
+            `Abnormal eye signs detected: ${screeningData.torchTestAbnormalSigns}\n\nClient referred to health facility. No other tests performed.`,
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  resetScreeningData();
+                  navigation.navigate("CHWDashboard");
+                },
+              },
+            ]
+          );
+        } else {
+          throw new Error("API error");
+        }
+      } catch (apiError) {
+        const saved = await saveOffline(completeData);
+        if (saved) {
+          Alert.alert(
+            "📱 Referral Saved Offline",
+            "Torch test referral saved locally and will sync when online.",
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  resetScreeningData();
+                  navigation.navigate("CHWDashboard");
+                },
+              },
+            ]
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Referral error:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
 
   const handleDistanceVisionReferral = async () => {
     setSubmitting(true);
@@ -252,9 +318,11 @@ export default function VisionScreen6Wrapper() {
     }
   };
 
-  // Don't show near vision test if already processing distance vision referral
-  if (submitting && screeningData.needsReferral && screeningData.referralStep === "Step 5 - Distance Vision Test") {
-    return null; // Or a loading spinner
+  // Don't show near vision test if already processing referral from torch or distance test
+  if (submitting && screeningData.needsReferral && 
+      (screeningData.referralStep === "Step 4 - Torch Light Test" || 
+       screeningData.referralStep === "Step 5 - Distance Vision Test")) {
+    return null;
   }
 
   return (
