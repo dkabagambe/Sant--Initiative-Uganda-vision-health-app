@@ -8,18 +8,29 @@ import {
   StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { useScreening } from "../../context/ScreeningContext";
 
-interface ScreeningCompleteProps {
-  onRegisterAndSave: () => void;
-  onReturnHome: () => void;
-  needsGlasses?: boolean;
-}
+export default function ScreeningComplete() {
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const { resetScreeningData } = useScreening();
+  
+  const glassesDispensed = route.params?.glassesDispensed || false;
+  const glassesPower = route.params?.glassesPower || "";
 
-export default function ScreeningComplete({
-  onRegisterAndSave,
-  onReturnHome,
-  needsGlasses = false,
-}: ScreeningCompleteProps) {
+  const handleRegisterAndSave = () => {
+    navigation.navigate("ClientRegistration");
+  };
+
+  const handleReturnHome = () => {
+    resetScreeningData();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "CHWTabs" }],
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#10B981" barStyle="light-content" />
@@ -35,17 +46,29 @@ export default function ScreeningComplete({
 
         {/* Subtitle */}
         <Text style={styles.subtitle}>
-          {needsGlasses 
-            ? "All tests finished - Client needs reading glasses"
+          {glassesDispensed 
+            ? `Reading glasses ${glassesPower} dispensed successfully`
             : "All tests finished successfully"}
         </Text>
+
+        {glassesDispensed && (
+          <View style={styles.infoCard}>
+            <Ionicons name="glasses" size={32} color="#2E7D32" />
+            <Text style={styles.infoText}>
+              Glasses power: {glassesPower}
+            </Text>
+            <Text style={styles.infoSubtext}>
+              Inventory has been updated
+            </Text>
+          </View>
+        )}
 
         {/* Buttons */}
         <View style={styles.buttonContainer}>
           {/* Register & Save Button */}
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={onRegisterAndSave}
+            onPress={handleRegisterAndSave}
             activeOpacity={0.8}
           >
             <Ionicons name="save" size={24} color="#FFFFFF" />
@@ -57,7 +80,7 @@ export default function ScreeningComplete({
           {/* Return Home Button */}
           <TouchableOpacity
             style={styles.secondaryButton}
-            onPress={onReturnHome}
+            onPress={handleReturnHome}
             activeOpacity={0.8}
           >
             <Ionicons name="home" size={24} color="#10B981" />
@@ -95,7 +118,26 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     color: "#6B7280",
     textAlign: "center",
-    marginBottom: 48,
+    marginBottom: 24,
+  },
+  infoCard: {
+    backgroundColor: "#E8F5E9",
+    borderRadius: 12,
+    padding: 20,
+    alignItems: "center",
+    marginBottom: 32,
+    width: "100%",
+  },
+  infoText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2E7D32",
+    marginTop: 8,
+  },
+  infoSubtext: {
+    fontSize: 14,
+    color: "#4B5563",
+    marginTop: 4,
   },
   buttonContainer: {
     width: "100%",
@@ -125,6 +167,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "#10B981",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 12,
+  },
+  secondaryButtonText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#10B981",
+  },
+});
     backgroundColor: "#FFFFFF",
     paddingVertical: 16,
     paddingHorizontal: 24,

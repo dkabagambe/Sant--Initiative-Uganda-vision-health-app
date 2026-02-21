@@ -198,22 +198,12 @@ export default function ReadingGlassesSelection() {
       const screeningResult = await apiService.createScreening(completeData);
 
       if (screeningResult.success) {
-        Alert.alert(
-          "✅ Screening Complete",
-          `Reading glasses ${selectedPower} dispensed successfully!\n\nClient: ${screeningData.clientName}\nAge: ${screeningData.clientAge} years\n\nInventory updated.`,
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                resetScreeningData();
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: "CHWTabs" }],
-                });
-              },
-            },
-          ]
-        );
+        // Navigate to completion screen instead of showing alert
+        updateScreeningData(completeData);
+        navigation.navigate("ScreeningComplete", {
+          glassesDispensed: true,
+          glassesPower: selectedPower,
+        });
       } else {
         throw new Error("Failed to save screening");
       }

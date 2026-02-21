@@ -51,6 +51,8 @@ import VisionScreen4 from "../screens/screening/VisionScreen4";
 import VisionScreen5 from "../screens/screening/VisionScreen5";
 import VisionScreen6 from "../screens/screening/VisionScreen6";
 import ReadingGlassesSelection from "../screens/screening/ReadingGlassesSelection";
+import ScreeningComplete from "../screens/screening/ScreeningComplete";
+import ClientRegistration from "../screens/screening/ClientRegistration";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -63,10 +65,9 @@ export type ScreeningStackParamList = {
   VisionScreen4: undefined;
   VisionScreen5: undefined;
   VisionScreen6: undefined;
-  GlassesSelection: undefined;
   ReadingGlassesSelection: undefined;
-  ReferralManagement: undefined;
-  Completion: undefined;
+  ScreeningComplete: { glassesDispensed?: boolean; glassesPower?: string };
+  ClientRegistration: undefined;
 };
 
 // Create a separate stack for NEW Screening Flow (within the Screen tab)
@@ -86,6 +87,8 @@ function ScreeningStack() {
       <Stack.Screen name="VisionScreen5" component={VisionScreen5} />
       <Stack.Screen name="VisionScreen6" component={VisionScreen6} />
       <Stack.Screen name="ReadingGlassesSelection" component={ReadingGlassesSelection} />
+      <Stack.Screen name="ScreeningComplete" component={ScreeningComplete} />
+      <Stack.Screen name="ClientRegistration" component={ClientRegistration} />
     </Stack.Navigator>
   );
 }

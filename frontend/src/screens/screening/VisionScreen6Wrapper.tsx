@@ -404,15 +404,14 @@ export default function VisionScreen6Wrapper() {
     );
   }
 
-  // Show completion screen if screening successful
+  // Navigate to completion screen if screening successful
   if (showComplete) {
-    return (
-      <ScreeningComplete
-        onRegisterAndSave={handleRegisterAndSave}
-        onReturnHome={handleReturnHome}
-        needsGlasses={completedData?.needsGlasses}
-      />
-    );
+    navigation.navigate("ScreeningComplete", {
+      glassesDispensed: completedData?.needsGlasses || false,
+      glassesPower: completedData?.recommendedPower || "",
+    });
+    setShowComplete(false);
+    return null;
   }
 
   return (
