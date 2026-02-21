@@ -59,12 +59,12 @@ exports.createScreening = async (req, res) => {
         recommended_product_id, recommended_power, selected_frame_type,
         notes, offline_id, is_synced
       ) VALUES (
-        ${healthWorkerId}, ${clientName}, ${clientPhone}, ${clientAge}, ${clientGender}, ${clientVillage},
+        ${healthWorkerId}, ${clientName || null}, ${clientPhone || null}, ${clientAge || null}, ${clientGender || null}, ${clientVillage || null},
         ${distanceVisionLeft || null}, ${distanceVisionRight || null}, ${distanceVisionBoth || null},
         ${nearVisionResult || null}, ${pinholeTestLeft || null}, ${pinholeTestRight || null},
-        ${needsGlasses || false}, ${needsReferral || false}, ${referralReason || null},
+        ${needsGlasses ? 1 : 0}, ${needsReferral ? 1 : 0}, ${referralReason || null},
         ${recommendedProductId || null}, ${recommendedPower || null}, ${selectedFrameType || null},
-        ${fullNotes.trim() || null}, ${offlineId || null}, true
+        ${fullNotes.trim() || null}, ${offlineId || null}, ${1}
       )
       RETURNING *
     `;

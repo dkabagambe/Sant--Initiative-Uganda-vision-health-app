@@ -214,23 +214,24 @@ exports.getReports = async (req, res) => {
       
     } else {
       // Summary report
-      let query = `
+      const params = [healthWorkerId];
+      let dateFilter = '';
+      
+      if (startDate && endDate) {
+        dateFilter = ` AND s.screening_date BETWEEN ? AND ?`;
+        params.push(startDate, endDate);
+      }
+      
+      const query = `
         SELECT 
           COUNT(DISTINCT s.id) as total_screenings,
-          COUNT(DISTINCT CASE WHEN s.needs_glasses THEN s.id END) as glasses_sold,
-          COUNT(DISTINCT CASE WHEN s.needs_referral THEN s.id END) as referrals_made,
+          COUNT(DISTINCT CASE WHEN s.needs_glasses = 1 THEN s.id END) as glasses_sold,
+          COUNT(DISTINCT CASE WHEN s.needs_referral = 1 THEN s.id END) as referrals_made,
           COALESCE(SUM(p.amount), 0) as total_revenue
         FROM screenings s
         LEFT JOIN payments p ON s.id = p.screening_id AND p.status = 'completed'
-        WHERE s.health_worker_id = ?
+        WHERE s.health_worker_id = ?${dateFilter}
       `;
-      
-      const params = [healthWorkerId];
-      
-      if (startDate && endDate) {
-        query += ` AND s.screening_date BETWEEN ? AND ?`;
-        params.push(startDate, endDate);
-      }
       
       const data = await sql(query, params);
       res.json({ success: true, data: data[0] });
