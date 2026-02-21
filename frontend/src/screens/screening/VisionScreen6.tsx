@@ -111,71 +111,9 @@ export default function VisionScreen6({
 
             <View style={styles.divider} />
 
-            <Text style={styles.recordQuestion}>Near Vision Test - Pass?</Text>
-            <View style={styles.recordButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.recordButton,
-                  canRead === true && styles.recordButtonSelected,
-                ]}
-                onPress={() => handleTestComplete(true)}
-              >
-                <Text
-                  style={[
-                    styles.recordButtonText,
-                    canRead === true && styles.recordButtonTextSelected,
-                  ]}
-                >
-                  ✓ Yes - Pass
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.recordButton,
-                  canRead === false && styles.recordButtonSelectedRed,
-                ]}
-                onPress={() => handleTestComplete(false)}
-              >
-                <Text
-                  style={[
-                    styles.recordButtonText,
-                    canRead === false && styles.recordButtonTextSelectedRed,
-                  ]}
-                >
-                  ✗ No - Fail
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {canRead === false && (
-              <View style={styles.referralAlert}>
-                {clientAge >= 40 ? (
-                  <>
-                    <Text style={styles.referralTitle}>
-                      👓 Presbyopia Pathway (Age 40+)
-                    </Text>
-                    <Text style={styles.referralText}>
-                      This is likely{" "}
-                      <Text style={styles.boldText}>presbyopia</Text> - normal
-                      age-related vision change. Clicking "No - Fail" will take
-                      you to reading glasses selection.
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <Text style={styles.referralTitle}>
-                      🏥 Referral Required (Age 6-39)
-                    </Text>
-                    <Text style={styles.referralText}>
-                      Near vision problems in people under 40 are{" "}
-                      <Text style={styles.boldText}>not normal</Text>. Clicking
-                      "No - Fail" will automatically open a pre-filled referral
-                      form for comprehensive eye examination.
-                    </Text>
-                  </>
-                )}
-              </View>
-            )}
+            <Text style={styles.recordQuestion}>
+              ✅ Result Recorded - Ready to Continue
+            </Text>
           </View>
         </ScrollView>
 
@@ -203,7 +141,6 @@ export default function VisionScreen6({
                 }
               }
             }}
-            disabled={canRead === null}
           >
             <Text style={styles.recordingBottomButtonText}>
               {canRead === true 
