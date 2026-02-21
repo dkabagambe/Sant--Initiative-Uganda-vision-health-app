@@ -44,14 +44,14 @@ exports.login = async (req, res) => {
     
     if (!smsResult.success) {
       console.error("SMS failed:", smsResult.error);
-      // Still return success but log the error
     }
 
+    // Always show OTP until SMS is fully configured
     res.json({
       success: true,
-      message: "OTP sent successfully",
+      message: smsResult.success ? "OTP sent successfully" : "OTP generated (SMS unavailable)",
       phoneNumber,
-      otp: process.env.NODE_ENV === "development" ? otp : undefined, // Only show in dev
+      otp: otp, // Always return OTP for testing
     });
   } catch (error) {
     console.error("Login error:", error);
