@@ -292,7 +292,7 @@ export default function VisionScreen6Wrapper() {
         } else {
           Alert.alert(
             "Error", 
-            `Failed to save screening. ${apiError.message || 'Please try again.'}`,
+            `Failed to save screening. ${(apiError as any)?.message || 'Please try again.'}`,
             [
               {
                 text: "OK",
@@ -306,7 +306,7 @@ export default function VisionScreen6Wrapper() {
       console.error("Screening submission error:", error);
       Alert.alert(
         "Error", 
-        `An unexpected error occurred: ${error.message || 'Unknown error'}`,
+        `An unexpected error occurred: ${(error as any)?.message || 'Unknown error'}`,
         [
           {
             text: "OK",
