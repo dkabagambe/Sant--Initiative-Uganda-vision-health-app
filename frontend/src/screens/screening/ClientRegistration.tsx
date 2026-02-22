@@ -11,7 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { apiService } from "../../services/api";
 import SaleComplete from "./SaleComplete";
 
@@ -31,11 +31,12 @@ interface ClientRegistrationProps {
   screeningId: string;
 }
 
-export default function ClientRegistration({
-  clientData,
-  screeningId,
-}: ClientRegistrationProps) {
+export default function ClientRegistration() {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  
+  const clientData = route.params?.clientData || {};
+  const screeningId = route.params?.screeningId || "";
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<"full" | "hire-purchase">("hire-purchase");
@@ -55,10 +56,16 @@ export default function ClientRegistration({
     try {
       const response = await apiService.getProducts();
       if (response.success) {
-        // Filter products matching recommended power
-        const matchingProducts = response.data.filter(
+        // Filter products matching recommended power, or show all if no match
+        let matchingProducts = response.data.filter(
           (p: any) => p.power === clientData.recommendedPower
         );
+        
+        // If no matching products, show all products
+        if (matchingProducts.length === 0) {
+          matchingProducts = response.data;
+        }
+        
         setProducts(matchingProducts);
         if (matchingProducts.length > 0) {
           setSelectedProduct(matchingProducts[0]);
@@ -66,6 +73,7 @@ export default function ClientRegistration({
       }
     } catch (error) {
       console.error("Failed to load products:", error);
+      Alert.alert("Error", "Failed to load products. Please try again.");
     }
   };
 
@@ -87,13 +95,14 @@ export default function ClientRegistration({
       const paymentData = {
         screeningId,
         productId: selectedProduct.id,
+        clientName: clientData.clientName,
+        clientPhone: mobileNumber,
         amount: selectedProduct.price,
-        paymentMethod,
-        installments: paymentMethod === "hire-purchase" ? 3 : 1,
-        vslaGroup: paymentMethod === "hire-purchase" ? vslaGroup : null,
-        mobileProvider,
-        mobileNumber,
-        merchantCode,
+        mobileMoneyNumber: mobileNumber,
+        paymentMethod: paymentMethod === "hire-purchase" ? "mobile_money" : "cash",
+        paymentType: paymentMethod === "hire-purchase" ? "installment" : "full",
+        totalInstallments: paymentMethod === "hire-purchase" ? 3 : 1,
+        installmentNumber: 1,
       };
 
       const result = await apiService.createPayment(paymentData);

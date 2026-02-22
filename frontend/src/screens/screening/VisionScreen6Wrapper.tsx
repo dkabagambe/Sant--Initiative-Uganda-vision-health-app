@@ -249,9 +249,9 @@ export default function VisionScreen6Wrapper() {
       navigation.navigate("ReferralManagementScreen", {
         autoOpenForm: true,
         prefilledData: {
-          clientName: screeningData.clientName,
-          clientAge: clientAge,
-          clientPhone: screeningData.clientPhone,
+          clientName: screeningData?.clientName || "",
+          clientAge: clientAge || 0,
+          clientPhone: screeningData?.clientPhone || "",
           referralReason: `Near vision problem detected in client under 40 years (age: ${clientAge}) - requires eye examination`,
           urgency: "high",
           referralType: "eye-care",

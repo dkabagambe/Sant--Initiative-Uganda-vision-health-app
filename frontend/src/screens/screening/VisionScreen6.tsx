@@ -151,6 +151,23 @@ export default function VisionScreen6({
                 </Text>
               </View>
             )}
+
+            {/* Navigation Button Inside Card */}
+            <TouchableOpacity
+              style={styles.nextButton}
+              onPress={() => {
+                console.log("Button pressed - canRead:", canRead, "age:", clientAge);
+                onComplete(canRead === true);
+              }}
+            >
+              <Text style={styles.nextButtonText}>
+                {canRead === true
+                  ? "✅ Complete Screening"
+                  : clientAge >= 40
+                    ? "👓 Select Reading Glasses"
+                    : "🏥 Create Referral"}
+              </Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
 
@@ -770,7 +787,7 @@ const styles = StyleSheet.create({
   recordingContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 100,
+    paddingBottom: 16,
   },
   resultCard: {
     borderRadius: 12,
@@ -933,20 +950,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   recordingBottomContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
   },
   recordingBottomButton: {
     backgroundColor: "#2E7D32",
@@ -955,6 +963,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   recordingBottomButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  nextButton: {
+    backgroundColor: "#10B981",
+    paddingVertical: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 24,
+  },
+  nextButtonText: {
     fontSize: 16,
     fontWeight: "700",
     color: "#FFFFFF",

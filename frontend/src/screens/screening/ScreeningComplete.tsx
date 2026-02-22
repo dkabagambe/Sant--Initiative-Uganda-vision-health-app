@@ -14,13 +14,27 @@ import { useScreening } from "../../context/ScreeningContext";
 export default function ScreeningComplete() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { resetScreeningData } = useScreening();
+  const { resetScreeningData, screeningData } = useScreening();
   
   const glassesDispensed = route.params?.glassesDispensed || false;
   const glassesPower = route.params?.glassesPower || "";
 
   const handleRegisterAndSave = () => {
-    navigation.navigate("ClientRegistration");
+    navigation.navigate("ClientRegistration", {
+      clientData: {
+        clientName: screeningData.clientName || "",
+        clientAge: screeningData.clientAge || 0,
+        clientPhone: screeningData.clientPhone || "",
+        clientGender: screeningData.clientGender || "",
+        recommendedPower: glassesPower || screeningData.recommendedPower || "",
+        district: screeningData.district || "",
+        county: screeningData.county || "",
+        subCounty: screeningData.subCounty || "",
+        parish: screeningData.parish || "",
+        clientVillage: screeningData.clientVillage || "",
+      },
+      screeningId: screeningData.screeningId || "",
+    });
   };
 
   const handleReturnHome = () => {
