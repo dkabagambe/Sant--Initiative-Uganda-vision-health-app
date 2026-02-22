@@ -4,7 +4,6 @@ import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import VisionScreen6 from "./VisionScreen6";
 import ScreeningComplete from "./ScreeningComplete";
-import ClientRegistration from "./ClientRegistration";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
 
@@ -13,7 +12,6 @@ export default function VisionScreen6Wrapper() {
   const { screeningData, updateScreeningData, resetScreeningData } = useScreening();
   const [submitting, setSubmitting] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
-  const [showRegistration, setShowRegistration] = useState(false);
   const [screeningId, setScreeningId] = useState<string | null>(null);
   const [completedData, setCompletedData] = useState<any>(null);
 
@@ -344,25 +342,17 @@ export default function VisionScreen6Wrapper() {
   };
 
   const handleRegisterAndSave = () => {
-    // Show registration screen
-    setShowComplete(false);
-    setShowRegistration(true);
+    // Navigate to registration screen instead of showing it
+    navigation.navigate("ClientRegistration", {
+      clientData: completedData,
+      screeningId: screeningId,
+    });
   };
 
   const handleReturnHome = () => {
     resetScreeningData();
     navigation.navigate("CHWDashboard");
   };
-
-  // Show registration screen
-  if (showRegistration && screeningId && completedData) {
-    return (
-      <ClientRegistration
-        clientData={completedData}
-        screeningId={screeningId}
-      />
-    );
-  }
 
   // Navigate to completion screen when showComplete is true
   React.useEffect(() => {
