@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   StatusBar,
   Dimensions,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -159,16 +160,27 @@ export default function VisionScreen6({
             style={styles.recordingBottomButton}
             onPress={() => {
               console.log(
-                "Button pressed - canRead:",
+                "VisionScreen6 Button pressed - canRead:",
                 canRead,
                 "clientAge:",
                 clientAge,
               );
-              if (canRead === true) {
-                onComplete(true);
-              } else if (canRead === false) {
-                onComplete(false);
-              }
+              Alert.alert(
+                "Debug",
+                `Button pressed! canRead: ${canRead}, age: ${clientAge}`,
+                [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      if (canRead === true) {
+                        onComplete(true);
+                      } else if (canRead === false) {
+                        onComplete(false);
+                      }
+                    },
+                  },
+                ]
+              );
             }}
           >
             <Text style={styles.recordingBottomButtonText}>
