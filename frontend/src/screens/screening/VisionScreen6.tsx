@@ -10,7 +10,10 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { moderateScale, fontSize as responsiveFontSize } from "../../utils/responsive";
+import {
+  moderateScale,
+  fontSize as responsiveFontSize,
+} from "../../utils/responsive";
 
 const { width } = Dimensions.get("window");
 
@@ -29,8 +32,11 @@ export default function VisionScreen6({
   const [showRecording, setShowRecording] = useState(false);
 
   const handleTestComplete = (passed: boolean) => {
+    console.log("VisionScreen6 - Test completed:", passed);
+    console.log("VisionScreen6 - Client age:", clientAge);
     setCanRead(passed);
     setShowRecording(true);
+    console.log("VisionScreen6 - Should show recording screen now");
   };
 
   if (showRecording) {
@@ -112,7 +118,12 @@ export default function VisionScreen6({
 
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Result:</Text>
-                <Text style={[styles.infoValue, canRead ? styles.passText : styles.failText]}>
+                <Text
+                  style={[
+                    styles.infoValue,
+                    canRead ? styles.passText : styles.failText,
+                  ]}
+                >
                   {canRead ? "PASS" : "FAIL"}
                 </Text>
               </View>
@@ -124,8 +135,8 @@ export default function VisionScreen6({
               <View style={styles.presbyopiaNote}>
                 <Ionicons name="information-circle" size={20} color="#2E7D32" />
                 <Text style={styles.presbyopiaText}>
-                  Age 40+ with near vision difficulty = Presbyopia (normal aging). 
-                  Will proceed to reading glasses selection.
+                  Age 40+ with near vision difficulty = Presbyopia (normal
+                  aging). Will proceed to reading glasses selection.
                 </Text>
               </View>
             )}
@@ -134,8 +145,8 @@ export default function VisionScreen6({
               <View style={styles.referralNote}>
                 <Ionicons name="warning" size={20} color="#DC2626" />
                 <Text style={styles.referralText}>
-                  Near vision problem in person under 40 is abnormal. 
-                  Will generate referral for eye examination.
+                  Near vision problem in person under 40 is abnormal. Will
+                  generate referral for eye examination.
                 </Text>
               </View>
             )}
@@ -147,7 +158,12 @@ export default function VisionScreen6({
           <TouchableOpacity
             style={styles.recordingBottomButton}
             onPress={() => {
-              console.log("Button pressed - canRead:", canRead, "clientAge:", clientAge);
+              console.log(
+                "Button pressed - canRead:",
+                canRead,
+                "clientAge:",
+                clientAge,
+              );
               if (canRead === true) {
                 onComplete(true);
               } else if (canRead === false) {
@@ -156,11 +172,11 @@ export default function VisionScreen6({
             }}
           >
             <Text style={styles.recordingBottomButtonText}>
-              {canRead === true 
-                ? "✅ Complete Screening" 
+              {canRead === true
+                ? "✅ Complete Screening"
                 : clientAge >= 40
-                ? "👓 Select Reading Glasses"
-                : "🏥 Create Referral"}
+                  ? "👓 Select Reading Glasses"
+                  : "🏥 Create Referral"}
             </Text>
           </TouchableOpacity>
         </View>
