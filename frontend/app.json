@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "sante-initiative",
+    "name": "Santé Initiative Uganda",
     "slug": "sante-initiative",
-    "version": "1.0.2",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -23,6 +23,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.sante.initiative",
+      "versionCode": 3,
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE"
