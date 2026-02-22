@@ -237,92 +237,39 @@ export default function VisionScreen6Wrapper() {
         return;
       }
 
-      // If failed and age < 40, create referral
-      const completeData = {
-        ...screeningData,
+      // If failed and age < 40, navigate to referral screen with pre-filled data
+      setSubmitting(false);
+      updateScreeningData({
         nearVisionResult: "failed",
         needsGlasses: false,
         needsReferral: true,
-        referralReason: "Failed near vision test - requires specialist examination",
-      };
-
-      console.log("Submitting screening data:", completeData);
-
-      try {
-        const result = await apiService.createScreening(completeData);
-        console.log("Screening result:", result);
-
-        if (result.success) {
-          // Create referral
-          await createReferral(result.data.id, completeData);
-          
-          Alert.alert(
-            "🏥 Referral Created",
-            "Screening completed. Referral created for nearest health facility.",
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  resetScreeningData();
-                  navigation.reset({
-                    index: 0,
-                    routes: [{ name: "CHWTabs" }],
-                  });
-                },
-              },
-            ]
-          );
-        } else {
-          throw new Error("API returned error");
-        }
-      } catch (apiError) {
-        console.error("API Error:", apiError);
-        // Save offline if API fails
-        const saved = await saveOffline(completeData);
-        if (saved) {
-          Alert.alert(
-            "📱 Saved Offline",
-            "No internet connection. Screening saved locally and will sync when online.",
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  resetScreeningData();
-                  navigation.reset({
-                    index: 0,
-                    routes: [{ name: "CHWTabs" }],
-                  });
-                },
-              },
-            ]
-          );
-        } else {
-          Alert.alert(
-            "Error", 
-            `Failed to save screening. ${(apiError as any)?.message || 'Please try again.'}`,
-            [
-              {
-                text: "OK",
-                onPress: () => setSubmitting(false),
-              },
-            ]
-          );
-        }
-      }
+        referralReason: `Near vision problem detected in client under 40 years (age: ${clientAge}) - requires eye examination`,
+      });
+      
+      navigation.navigate("ReferralManagementScreen", {
+        autoOpenForm: true,
+        prefilledData: {
+          clientName: screeningData.clientName,
+          clientAge: clientAge,
+          clientPhone: screeningData.clientPhone,
+          referralReason: `Near vision problem detected in client under 40 years (age: ${clientAge}) - requires eye examination`,
+          urgency: "high",
+          referralType: "eye-care",
+        },
+      });
+      return;
     } catch (error) {
       console.error("Screening submission error:", error);
+      setSubmitting(false);
       Alert.alert(
         "Error", 
         `An unexpected error occurred: ${(error as any)?.message || 'Unknown error'}`,
         [
           {
             text: "OK",
-            onPress: () => setSubmitting(false),
           },
         ]
       );
-    } finally {
-      setSubmitting(false);
     }
   };
 
