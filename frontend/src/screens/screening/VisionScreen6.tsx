@@ -159,28 +159,8 @@ export default function VisionScreen6({
           <TouchableOpacity
             style={styles.recordingBottomButton}
             onPress={() => {
-              console.log(
-                "VisionScreen6 Button pressed - canRead:",
-                canRead,
-                "clientAge:",
-                clientAge,
-              );
-              Alert.alert(
-                "Debug",
-                `Button pressed! canRead: ${canRead}, age: ${clientAge}`,
-                [
-                  {
-                    text: "OK",
-                    onPress: () => {
-                      if (canRead === true) {
-                        onComplete(true);
-                      } else if (canRead === false) {
-                        onComplete(false);
-                      }
-                    },
-                  },
-                ]
-              );
+              console.log("VisionScreen6 Button pressed - canRead:", canRead, "clientAge:", clientAge);
+              onComplete(canRead === true);
             }}
           >
             <Text style={styles.recordingBottomButtonText}>
