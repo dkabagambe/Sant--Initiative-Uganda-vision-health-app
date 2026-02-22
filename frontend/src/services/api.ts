@@ -43,14 +43,11 @@ export interface Screening {
 }
 
 // Base URL configuration
-// Development API (local testing)
-const API_BASE_URL = "http://20.20.42.133:5000/api"; // Physical device/emulator
+// Production API (Heroku)
+const API_BASE_URL = "https://sante-production-app-42dca70009b0.herokuapp.com/api";
 
-// Production API (uncomment for production)
-// const API_BASE_URL =
-//   "https://sante-production-app-42dca70009b0.herokuapp.com/api";
-
-// Other options:
+// Development API (local testing - uncomment for local development)
+// const API_BASE_URL = "http://20.20.42.133:5000/api"; // Physical device/emulator
 // const API_BASE_URL = "http://10.0.2.2:5000/api"; // Android emulator
 // const API_BASE_URL = "http://localhost:5000/api"; // iOS simulator
 
