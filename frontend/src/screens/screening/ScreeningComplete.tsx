@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   StatusBar,
 } from "react-native";
+import { moderateScale, scale, verticalScale, fontSize as responsiveFontSize } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";

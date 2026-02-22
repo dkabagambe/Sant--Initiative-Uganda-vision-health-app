@@ -8,6 +8,7 @@ import {
   StatusBar,
   ScrollView,
 } from "react-native";
+import { moderateScale, scale, verticalScale, fontSize as responsiveFontSize } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 
 interface SaleCompleteProps {
