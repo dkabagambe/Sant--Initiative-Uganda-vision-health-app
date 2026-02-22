@@ -10,7 +10,7 @@ import { apiService } from "../../services/api";
 
 export default function VisionScreen6Wrapper() {
   const navigation = useNavigation<any>();
-  const { screeningData, resetScreeningData } = useScreening();
+  const { screeningData, updateScreeningData, resetScreeningData } = useScreening();
   const [submitting, setSubmitting] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
   const [showRegistration, setShowRegistration] = useState(false);
@@ -222,14 +222,28 @@ export default function VisionScreen6Wrapper() {
         return;
       }
 
+      // If passed, navigate directly to completion screen
+      if (passed) {
+        setSubmitting(false);
+        updateScreeningData({
+          nearVisionResult: "passed",
+          needsGlasses: false,
+          needsReferral: false,
+        });
+        navigation.navigate("ScreeningComplete", {
+          glassesDispensed: false,
+          glassesPower: "",
+        });
+        return;
+      }
+
+      // If failed and age < 40, create referral
       const completeData = {
         ...screeningData,
-        nearVisionResult: passed ? "passed" : "failed",
+        nearVisionResult: "failed",
         needsGlasses: false,
-        needsReferral: screeningData.needsReferral || (!passed && clientAge < 40),
-        referralReason: screeningData.referralReason || (!passed && clientAge < 40 
-          ? "Failed near vision test - requires specialist examination" 
-          : null),
+        needsReferral: true,
+        referralReason: "Failed near vision test - requires specialist examination",
       };
 
       console.log("Submitting screening data:", completeData);
@@ -239,32 +253,25 @@ export default function VisionScreen6Wrapper() {
         console.log("Screening result:", result);
 
         if (result.success) {
-          // If referral needed, create it
-          if (completeData.needsReferral) {
-            await createReferral(result.data.id, completeData);
-            
-            Alert.alert(
-              "🏥 Referral Created",
-              "Screening completed. Referral created for nearest health facility.",
-              [
-                {
-                  text: "OK",
-                  onPress: () => {
-                    resetScreeningData();
-                    navigation.reset({
-                      index: 0,
-                      routes: [{ name: "CHWTabs" }],
-                    });
-                  },
+          // Create referral
+          await createReferral(result.data.id, completeData);
+          
+          Alert.alert(
+            "🏥 Referral Created",
+            "Screening completed. Referral created for nearest health facility.",
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  resetScreeningData();
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "CHWTabs" }],
+                  });
                 },
-              ]
-            );
-          } else {
-            // Show completion screen for successful screenings (no referral)
-            setScreeningId(result.data.id);
-            setCompletedData(completeData);
-            setShowComplete(true);
-          }
+              },
+            ]
+          );
         } else {
           throw new Error("API returned error");
         }
