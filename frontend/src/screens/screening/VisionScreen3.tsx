@@ -158,37 +158,6 @@ export default function SafetyInformationScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Bottom Tab Bar */}
-      <View style={styles.tabBar}>
-        {[
-          { emoji: "🏠", label: "Home", isActive: false },
-          { emoji: "📱", label: "Screenshot", isActive: true },
-          { emoji: "📦", label: "Stock", isActive: false },
-          { emoji: "💰", label: "Payments", isActive: false },
-          { emoji: "🔗", label: "Referrals", isActive: false },
-        ].map((tab, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.tabItem}
-            activeOpacity={0.7}
-            onPress={() => {
-              if (index === 1) return; // Current screen
-              // Add navigation for other tabs
-            }}
-          >
-            <Text
-              style={[styles.tabEmoji, tab.isActive && styles.tabEmojiActive]}
-            >
-              {tab.emoji}
-            </Text>
-            <Text
-              style={[styles.tabLabel, tab.isActive && styles.tabLabelActive]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
     </SafeAreaView>
   );
 }
@@ -441,46 +410,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#FFFFFF",
-  },
-  tabBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#E8EAED",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 8,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 4,
-  },
-  tabEmoji: {
-    fontSize: 20,
-    color: "#666666",
-    marginBottom: 4,
-  },
-  tabEmojiActive: {
-    color: "#1A4D8F",
-  },
-  tabLabel: {
-    fontSize: 11,
-    color: "#666666",
-    fontWeight: "500",
-    letterSpacing: 0.3,
-  },
-  tabLabelActive: {
-    color: "#1A4D8F",
-    fontWeight: "700",
   },
 });

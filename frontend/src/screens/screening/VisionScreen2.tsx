@@ -183,33 +183,6 @@ export default function PreScreeningQuestionsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Bottom Tab Bar */}
-      <View style={styles.tabBar}>
-        {[
-          { icon: "home-outline", label: "Home" },
-          { icon: "eye-outline", label: "Screen" },
-          { icon: "cube-outline", label: "Stock" },
-          { icon: "cash-outline", label: "Payments" },
-          { icon: "share-social-outline", label: "Referrals" },
-        ].map((tab, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.tabItem}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={tab.icon as any}
-              size={24}
-              color={index === 1 ? "#1A4D8F" : "#666666"}
-            />
-            <Text
-              style={[styles.tabLabel, index === 1 && styles.tabLabelActive]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
     </SafeAreaView>
   );
 }
@@ -402,34 +375,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#FFFFFF",
-  },
-  tabBar: {
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 8,
-  },
-  tabLabel: {
-    fontSize: 12,
-    color: "#666666",
-    marginTop: 4,
-    fontWeight: "500",
-  },
-  tabLabelActive: {
-    color: "#1A4D8F",
-    fontWeight: "600",
   },
 });

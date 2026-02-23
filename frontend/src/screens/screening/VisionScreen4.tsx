@@ -675,41 +675,6 @@ export default function TorchLightStepScreen() {
         )}
       </View>
 
-      {/* Bottom Tab Bar */}
-      <View style={styles.tabBar}>
-        {[
-          { icon: "home-outline", label: "Home" },
-          {
-            icon: "eye-outline",
-            label: "Screen",
-            active: currentSubStep !== 4.5,
-          },
-          { icon: "cube-outline", label: "Stock" },
-          { icon: "cash-outline", label: "Payments" },
-          {
-            icon: "share-social-outline",
-            label: "Referrals",
-            active: testPassed === false,
-          },
-        ].map((tab, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.tabItem}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={tab.icon as any}
-              size={22}
-              color={tab.active ? "#1A4D8F" : "#666666"}
-            />
-            <Text
-              style={[styles.tabLabel, tab.active && styles.tabLabelActive]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
     </SafeAreaView>
   );
 }
@@ -758,7 +723,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 140,
+    paddingBottom: 40,
   },
   progressContainer: {
     marginBottom: 16,
@@ -1245,12 +1210,9 @@ const styles = StyleSheet.create({
 
   /* Bottom Actions */
   bottomActions: {
-    position: "absolute",
-    bottom: 70,
-    left: 0,
-    right: 0,
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingTop: 16,
+    paddingBottom: 24,
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
     borderTopColor: "#E8EAED",
@@ -1304,41 +1266,6 @@ const styles = StyleSheet.create({
     height: 20,
   },
 
-  /* Tab Bar */
-  tabBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#E8EAED",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 8,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 4,
-  },
-  tabLabel: {
-    fontSize: 11,
-    color: "#666666",
-    fontWeight: "500",
-    letterSpacing: 0.3,
-    marginTop: 4,
-  },
-  tabLabelActive: {
-    color: "#1A4D8F",
-    fontWeight: "700",
-  },
   countdownContainer: {
     alignItems: "center",
     justifyContent: "center",

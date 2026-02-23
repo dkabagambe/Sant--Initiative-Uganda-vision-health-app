@@ -469,33 +469,6 @@ export default function DistanceVisionTestScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Bottom Tab Bar - YOUR ORIGINAL FORMAT */}
-      <View style={styles.tabBar}>
-        {[
-          { icon: "home-outline", label: "Home" },
-          { icon: "eye-outline", label: "Screen" },
-          { icon: "cube-outline", label: "Stock" },
-          { icon: "cash-outline", label: "Payments" },
-          { icon: "share-social-outline", label: "Referrals" },
-        ].map((tab, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.tabItem}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={tab.icon as any}
-              size={22}
-              color={index === 1 ? "#1565C0" : "#6B7280"}
-            />
-            <Text
-              style={[styles.tabLabel, index === 1 && styles.tabLabelActive]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
     </SafeAreaView>
   );
 }
@@ -821,13 +794,10 @@ const styles = StyleSheet.create({
     height: 20,
   },
   bottomNav: {
-    position: "absolute",
-    bottom: 70, // Position above tab bar
-    left: 0,
-    right: 0,
     flexDirection: "row",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingTop: 16,
+    paddingBottom: 24,
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
@@ -867,38 +837,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#FFFFFF",
-  },
-  tabBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 6,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 6,
-  },
-  tabLabel: {
-    fontSize: 11,
-    color: "#6B7280",
-    marginTop: 4,
-    fontWeight: "500",
-  },
-  tabLabelActive: {
-    color: "#1565C0",
-    fontWeight: "700",
   },
 });
