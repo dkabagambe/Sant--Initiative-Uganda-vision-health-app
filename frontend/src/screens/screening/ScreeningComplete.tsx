@@ -42,7 +42,7 @@ export default function ScreeningComplete() {
     resetScreeningData();
     navigation.reset({
       index: 0,
-      routes: [{ name: "CHWTabs" }],
+      routes: [{ name: "AppTabs" }],
     });
   };
 

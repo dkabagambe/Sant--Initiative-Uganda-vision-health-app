@@ -155,7 +155,7 @@ export default function ClientRegistration() {
         nextPaymentDate={saleData.nextPaymentDate}
         onBackToHome={() => navigation.reset({
           index: 0,
-          routes: [{ name: "CHWTabs" }],
+          routes: [{ name: "AppTabs" }],
         })}
         onScreenNext={() => navigation.navigate("VisionScreen1")}
       />
@@ -342,7 +342,7 @@ export default function ClientRegistration() {
             style={styles.cancelButton}
             onPress={() => navigation.reset({
               index: 0,
-              routes: [{ name: "CHWTabs" }],
+              routes: [{ name: "AppTabs" }],
             })}
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>

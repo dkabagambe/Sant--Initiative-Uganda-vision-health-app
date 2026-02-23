@@ -173,7 +173,7 @@ export default function TorchLightStepScreen() {
                   updateScreeningData({});
                   navigation.reset({
                     index: 0,
-                    routes: [{ name: "CHWTabs" }],
+                    routes: [{ name: "AppTabs" }],
                   });
                 },
               },
@@ -192,7 +192,7 @@ export default function TorchLightStepScreen() {
                   updateScreeningData({});
                   navigation.reset({
                     index: 0,
-                    routes: [{ name: "CHWTabs" }],
+                    routes: [{ name: "AppTabs" }],
                   });
                 },
               },

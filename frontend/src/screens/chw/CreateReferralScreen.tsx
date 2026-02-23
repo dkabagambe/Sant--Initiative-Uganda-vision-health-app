@@ -98,7 +98,7 @@ export default function CreateReferralScreen() {
                 if (fromScreening) {
                   navigation.reset({
                     index: 0,
-                    routes: [{ name: "CHWTabs" }],
+                    routes: [{ name: "AppTabs" }],
                   });
                 } else {
                   navigation.goBack();
@@ -129,7 +129,7 @@ export default function CreateReferralScreen() {
             text: "Cancel Referral",
             style: "destructive",
             onPress: () => {
-              navigation.reset({ index: 0, routes: [{ name: "CHWTabs" }] });
+              navigation.reset({ index: 0, routes: [{ name: "AppTabs" }] });
             },
           },
         ]

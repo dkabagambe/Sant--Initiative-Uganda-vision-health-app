@@ -144,7 +144,7 @@ export default function ReadingGlassesSelection() {
                 resetScreeningData();
                 navigation.reset({
                   index: 0,
-                  routes: [{ name: "CHWTabs" }],
+                  routes: [{ name: "AppTabs" }],
                 });
               },
             },
@@ -236,7 +236,7 @@ export default function ReadingGlassesSelection() {
                 resetScreeningData();
                 navigation.reset({
                   index: 0,
-                  routes: [{ name: "CHWTabs" }],
+                  routes: [{ name: "AppTabs" }],
                 });
               },
             },

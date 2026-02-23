@@ -63,7 +63,7 @@ export default function VisionScreen6Wrapper() {
                   resetScreeningData();
                   navigation.reset({
                     index: 0,
-                    routes: [{ name: "CHWTabs" }],
+                    routes: [{ name: "AppTabs" }],
                   });
                 },
               },
@@ -85,7 +85,7 @@ export default function VisionScreen6Wrapper() {
                   resetScreeningData();
                   navigation.reset({
                     index: 0,
-                    routes: [{ name: "CHWTabs" }],
+                    routes: [{ name: "AppTabs" }],
                   });
                 },
               },
@@ -129,7 +129,7 @@ export default function VisionScreen6Wrapper() {
                   resetScreeningData();
                   navigation.reset({
                     index: 0,
-                    routes: [{ name: "CHWTabs" }],
+                    routes: [{ name: "AppTabs" }],
                   });
                 },
               },
@@ -151,7 +151,7 @@ export default function VisionScreen6Wrapper() {
                   resetScreeningData();
                   navigation.reset({
                     index: 0,
-                    routes: [{ name: "CHWTabs" }],
+                    routes: [{ name: "AppTabs" }],
                   });
                 },
               },
@@ -301,7 +301,7 @@ export default function VisionScreen6Wrapper() {
                   resetScreeningData();
                   navigation.reset({
                     index: 0,
-                    routes: [{ name: "CHWTabs" }],
+                    routes: [{ name: "AppTabs" }],
                   });
                 },
               },
@@ -324,7 +324,7 @@ export default function VisionScreen6Wrapper() {
                   resetScreeningData();
                   navigation.reset({
                     index: 0,
-                    routes: [{ name: "CHWTabs" }],
+                    routes: [{ name: "AppTabs" }],
                   });
                 },
               },
