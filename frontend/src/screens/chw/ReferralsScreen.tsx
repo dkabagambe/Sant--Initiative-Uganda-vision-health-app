@@ -33,11 +33,18 @@ type ReferralsScreenNavigationProp = NativeStackNavigationProp<
 interface ReferralItem {
   id: string;
   client_name: string;
+  client_phone: string;
+  client_age: number;
+  client_gender: string;
+  client_district: string;
   reason: string;
   facility_name: string;
+  facility_location: string;
   referred_date: string;
+  completed_date: string;
   status: string;
   urgency: string;
+  notes: string;
 }
 
 export default function ReferralsScreen() {
@@ -137,62 +144,98 @@ export default function ReferralsScreen() {
   const currentReferrals =
     activeTab === "pending" ? pendingReferrals : completedReferrals;
 
-  const ReferralCard = ({ referral }: { referral: ReferralItem }) => (
-    <View style={styles.outlinedCard}>
-      {/* Patient Header */}
-      <View style={styles.patientHeader}>
-        <Text style={styles.patientName}>{referral.client_name}</Text>
-        <View
-          style={[
-            styles.statusBadge,
-            {
-              backgroundColor:
-                referral.urgency === "urgent" ? "#FEE2E2" : "#E0F2FE",
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.statusText,
-              { color: referral.urgency === "urgent" ? "#DC2626" : "#0284C7" },
-            ]}
-          >
-            {referral.urgency}
+  const ReferralCard = ({ referral }: { referral: ReferralItem }) => {
+    const urgencyColors: Record<string, { bg: string; text: string }> = {
+      urgent: { bg: "#FEE2E2", text: "#DC2626" },
+      high: { bg: "#FEE2E2", text: "#DC2626" },
+      normal: { bg: "#FEF3C7", text: "#D97706" },
+      low: { bg: "#E0F2FE", text: "#0284C7" },
+    };
+    const colors = urgencyColors[referral.urgency] || urgencyColors.normal;
+
+    return (
+      <View style={styles.outlinedCard}>
+        {/* Patient Header */}
+        <View style={styles.patientHeader}>
+          <Text style={styles.patientName}>{referral.client_name}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: colors.bg }]}>
+            <Text style={[styles.statusText, { color: colors.text }]}>
+              {referral.urgency}
+            </Text>
+          </View>
+        </View>
+
+        {/* Client Details Row */}
+        <View style={styles.clientDetailsRow}>
+          {referral.client_age ? (
+            <Text style={styles.clientDetail}>Age: {referral.client_age}</Text>
+          ) : null}
+          {referral.client_gender ? (
+            <Text style={styles.clientDetail}>{referral.client_gender}</Text>
+          ) : null}
+          {referral.client_district ? (
+            <Text style={styles.clientDetail}>{referral.client_district}</Text>
+          ) : null}
+        </View>
+
+        {referral.client_phone ? (
+          <Text style={styles.clientPhone}>
+            <Ionicons name="call-outline" size={13} color="#6B7280" /> {referral.client_phone}
+          </Text>
+        ) : null}
+
+        {/* Divider */}
+        <View style={styles.cardDivider} />
+
+        {/* Referral Details */}
+        <View style={styles.detailSection}>
+          <Text style={styles.detailLabel}>Reason for referral</Text>
+          <Text style={styles.detailValue}>{referral.reason}</Text>
+        </View>
+
+        <View style={styles.detailSection}>
+          <Text style={styles.detailLabel}>Referred to</Text>
+          <Text style={styles.detailValue}>
+            {referral.facility_name || "Not specified"}
+            {referral.facility_location ? ` — ${referral.facility_location}` : ""}
           </Text>
         </View>
-      </View>
 
-      {/* Referral Details */}
-      <View style={styles.detailSection}>
-        <Text style={styles.detailLabel}>Reason for referral</Text>
-        <Text style={styles.detailValue}>{referral.reason}</Text>
-      </View>
+        <View style={styles.detailSection}>
+          <Text style={styles.detailLabel}>Referred on</Text>
+          <Text style={styles.detailValue}>
+            {new Date(referral.referred_date).toLocaleDateString()}
+          </Text>
+        </View>
 
-      <View style={styles.detailSection}>
-        <Text style={styles.detailLabel}>Referred to</Text>
-        <Text style={styles.detailValue}>
-          {referral.facility_name || "Not specified"}
-        </Text>
-      </View>
+        {referral.notes ? (
+          <View style={styles.detailSection}>
+            <Text style={styles.detailLabel}>Notes</Text>
+            <Text style={styles.detailValue}>{referral.notes}</Text>
+          </View>
+        ) : null}
 
-      <View style={styles.detailSection}>
-        <Text style={styles.detailLabel}>Referred on</Text>
-        <Text style={styles.detailValue}>
-          {new Date(referral.referred_date).toLocaleDateString()}
-        </Text>
-      </View>
+        {referral.status === "completed" && referral.completed_date ? (
+          <View style={styles.detailSection}>
+            <Text style={styles.detailLabel}>Completed on</Text>
+            <Text style={[styles.detailValue, { color: "#2E7D32", fontWeight: "600" }]}>
+              {new Date(referral.completed_date).toLocaleDateString()}
+            </Text>
+          </View>
+        ) : null}
 
-      {/* Action Button */}
-      {referral.status === "pending" && (
-        <TouchableOpacity
-          style={styles.markCompleteButton}
-          onPress={() => handleMarkComplete(referral.id, referral.client_name)}
-        >
-          <Text style={styles.markCompleteButtonText}>Mark Complete</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+        {/* Action Button */}
+        {referral.status === "pending" && (
+          <TouchableOpacity
+            style={styles.markCompleteButton}
+            onPress={() => handleMarkComplete(referral.id, referral.client_name)}
+          >
+            <Text style={styles.markCompleteButtonText}>Mark Complete</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
 
   if (loading) {
     return (
@@ -527,6 +570,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     textTransform: "capitalize",
+  },
+  clientDetailsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 6,
+  },
+  clientDetail: {
+    fontSize: 13,
+    color: "#6B7280",
+    backgroundColor: "#F3F4F6",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  clientPhone: {
+    fontSize: 13,
+    color: "#6B7280",
+    marginBottom: 4,
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: "#E5E7EB",
+    marginVertical: 12,
   },
   patientDetails: {
     fontSize: 14,

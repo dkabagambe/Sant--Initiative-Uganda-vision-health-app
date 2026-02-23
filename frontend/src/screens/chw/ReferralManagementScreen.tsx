@@ -20,16 +20,18 @@ import AppHeader from "../../components/AppHeader";
 
 interface Referral {
   id: string;
-  clientName: string;
-  clientAge: number;
-  clientPhone: string;
+  client_name: string;
+  client_phone: string;
+  client_age: number;
+  client_gender: string;
+  client_district: string;
   reason: string;
-  urgency: "urgent" | "normal" | "high";
-  facilityName: string;
-  facilityLocation: string;
-  referredDate: string;
-  completedDate?: string;
-  outcome?: string;
+  urgency: "urgent" | "normal" | "high" | "low";
+  facility_name: string;
+  facility_location: string;
+  referred_date: string;
+  completed_date?: string;
+  notes?: string;
   status: "pending" | "active" | "completed";
 }
 
@@ -171,11 +173,12 @@ export default function ReferralManagementScreen() {
         `Completed: ${completedReferrals.length}\n\n` +
         `--- Active Referrals ---\n` +
         activeReferrals.map((r: Referral, i: number) => 
-          `${i + 1}. ${r.clientName} (${r.clientAge}y)\n` +
-          `   Phone: ${r.clientPhone}\n` +
+          `${i + 1}. ${r.client_name} (${r.client_age}y, ${r.client_gender || "N/A"})\n` +
+          `   Phone: ${r.client_phone}\n` +
+          `   District: ${r.client_district || "N/A"}\n` +
           `   Reason: ${r.reason}\n` +
-          `   Facility: ${r.facilityName}\n` +
-          `   Date: ${new Date(r.referredDate).toLocaleDateString()}\n`
+          `   Facility: ${r.facility_name}\n` +
+          `   Date: ${new Date(r.referred_date).toLocaleDateString()}\n`
         ).join('\n');
 
       await Share.share({
@@ -288,15 +291,22 @@ export default function ReferralManagementScreen() {
             {displayedReferrals.map((referral) => (
               <View key={referral.id} style={styles.card}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.clientName}>{referral.clientName}</Text>
-                  {activeTab === "active" && (referral.urgency === "urgent" || referral.urgency === "high") && (
+                  <Text style={styles.clientName}>{referral.client_name}</Text>
+                  {(referral.urgency === "urgent" || referral.urgency === "high") && (
                     <View style={styles.urgentBadge}>
-                      <Text style={styles.urgentText}>Urgent</Text>
+                      <Text style={styles.urgentText}>{referral.urgency === "urgent" ? "Urgent" : "High"}</Text>
                     </View>
                   )}
                 </View>
-                
-                <Text style={styles.clientPhone}>{referral.clientPhone}</Text>
+
+                {/* Client details row */}
+                <Text style={styles.clientInfo}>
+                  {[referral.client_age ? `Age ${referral.client_age}` : null, referral.client_gender, referral.client_district].filter(Boolean).join(" • ")}
+                </Text>
+
+                {referral.client_phone ? (
+                  <Text style={styles.clientPhone}>{referral.client_phone}</Text>
+                ) : null}
 
                 {activeTab === "completed" ? (
                   <>
@@ -308,13 +318,16 @@ export default function ReferralManagementScreen() {
                     <View style={styles.infoRow}>
                       <Text style={styles.infoLabel}>Facility</Text>
                     </View>
-                    <Text style={styles.infoValue}>{referral.facilityName}</Text>
+                    <Text style={styles.infoValue}>
+                      {referral.facility_name || "Not specified"}
+                      {referral.facility_location ? ` — ${referral.facility_location}` : ""}
+                    </Text>
 
                     <View style={styles.infoRow}>
                       <Text style={styles.infoLabel}>Referred</Text>
                     </View>
                     <Text style={styles.infoValue}>
-                      {new Date(referral.referredDate).toLocaleDateString("en-US", {
+                      {new Date(referral.referred_date).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
@@ -325,8 +338,8 @@ export default function ReferralManagementScreen() {
                       <Text style={styles.infoLabel}>Completed</Text>
                     </View>
                     <Text style={styles.infoValue}>
-                      {referral.completedDate
-                        ? new Date(referral.completedDate).toLocaleDateString("en-US", {
+                      {referral.completed_date
+                        ? new Date(referral.completed_date).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
                             year: "numeric",
@@ -334,15 +347,17 @@ export default function ReferralManagementScreen() {
                         : "N/A"}
                     </Text>
 
-                    <View style={styles.infoRow}>
-                      <Text style={styles.infoLabel}>Outcome</Text>
-                    </View>
-                    <Text style={styles.infoValue}>{referral.outcome || "No outcome recorded"}</Text>
+                    {referral.notes ? (
+                      <>
+                        <View style={styles.infoRow}>
+                          <Text style={styles.infoLabel}>Notes</Text>
+                        </View>
+                        <Text style={styles.infoValue}>{referral.notes}</Text>
+                      </>
+                    ) : null}
                   </>
                 ) : (
                   <>
-                    <Text style={styles.clientInfo}>Age {referral.clientAge}</Text>
-
                     <View style={styles.cardRow}>
                       <Text style={styles.cardLabel}>Reason for referral</Text>
                     </View>
@@ -351,18 +366,30 @@ export default function ReferralManagementScreen() {
                     <View style={styles.cardRow}>
                       <Text style={styles.cardLabel}>Referred to</Text>
                     </View>
-                    <Text style={styles.cardValue}>{referral.facilityName}</Text>
+                    <Text style={styles.cardValue}>
+                      {referral.facility_name || "Not specified"}
+                      {referral.facility_location ? ` — ${referral.facility_location}` : ""}
+                    </Text>
 
                     <View style={styles.cardRow}>
                       <Text style={styles.cardLabel}>Referred on</Text>
                     </View>
                     <Text style={styles.cardValue}>
-                      {new Date(referral.referredDate).toLocaleDateString("en-US", {
+                      {new Date(referral.referred_date).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
                       })}
                     </Text>
+
+                    {referral.notes ? (
+                      <>
+                        <View style={styles.cardRow}>
+                          <Text style={styles.cardLabel}>Notes</Text>
+                        </View>
+                        <Text style={styles.cardValue}>{referral.notes}</Text>
+                      </>
+                    ) : null}
 
                     <TouchableOpacity
                       style={styles.markCompleteBtn}
