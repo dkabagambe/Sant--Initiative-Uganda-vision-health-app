@@ -586,12 +586,8 @@ export default function TorchLightStepScreen() {
         {currentSubStep === 4 && renderSubStep4()}
         {currentSubStep === 4.5 && renderSubStep4_5()}
 
-        {/* Spacer for bottom buttons */}
-        <View style={styles.spacer} />
-      </ScrollView>
-
-      {/* Bottom Action Buttons */}
-      <View style={styles.bottomActions}>
+        {/* Bottom Action Buttons */}
+        <View style={styles.bottomActions}>
         {currentSubStep === 1 ? (
           <TouchableOpacity
             style={styles.primaryButton}
@@ -673,7 +669,8 @@ export default function TorchLightStepScreen() {
             </Text>
           </TouchableOpacity>
         )}
-      </View>
+        </View>
+      </ScrollView>
 
     </SafeAreaView>
   );
@@ -1211,16 +1208,8 @@ const styles = StyleSheet.create({
   /* Bottom Actions */
   bottomActions: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: "#E8EAED",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+    paddingVertical: 16,
+    marginBottom: 100,
   },
   primaryButton: {
     backgroundColor: "#2E7D32",

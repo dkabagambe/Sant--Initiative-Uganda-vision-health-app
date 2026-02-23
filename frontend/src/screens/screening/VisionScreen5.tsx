@@ -437,37 +437,34 @@ export default function DistanceVisionTestScreen() {
           </Text>
         </View>
 
-        {/* Spacer for bottom buttons */}
-        <View style={styles.spacer} />
+        {/* Bottom Navigation Buttons */}
+        <View style={styles.bottomNav}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBack}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.nextButton,
+              (line1Score === null || line2Score === null) &&
+                styles.nextButtonDisabled,
+            ]}
+            onPress={handleNextEye}
+            disabled={line1Score === null || line2Score === null}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.nextButtonText}>
+              {testStage === "rightEye"
+                ? "Next: Test Left Eye →"
+                : "Complete Test"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
-
-      {/* Bottom Navigation Buttons - YOUR ORIGINAL FORMAT */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBack}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.nextButton,
-            (line1Score === null || line2Score === null) &&
-              styles.nextButtonDisabled,
-          ]}
-          onPress={handleNextEye}
-          disabled={line1Score === null || line2Score === null}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.nextButtonText}>
-            {testStage === "rightEye"
-              ? "Next: Test Left Eye →"
-              : "Complete Test"}
-          </Text>
-        </TouchableOpacity>
-      </View>
 
     </SafeAreaView>
   );
@@ -796,16 +793,9 @@ const styles = StyleSheet.create({
   bottomNav: {
     flexDirection: "row",
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 4,
+    paddingVertical: 16,
+    marginBottom: 100,
+    gap: 12,
   },
   backButton: {
     flex: 1,

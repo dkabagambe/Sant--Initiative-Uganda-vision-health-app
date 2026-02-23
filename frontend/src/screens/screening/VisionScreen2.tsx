@@ -157,31 +157,30 @@ export default function PreScreeningQuestionsScreen() {
             ))}
           </View>
         </View>
+        {/* Bottom Navigation Buttons */}
+        <View style={styles.bottomNav}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.backButtonText}>{t("back")}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.nextButton,
+              // Enable this to require all answers before proceeding:
+              // answers.every(a => a !== null) ? {} : styles.nextButtonDisabled
+            ]}
+            onPress={handleNext}
+            activeOpacity={0.8}
+            // disabled={!answers.every(a => a !== null)}
+          >
+            <Text style={styles.nextButtonText}>{t("next")}</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
-
-      {/* Bottom Navigation Buttons */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.backButtonText}>{t("back")}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.nextButton,
-            // Enable this to require all answers before proceeding:
-            // answers.every(a => a !== null) ? {} : styles.nextButtonDisabled
-          ]}
-          onPress={handleNext}
-          activeOpacity={0.8}
-          // disabled={!answers.every(a => a !== null)}
-        >
-          <Text style={styles.nextButtonText}>{t("next")}</Text>
-        </TouchableOpacity>
-      </View>
 
     </SafeAreaView>
   );
@@ -342,9 +341,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    marginBottom: 100,
     gap: 12,
   },
   backButton: {

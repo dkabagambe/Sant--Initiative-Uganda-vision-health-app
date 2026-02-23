@@ -132,31 +132,28 @@ export default function SafetyInformationScreen() {
           </View>
         </View>
 
-        {/* Spacer for bottom buttons */}
-        <View style={styles.spacer} />
+        {/* Bottom Navigation Buttons */}
+        <View style={styles.bottomNav}>
+          <TouchableOpacity
+            style={styles.backButtonNav}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.backButtonText}>👈 Back</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.startButton}
+            onPress={handleStartTest}
+            activeOpacity={0.8}
+          >
+            <View style={styles.startButtonContent}>
+              <Text style={styles.startButtonEmoji}>🔦</Text>
+              <Text style={styles.startButtonText}>Start Torch Light Test</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
-
-      {/* Bottom Navigation Buttons */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.backButtonNav}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.backButtonText}>👈 Back</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.startButton}
-          onPress={handleStartTest}
-          activeOpacity={0.8}
-        >
-          <View style={styles.startButtonContent}>
-            <Text style={styles.startButtonEmoji}>🔦</Text>
-            <Text style={styles.startButtonText}>Start Torch Light Test</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
 
     </SafeAreaView>
   );
@@ -350,21 +347,11 @@ const styles = StyleSheet.create({
     height: 20,
   },
   bottomNav: {
-    position: "absolute",
-    bottom: 70,
-    left: 0,
-    right: 0,
     flexDirection: "row",
     paddingHorizontal: 20,
-    paddingVertical: 20,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: "#E8EAED",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
+    paddingVertical: 16,
+    marginBottom: 100,
+    gap: 12,
   },
   backButtonNav: {
     flex: 1,
