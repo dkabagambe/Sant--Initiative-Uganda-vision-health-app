@@ -9,6 +9,7 @@ export interface User {
   role: string;
   village?: string;
   district?: string;
+  profile_image?: string;
 }
 
 export interface Product {
@@ -297,6 +298,16 @@ export const apiService = {
 
   async getInventorySummary() {
     const response = await api.get("/dashboard/inventory");
+    return response.data;
+  },
+
+  async getInventory() {
+    const response = await api.get("/inventory");
+    return response.data;
+  },
+
+  async updateInventory(productId: string, data: { quantity: number }) {
+    const response = await api.put(`/inventory/${productId}`, data);
     return response.data;
   },
 

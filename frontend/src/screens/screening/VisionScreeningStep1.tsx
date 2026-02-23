@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { getDistrictNames, getCountiesForDistrict } from "../../data/ugandaLocations";
 
 const { width } = Dimensions.get("window");
 
@@ -305,25 +306,15 @@ export default function VisionScreeningFlow() {
   const [selectedVSLA, setSelectedVSLA] = useState("");
   const [mobileMoneyNumber, setMobileMoneyNumber] = useState("0700123456");
 
-  const districts = [
-    { label: "Luweero", value: "luweero" },
-    { label: "Kampala", value: "kampala" },
-    { label: "Wakiso", value: "wakiso" },
-    { label: "Mukono", value: "mukono" },
-    { label: "Masaka", value: "masaka" },
-    { label: "Mbarara", value: "mbarara" },
-    { label: "Gulu", value: "gulu" },
-    { label: "Lira", value: "lira" },
-    { label: "Mbale", value: "mbale" },
-    { label: "Jinja", value: "jinja" },
-  ];
+  const districts = useMemo(() => 
+    getDistrictNames().map((d) => ({ label: d, value: d })),
+    []
+  );
 
-  const counties = [
-    { label: "Luweero County", value: "luweero_county" },
-    { label: "Bamunanika County", value: "bamunanika" },
-    { label: "Katikamu County", value: "katikamu" },
-    { label: "Nakaseke County", value: "nakaseke" },
-  ];
+  const counties = useMemo(() => 
+    district ? getCountiesForDistrict(district).map((c) => ({ label: c, value: c })) : [],
+    [district]
+  );
 
   const subCounties = [
     { label: "Luweero Town Council", value: "luweero_tc" },
@@ -532,7 +523,7 @@ export default function VisionScreeningFlow() {
               value={district}
               placeholder="Select district"
               options={districts}
-              onSelect={setDistrict}
+              onSelect={(val) => { setDistrict(val); setCounty(""); }}
             />
 
             <Dropdown
@@ -1257,7 +1248,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   header: {
     paddingHorizontal: 20,

@@ -9,6 +9,7 @@ import {
   Dimensions,
   Image,
   Alert,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -455,7 +456,7 @@ export default function CHWDashboard() {
           },
           { name: "Stock", icon: "cube", screen: "Inventory" },
           { name: "Payments", icon: "cash", screen: "Payments" },
-          { name: "Referrals", icon: "share", screen: "ReferralManagement" },
+          { name: "Referrals", icon: "share", screen: "Referrals" },
         ].map((item, index) => (
           <TouchableOpacity
             key={index}
@@ -563,12 +564,12 @@ const styles = StyleSheet.create({
   // Scroll View
   scrollView: {
     flex: 1,
-    marginTop: 170, // Adjust for fixed header
+    marginTop: StatusBar.currentHeight ? StatusBar.currentHeight + 70 : 100,
   },
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 100, // Space for bottom nav
+    paddingBottom: 120,
   },
   // Welcome Section
   welcomeSection: {
@@ -583,15 +584,15 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   welcomeTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "700",
     color: "#fff",
     marginBottom: 4,
   },
   userRole: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#fff",
-    marginBottom: 16,
+    marginBottom: 14,
   },
   readyCard: {
     flexDirection: "row",
@@ -642,14 +643,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   weekStatNumber: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "700",
     color: "#1A1A1A",
   },
   weekStatLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#666666",
     marginTop: 4,
+    textAlign: "center",
   },
   // Quick Actions
   quickActionsSection: {
@@ -695,10 +697,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   dashboardCard: {
-    width: (width - 40) / 2, // 16px padding on each side + 8px gap
+    width: (width - 44) / 2,
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -707,16 +709,16 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   dashboardValue: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "700",
     color: "#1A4D8F",
     marginBottom: 4,
   },
   dashboardLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: "#1A1A1A",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   dashboardSub: {
     marginTop: 4,
@@ -826,7 +828,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
     borderTopColor: "#E0E0E0",
-    paddingVertical: 12,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === "android" ? 16 : 12,
     paddingHorizontal: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },

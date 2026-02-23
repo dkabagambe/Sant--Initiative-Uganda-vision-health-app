@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -10,11 +10,14 @@ import {
   TextInput,
   Platform,
   Alert,
+  Modal,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { getDistrictNames, getCountiesForDistrict } from "../../data/ugandaLocations";
 
 export default function VisionScreen1() {
   const navigation = useNavigation<any>();
@@ -32,10 +35,38 @@ export default function VisionScreen1() {
     parish: "",
   });
 
+  const [showDistrictModal, setShowDistrictModal] = useState(false);
+  const [showCountyModal, setShowCountyModal] = useState(false);
+  const [districtSearch, setDistrictSearch] = useState("");
+  const [countySearch, setCountySearch] = useState("");
+
+  const allDistricts = useMemo(() => getDistrictNames(), []);
+
+  const filteredDistricts = useMemo(() => {
+    if (!districtSearch.trim()) return allDistricts;
+    return allDistricts.filter((d) =>
+      d.toLowerCase().includes(districtSearch.toLowerCase())
+    );
+  }, [districtSearch, allDistricts]);
+
+  const countiesForDistrict = useMemo(
+    () => (formData.district ? getCountiesForDistrict(formData.district) : []),
+    [formData.district]
+  );
+
+  const filteredCounties = useMemo(() => {
+    if (!countySearch.trim()) return countiesForDistrict;
+    return countiesForDistrict.filter((c) =>
+      c.toLowerCase().includes(countySearch.toLowerCase())
+    );
+  }, [countySearch, countiesForDistrict]);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
+      // Reset county when district changes
+      ...(field === "district" && value !== prev.district ? { county: "" } : {}),
     }));
   };
 
@@ -194,30 +225,57 @@ export default function VisionScreen1() {
             </View>
           </View>
 
-          {/* District */}
+          {/* District - Searchable Dropdown */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>
               {t("district")} <Text style={styles.required}>*</Text>
             </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., Kampala, Luweero, Wakiso"
-              value={formData.district}
-              onChangeText={(text) => handleInputChange("district", text)}
-              placeholderTextColor="#999"
-            />
+            <TouchableOpacity
+              style={styles.dropdownButton}
+              onPress={() => {
+                setDistrictSearch("");
+                setShowDistrictModal(true);
+              }}
+            >
+              <Text
+                style={[
+                  styles.dropdownButtonText,
+                  !formData.district && styles.dropdownPlaceholder,
+                ]}
+              >
+                {formData.district || "e.g., Kampala, Luweero, Wakiso"}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#666" />
+            </TouchableOpacity>
           </View>
 
-          {/* County/Municipality/Division */}
+          {/* County - Dependent Dropdown */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>{t("county")}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={t("enterCounty")}
-              value={formData.county}
-              onChangeText={(text) => handleInputChange("county", text)}
-              placeholderTextColor="#999"
-            />
+            <TouchableOpacity
+              style={[
+                styles.dropdownButton,
+                !formData.district && styles.dropdownDisabled,
+              ]}
+              onPress={() => {
+                if (!formData.district) {
+                  Alert.alert("Select District", "Please select a district first");
+                  return;
+                }
+                setCountySearch("");
+                setShowCountyModal(true);
+              }}
+            >
+              <Text
+                style={[
+                  styles.dropdownButtonText,
+                  !formData.county && styles.dropdownPlaceholder,
+                ]}
+              >
+                {formData.county || (formData.district ? "Select county" : "Select district first")}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#666" />
+            </TouchableOpacity>
           </View>
 
           {/* Sub-county/Division/Town Council */}
@@ -253,6 +311,123 @@ export default function VisionScreen1() {
         {/* Spacer for bottom tab bar */}
         <View style={styles.spacer} />
       </ScrollView>
+
+      {/* District Dropdown Modal */}
+      <Modal visible={showDistrictModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select District</Text>
+              <TouchableOpacity onPress={() => setShowDistrictModal(false)}>
+                <Ionicons name="close" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color="#999" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search district..."
+                value={districtSearch}
+                onChangeText={setDistrictSearch}
+                placeholderTextColor="#999"
+                autoFocus
+              />
+            </View>
+            <FlatList
+              data={filteredDistricts}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.modalItem,
+                    formData.district === item && styles.modalItemActive,
+                  ]}
+                  onPress={() => {
+                    handleInputChange("district", item);
+                    setShowDistrictModal(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.modalItemText,
+                      formData.district === item && styles.modalItemTextActive,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {formData.district === item && (
+                    <Ionicons name="checkmark" size={20} color="#2E7D32" />
+                  )}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No districts found</Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* County Dropdown Modal */}
+      <Modal visible={showCountyModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Counties in {formData.district}
+              </Text>
+              <TouchableOpacity onPress={() => setShowCountyModal(false)}>
+                <Ionicons name="close" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+            {countiesForDistrict.length > 5 && (
+              <View style={styles.searchContainer}>
+                <Ionicons name="search" size={20} color="#999" />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search county..."
+                  value={countySearch}
+                  onChangeText={setCountySearch}
+                  placeholderTextColor="#999"
+                  autoFocus
+                />
+              </View>
+            )}
+            <FlatList
+              data={filteredCounties}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.modalItem,
+                    formData.county === item && styles.modalItemActive,
+                  ]}
+                  onPress={() => {
+                    handleInputChange("county", item);
+                    setShowCountyModal(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.modalItemText,
+                      formData.county === item && styles.modalItemTextActive,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {formData.county === item && (
+                    <Ionicons name="checkmark" size={20} color="#2E7D32" />
+                  )}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No counties found</Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -303,12 +478,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 90,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 120,
   },
   progressSection: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   progressText: {
     fontSize: 16,
@@ -328,26 +503,27 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   formHeader: {
-    marginBottom: 24,
+    marginBottom: 28,
   },
   formTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "700",
     color: "#1A1A1A",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   formSubtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#666666",
+    lineHeight: 20,
   },
   formContainer: {
     marginBottom: 30,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#1A1A1A",
     fontWeight: "600",
     marginBottom: 8,
@@ -360,14 +536,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E0E0E0",
     borderRadius: 8,
-    padding: 14,
-    fontSize: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
     color: "#1A1A1A",
+    minHeight: 48,
   },
   inputHint: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#666666",
-    marginTop: 6,
+    marginTop: 4,
     fontStyle: "italic",
   },
   sexButtons: {
@@ -377,18 +555,20 @@ const styles = StyleSheet.create({
   sexButton: {
     flex: 1,
     backgroundColor: "#F3F4F6",
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#E5E7EB",
+    minHeight: 48,
+    justifyContent: "center",
   },
   sexButtonActive: {
     backgroundColor: "#1A4D8F",
     borderColor: "#1A4D8F",
   },
   sexButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     color: "#666666",
     fontWeight: "500",
   },
@@ -397,10 +577,11 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     backgroundColor: "#2E7D32",
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 16,
+    minHeight: 52,
     shadowColor: "#1A4D8F",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -409,10 +590,99 @@ const styles = StyleSheet.create({
   },
   nextButtonText: {
     color: "#FFFFFF",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
   },
   spacer: {
     height: 20,
+  },
+  dropdownButton: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    minHeight: 48,
+  },
+  dropdownButtonText: {
+    fontSize: 15,
+    color: "#1A1A1A",
+    flex: 1,
+  },
+  dropdownPlaceholder: {
+    color: "#999",
+  },
+  dropdownDisabled: {
+    backgroundColor: "#F3F4F6",
+    borderColor: "#E5E7EB",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "70%",
+    paddingBottom: 30,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1A1A1A",
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    margin: 12,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+  },
+  searchInput: {
+    flex: 1,
+    padding: 12,
+    fontSize: 16,
+    color: "#1A1A1A",
+  },
+  modalItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  modalItemActive: {
+    backgroundColor: "#F0FFF4",
+  },
+  modalItemText: {
+    fontSize: 16,
+    color: "#374151",
+  },
+  modalItemTextActive: {
+    color: "#2E7D32",
+    fontWeight: "600",
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#999",
+    fontSize: 16,
+    padding: 24,
   },
 });

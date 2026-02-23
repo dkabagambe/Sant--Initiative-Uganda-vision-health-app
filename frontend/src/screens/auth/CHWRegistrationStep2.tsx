@@ -7,12 +7,15 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
+  Platform,
+  StatusBar,
 } from "react-native";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
+import { getDistrictNames, getCountiesForDistrict } from "../../data/ugandaLocations";
 
 type RootStackParamList = {
   Login: undefined;
@@ -51,32 +54,25 @@ export default function CHWRegistrationStep2() {
     village: "",
   });
 
-  // District dropdown state
   const [districtModalVisible, setDistrictModalVisible] = useState(false);
+  const [countyModalVisible, setCountyModalVisible] = useState(false);
+  const [districtSearch, setDistrictSearch] = useState("");
+  const [countySearch, setCountySearch] = useState("");
 
-  // Sample districts in Uganda
-  const districts = [
-    "Kampala",
-    "Wakiso",
-    "Mukono",
-    "Luweero",
-    "Masaka",
-    "Mbarara",
-    "Gulu",
-    "Lira",
-    "Jinja",
-    "Mbale",
-    "Soroti",
-    "Arua",
-    "Fort Portal",
-    "Hoima",
-    "Kabale",
-    "Mityana",
-    "Mubende",
-    "Ntungamo",
-    "Rukungiri",
-    "Tororo",
-  ];
+  const allDistricts = useMemo(() => getDistrictNames(), []);
+  const filteredDistricts = useMemo(() => {
+    if (!districtSearch.trim()) return allDistricts;
+    return allDistricts.filter((d) => d.toLowerCase().includes(districtSearch.toLowerCase()));
+  }, [districtSearch, allDistricts]);
+
+  const countiesForDistrict = useMemo(
+    () => (formData.district ? getCountiesForDistrict(formData.district) : []),
+    [formData.district]
+  );
+  const filteredCounties = useMemo(() => {
+    if (!countySearch.trim()) return countiesForDistrict;
+    return countiesForDistrict.filter((c) => c.toLowerCase().includes(countySearch.toLowerCase()));
+  }, [countySearch, countiesForDistrict]);
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -96,15 +92,11 @@ export default function CHWRegistrationStep2() {
   };
 
   const updateFormData = (field: string, value: string) => {
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [field]: value,
-    });
-  };
-
-  const selectDistrict = (district: string) => {
-    updateFormData("district", district);
-    setDistrictModalVisible(false);
+      ...(field === "district" && value !== prev.district ? { county: "" } : {}),
+    }));
   };
 
   const isFormValid = () => {
@@ -112,28 +104,6 @@ export default function CHWRegistrationStep2() {
       formData.phoneNumber.trim() !== "" && formData.district.trim() !== ""
     );
   };
-
-  const renderDistrictItem = ({ item }: { item: string }) => (
-    <TouchableOpacity
-      style={[
-        styles.districtItem,
-        formData.district === item && styles.districtItemSelected,
-      ]}
-      onPress={() => selectDistrict(item)}
-    >
-      <Text
-        style={[
-          styles.districtItemText,
-          formData.district === item && styles.districtItemTextSelected,
-        ]}
-      >
-        {item}
-      </Text>
-      {formData.district === item && (
-        <Ionicons name="checkmark" size={20} color={colors.primary} />
-      )}
-    </TouchableOpacity>
-  );
 
   return (
     <View style={styles.screenContainer}>
@@ -230,16 +200,23 @@ export default function CHWRegistrationStep2() {
           />
         </TouchableOpacity>
 
-        {/* County/Municipality */}
+        {/* County/Municipality Dropdown */}
         <Text style={styles.label}>County/Municipality</Text>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g., Luweero County"
-            value={formData.county}
-            onChangeText={(text) => updateFormData("county", text)}
-          />
-        </View>
+        <TouchableOpacity
+          style={[styles.dropdownContainer, !formData.district && { backgroundColor: "#F3F4F6" }]}
+          onPress={() => {
+            if (!formData.district) return;
+            setCountySearch("");
+            setCountyModalVisible(true);
+          }}
+        >
+          <Text
+            style={formData.county ? styles.dropdownText : styles.dropdownPlaceholder}
+          >
+            {formData.county || (formData.district ? "Select County" : "Select district first")}
+          </Text>
+          <Ionicons name="chevron-down" size={20} color="#666" />
+        </TouchableOpacity>
 
         {/* Sub-county/Division */}
         <Text style={styles.label}>Sub-county/Division</Text>
@@ -306,32 +283,82 @@ export default function CHWRegistrationStep2() {
       </ScrollView>
 
       {/* District Selection Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={districtModalVisible}
-        onRequestClose={() => setDistrictModalVisible(false)}
-      >
+      <Modal animationType="slide" transparent visible={districtModalVisible} onRequestClose={() => setDistrictModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            {/* Modal Header */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select District</Text>
-              <TouchableOpacity
-                onPress={() => setDistrictModalVisible(false)}
-                style={styles.modalCloseButton}
-              >
+              <TouchableOpacity onPress={() => setDistrictModalVisible(false)} style={styles.modalCloseButton}>
                 <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
-
-            {/* District List */}
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color="#999" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search district..."
+                value={districtSearch}
+                onChangeText={setDistrictSearch}
+                placeholderTextColor="#999"
+                autoFocus
+              />
+            </View>
             <FlatList
-              data={districts.sort()}
-              renderItem={renderDistrictItem}
+              data={filteredDistricts}
               keyExtractor={(item) => item}
               style={styles.districtList}
-              showsVerticalScrollIndicator={true}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.districtItem, formData.district === item && styles.districtItemSelected]}
+                  onPress={() => { updateFormData("district", item); setDistrictModalVisible(false); }}
+                >
+                  <Text style={[styles.districtItemText, formData.district === item && styles.districtItemTextSelected]}>{item}</Text>
+                  {formData.district === item && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={<Text style={styles.emptyText}>No districts found</Text>}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* County Selection Modal */}
+      <Modal animationType="slide" transparent visible={countyModalVisible} onRequestClose={() => setCountyModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Counties in {formData.district}</Text>
+              <TouchableOpacity onPress={() => setCountyModalVisible(false)} style={styles.modalCloseButton}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            {countiesForDistrict.length > 5 && (
+              <View style={styles.searchContainer}>
+                <Ionicons name="search" size={20} color="#999" />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search county..."
+                  value={countySearch}
+                  onChangeText={setCountySearch}
+                  placeholderTextColor="#999"
+                  autoFocus
+                />
+              </View>
+            )}
+            <FlatList
+              data={filteredCounties}
+              keyExtractor={(item) => item}
+              style={styles.districtList}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.districtItem, formData.county === item && styles.districtItemSelected]}
+                  onPress={() => { updateFormData("county", item); setCountyModalVisible(false); }}
+                >
+                  <Text style={[styles.districtItemText, formData.county === item && styles.districtItemTextSelected]}>{item}</Text>
+                  {formData.county === item && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={<Text style={styles.emptyText}>No counties found</Text>}
             />
           </View>
         </View>
@@ -350,8 +377,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 12 : 60,
+    paddingBottom: 14,
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",
   },
@@ -396,10 +423,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#E0E0E0",
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
     color: "#000000",
-    marginBottom: 20,
+    marginBottom: 18,
   },
   locationTitle: {
     marginTop: 30,
@@ -419,20 +446,21 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   countryCode: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderRightWidth: 1,
     borderRightColor: "#EEEEEE",
     justifyContent: "center",
   },
   countryCodeText: {
-    fontSize: 16,
+    fontSize: 15,
     color: "#333333",
   },
   phoneInput: {
     flex: 1,
-    padding: 16,
-    fontSize: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
     color: "#333333",
   },
   helperText: {
@@ -571,5 +599,25 @@ const styles = StyleSheet.create({
   districtItemTextSelected: {
     color: colors.primary,
     fontWeight: "600",
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    margin: 12,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+  },
+  searchInput: {
+    flex: 1,
+    padding: 12,
+    fontSize: 16,
+    color: "#333",
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#999",
+    fontSize: 16,
+    padding: 24,
   },
 });

@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { apiService } from "../../services/api";
+import { apiService, User } from "../../services/api";
 
 type RootStackParamList = {
   CHWDashboard: undefined;
@@ -38,7 +38,7 @@ export default function CHWDashboardScreen() {
     total_screenings: 0,
     clients_referred: 0,
   });
-  const [user, setUser] = useState({ fullName: "VHT", village: "" });
+  const [user, setUser] = useState<Partial<User>>({ fullName: "VHT", village: "" });
 
   useEffect(() => {
     loadDashboardData();
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingBottom: 80, // Space for tab bar
+    paddingBottom: 120, // Space for tab bar
   },
   header: {
     paddingTop: 16,
@@ -608,6 +608,16 @@ const styles = StyleSheet.create({
   },
   reportsSubtitle: {
     fontSize: 12,
+    color: "#6B7280",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
     color: "#6B7280",
   },
 });

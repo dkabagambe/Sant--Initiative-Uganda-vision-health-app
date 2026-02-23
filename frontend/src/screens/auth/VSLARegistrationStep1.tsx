@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Platform,
+  StatusBar,
   Modal,
   FlatList,
 } from "react-native";
@@ -498,7 +499,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     marginBottom: 32,
-    paddingTop: 70,
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 16 : 70,
   },
   backButton: {
     padding: 8,

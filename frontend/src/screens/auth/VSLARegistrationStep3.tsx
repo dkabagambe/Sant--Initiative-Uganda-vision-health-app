@@ -7,6 +7,8 @@ import {
   TextInput,
   TouchableOpacity,
   SafeAreaView,
+  Platform,
+  StatusBar,
   Modal,
   FlatList,
   Alert,
@@ -336,7 +338,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     marginBottom: 20,
-    paddingTop: 70,
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 16 : 70,
     width: "100%",
   },
   headerContent: {

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,15 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Platform,
+  StatusBar,
   Alert,
+  Modal,
+  FlatList,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { getDistrictNames, getCountiesForDistrict } from "../../data/ugandaLocations";
 
 // Define navigation types
 type RootStackParamList = {
@@ -102,6 +107,26 @@ const VSLARegistrationStep2 = () => {
   const [district, setDistrict] = useState("");
   const [county, setCounty] = useState("");
   const [subcounty, setSubcounty] = useState("");
+
+  // Dropdown state
+  const [showDistrictModal, setShowDistrictModal] = useState(false);
+  const [showCountyModal, setShowCountyModal] = useState(false);
+  const [districtSearch, setDistrictSearch] = useState("");
+  const [countySearch, setCountySearch] = useState("");
+
+  const allDistricts = useMemo(() => getDistrictNames(), []);
+  const filteredDistricts = useMemo(() => {
+    if (!districtSearch.trim()) return allDistricts;
+    return allDistricts.filter((d) => d.toLowerCase().includes(districtSearch.toLowerCase()));
+  }, [districtSearch, allDistricts]);
+  const countiesForDistrict = useMemo(
+    () => (district ? getCountiesForDistrict(district) : []),
+    [district]
+  );
+  const filteredCounties = useMemo(() => {
+    if (!countySearch.trim()) return countiesForDistrict;
+    return countiesForDistrict.filter((c) => c.toLowerCase().includes(countySearch.toLowerCase()));
+  }, [countySearch, countiesForDistrict]);
   const [parish, setParish] = useState("");
   const [village, setVillage] = useState("");
   const [meetingLocation, setMeetingLocation] = useState("");
@@ -271,22 +296,32 @@ const VSLARegistrationStep2 = () => {
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>District *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., Luweero"
-              value={district}
-              onChangeText={setDistrict}
-            />
+            <TouchableOpacity
+              style={styles.dropdownButton}
+              onPress={() => { setDistrictSearch(""); setShowDistrictModal(true); }}
+            >
+              <Text style={district ? styles.dropdownText : styles.dropdownPlaceholder}>
+                {district || "Select District"}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#666" />
+            </TouchableOpacity>
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>County/Municipality</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., Luweero County"
-              value={county}
-              onChangeText={setCounty}
-            />
+            <TouchableOpacity
+              style={[styles.dropdownButton, !district && { backgroundColor: "#F3F4F6" }]}
+              onPress={() => {
+                if (!district) return;
+                setCountySearch("");
+                setShowCountyModal(true);
+              }}
+            >
+              <Text style={county ? styles.dropdownText : styles.dropdownPlaceholder}>
+                {county || (district ? "Select County" : "Select district first")}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#666" />
+            </TouchableOpacity>
           </View>
 
           <View style={styles.inputGroup}>
@@ -351,6 +386,72 @@ const VSLARegistrationStep2 = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* District Modal */}
+      <Modal visible={showDistrictModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select District</Text>
+              <TouchableOpacity onPress={() => setShowDistrictModal(false)}>
+                <Ionicons name="close" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color="#999" />
+              <TextInput style={styles.searchInput} placeholder="Search district..." value={districtSearch} onChangeText={setDistrictSearch} placeholderTextColor="#999" autoFocus />
+            </View>
+            <FlatList
+              data={filteredDistricts}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.modalItem, district === item && styles.modalItemActive]}
+                  onPress={() => { setDistrict(item); setCounty(""); setShowDistrictModal(false); }}
+                >
+                  <Text style={[styles.modalItemText, district === item && styles.modalItemTextActive]}>{item}</Text>
+                  {district === item && <Ionicons name="checkmark" size={20} color="#FF9800" />}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={<Text style={styles.emptyText}>No districts found</Text>}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* County Modal */}
+      <Modal visible={showCountyModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Counties in {district}</Text>
+              <TouchableOpacity onPress={() => setShowCountyModal(false)}>
+                <Ionicons name="close" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+            {countiesForDistrict.length > 5 && (
+              <View style={styles.searchContainer}>
+                <Ionicons name="search" size={20} color="#999" />
+                <TextInput style={styles.searchInput} placeholder="Search county..." value={countySearch} onChangeText={setCountySearch} placeholderTextColor="#999" autoFocus />
+              </View>
+            )}
+            <FlatList
+              data={filteredCounties}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.modalItem, county === item && styles.modalItemActive]}
+                  onPress={() => { setCounty(item); setShowCountyModal(false); }}
+                >
+                  <Text style={[styles.modalItemText, county === item && styles.modalItemTextActive]}>{item}</Text>
+                  {county === item && <Ionicons name="checkmark" size={20} color="#FF9800" />}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={<Text style={styles.emptyText}>No counties found</Text>}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -438,7 +539,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     marginBottom: 32,
-    paddingTop: 70,
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 16 : 70,
   },
   backButton: {
     padding: 8,
@@ -606,6 +707,91 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     color: "#FFFFFF",
+  },
+  dropdownButton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#DDDDDD",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#FFFFFF",
+    height: 40,
+  },
+  dropdownText: {
+    fontSize: 14,
+    color: "#333333",
+  },
+  dropdownPlaceholder: {
+    fontSize: 14,
+    color: "#999",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "70%",
+    paddingBottom: 30,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1A1A1A",
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    margin: 12,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+  },
+  searchInput: {
+    flex: 1,
+    padding: 12,
+    fontSize: 16,
+    color: "#333",
+  },
+  modalItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  modalItemActive: {
+    backgroundColor: "#FFF8E1",
+  },
+  modalItemText: {
+    fontSize: 16,
+    color: "#374151",
+  },
+  modalItemTextActive: {
+    color: "#FF9800",
+    fontWeight: "600",
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#999",
+    fontSize: 16,
+    padding: 24,
   },
 });
 

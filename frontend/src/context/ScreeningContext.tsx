@@ -34,6 +34,7 @@ interface ScreeningData {
   recommendedPower: string;
   selectedFrameType: string;
   notes: string;
+  screeningId: string;
 }
 
 interface ScreeningContextType {

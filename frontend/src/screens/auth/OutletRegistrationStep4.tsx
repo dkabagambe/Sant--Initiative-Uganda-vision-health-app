@@ -9,6 +9,8 @@ import {
   Alert,
   SafeAreaView,
   TextInput,
+  Platform,
+  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -604,8 +606,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 12 : 60,
+    paddingBottom: 14,
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",
   },

@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   // Step Title Card
   titleCard: {
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
     color: "#111827",
   },
   spacer: {
-    height: 80,
+    height: 120,
   },
   // Bottom Container
   bottomContainer: {

@@ -89,6 +89,33 @@ export default function ReferralsScreen() {
     setRefreshing(false);
   };
 
+  const handleMarkComplete = (referralId: string, clientName: string) => {
+    Alert.alert(
+      "Mark Referral Complete",
+      `Are you sure you want to mark the referral for ${clientName} as completed?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Mark Complete",
+          onPress: async () => {
+            try {
+              const result = await apiService.updateReferralStatus(referralId, "completed");
+              if (result.success) {
+                await loadReferrals();
+                Alert.alert("Success", "Referral marked as completed");
+              } else {
+                Alert.alert("Error", result.error || "Failed to update referral");
+              }
+            } catch (error) {
+              console.error("Failed to update referral:", error);
+              Alert.alert("Error", "Failed to update referral. Please try again.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleCreateReferral = () => {
     // Navigate to root-level CreateReferralScreen (ReferralsTab -> CHWTabs -> Root)
     const root = navigation.getParent()?.getParent();
@@ -157,7 +184,10 @@ export default function ReferralsScreen() {
 
       {/* Action Button */}
       {referral.status === "pending" && (
-        <TouchableOpacity style={styles.markCompleteButton}>
+        <TouchableOpacity
+          style={styles.markCompleteButton}
+          onPress={() => handleMarkComplete(referral.id, referral.client_name)}
+        >
           <Text style={styles.markCompleteButtonText}>Mark Complete</Text>
         </TouchableOpacity>
       )}
@@ -382,7 +412,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   statsContainer: {
     flexDirection: "row",

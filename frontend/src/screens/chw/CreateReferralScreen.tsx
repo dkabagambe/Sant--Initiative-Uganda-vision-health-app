@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,11 +9,14 @@ import {
   SafeAreaView,
   StatusBar,
   Alert,
+  Modal,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { apiService } from "../../services/api";
+import { getDistrictNames } from "../../data/ugandaLocations";
 
 export default function CreateReferralScreen() {
   const navigation = useNavigation<any>();
@@ -33,6 +36,14 @@ export default function CreateReferralScreen() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [showDistrictModal, setShowDistrictModal] = useState(false);
+  const [districtSearch, setDistrictSearch] = useState("");
+
+  const allDistricts = useMemo(() => getDistrictNames(), []);
+  const filteredDistricts = useMemo(() => {
+    if (!districtSearch.trim()) return allDistricts;
+    return allDistricts.filter((d) => d.toLowerCase().includes(districtSearch.toLowerCase()));
+  }, [districtSearch, allDistricts]);
 
   const handleSubmit = async () => {
     // Validation
@@ -177,13 +188,15 @@ export default function CreateReferralScreen() {
           {/* Facility District */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Facility District</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.facilityDistrict}
-              onChangeText={(text) => setFormData({ ...formData, facilityDistrict: text })}
-              placeholder="Enter district"
-              placeholderTextColor="#9CA3AF"
-            />
+            <TouchableOpacity
+              style={styles.dropdownButton}
+              onPress={() => { setDistrictSearch(""); setShowDistrictModal(true); }}
+            >
+              <Text style={formData.facilityDistrict ? styles.dropdownButtonText : styles.dropdownPlaceholderText}>
+                {formData.facilityDistrict || "Select district"}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#666" />
+            </TouchableOpacity>
           </View>
 
           {/* Facility Subcounty */}
@@ -250,6 +263,37 @@ export default function CreateReferralScreen() {
           </View>
         </View>
       </ScrollView>
+      {/* District Modal */}
+      <Modal visible={showDistrictModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select District</Text>
+              <TouchableOpacity onPress={() => setShowDistrictModal(false)}>
+                <Ionicons name="close" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color="#999" />
+              <TextInput style={styles.searchInput} placeholder="Search district..." value={districtSearch} onChangeText={setDistrictSearch} placeholderTextColor="#999" autoFocus />
+            </View>
+            <FlatList
+              data={filteredDistricts}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.modalItem, formData.facilityDistrict === item && styles.modalItemActive]}
+                  onPress={() => { setFormData({ ...formData, facilityDistrict: item }); setShowDistrictModal(false); }}
+                >
+                  <Text style={[styles.modalItemText, formData.facilityDistrict === item && styles.modalItemTextActive]}>{item}</Text>
+                  {formData.facilityDistrict === item && <Ionicons name="checkmark" size={20} color="#2E7D32" />}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={<Text style={styles.emptyText}>No districts found</Text>}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -345,5 +389,89 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#FFFFFF",
+  },
+  dropdownButton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+    color: "#111827",
+  },
+  dropdownPlaceholderText: {
+    fontSize: 16,
+    color: "#9CA3AF",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "70%",
+    paddingBottom: 30,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    margin: 12,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+  },
+  searchInput: {
+    flex: 1,
+    padding: 12,
+    fontSize: 16,
+    color: "#333",
+  },
+  modalItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  modalItemActive: {
+    backgroundColor: "#F0F9F0",
+  },
+  modalItemText: {
+    fontSize: 16,
+    color: "#374151",
+  },
+  modalItemTextActive: {
+    color: "#2E7D32",
+    fontWeight: "600",
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#999",
+    fontSize: 16,
+    padding: 24,
   },
 });

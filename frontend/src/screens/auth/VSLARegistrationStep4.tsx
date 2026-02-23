@@ -8,6 +8,8 @@ import {
   SafeAreaView,
   Alert,
   TextInput,
+  Platform,
+  StatusBar,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -461,7 +463,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     marginBottom: 20,
-    paddingTop: 70,
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 16 : 70,
     width: "100%",
   },
   headerContent: {

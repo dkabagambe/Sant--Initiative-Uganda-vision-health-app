@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -248,12 +249,12 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    paddingTop: 70,
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 20 : 70,
   },
   contentContainer: {
     paddingHorizontal: 20,
     paddingTop: 24,
-    paddingBottom: 80,
+    paddingBottom: 120,
   },
   progressSection: {
     marginBottom: 16,
