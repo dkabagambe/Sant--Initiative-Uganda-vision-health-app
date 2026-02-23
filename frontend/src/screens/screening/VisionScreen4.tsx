@@ -125,8 +125,8 @@ export default function TorchLightStepScreen() {
         await saveOffline(referralData);
       }
 
-      // Navigate to pre-filled referral form
-      navigation.navigate("CreateReferralScreen", {
+      // Navigate to pre-filled referral form (go up to root navigator)
+      const referralParams = {
         fromScreening: true,
         screeningId: savedScreeningId,
         clientName: screeningData.clientName || "",
@@ -140,7 +140,21 @@ export default function TorchLightStepScreen() {
         reason: reasonText,
         urgency: "high",
         notes: `Referred from Step 4 — Torch Light Test.\nAbnormal signs: ${abnormalLabels.join(", ")}.\nDO NOT proceed with other vision tests.`,
-      });
+      };
+
+      // Try root navigator (ScreeningStack -> CHWTabs -> Root)
+      const root = navigation.getParent()?.getParent();
+      if (root) {
+        root.navigate("CreateReferralScreen", referralParams);
+      } else {
+        // Fallback: try one level up
+        const parent = navigation.getParent();
+        if (parent) {
+          parent.navigate("CreateReferralScreen", referralParams);
+        } else {
+          navigation.navigate("CreateReferralScreen" as any, referralParams);
+        }
+      }
     } else {
       // No abnormal signs - check age
       updateScreeningData({

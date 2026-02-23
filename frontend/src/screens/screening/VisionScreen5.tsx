@@ -89,8 +89,8 @@ export default function DistanceVisionTestScreen() {
 
       const reasonText = referralData.referralReason;
 
-      // Navigate to pre-filled referral form
-      navigation.navigate("CreateReferralScreen", {
+      // Navigate to pre-filled referral form (go up to root navigator)
+      const referralParams = {
         fromScreening: true,
         screeningId: savedScreeningId,
         clientName: screeningData.clientName || "",
@@ -104,7 +104,20 @@ export default function DistanceVisionTestScreen() {
         reason: reasonText,
         urgency: "normal",
         notes: `Referred from Step 5 — Distance Vision Test.\n${eyeTested} eye failed. Line 1: ${line1Score}/3, Line 2: ${line2Score}/5.\nNear vision test NOT performed.`,
-      });
+      };
+
+      // Try root navigator (ScreeningStack -> CHWTabs -> Root)
+      const root = navigation.getParent()?.getParent();
+      if (root) {
+        root.navigate("CreateReferralScreen", referralParams);
+      } else {
+        const parent = navigation.getParent();
+        if (parent) {
+          parent.navigate("CreateReferralScreen", referralParams);
+        } else {
+          navigation.navigate("CreateReferralScreen" as any, referralParams);
+        }
+      }
       return;
     }
 
