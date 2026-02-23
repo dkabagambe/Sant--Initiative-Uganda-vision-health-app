@@ -9,6 +9,9 @@ import {
   StatusBar,
   TextInput,
   Alert,
+  Modal,
+  FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -41,13 +44,27 @@ export default function ClientRegistration() {
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<"full" | "hire-purchase">("hire-purchase");
-  const [vslaGroup, setVslaGroup] = useState("");
+  const [vslaGroup, setVslaGroup] = useState<any>(null);
+  const [showVslaDropdown, setShowVslaDropdown] = useState(false);
   const [mobileProvider, setMobileProvider] = useState<"MTN" | "Airtel">("MTN");
   const [mobileNumber, setMobileNumber] = useState(clientData.clientPhone || "");
   const [merchantCode] = useState(`SAN-UG-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`);
   const [loading, setLoading] = useState(false);
   const [showSaleComplete, setShowSaleComplete] = useState(false);
   const [saleData, setSaleData] = useState<any>(null);
+
+  // VSLA Groups data (grouped by district and sub-county)
+  const vslaGroups = [
+    { id: "1", name: "Twezimbe Women's Group", district: "Luweero", subCounty: "Wobulenzi" },
+    { id: "2", name: "Bweyogerere Savings Circle", district: "Luweero", subCounty: "Wobulenzi" },
+    { id: "3", name: "Kikyusa Farmers VSLA", district: "Luweero", subCounty: "Kikyusa" },
+    { id: "4", name: "Bamunanika Youth Savers", district: "Luweero", subCounty: "Bamunanika" },
+    { id: "5", name: "Katikamu Women United", district: "Luweero", subCounty: "Katikamu" },
+    { id: "6", name: "Nakaseke Bright Future", district: "Nakaseke", subCounty: "Nakaseke TC" },
+    { id: "7", name: "Kiwoko Health Savers", district: "Nakaseke", subCounty: "Kiwoko" },
+    { id: "8", name: "Kampala Central VSLA", district: "Kampala", subCounty: "Central Division" },
+    { id: "9", name: "Mukono Traders Group", district: "Mukono", subCounty: "Mukono TC" },
+  ];
 
   useEffect(() => {
     loadProducts();
@@ -89,6 +106,11 @@ export default function ClientRegistration() {
       return;
     }
 
+    if (!mobileNumber || mobileNumber.length < 10) {
+      Alert.alert("Error", "Please enter a valid mobile money number");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -122,7 +144,7 @@ export default function ClientRegistration() {
         setSaleData({
           clientName: clientData.clientName,
           clientPhone: clientData.clientPhone,
-          productName: `${selectedProduct.power} - ${selectedProduct.frameType} Frame`,
+          productName: `${selectedProduct.power} - ${selectedProduct.name || "Reading Glasses"}`,
           totalAmount: selectedProduct.price,
           paymentMethod,
           installmentAmount,
@@ -210,10 +232,10 @@ export default function ClientRegistration() {
           {selectedProduct && (
             <View style={styles.productCard}>
               <Text style={styles.productName}>
-                {selectedProduct.power} - {selectedProduct.frameType} Frame
+                {selectedProduct.power} - Frame
               </Text>
-              <Text style={styles.productStock}>Stock Available: {selectedProduct.stockQuantity} units</Text>
-              <Text style={styles.productPrice}>UGX {selectedProduct.price.toLocaleString()}</Text>
+              <Text style={styles.productStock}>Stock Available: {selectedProduct.stock_quantity || 0} units</Text>
+              <Text style={styles.productPrice}>UGX {(selectedProduct.price || 0).toLocaleString()}</Text>
             </View>
           )}
         </View>
@@ -266,12 +288,20 @@ export default function ClientRegistration() {
         {paymentMethod === "hire-purchase" && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>VSLA Group</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Select VSLA Group"
-              value={vslaGroup}
-              onChangeText={setVslaGroup}
-            />
+            <TouchableOpacity
+              style={styles.dropdownButton}
+              onPress={() => setShowVslaDropdown(true)}
+            >
+              {vslaGroup ? (
+                <View>
+                  <Text style={styles.dropdownSelectedText}>{vslaGroup.name}</Text>
+                  <Text style={styles.dropdownSubText}>{vslaGroup.district} • {vslaGroup.subCounty}</Text>
+                </View>
+              ) : (
+                <Text style={styles.dropdownPlaceholder}>Select VSLA Group</Text>
+              )}
+              <Ionicons name="chevron-down" size={20} color="#6B7280" />
+            </TouchableOpacity>
           </View>
         )}
 
@@ -329,13 +359,15 @@ export default function ClientRegistration() {
         {/* Action Buttons */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={styles.confirmButton}
+            style={[styles.confirmButton, loading && { opacity: 0.7 }]}
             onPress={handleConfirmSale}
             disabled={loading}
           >
-            <Text style={styles.confirmButtonText}>
-              {loading ? "Processing..." : "Confirm Sale"}
-            </Text>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Text style={styles.confirmButtonText}>Confirm Sale</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -348,7 +380,58 @@ export default function ClientRegistration() {
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
+
+        <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* VSLA Group Dropdown Modal */}
+      <Modal
+        visible={showVslaDropdown}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowVslaDropdown(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select VSLA Group</Text>
+              <TouchableOpacity onPress={() => setShowVslaDropdown(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={vslaGroups}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.vslaItem,
+                    vslaGroup?.id === item.id && styles.vslaItemSelected,
+                  ]}
+                  onPress={() => {
+                    setVslaGroup(item);
+                    setShowVslaDropdown(false);
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[
+                      styles.vslaName,
+                      vslaGroup?.id === item.id && { color: "#10B981" },
+                    ]}>{item.name}</Text>
+                    <Text style={styles.vslaLocation}>
+                      {item.district} • {item.subCounty}
+                    </Text>
+                  </View>
+                  {vslaGroup?.id === item.id && (
+                    <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                  )}
+                </TouchableOpacity>
+              )}
+              ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: "#F3F4F6" }} />}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -596,5 +679,74 @@ const styles = StyleSheet.create({
     fontSize: responsiveFontSize.xlarge,
     fontWeight: "600",
     color: "#6B7280",
+  },
+  dropdownButton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: moderateScale(8),
+    paddingHorizontal: scale(12),
+    paddingVertical: verticalScale(12),
+    minHeight: verticalScale(48),
+  },
+  dropdownSelectedText: {
+    fontSize: responsiveFontSize.medium,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  dropdownSubText: {
+    fontSize: responsiveFontSize.small,
+    color: "#6B7280",
+    marginTop: verticalScale(2),
+  },
+  dropdownPlaceholder: {
+    fontSize: responsiveFontSize.medium,
+    color: "#9CA3AF",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "70%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: scale(20),
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  modalTitle: {
+    fontSize: responsiveFontSize.large,
+    fontWeight: "600",
+    color: "#1F2937",
+  },
+  vslaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: verticalScale(14),
+    paddingHorizontal: scale(20),
+  },
+  vslaItemSelected: {
+    backgroundColor: "#F0FDF4",
+  },
+  vslaName: {
+    fontSize: responsiveFontSize.medium,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  vslaLocation: {
+    fontSize: responsiveFontSize.small,
+    color: "#6B7280",
+    marginTop: verticalScale(2),
   },
 });

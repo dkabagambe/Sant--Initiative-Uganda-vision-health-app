@@ -74,7 +74,7 @@ const StockItem = ({
   return (
     <View style={styles.stockItem}>
       <View style={styles.stockItemHeader}>
-        <Text style={styles.stockPower}>{power}</Text>
+        <Text style={styles.stockPower}>{power}D</Text>
         <View style={styles.stockQuantityContainer}>
           <Text style={styles.stockQuantity}>{totalPairs} pairs</Text>
           {status && (
@@ -186,15 +186,41 @@ export default function InventoryScreen() {
   const loadInventory = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getInventorySummary();
-      if (response.success) {
-        setInventory(response.data.products);
-        setTotals(response.data.totals);
-        
-        // Calculate stats
-        const lowStock = response.data.products.filter((p: any) => p.stock_quantity < 20).length;
-        setStats(prev => ({ ...prev, lowStockCount: lowStock }));
+      
+      // Try dashboard inventory first (requires auth)
+      let products: any[] = [];
+      let totalPairs = 0;
+      
+      try {
+        const response = await apiService.getInventorySummary();
+        if (response.success && response.data?.products?.length > 0) {
+          products = response.data.products;
+          totalPairs = response.data.totals?.total_pairs || 0;
+        }
+      } catch (e) {
+        console.log("Dashboard inventory failed, trying products endpoint...");
       }
+      
+      // Fallback to products endpoint (no auth required)
+      if (products.length === 0) {
+        try {
+          const prodResponse = await apiService.getInventory();
+          if (prodResponse.success && prodResponse.data?.length > 0) {
+            products = prodResponse.data;
+            totalPairs = products.reduce((sum: number, p: any) => sum + (p.stock_quantity || 0), 0);
+          }
+        } catch (e) {
+          console.error("Products endpoint also failed:", e);
+        }
+      }
+      
+      setInventory(products);
+      setTotals({ total_pairs: totalPairs });
+      
+      // Calculate stats
+      const lowStock = products.filter((p: any) => p.stock_quantity < 20).length;
+      setStats(prev => ({ ...prev, lowStockCount: lowStock }));
+      
     } catch (error) {
       console.error("Failed to load inventory:", error);
       Alert.alert("Error", "Failed to load inventory");
@@ -268,8 +294,8 @@ export default function InventoryScreen() {
 
   const getStatus = (quantity: number): "normal" | "low" | "critical" | undefined => {
     if (quantity === 0) return "critical";
-    if (quantity < 20) return "critical";
-    if (quantity < 50) return "low";
+    if (quantity < 5) return "critical";
+    if (quantity < 10) return "low";
     return undefined;
   };
 
@@ -578,25 +604,28 @@ export default function InventoryScreen() {
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalBody}>
-              {/* Power Selection */}
+              {/* Power Selection - from database */}
               <Text style={styles.modalLabel}>Select Power *</Text>
               <View style={styles.powerGrid}>
-                {["+1.00", "+1.50", "+2.00", "+2.50", "+3.00", "+3.50"].map((power) => (
+                {inventory.map((product: any) => (
                   <TouchableOpacity
-                    key={power}
+                    key={product.id}
                     style={[
                       styles.powerOption,
-                      addStockPower === power && styles.powerOptionSelected,
+                      addStockPower === product.power && styles.powerOptionSelected,
                     ]}
-                    onPress={() => setAddStockPower(power)}
+                    onPress={() => setAddStockPower(product.power)}
                   >
                     <Text
                       style={[
                         styles.powerOptionText,
-                        addStockPower === power && styles.powerOptionTextSelected,
+                        addStockPower === product.power && styles.powerOptionTextSelected,
                       ]}
                     >
-                      {power}D
+                      {product.power}D
+                    </Text>
+                    <Text style={{ fontSize: 11, color: product.stock_quantity === 0 ? "#DC2626" : "#6B7280", marginTop: 2 }}>
+                      {product.stock_quantity} in stock
                     </Text>
                   </TouchableOpacity>
                 ))}

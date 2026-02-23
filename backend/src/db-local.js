@@ -143,6 +143,17 @@ db.exec(`
   );
 `);
 
+// Migrations: add columns that may be missing on existing databases
+const migrations = [
+  'ALTER TABLE referrals ADD COLUMN client_phone TEXT',
+  'ALTER TABLE referrals ADD COLUMN client_age INTEGER',
+  'ALTER TABLE referrals ADD COLUMN client_gender TEXT',
+  'ALTER TABLE referrals ADD COLUMN client_district TEXT',
+];
+migrations.forEach(m => {
+  try { db.exec(m); } catch (e) { /* column already exists */ }
+});
+
 // Insert sample products
 const insertProduct = db.prepare(`
   INSERT OR IGNORE INTO products (id, name, description, power, price, stock_quantity, stock_standard, stock_metal, stock_fashion)

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,36 +6,110 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { moderateScale, scale, verticalScale, fontSize as responsiveFontSize } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
+import { apiService } from "../../services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function ScreeningComplete() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { resetScreeningData, screeningData } = useScreening();
+  const [saving, setSaving] = useState(false);
   
   const glassesDispensed = route.params?.glassesDispensed || false;
   const glassesPower = route.params?.glassesPower || "";
 
-  const handleRegisterAndSave = () => {
-    navigation.navigate("ClientRegistration", {
-      clientData: {
-        clientName: screeningData.clientName || "",
-        clientAge: screeningData.clientAge || 0,
-        clientPhone: screeningData.clientPhone || "",
-        clientGender: screeningData.clientGender || "",
-        recommendedPower: glassesPower || screeningData.recommendedPower || "",
-        district: screeningData.district || "",
-        county: screeningData.county || "",
-        subCounty: screeningData.subCounty || "",
-        parish: screeningData.parish || "",
-        clientVillage: screeningData.clientVillage || "",
-      },
-      screeningId: screeningData.screeningId || "",
-    });
+  const handleRegisterAndSave = async () => {
+    // If glasses were dispensed, go to ClientRegistration for payment/sale flow
+    if (glassesDispensed) {
+      navigation.navigate("ClientRegistration", {
+        clientData: {
+          clientName: screeningData.clientName || "",
+          clientAge: screeningData.clientAge || 0,
+          clientPhone: screeningData.clientPhone || "",
+          clientGender: screeningData.clientGender || "",
+          recommendedPower: glassesPower || screeningData.recommendedPower || "",
+          district: screeningData.district || "",
+          county: screeningData.county || "",
+          subCounty: screeningData.subCounty || "",
+          parish: screeningData.parish || "",
+          clientVillage: screeningData.clientVillage || "",
+        },
+        screeningId: screeningData.screeningId || "",
+      });
+      return;
+    }
+
+    // No glasses — save screening record and client directly
+    setSaving(true);
+    try {
+      const completeData = {
+        ...screeningData,
+        needsGlasses: false,
+        needsReferral: false,
+        notes: screeningData.notes || "All vision tests passed. No glasses needed.",
+      };
+
+      let savedSuccessfully = false;
+
+      try {
+        const result = await apiService.createScreening(completeData);
+        if (result.success) {
+          savedSuccessfully = true;
+        }
+      } catch (apiError) {
+        console.error("API save failed, saving offline:", apiError);
+      }
+
+      // Fallback: save offline if API failed
+      if (!savedSuccessfully) {
+        try {
+          const offlineQueue = await AsyncStorage.getItem("offlineScreenings");
+          const queue = offlineQueue ? JSON.parse(offlineQueue) : [];
+          queue.push({
+            ...completeData,
+            offlineId: Date.now().toString(),
+            timestamp: new Date().toISOString(),
+          });
+          await AsyncStorage.setItem("offlineScreenings", JSON.stringify(queue));
+          savedSuccessfully = true;
+        } catch (offlineError) {
+          console.error("Offline save also failed:", offlineError);
+        }
+      }
+
+      if (savedSuccessfully) {
+        Alert.alert(
+          "✅ Record Saved",
+          `Screening for ${screeningData.clientName || "client"} has been saved successfully.`,
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                resetScreeningData();
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "AppTabs" }],
+                });
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert("Error", "Failed to save record. Please try again.");
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+      Alert.alert("Error", "An unexpected error occurred.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleReturnHome = () => {
@@ -82,13 +156,18 @@ export default function ScreeningComplete() {
         <View style={styles.buttonContainer}>
           {/* Register & Save Button */}
           <TouchableOpacity
-            style={styles.primaryButton}
+            style={[styles.primaryButton, saving && { opacity: 0.7 }]}
             onPress={handleRegisterAndSave}
             activeOpacity={0.8}
+            disabled={saving}
           >
-            <Ionicons name="save" size={24} color="#FFFFFF" />
+            {saving ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Ionicons name="save" size={24} color="#FFFFFF" />
+            )}
             <Text style={styles.primaryButtonText}>
-              Register Client & Save Record
+              {saving ? "Saving..." : "Register Client & Save Record"}
             </Text>
           </TouchableOpacity>
 

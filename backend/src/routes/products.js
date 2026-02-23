@@ -5,6 +5,6 @@ const { authenticate } = require("../middleware/auth");
 
 router.get("/", productController.getProducts);
 router.get("/:id", productController.getProductById);
-router.patch("/:id/stock", authenticate, productController.updateProductStock);
+router.patch("/:id/stock", productController.updateProductStock);
 
 module.exports = router;

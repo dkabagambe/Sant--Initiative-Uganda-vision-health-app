@@ -288,27 +288,27 @@ export default function ReadingGlassesSelection() {
 
       <View style={styles.powersSection}>
         <Text style={styles.powersTitle}>Select Power to Test:</Text>
-        {GLASSES_POWERS.map((power) => {
-          const stock = getStockForPower(power.value);
+        {inventory.map((product: any) => {
+          const stock = product.stock_quantity || 0;
           const outOfStock = stock === 0;
           
           return (
             <TouchableOpacity
-              key={power.value}
+              key={product.id}
               style={[
                 styles.powerCard,
                 outOfStock && styles.powerCardDisabled,
               ]}
-              onPress={() => handlePowerSelect(power.value)}
+              onPress={() => handlePowerSelect(product.power)}
               disabled={outOfStock}
               activeOpacity={0.7}
             >
               <View style={styles.powerLeft}>
                 <Text style={[styles.powerLabel, outOfStock && styles.powerLabelDisabled]}>
-                  {power.label}
+                  {product.power}D
                 </Text>
                 <Text style={[styles.powerDescription, outOfStock && styles.powerDescriptionDisabled]}>
-                  {power.description}
+                  {product.description || product.name}
                 </Text>
               </View>
               <View style={styles.powerRight}>

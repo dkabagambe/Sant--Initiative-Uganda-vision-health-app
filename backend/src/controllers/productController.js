@@ -47,52 +47,30 @@ exports.updateProductStock = async (req, res) => {
       return res.status(400).json({ success: false, error: "Quantity change required" });
     }
 
-    // Build update query based on frame type
-    let updateQuery;
-    if (frameType === "standard") {
-      updateQuery = sql`
-        UPDATE products 
-        SET stock_standard = stock_standard + ${quantityChange},
-            stock_quantity = stock_quantity + ${quantityChange}
-        WHERE id = ${id}
-        RETURNING *
-      `;
-    } else if (frameType === "metal") {
-      updateQuery = sql`
-        UPDATE products 
-        SET stock_metal = stock_metal + ${quantityChange},
-            stock_quantity = stock_quantity + ${quantityChange}
-        WHERE id = ${id}
-        RETURNING *
-      `;
-    } else if (frameType === "fashion") {
-      updateQuery = sql`
-        UPDATE products 
-        SET stock_fashion = stock_fashion + ${quantityChange},
-            stock_quantity = stock_quantity + ${quantityChange}
-        WHERE id = ${id}
-        RETURNING *
-      `;
-    } else {
-      // Update total stock only
-      updateQuery = sql`
-        UPDATE products 
-        SET stock_quantity = stock_quantity + ${quantityChange}
-        WHERE id = ${id}
-        RETURNING *
-      `;
-    }
-
-    const result = await updateQuery;
-
-    if (result.length === 0) {
+    // Check product exists first
+    const existing = sql`SELECT * FROM products WHERE id = ${id}`;
+    if (!existing || existing.length === 0) {
       return res.status(404).json({ success: false, error: "Product not found" });
     }
+
+    // Update based on frame type
+    if (frameType === "standard") {
+      sql`UPDATE products SET stock_standard = stock_standard + ${quantityChange}, stock_quantity = stock_quantity + ${quantityChange} WHERE id = ${id}`;
+    } else if (frameType === "metal") {
+      sql`UPDATE products SET stock_metal = stock_metal + ${quantityChange}, stock_quantity = stock_quantity + ${quantityChange} WHERE id = ${id}`;
+    } else if (frameType === "fashion") {
+      sql`UPDATE products SET stock_fashion = stock_fashion + ${quantityChange}, stock_quantity = stock_quantity + ${quantityChange} WHERE id = ${id}`;
+    } else {
+      sql`UPDATE products SET stock_quantity = stock_quantity + ${quantityChange} WHERE id = ${id}`;
+    }
+
+    // Fetch updated product
+    const updated = sql`SELECT * FROM products WHERE id = ${id}`;
 
     res.json({
       success: true,
       message: "Stock updated successfully",
-      product: result[0],
+      product: updated[0],
     });
   } catch (error) {
     console.error("Update stock error:", error);
