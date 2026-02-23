@@ -217,10 +217,10 @@ export default function InventoryScreen() {
         
         // Get recent sales (last 4)
         const recent = weekSales.slice(0, 4).map((s: any) => ({
-          name: s.client_name,
-          power: s.recommended_power || '+2.00D',
-          frameType: 'Standard',
-          price: 15000,
+          clientName: s.client_name || 'Unknown',
+          power: s.recommended_power || 'N/A',
+          frameType: s.selected_frame_type || 'Standard',
+          amount: `UGX ${(s.glasses_price || 15000).toLocaleString()}`,
           time: getTimeAgo(s.created_at),
         }));
         
@@ -388,19 +388,42 @@ export default function InventoryScreen() {
         {/* Title Section */}
         <View style={styles.titleSection}>
           <Text style={styles.screenTitle}>Inventory & Sales</Text>
-          <Text style={styles.totalStock}>Total stock: 64 pairs</Text>
+          <Text style={styles.totalStock}>Total stock: {totals.total_pairs || 0} pairs</Text>
         </View>
 
-        {/* Low Stock Alert */}
-        <View style={styles.alertCard}>
-          <View style={styles.alertHeader}>
-            <Ionicons name="alert-circle" size={24} color="#DC2626" />
-            <Text style={styles.alertTitle}>Low stock alert</Text>
+        {/* Low Stock Alert - Dynamic */}
+        {inventory.filter((p: any) => p.stock_quantity > 0 && p.stock_quantity < 20).length > 0 && (
+          <View style={styles.alertCard}>
+            <View style={styles.alertHeader}>
+              <Ionicons name="alert-circle" size={24} color="#DC2626" />
+              <Text style={styles.alertTitle}>Low stock alert</Text>
+            </View>
+            <Text style={styles.alertText}>
+              {inventory
+                .filter((p: any) => p.stock_quantity > 0 && p.stock_quantity < 20)
+                .map((p: any) => `${p.power}D has only ${p.stock_quantity} pairs left`)
+                .join(". ")}
+              . Consider reordering.
+            </Text>
           </View>
-          <Text style={styles.alertText}>
-            +2.50D has only 4 pairs left. Consider reordering.
-          </Text>
-        </View>
+        )}
+
+        {/* Out of Stock Alert */}
+        {inventory.filter((p: any) => p.stock_quantity === 0).length > 0 && (
+          <View style={[styles.alertCard, { backgroundColor: "#FEF2F2", borderColor: "#FCA5A5" }]}>
+            <View style={styles.alertHeader}>
+              <Ionicons name="warning" size={24} color="#B91C1C" />
+              <Text style={[styles.alertTitle, { color: "#B91C1C" }]}>Out of stock</Text>
+            </View>
+            <Text style={styles.alertText}>
+              {inventory
+                .filter((p: any) => p.stock_quantity === 0)
+                .map((p: any) => `${p.power}D`)
+                .join(", ")}
+              {" "}— no stock available. Add stock immediately.
+            </Text>
+          </View>
+        )}
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
@@ -455,9 +478,16 @@ export default function InventoryScreen() {
           </View>
 
           <View style={styles.salesList}>
-            {recentSales.map((sale, index) => (
-              <SaleItem key={index} {...sale} />
-            ))}
+            {recentSales.length > 0 ? (
+              recentSales.map((sale, index) => (
+                <SaleItem key={index} {...sale} />
+              ))
+            ) : (
+              <View style={{ padding: 20, alignItems: "center" }}>
+                <Ionicons name="receipt-outline" size={32} color="#D1D5DB" />
+                <Text style={{ color: "#9CA3AF", marginTop: 8, fontSize: 14 }}>No sales this week</Text>
+              </View>
+            )}
           </View>
         </View>
 
