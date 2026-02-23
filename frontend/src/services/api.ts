@@ -302,12 +302,22 @@ export const apiService = {
   },
 
   async getInventory() {
-    const response = await api.get("/inventory");
+    const response = await api.get("/products");
     return response.data;
   },
 
   async updateInventory(productId: string, data: { quantity: number }) {
-    const response = await api.put(`/inventory/${productId}`, data);
+    const response = await api.patch(`/products/${productId}/stock`, {
+      quantityChange: data.quantity,
+    });
+    return response.data;
+  },
+
+  async addStock(productId: string, quantityChange: number, frameType?: string) {
+    const response = await api.patch(`/products/${productId}/stock`, {
+      quantityChange,
+      frameType,
+    });
     return response.data;
   },
 

@@ -156,6 +156,10 @@ export default function InventoryScreen() {
   const [totals, setTotals] = useState({ total_pairs: 0 });
   const [userData, setUserData] = useState<any>(null);
   const [recentSales, setRecentSales] = useState<any[]>([]);
+  const [addStockPower, setAddStockPower] = useState<string | null>(null);
+  const [addStockFrameType, setAddStockFrameType] = useState<string>("standard");
+  const [addStockQuantity, setAddStockQuantity] = useState(0);
+  const [addStockLoading, setAddStockLoading] = useState(false);
   const [stats, setStats] = useState({
     weekSold: 0,
     lowStockCount: 0,
@@ -270,24 +274,49 @@ export default function InventoryScreen() {
   };
 
   const handleAddStock = () => {
-    Alert.alert(
-      "Add Stock",
-      "Select an option:",
-      [
-        {
-          text: "Scan Barcode",
-          onPress: () => Alert.alert("Coming Soon", "Barcode scanning will be available in the next update.")
-        },
-        {
-          text: "Manual Entry",
-          onPress: () => {
-            // Navigate to add stock form
-            Alert.alert("Manual Entry", "Please enter stock details:\n\nPower: +2.00D\nQuantity: 10\nFrame Type: Standard\n\n(Full form coming soon)");
-          }
-        },
-        { text: "Cancel", style: "cancel" }
-      ]
-    );
+    setAddStockPower(null);
+    setAddStockFrameType("standard");
+    setAddStockQuantity(0);
+    setShowAddStockModal(true);
+  };
+
+  const handleSubmitAddStock = async () => {
+    if (!addStockPower) {
+      Alert.alert("Error", "Please select a power.");
+      return;
+    }
+    if (addStockQuantity <= 0) {
+      Alert.alert("Error", "Please enter a quantity greater than 0.");
+      return;
+    }
+
+    setAddStockLoading(true);
+    try {
+      // Find the product by power
+      const product = inventory.find((item: any) => item.power === addStockPower);
+      if (!product) {
+        Alert.alert("Error", `No product found for power ${addStockPower}. Please contact admin.`);
+        setAddStockLoading(false);
+        return;
+      }
+
+      const result = await apiService.addStock(product.id, addStockQuantity, addStockFrameType);
+      if (result.success) {
+        Alert.alert(
+          "\u2705 Stock Added",
+          `Successfully added ${addStockQuantity} pairs of ${addStockPower} (${addStockFrameType}) glasses.`
+        );
+        setShowAddStockModal(false);
+        await loadInventory();
+      } else {
+        throw new Error("Failed to add stock");
+      }
+    } catch (error) {
+      console.error("Add stock error:", error);
+      Alert.alert("Error", "Failed to add stock. Please try again.");
+    } finally {
+      setAddStockLoading(false);
+    }
   };
 
   const handleRequestReplenishment = async () => {
@@ -513,24 +542,116 @@ export default function InventoryScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add New Stock</Text>
+              <Text style={styles.modalTitle}>Add Stock</Text>
               <TouchableOpacity onPress={() => setShowAddStockModal(false)}>
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
-            <View style={styles.modalBody}>
-              <Text style={styles.modalText}>
-                This feature will allow you to add new glasses stock to your
-                inventory. Implementation details would include form inputs for
-                power, frame type, quantity, and price.
-              </Text>
+            <ScrollView style={styles.modalBody}>
+              {/* Power Selection */}
+              <Text style={styles.modalLabel}>Select Power *</Text>
+              <View style={styles.powerGrid}>
+                {["+1.00", "+1.50", "+2.00", "+2.50", "+3.00", "+3.50"].map((power) => (
+                  <TouchableOpacity
+                    key={power}
+                    style={[
+                      styles.powerOption,
+                      addStockPower === power && styles.powerOptionSelected,
+                    ]}
+                    onPress={() => setAddStockPower(power)}
+                  >
+                    <Text
+                      style={[
+                        styles.powerOptionText,
+                        addStockPower === power && styles.powerOptionTextSelected,
+                      ]}
+                    >
+                      {power}D
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Frame Type */}
+              <Text style={styles.modalLabel}>Frame Type</Text>
+              <View style={styles.frameTypeRow}>
+                {["standard", "metal", "fashion"].map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.frameTypeOption,
+                      addStockFrameType === type && styles.frameTypeOptionSelected,
+                    ]}
+                    onPress={() => setAddStockFrameType(type)}
+                  >
+                    <Text
+                      style={[
+                        styles.frameTypeText,
+                        addStockFrameType === type && styles.frameTypeTextSelected,
+                      ]}
+                    >
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Quantity */}
+              <Text style={styles.modalLabel}>Quantity (pairs) *</Text>
+              <View style={styles.quantityRow}>
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={() => setAddStockQuantity(Math.max(0, addStockQuantity - 1))}
+                >
+                  <Ionicons name="remove" size={24} color="#1E40AF" />
+                </TouchableOpacity>
+                <Text style={styles.quantityText}>{addStockQuantity}</Text>
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={() => setAddStockQuantity(addStockQuantity + 1)}
+                >
+                  <Ionicons name="add" size={24} color="#1E40AF" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Quick quantity buttons */}
+              <View style={styles.quickQuantityRow}>
+                {[5, 10, 20, 50].map((qty) => (
+                  <TouchableOpacity
+                    key={qty}
+                    style={styles.quickQuantityButton}
+                    onPress={() => setAddStockQuantity(qty)}
+                  >
+                    <Text style={styles.quickQuantityText}>{qty}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Submit */}
               <TouchableOpacity
-                style={styles.modalButton}
+                style={[
+                  styles.modalButton,
+                  (!addStockPower || addStockQuantity <= 0) && { opacity: 0.5 },
+                ]}
+                onPress={handleSubmitAddStock}
+                disabled={!addStockPower || addStockQuantity <= 0 || addStockLoading}
+              >
+                {addStockLoading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.modalButtonText}>
+                    Add {addStockQuantity > 0 ? `${addStockQuantity} Pairs` : "Stock"}
+                  </Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalCancelButton}
                 onPress={() => setShowAddStockModal(false)}
               >
-                <Text style={styles.modalButtonText}>Close</Text>
+                <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
-            </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -921,7 +1042,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: "60%",
+    maxHeight: "80%",
   },
   modalHeader: {
     flexDirection: "row",
@@ -945,16 +1066,131 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 24,
   },
+  modalLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#374151",
+    marginBottom: 10,
+    marginTop: 16,
+  },
+  powerGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  powerOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#F9FAFB",
+    minWidth: 80,
+    alignItems: "center",
+  },
+  powerOptionSelected: {
+    borderColor: "#1E40AF",
+    backgroundColor: "#EFF6FF",
+  },
+  powerOptionText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#6B7280",
+  },
+  powerOptionTextSelected: {
+    color: "#1E40AF",
+  },
+  frameTypeRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  frameTypeOption: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#F9FAFB",
+    alignItems: "center",
+  },
+  frameTypeOptionSelected: {
+    borderColor: "#1E40AF",
+    backgroundColor: "#EFF6FF",
+  },
+  frameTypeText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6B7280",
+  },
+  frameTypeTextSelected: {
+    color: "#1E40AF",
+  },
+  quantityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 20,
+    marginVertical: 12,
+  },
+  quantityButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: "#1E40AF",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EFF6FF",
+  },
+  quantityText: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#1F2937",
+    minWidth: 60,
+    textAlign: "center",
+  },
+  quickQuantityRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 10,
+    marginBottom: 20,
+  },
+  quickQuantityButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: "#F3F4F6",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  quickQuantityText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#374151",
+  },
   modalButton: {
     backgroundColor: "#1E40AF",
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",
+    marginTop: 8,
   },
   modalButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
+  },
+  modalCancelButton: {
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  modalCancelText: {
+    color: "#6B7280",
+    fontSize: 16,
+    fontWeight: "500",
   },
   loadingContainer: {
     flex: 1,

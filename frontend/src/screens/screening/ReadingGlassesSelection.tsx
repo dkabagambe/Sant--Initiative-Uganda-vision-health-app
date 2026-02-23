@@ -53,9 +53,9 @@ export default function ReadingGlassesSelection() {
 
   const getStockForPower = (power: string) => {
     const product = inventory.find(
-      (item) => item.product_type === "reading_glasses" && item.power === power
+      (item) => item.power === power
     );
-    return product?.quantity || 0;
+    return product?.stock_quantity || 0;
   };
 
   const handlePowerSelect = (power: string) => {
@@ -166,7 +166,7 @@ export default function ReadingGlassesSelection() {
     try {
       // Find product in inventory
       const product = inventory.find(
-        (item) => item.product_type === "reading_glasses" && item.power === selectedPower
+        (item) => item.power === selectedPower
       );
 
       if (!product) {
@@ -175,10 +175,8 @@ export default function ReadingGlassesSelection() {
         return;
       }
 
-      // Update inventory (dispense)
-      const dispenseResult = await apiService.updateInventory(product.id, {
-        quantity: product.quantity - 1,
-      });
+      // Update inventory (dispense — subtract 1)
+      const dispenseResult = await apiService.addStock(product.id, -1, "standard");
 
       if (!dispenseResult.success) {
         throw new Error("Failed to update inventory");

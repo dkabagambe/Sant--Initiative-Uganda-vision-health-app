@@ -153,6 +153,7 @@ export default function SafetyInformationScreen() {
             </View>
           </TouchableOpacity>
         </View>
+        <View style={{ height: 190 }} />
       </ScrollView>
 
     </SafeAreaView>
@@ -350,7 +351,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    marginBottom: 100,
     gap: 12,
   },
   backButtonNav: {

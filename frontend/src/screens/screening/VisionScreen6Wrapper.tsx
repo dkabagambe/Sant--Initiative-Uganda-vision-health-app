@@ -21,150 +21,8 @@ export default function VisionScreen6Wrapper() {
     console.log("Client Age:", screeningData.clientAge);
   }, [screeningData]);
 
-  // Check if referral already needed (from torch test or distance vision failure)
-  React.useEffect(() => {
-    if (screeningData.needsReferral) {
-      if (screeningData.referralStep === "Step 4 - Torch Light Test") {
-        // Torch test abnormal - END screening immediately
-        handleTorchTestReferral();
-      } else if (screeningData.referralStep === "Step 5 - Distance Vision Test") {
-        // Distance vision failed - END screening immediately
-        handleDistanceVisionReferral();
-      }
-    }
-  }, []);
-
-  const handleTorchTestReferral = async () => {
-    setSubmitting(true);
-
-    try {
-      const completeData = {
-        ...screeningData,
-        torchTestPassed: false,
-        distanceVisionResult: "not_tested",
-        nearVisionResult: "not_tested",
-        needsReferral: true,
-        needsGlasses: false,
-      };
-
-      try {
-        const result = await apiService.createScreening(completeData);
-
-        if (result.success) {
-          await createReferral(result.data.id, completeData);
-
-          Alert.alert(
-            "🏥 Referral Created",
-            `Abnormal eye signs detected: ${screeningData.torchTestAbnormalSigns}\n\nClient referred to health facility. No other tests performed.`,
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  resetScreeningData();
-                  navigation.reset({
-                    index: 0,
-                    routes: [{ name: "AppTabs" }],
-                  });
-                },
-              },
-            ]
-          );
-        } else {
-          throw new Error("API error");
-        }
-      } catch (apiError) {
-        const saved = await saveOffline(completeData);
-        if (saved) {
-          Alert.alert(
-            "📱 Referral Saved Offline",
-            "Torch test referral saved locally and will sync when online.",
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  resetScreeningData();
-                  navigation.reset({
-                    index: 0,
-                    routes: [{ name: "AppTabs" }],
-                  });
-                },
-              },
-            ]
-          );
-        }
-      }
-    } catch (error) {
-      console.error("Referral error:", error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-
-  const handleDistanceVisionReferral = async () => {
-    setSubmitting(true);
-
-    try {
-      const completeData = {
-        ...screeningData,
-        distanceVisionResult: "failed",
-        nearVisionResult: "not_tested", // Skip near vision
-        needsReferral: true,
-        needsGlasses: false,
-      };
-
-      try {
-        const result = await apiService.createScreening(completeData);
-
-        if (result.success) {
-          await createReferral(result.data.id, completeData);
-
-          Alert.alert(
-            "🏥 Referral Required",
-            "Distance vision test failed. Client referred to health facility.\n\nNear vision test was NOT performed (protocol requirement).",
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  resetScreeningData();
-                  navigation.reset({
-                    index: 0,
-                    routes: [{ name: "AppTabs" }],
-                  });
-                },
-              },
-            ]
-          );
-        } else {
-          throw new Error("API error");
-        }
-      } catch (apiError) {
-        const saved = await saveOffline(completeData);
-        if (saved) {
-          Alert.alert(
-            "📱 Referral Saved Offline",
-            "Distance vision referral saved locally and will sync when online.",
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  resetScreeningData();
-                  navigation.reset({
-                    index: 0,
-                    routes: [{ name: "AppTabs" }],
-                  });
-                },
-              },
-            ]
-          );
-        }
-      }
-    } catch (error) {
-      console.error("Referral error:", error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // Torch test and distance vision referrals are now handled directly
+  // in VisionScreen4 and VisionScreen5 by navigating to CreateReferralScreen.
 
   const saveOffline = async (data: any) => {
     try {
@@ -210,7 +68,7 @@ export default function VisionScreen6Wrapper() {
     setSubmitting(true);
 
     try {
-      const clientAge = screeningData.clientAge || 0;
+      const clientAge = Number(screeningData.clientAge) || 0;
       
       // Check if presbyopia (age 40+ with failed near vision)
       if (!passed && clientAge >= 40) {
@@ -235,7 +93,7 @@ export default function VisionScreen6Wrapper() {
         return;
       }
 
-      // If failed and age < 40, navigate to referral screen with pre-filled data
+      // If failed and age < 40, navigate to CreateReferralScreen with pre-filled data
       setSubmitting(false);
       updateScreeningData({
         nearVisionResult: "failed",
@@ -243,18 +101,31 @@ export default function VisionScreen6Wrapper() {
         needsReferral: true,
         referralReason: `Near vision problem detected in client under 40 years (age: ${clientAge}) - requires eye examination`,
       });
-      
-      navigation.navigate("ReferralManagementScreen", {
-        autoOpenForm: true,
-        prefilledData: {
-          clientName: screeningData?.clientName || "",
-          clientAge: clientAge || 0,
-          clientPhone: screeningData?.clientPhone || "",
-          referralReason: `Near vision problem detected in client under 40 years (age: ${clientAge}) - requires eye examination`,
-          urgency: "high",
-          referralType: "eye-care",
-        },
-      });
+
+      const referralParams = {
+        fromScreening: true,
+        clientName: screeningData.clientName || "",
+        clientPhone: screeningData.clientPhone || "",
+        clientAge: clientAge.toString(),
+        clientSex: screeningData.clientGender || "",
+        district: screeningData.district || "",
+        reason: `Near vision problem detected in client under 40 years (age: ${clientAge}) - requires eye examination`,
+        urgency: "high",
+        notes: `Referred from Step 6 — Near Vision Test.\nClient age: ${clientAge} (under 40).\nNear vision failed — abnormal for this age group.`,
+      };
+
+      // Navigate to root-level CreateReferralScreen
+      const root = navigation.getParent()?.getParent();
+      if (root) {
+        root.navigate("CreateReferralScreen", referralParams);
+      } else {
+        const parent = navigation.getParent();
+        if (parent) {
+          parent.navigate("CreateReferralScreen", referralParams);
+        } else {
+          navigation.navigate("CreateReferralScreen" as any, referralParams);
+        }
+      }
       return;
     } catch (error) {
       console.error("Screening submission error:", error);
@@ -367,7 +238,7 @@ export default function VisionScreen6Wrapper() {
 
   return (
     <VisionScreen6
-      clientAge={screeningData.clientAge || 0}
+      clientAge={Number(screeningData.clientAge) || 0}
       onComplete={handleComplete}
       onRefer={handleRefer}
     />

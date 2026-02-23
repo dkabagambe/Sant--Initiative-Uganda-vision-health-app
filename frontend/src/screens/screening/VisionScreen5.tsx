@@ -140,39 +140,39 @@ export default function DistanceVisionTestScreen() {
     }
   };
 
-  // Render rotated E characters with consistent sizing
-  const renderRotatedE = (rotation: string, size: number) => {
-    let rotationDeg = "0deg";
+  // Render square block-style Tumbling E
+  // The E is drawn as a View with 3 horizontal bars pointing in a direction
+  const renderBlockE = (rotation: string, size: number) => {
+    const barThickness = Math.round(size / 5);
+    const barLength = size;
+    const gap = barThickness;
 
+    // Base E points RIGHT: 3 horizontal bars on the left side
+    const baseE = (
+      <View style={{ width: size, height: size, backgroundColor: "transparent" }}>
+        {/* Vertical bar (spine) */}
+        <View style={{ position: "absolute", left: 0, top: 0, width: barThickness, height: size, backgroundColor: "#111827" }} />
+        {/* Top bar */}
+        <View style={{ position: "absolute", left: 0, top: 0, width: barLength, height: barThickness, backgroundColor: "#111827" }} />
+        {/* Middle bar */}
+        <View style={{ position: "absolute", left: 0, top: Math.round((size - barThickness) / 2), width: barLength, height: barThickness, backgroundColor: "#111827" }} />
+        {/* Bottom bar */}
+        <View style={{ position: "absolute", left: 0, bottom: 0, width: barLength, height: barThickness, backgroundColor: "#111827" }} />
+      </View>
+    );
+
+    let rotationDeg = "0deg";
     switch (rotation) {
-      case "right":
-        rotationDeg = "0deg";
-        break;
-      case "down":
-        rotationDeg = "90deg";
-        break;
-      case "left":
-        rotationDeg = "180deg";
-        break;
-      case "up":
-        rotationDeg = "270deg";
-        break;
-      default:
-        rotationDeg = "0deg";
+      case "right": rotationDeg = "0deg"; break;
+      case "down": rotationDeg = "90deg"; break;
+      case "left": rotationDeg = "180deg"; break;
+      case "up": rotationDeg = "270deg"; break;
     }
 
     return (
-      <Text
-        style={{
-          fontSize: size,
-          fontWeight: "700",
-          color: "#111827",
-          fontFamily: "monospace",
-          transform: [{ rotate: rotationDeg }],
-        }}
-      >
-        E
-      </Text>
+      <View style={{ transform: [{ rotate: rotationDeg }] }}>
+        {baseE}
+      </View>
     );
   };
 
@@ -306,9 +306,9 @@ export default function DistanceVisionTestScreen() {
           <View style={styles.eChartLine}>
             <Text style={styles.lineLabel}>Line 1: 6/60 (Largest)</Text>
             <View style={[styles.eContainer, { alignItems: 'center' }]}>
-              {renderRotatedE("right", moderateScale(72))}
-              {renderRotatedE("down", moderateScale(72))}
-              {renderRotatedE("left", moderateScale(72))}
+              {renderBlockE("right", 80)}
+              {renderBlockE("down", 80)}
+              {renderBlockE("left", 80)}
             </View>
             <Text style={styles.lettersNote}>
               3 letters to read (Right, Down, Left)
@@ -319,11 +319,11 @@ export default function DistanceVisionTestScreen() {
           <View style={styles.eChartLine}>
             <Text style={styles.lineLabel}>Line 2: 6/12 (Smaller)</Text>
             <View style={[styles.eContainer, styles.smallEContainer, { alignItems: 'center' }]}>
-              {renderRotatedE("right", moderateScale(48))}
-              {renderRotatedE("up", moderateScale(48))}
-              {renderRotatedE("down", moderateScale(48))}
-              {renderRotatedE("left", moderateScale(48))}
-              {renderRotatedE("right", moderateScale(48))}
+              {renderBlockE("right", 40)}
+              {renderBlockE("up", 40)}
+              {renderBlockE("down", 40)}
+              {renderBlockE("left", 40)}
+              {renderBlockE("right", 40)}
             </View>
             <Text style={styles.lettersNote}>
               5 letters to read (Right, Up, Down, Left, Right)
@@ -464,6 +464,7 @@ export default function DistanceVisionTestScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+        <View style={{ height: 190 }} />
       </ScrollView>
 
     </SafeAreaView>
@@ -678,7 +679,9 @@ const styles = StyleSheet.create({
     borderColor: "#D1D5DB",
   },
   smallEContainer: {
-    gap: 8,
+    gap: 16,
+    flexWrap: "wrap",
+    paddingHorizontal: 12,
   },
   lettersNote: {
     fontSize: 14,
@@ -712,16 +715,19 @@ const styles = StyleSheet.create({
   scoreButtonsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: 10,
     marginBottom: 8,
   },
   scoreButtonsRowLarge: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+    gap: 10,
     marginBottom: 8,
   },
   scoreButton: {
-    width: (width - 100) / 4, // Adjusted for padding
+    flex: 1,
+    minWidth: 44,
     height: 56,
     backgroundColor: "#FFFFFF",
     borderRadius: 8,
@@ -794,7 +800,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    marginBottom: 100,
     gap: 12,
   },
   backButton: {

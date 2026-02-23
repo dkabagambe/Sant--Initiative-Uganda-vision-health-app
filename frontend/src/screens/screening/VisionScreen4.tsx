@@ -25,7 +25,7 @@ export default function TorchLightStepScreen() {
   const [countdown, setCountdown] = useState(120); // 2 minutes = 120 seconds
   const [isWaiting, setIsWaiting] = useState(false);
 
-  const clientAge = screeningData.clientAge || 0;
+  const clientAge = Number(screeningData.clientAge) || 0;
 
   const saveOffline = async (data: any) => {
     try {
@@ -670,6 +670,7 @@ export default function TorchLightStepScreen() {
           </TouchableOpacity>
         )}
         </View>
+        <View style={{ height: 190 }} />
       </ScrollView>
 
     </SafeAreaView>
@@ -1209,7 +1210,6 @@ const styles = StyleSheet.create({
   bottomActions: {
     paddingHorizontal: 20,
     paddingVertical: 16,
-    marginBottom: 100,
   },
   primaryButton: {
     backgroundColor: "#2E7D32",

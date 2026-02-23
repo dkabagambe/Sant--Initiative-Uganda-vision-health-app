@@ -180,6 +180,7 @@ export default function PreScreeningQuestionsScreen() {
             <Text style={styles.nextButtonText}>{t("next")}</Text>
           </TouchableOpacity>
         </View>
+        <View style={{ height: 190 }} />
       </ScrollView>
 
     </SafeAreaView>
@@ -226,7 +227,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 20,
     paddingTop: 24,
-    paddingBottom: 120,
+    paddingBottom: 16,
   },
   progressSection: {
     marginBottom: 16,
@@ -341,7 +342,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    marginBottom: 100,
     gap: 12,
   },
   backButton: {
