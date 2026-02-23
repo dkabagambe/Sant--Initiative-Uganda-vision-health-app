@@ -57,7 +57,7 @@ export default function CHWRegistrationStep3() {
   };
 
   const handlePreviousPress = () => {
-    navigation.navigate("CHWRegistrationStep2");
+    navigation.navigate("CHWRegistrationStep2", { step1Data });
   };
 
   const handleNextPress = async () => {
@@ -70,24 +70,13 @@ export default function CHWRegistrationStep3() {
       ...formData,
     };
 
-    // Request OTP
-    try {
-      const phone = step2Data.phoneNumber || "";
-      const result = await apiService.login(phone);
-      
-      if (result.success) {
-        // Navigate to step 4 with all data and OTP info
-        navigation.navigate("CHWRegistrationStep4", {
-          formData: completeFormData,
-          phone,
-          otp: result.otp || "", // Dev mode shows OTP
-        });
-      } else {
-        Alert.alert("Error", "Failed to send OTP. Please try again.");
-      }
-    } catch (error) {
-      Alert.alert("Error", "Failed to send OTP. Please check your connection.");
-    }
+    // Navigate directly to Step 4 — no OTP sent (OTP only on login)
+    const phone = step2Data.phoneNumber || "";
+    navigation.navigate("CHWRegistrationStep4", {
+      formData: completeFormData,
+      phone,
+      otp: "",
+    });
   };
 
   const updateFormData = (field: string, value: string) => {

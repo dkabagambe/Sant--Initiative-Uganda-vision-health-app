@@ -188,11 +188,6 @@ export default function CHWRegistrationStep4() {
       return;
     }
 
-    if (!otpInput || otpInput.length !== 6) {
-      Alert.alert("OTP Required", "Please enter the 6-digit OTP sent to your phone");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -203,7 +198,8 @@ export default function CHWRegistrationStep4() {
         recommendationLetter: selectedFiles.recommendation?.uploadedUrl || null,
       };
 
-      const result = await apiService.verifyOTP(phone, otpInput, completeRegistrationData);
+      // OTP not required for registration — backend skips verification when registrationData is present
+      const result = await apiService.verifyOTP(phone, otpInput || "000000", completeRegistrationData);
 
       if (result.success) {
         Alert.alert(
@@ -356,7 +352,7 @@ export default function CHWRegistrationStep4() {
         </View>
 
         {/* Recommendation Letter */}
-        <Text style={[styles.documentLabel, styles.marginTop]}>
+        <Text style={[styles.documentLabel, { marginTop: 20 }]}>
           Recommendation Letter (Optional)
         </Text>
         <View style={styles.documentCard}>

@@ -231,7 +231,15 @@ export default function CHWDashboard() {
       title: "VHT Eye Screening",
       subtitle: "Uganda Job Aid Protocol",
       icon: "👁️",
-      onPress: () => navigation.navigate("StartScreening"),
+      onPress: () => {
+        // Navigate to root stack VisionScreen1 (2 levels up: CHWHomeStack -> CHWTabs -> Root)
+        const rootNav = navigation.getParent()?.getParent();
+        if (rootNav) {
+          rootNav.navigate("VisionScreen1");
+        } else {
+          navigation.navigate("VisionScreen1" as any);
+        }
+      },
     },
   ];
 
@@ -290,10 +298,10 @@ export default function CHWDashboard() {
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeTitle}>
-            {t('welcome')}, {userData?.full_name || userData?.first_name || "User"}
+            {t('welcome')}, {userData?.first_name || userData?.full_name || "User"}
           </Text>
           <Text style={styles.userRole}>
-            {userData?.district ? `${userData.district} ${t('district')}` : t('district')}
+            {userData?.district ? `${userData.district} District` : ""}
           </Text>
 
           <View style={styles.readyCard}>

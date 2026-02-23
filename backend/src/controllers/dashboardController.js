@@ -253,31 +253,58 @@ exports.getClients = async (req, res) => {
     const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A';
     const { limit = 50, offset = 0 } = req.query;
 
-    const clients = await sql`
-      SELECT DISTINCT ON (client_phone)
-        client_name, client_phone, client_age, client_gender, client_village,
+    // First get clients from the clients table
+    const registeredClients = await sql`
+      SELECT 
+        id, full_name, phone_number, age, gender, village, district,
+        created_at as last_screening_date,
+        0 as total_screenings
+      FROM clients
+      WHERE health_worker_id = ${healthWorkerId}
+    `;
+
+    // Then get clients from screenings (screened clients)
+    const screenedClients = await sql`
+      SELECT 
+        client_name as full_name, client_phone as phone_number, 
+        client_age as age, client_gender as gender, client_village as village,
+        '' as district,
         MAX(screening_date) as last_screening_date,
         COUNT(*) as total_screenings
       FROM screenings
       WHERE health_worker_id = ${healthWorkerId}
-      AND client_phone IS NOT NULL
+      AND client_name IS NOT NULL
       GROUP BY client_name, client_phone, client_age, client_gender, client_village
-      ORDER BY client_phone, MAX(screening_date) DESC
-      LIMIT ${limit} OFFSET ${offset}
+      ORDER BY MAX(screening_date) DESC
     `;
 
-    const total = await sql`
-      SELECT COUNT(DISTINCT client_phone) as count 
-      FROM screenings 
-      WHERE health_worker_id = ${healthWorkerId}
-      AND client_phone IS NOT NULL
-    `;
+    // Merge: prefer screened clients, add registered ones not already in screenings
+    const seen = new Set();
+    const merged = [];
+
+    for (const c of screenedClients) {
+      const key = (c.phone_number || c.full_name || '').toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        merged.push(c);
+      }
+    }
+
+    for (const c of registeredClients) {
+      const key = (c.phone_number || c.full_name || '').toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        merged.push(c);
+      }
+    }
+
+    const paginated = merged.slice(Number(offset), Number(offset) + Number(limit));
 
     res.json({
       success: true,
-      data: clients,
-      count: clients.length,
-      total: parseInt(total[0].count),
+      data: paginated,
+      count: paginated.length,
+      total: merged.length,
     });
   } catch (error) {
     console.error("Get clients error:", error);

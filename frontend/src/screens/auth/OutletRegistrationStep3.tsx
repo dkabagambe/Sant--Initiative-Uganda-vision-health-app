@@ -81,21 +81,12 @@ const OutletRegistrationStep3 = () => {
       return;
     }
 
-    try {
-      const result = await apiService.login(phone);
-      
-      if (result.success) {
-        navigation.navigate("OutletRegistrationStep4", {
-          formData: completeFormData,
-          phone,
-          otp: result.otp || "",
-        });
-      } else {
-        Alert.alert("Error", "Failed to send OTP. Please try again.");
-      }
-    } catch (error) {
-      Alert.alert("Error", "Failed to send OTP. Please check your connection.");
-    }
+    // Navigate directly to Step 4 — no OTP sent (OTP only on login)
+    navigation.navigate("OutletRegistrationStep4", {
+      formData: completeFormData,
+      phone,
+      otp: "",
+    });
   };
 
   const handleBack = () => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { apiService } from "../../services/api";
 
@@ -51,9 +51,14 @@ export default function ReferralsScreen() {
   const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
-    loadReferrals();
     loadUserData();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadReferrals();
+    }, [])
+  );
 
   const loadUserData = async () => {
     try {
@@ -84,35 +89,18 @@ export default function ReferralsScreen() {
     setRefreshing(false);
   };
 
-  const handleCreateReferral = async () => {
-    try {
-      // Get health facilities from database
-      const facilities = await apiService.getHealthFacilities(userData?.district);
-      
-      Alert.alert(
-        "Create New Referral",
-        "Select referral type:",
-        [
-          {
-            text: "From Screening",
-            onPress: () => {
-              Alert.alert("From Screening", "This will create a referral from the current screening session.\n\nNavigate to screening first.");
-            }
-          },
-          {
-            text: "Manual Referral",
-            onPress: () => {
-              Alert.alert(
-                "Manual Referral",
-                `Client Name: [Enter name]\nReason: [Select reason]\nFacility: ${facilities.data?.[0]?.name || 'Nearest facility'}\nUrgency: Normal\n\n(Full form coming soon)`
-              );
-            }
-          },
-          { text: "Cancel", style: "cancel" }
-        ]
-      );
-    } catch (error) {
-      Alert.alert("Error", "Failed to load facilities. Please try again.");
+  const handleCreateReferral = () => {
+    // Navigate to root-level CreateReferralScreen (ReferralsTab -> CHWTabs -> Root)
+    const root = navigation.getParent()?.getParent();
+    if (root) {
+      root.navigate("CreateReferralScreen" as any);
+    } else {
+      const parent = navigation.getParent();
+      if (parent) {
+        parent.navigate("CreateReferralScreen" as any);
+      } else {
+        (navigation as any).navigate("CreateReferralScreen");
+      }
     }
   };
 
@@ -318,7 +306,7 @@ export default function ReferralsScreen() {
         </View>
 
         {/* Create New Referral Button */}
-        <TouchableOpacity style={styles.createNewButton}>
+        <TouchableOpacity style={styles.createNewButton} onPress={handleCreateReferral}>
           <View style={styles.plusIconContainer}>
             <Ionicons name="add" size={24} color="#FFFFFF" />
           </View>

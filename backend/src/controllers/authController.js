@@ -62,15 +62,20 @@ exports.verifyOTP = async (req, res) => {
       return res.status(400).json({ success: false, error: "Phone number and OTP required" });
     }
 
-    // Verify OTP with Twilio Verify API
-    const verifyResult = await smsService.verifyOTP(phoneNumber, otp);
-    
-    if (!verifyResult.success) {
-      return res.status(401).json({ 
-        success: false, 
-        error: "Invalid or expired OTP",
-        details: verifyResult.error 
-      });
+    // Only verify OTP via Twilio for login (not registration)
+    // Registration flow passes registrationData — skip OTP check to save Twilio credits
+    if (!registrationData) {
+      const verifyResult = await smsService.verifyOTP(phoneNumber, otp);
+      
+      if (!verifyResult.success) {
+        return res.status(401).json({ 
+          success: false, 
+          error: "Invalid or expired OTP",
+          details: verifyResult.error 
+        });
+      }
+    } else {
+      console.log(`📝 [REGISTRATION] Skipping OTP verification for ${phoneNumber}`);
     }
 
     // Get user from database

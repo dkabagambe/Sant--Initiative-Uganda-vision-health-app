@@ -13,9 +13,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { apiService } from "../../services/api";
 
+interface Client {
+  id?: string;
+  full_name: string;
+  phone_number?: string;
+  age?: number;
+  gender?: string;
+  village?: string;
+  district?: string;
+  last_screening_date?: string;
+  total_screenings?: number;
+}
+
 export default function MyClientsScreen() {
   const navigation = useNavigation();
-  const [clients, setClients] = useState([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -79,7 +91,7 @@ export default function MyClientsScreen() {
               <Text style={styles.statLabel}>Total Clients</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{clients.filter(c => c.age >= 50).length}</Text>
+              <Text style={styles.statNumber}>{clients.filter(c => (c.age || 0) >= 50).length}</Text>
               <Text style={styles.statLabel}>Age 50+</Text>
             </View>
           </View>
@@ -88,19 +100,25 @@ export default function MyClientsScreen() {
             <Text style={styles.sectionTitle}>Recent Clients</Text>
 
             <View style={styles.clientList}>
-              {clients.map((client) => (
-                <View key={client.id} style={styles.clientItem}>
+              {clients.map((client, index) => (
+                <View key={client.id || `client-${index}`} style={styles.clientItem}>
                   <View style={styles.clientAvatar}>
                     <Ionicons name="person-circle" size={40} color="#6B7280" />
                   </View>
                   <View style={styles.clientInfo}>
                     <Text style={styles.clientName}>{client.full_name}</Text>
                     <Text style={styles.clientDetails}>
-                      {client.age ? `Age ${client.age}` : ""} • {client.village || "No village"}
+                      {client.age ? `Age ${client.age}` : ""}{client.age && client.village ? " • " : ""}{client.village || ""}
                     </Text>
-                    <Text style={styles.clientStatus}>
+                    <Text style={styles.clientDetails}>
                       {client.phone_number || "No phone"}
+                      {(client.total_screenings || 0) > 0 ? ` • ${client.total_screenings} screening(s)` : ""}
                     </Text>
+                    {client.last_screening_date && (
+                      <Text style={styles.clientStatus}>
+                        Last screened: {new Date(client.last_screening_date).toLocaleDateString()}
+                      </Text>
+                    )}
                   </View>
                   <TouchableOpacity style={styles.viewButton}>
                     <Text style={styles.viewButtonText}>View</Text>
@@ -109,8 +127,8 @@ export default function MyClientsScreen() {
               ))}
 
               {clients.length === 0 && (
-                <Text style={{ textAlign: "center", color: "#666", marginTop: 20 }}>
-                  No clients yet
+                <Text style={{ textAlign: "center", color: "#666", marginTop: 20, paddingVertical: 16 }}>
+                  No clients screened yet. Start a screening to add clients.
                 </Text>
               )}
             </View>

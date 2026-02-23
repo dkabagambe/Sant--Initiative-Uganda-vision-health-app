@@ -22,7 +22,7 @@ const authenticate = async (req, res, next) => {
       return res.status(401).json({ success: false, error: "User not found" });
     }
 
-    req.user = users[0];
+    req.user = { ...users[0], userId: users[0].id };
     next();
   } catch (error) {
     if (error.name === "JsonWebTokenError") {

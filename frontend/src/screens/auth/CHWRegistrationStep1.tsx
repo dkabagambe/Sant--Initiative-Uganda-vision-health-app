@@ -17,7 +17,7 @@ type RootStackParamList = {
   OTP: { phone: string; role: string };
   Register: undefined;
   CHWRegistrationStep1: undefined;
-  CHWRegistrationStep2: undefined;
+  CHWRegistrationStep2: { step1Data?: any };
   CHWRegistrationStep3: undefined;
   AppTabs: { role: string };
 };

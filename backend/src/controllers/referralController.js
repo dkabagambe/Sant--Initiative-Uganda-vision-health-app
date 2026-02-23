@@ -51,8 +51,10 @@ exports.getReferrals = async (req, res) => {
     if (status) {
       referrals = await sql`
         SELECT 
-          r.*,
-          s.client_name,
+          r.id, r.screening_id, r.health_worker_id,
+          COALESCE(r.client_name, s.client_name) as client_name,
+          r.reason, r.urgency, r.facility_name, r.facility_location,
+          r.status, r.referred_date, r.completed_date, r.notes, r.created_at,
           s.client_phone,
           s.client_age,
           u.full_name as health_worker_name
@@ -67,8 +69,10 @@ exports.getReferrals = async (req, res) => {
     } else {
       referrals = await sql`
         SELECT 
-          r.*,
-          s.client_name,
+          r.id, r.screening_id, r.health_worker_id,
+          COALESCE(r.client_name, s.client_name) as client_name,
+          r.reason, r.urgency, r.facility_name, r.facility_location,
+          r.status, r.referred_date, r.completed_date, r.notes, r.created_at,
           s.client_phone,
           s.client_age,
           u.full_name as health_worker_name

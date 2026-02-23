@@ -71,10 +71,7 @@ const OutletRegistrationStep4 = () => {
   };
 
   const handlePreviousPress = () => {
-    navigation.navigate("OutletRegistrationStep3", {
-      step1Data,
-      step2Data,
-    });
+    navigation.goBack();
   };
 
   const pickImage = async (type: keyof typeof selectedFiles) => {
@@ -205,11 +202,6 @@ const OutletRegistrationStep4 = () => {
       return;
     }
 
-    if (!otpInput || otpInput.length !== 6) {
-      Alert.alert("OTP Required", "Please enter the 6-digit OTP sent to your phone");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -218,7 +210,8 @@ const OutletRegistrationStep4 = () => {
         role: "outlet",
       };
 
-      const result = await apiService.verifyOTP(phone, otpInput, completeRegistrationData);
+      // OTP not required for registration — backend skips verification when registrationData is present
+      const result = await apiService.verifyOTP(phone, otpInput || "000000", completeRegistrationData);
 
       if (result.success) {
         Alert.alert(

@@ -27,7 +27,16 @@ const twilioService = initializeClient();
  * @param {string} otp - Ignored, Twilio Verify generates its own OTP
  * @returns {Promise<{success: boolean, error?: string}>}
  */
+// Dev bypass numbers — these skip Twilio entirely, use OTP "123456"
+const DEV_BYPASS_NUMBERS = ['0705686573', '+256705686573'];
+
 exports.sendOTP = async (phoneNumber, otp) => {
+  // Bypass OTP for dev numbers
+  if (DEV_BYPASS_NUMBERS.includes(phoneNumber)) {
+    console.log(`📱 [DEV BYPASS] Skipping OTP send for ${phoneNumber} — use code 123456`);
+    return { success: true, devMode: true };
+  }
+
   // If SMS not configured, just log and return success (dev mode)
   if (!twilioService) {
     console.log(`📱 [DEV MODE] OTP for ${phoneNumber}: ${otp}`);
@@ -69,6 +78,13 @@ exports.sendOTP = async (phoneNumber, otp) => {
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 exports.verifyOTP = async (phoneNumber, code) => {
+  // Bypass OTP verification for dev numbers — accept "123456"
+  if (DEV_BYPASS_NUMBERS.includes(phoneNumber)) {
+    const valid = code === '123456';
+    console.log(`📱 [DEV BYPASS] Verifying OTP for ${phoneNumber}: ${code} → ${valid ? 'approved' : 'rejected'}`);
+    return { success: valid, devMode: true };
+  }
+
   if (!twilioService) {
     console.log(`📱 [DEV MODE] Verifying OTP for ${phoneNumber}: ${code}`);
     return { success: true, devMode: true };
