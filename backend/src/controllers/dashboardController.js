@@ -268,13 +268,14 @@ exports.getClients = async (req, res) => {
       SELECT 
         client_name as full_name, client_phone as phone_number, 
         client_age as age, client_gender as gender, client_village as village,
-        '' as district,
+        client_district as district, client_county as county, 
+        client_sub_county as sub_county, client_parish as parish,
         MAX(screening_date) as last_screening_date,
         COUNT(*) as total_screenings
       FROM screenings
       WHERE health_worker_id = ${healthWorkerId}
       AND client_name IS NOT NULL
-      GROUP BY client_name, client_phone, client_age, client_gender, client_village
+      GROUP BY client_name, client_phone, client_age, client_gender, client_village, client_district, client_county, client_sub_county, client_parish
       ORDER BY MAX(screening_date) DESC
     `;
 

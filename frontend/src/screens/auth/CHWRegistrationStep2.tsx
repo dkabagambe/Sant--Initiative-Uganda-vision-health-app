@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
-import { getDistrictNames, getCountiesForDistrict } from "../../data/ugandaLocations";
+import { getDistrictNames, getCountiesForDistrict, getSubCountiesForCounty, getParishesForSubCounty } from "../../data/ugandaLocations";
 
 type RootStackParamList = {
   Login: undefined;
@@ -56,8 +56,12 @@ export default function CHWRegistrationStep2() {
 
   const [districtModalVisible, setDistrictModalVisible] = useState(false);
   const [countyModalVisible, setCountyModalVisible] = useState(false);
+  const [subCountyModalVisible, setSubCountyModalVisible] = useState(false);
+  const [parishModalVisible, setParishModalVisible] = useState(false);
   const [districtSearch, setDistrictSearch] = useState("");
   const [countySearch, setCountySearch] = useState("");
+  const [subCountySearch, setSubCountySearch] = useState("");
+  const [parishSearch, setParishSearch] = useState("");
 
   const allDistricts = useMemo(() => getDistrictNames(), []);
   const filteredDistricts = useMemo(() => {
@@ -73,6 +77,24 @@ export default function CHWRegistrationStep2() {
     if (!countySearch.trim()) return countiesForDistrict;
     return countiesForDistrict.filter((c) => c.toLowerCase().includes(countySearch.toLowerCase()));
   }, [countySearch, countiesForDistrict]);
+
+  const subCountiesForCounty = useMemo(
+    () => (formData.county ? getSubCountiesForCounty(formData.county) : []),
+    [formData.county]
+  );
+  const filteredSubCounties = useMemo(() => {
+    if (!subCountySearch.trim()) return subCountiesForCounty;
+    return subCountiesForCounty.filter((sc) => sc.toLowerCase().includes(subCountySearch.toLowerCase()));
+  }, [subCountySearch, subCountiesForCounty]);
+
+  const parishesForSubCounty = useMemo(
+    () => (formData.subCounty ? getParishesForSubCounty(formData.subCounty) : []),
+    [formData.subCounty]
+  );
+  const filteredParishes = useMemo(() => {
+    if (!parishSearch.trim()) return parishesForSubCounty;
+    return parishesForSubCounty.filter((p) => p.toLowerCase().includes(parishSearch.toLowerCase()));
+  }, [parishSearch, parishesForSubCounty]);
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -95,7 +117,9 @@ export default function CHWRegistrationStep2() {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
-      ...(field === "district" && value !== prev.district ? { county: "" } : {}),
+      ...(field === "district" && value !== prev.district ? { county: "", subCounty: "", parish: "" } : {}),
+      ...(field === "county" && value !== prev.county ? { subCounty: "", parish: "" } : {}),
+      ...(field === "subCounty" && value !== prev.subCounty ? { parish: "" } : {}),
     }));
   };
 
@@ -220,25 +244,46 @@ export default function CHWRegistrationStep2() {
 
         {/* Sub-county/Division */}
         <Text style={styles.label}>Sub-county/Division</Text>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g., Wobulenzi Sub-County"
-            value={formData.subCounty}
-            onChangeText={(text) => updateFormData("subCounty", text)}
-          />
-        </View>
+        <TouchableOpacity
+          style={[styles.dropdownContainer, !formData.county && { backgroundColor: "#F3F4F6" }]}
+          onPress={() => {
+            if (!formData.county) return;
+            setSubCountySearch("");
+            setSubCountyModalVisible(true);
+          }}
+        >
+          <Text style={formData.subCounty ? styles.dropdownText : styles.dropdownPlaceholder}>
+            {formData.subCounty || (formData.county ? "Select Sub-county" : "Select county first")}
+          </Text>
+          <Ionicons name="chevron-down" size={20} color="#666" />
+        </TouchableOpacity>
 
         {/* Parish/Ward */}
         <Text style={styles.label}>Parish/Ward</Text>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g., Bombo Parish"
-            value={formData.parish}
-            onChangeText={(text) => updateFormData("parish", text)}
-          />
-        </View>
+        {formData.subCounty && parishesForSubCounty.length === 0 ? (
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Type parish name"
+              value={formData.parish}
+              onChangeText={(text) => updateFormData("parish", text)}
+            />
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={[styles.dropdownContainer, !formData.subCounty && { backgroundColor: "#F3F4F6" }]}
+            onPress={() => {
+              if (!formData.subCounty) return;
+              setParishSearch("");
+              setParishModalVisible(true);
+            }}
+          >
+            <Text style={formData.parish ? styles.dropdownText : styles.dropdownPlaceholder}>
+              {formData.parish || (formData.subCounty ? "Select Parish" : "Select sub-county first")}
+            </Text>
+            <Ionicons name="chevron-down" size={20} color="#666" />
+          </TouchableOpacity>
+        )}
 
         {/* Village/Cell */}
         <Text style={styles.label}>Village/Cell</Text>
@@ -359,6 +404,76 @@ export default function CHWRegistrationStep2() {
                 </TouchableOpacity>
               )}
               ListEmptyComponent={<Text style={styles.emptyText}>No counties found</Text>}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Sub-County Selection Modal */}
+      <Modal animationType="slide" transparent visible={subCountyModalVisible} onRequestClose={() => setSubCountyModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Sub-Counties in {formData.county}</Text>
+              <TouchableOpacity onPress={() => setSubCountyModalVisible(false)} style={styles.modalCloseButton}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            {subCountiesForCounty.length > 5 && (
+              <View style={styles.searchContainer}>
+                <Ionicons name="search" size={20} color="#999" />
+                <TextInput style={styles.searchInput} placeholder="Search sub-county..." value={subCountySearch} onChangeText={setSubCountySearch} placeholderTextColor="#999" autoFocus />
+              </View>
+            )}
+            <FlatList
+              data={filteredSubCounties}
+              keyExtractor={(item) => item}
+              style={styles.districtList}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.districtItem, formData.subCounty === item && styles.districtItemSelected]}
+                  onPress={() => { updateFormData("subCounty", item); setSubCountyModalVisible(false); }}
+                >
+                  <Text style={[styles.districtItemText, formData.subCounty === item && styles.districtItemTextSelected]}>{item}</Text>
+                  {formData.subCounty === item && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={<Text style={styles.emptyText}>No sub-counties found</Text>}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Parish Selection Modal */}
+      <Modal animationType="slide" transparent visible={parishModalVisible} onRequestClose={() => setParishModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Parishes in {formData.subCounty}</Text>
+              <TouchableOpacity onPress={() => setParishModalVisible(false)} style={styles.modalCloseButton}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            {parishesForSubCounty.length > 5 && (
+              <View style={styles.searchContainer}>
+                <Ionicons name="search" size={20} color="#999" />
+                <TextInput style={styles.searchInput} placeholder="Search parish..." value={parishSearch} onChangeText={setParishSearch} placeholderTextColor="#999" autoFocus />
+              </View>
+            )}
+            <FlatList
+              data={filteredParishes}
+              keyExtractor={(item) => item}
+              style={styles.districtList}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.districtItem, formData.parish === item && styles.districtItemSelected]}
+                  onPress={() => { updateFormData("parish", item); setParishModalVisible(false); }}
+                >
+                  <Text style={[styles.districtItemText, formData.parish === item && styles.districtItemTextSelected]}>{item}</Text>
+                  {formData.parish === item && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={<Text style={styles.emptyText}>No parishes found</Text>}
             />
           </View>
         </View>

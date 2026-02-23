@@ -8,12 +8,12 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  Platform,
   Alert,
   Modal,
   FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Picker } from "@react-native-picker/picker";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { apiService } from "../../services/api";
 import { getDistrictNames } from "../../data/ugandaLocations";
@@ -21,60 +21,89 @@ import { getDistrictNames } from "../../data/ugandaLocations";
 export default function CreateReferralScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  
+
+  // Accept pre-filled data from screening flow
+  const fromScreening = route.params?.fromScreening || false;
+  const screeningId = route.params?.screeningId || null;
+
   const [formData, setFormData] = useState({
     clientName: route.params?.clientName || "",
-    clientPhone: "",
-    clientAge: "",
-    reason: "",
-    referralType: "Eye Care",
+    clientPhone: route.params?.clientPhone || "",
+    clientAge: route.params?.clientAge?.toString() || "",
+    clientSex: route.params?.clientSex || "",
+    clientDistrict: route.params?.district || "",
+    reason: route.params?.reason || "",
     facilityName: "",
     facilityDistrict: "",
-    facilitySubcounty: "",
-    urgency: "normal",
-    notes: "",
+    urgency: route.params?.urgency || "normal",
+    notes: route.params?.notes || "",
   });
 
   const [loading, setLoading] = useState(false);
-  const [showDistrictModal, setShowDistrictModal] = useState(false);
-  const [districtSearch, setDistrictSearch] = useState("");
+
+  // Client district dropdown
+  const [showClientDistrictModal, setShowClientDistrictModal] = useState(false);
+  const [clientDistrictSearch, setClientDistrictSearch] = useState("");
+
+  // Facility district dropdown
+  const [showFacilityDistrictModal, setShowFacilityDistrictModal] = useState(false);
+  const [facilityDistrictSearch, setFacilityDistrictSearch] = useState("");
+
+  // Sex picker
+  const [showSexModal, setShowSexModal] = useState(false);
+  const sexOptions = ["Male", "Female"];
 
   const allDistricts = useMemo(() => getDistrictNames(), []);
-  const filteredDistricts = useMemo(() => {
-    if (!districtSearch.trim()) return allDistricts;
-    return allDistricts.filter((d) => d.toLowerCase().includes(districtSearch.toLowerCase()));
-  }, [districtSearch, allDistricts]);
+  const filteredClientDistricts = useMemo(() => {
+    if (!clientDistrictSearch.trim()) return allDistricts;
+    return allDistricts.filter((d) => d.toLowerCase().includes(clientDistrictSearch.toLowerCase()));
+  }, [clientDistrictSearch, allDistricts]);
+  const filteredFacilityDistricts = useMemo(() => {
+    if (!facilityDistrictSearch.trim()) return allDistricts;
+    return allDistricts.filter((d) => d.toLowerCase().includes(facilityDistrictSearch.toLowerCase()));
+  }, [facilityDistrictSearch, allDistricts]);
 
   const handleSubmit = async () => {
-    // Validation
-    if (!formData.clientName || !formData.clientPhone || !formData.reason) {
-      Alert.alert("Error", "Please fill in all required fields");
+    if (!formData.clientName || !formData.reason) {
+      Alert.alert("Error", "Please fill in client name and reason for referral");
       return;
     }
 
     try {
       setLoading(true);
       const result = await apiService.createReferral({
+        screeningId: screeningId || undefined,
         clientName: formData.clientName,
-        clientPhone: formData.clientPhone,
+        clientPhone: formData.clientPhone || null,
         clientAge: parseInt(formData.clientAge) || null,
+        clientGender: formData.clientSex || null,
+        clientDistrict: formData.clientDistrict || null,
         reason: formData.reason,
         urgency: formData.urgency,
         facilityName: formData.facilityName || null,
-        facilityLocation: formData.facilityDistrict 
-          ? `${formData.facilitySubcounty}, ${formData.facilityDistrict}` 
-          : null,
+        facilityLocation: formData.facilityDistrict || null,
         notes: formData.notes || null,
       });
 
       if (result.success) {
         Alert.alert(
           "Success",
-          "Referral created successfully",
+          fromScreening
+            ? "Referral created successfully. Screening ended — client must visit the health facility."
+            : "Referral created successfully",
           [
             {
               text: "OK",
-              onPress: () => navigation.goBack(),
+              onPress: () => {
+                if (fromScreening) {
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: "CHWTabs" }],
+                  });
+                } else {
+                  navigation.goBack();
+                }
+              },
             },
           ]
         );
@@ -89,89 +118,165 @@ export default function CreateReferralScreen() {
     }
   };
 
+  const handleBack = () => {
+    if (fromScreening) {
+      Alert.alert(
+        "Cancel Referral?",
+        "Going back will cancel this referral. The screening has already been saved.",
+        [
+          { text: "Stay", style: "cancel" },
+          {
+            text: "Cancel Referral",
+            style: "destructive",
+            onPress: () => {
+              navigation.reset({ index: 0, routes: [{ name: "CHWTabs" }] });
+            },
+          },
+        ]
+      );
+    } else {
+      navigation.goBack();
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#2E7D32" barStyle="light-content" />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+        <TouchableOpacity onPress={handleBack}>
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Create New Referral</Text>
+        <Text style={styles.headerTitle}>
+          {fromScreening ? "Referral from Screening" : "Create Referral"}
+        </Text>
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled">
         <View style={styles.form}>
+
+          {/* Pre-filled banner when from screening */}
+          {fromScreening && (
+            <View style={styles.warningBanner}>
+              <Ionicons name="warning" size={20} color="#92400E" />
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={styles.warningTitle}>Referral Required</Text>
+                <Text style={styles.warningText}>
+                  Client details are pre-filled from the screening. Add the referral facility details below.
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* ===== SECTION: Client Information ===== */}
+          <Text style={styles.sectionTitle}>Client Information</Text>
+
           {/* Client Name */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Client Name *</Text>
+            <Text style={styles.label}>Name *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, fromScreening && styles.readOnlyInput]}
               value={formData.clientName}
               onChangeText={(text) => setFormData({ ...formData, clientName: text })}
               placeholder="Enter client name"
               placeholderTextColor="#9CA3AF"
-            />
-          </View>
-
-          {/* Client Phone */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Client Phone *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.clientPhone}
-              onChangeText={(text) => setFormData({ ...formData, clientPhone: text })}
-              placeholder="0700000000"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="phone-pad"
+              editable={!fromScreening}
             />
           </View>
 
           {/* Client Age */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Client Age</Text>
+            <Text style={styles.label}>Age</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, fromScreening && styles.readOnlyInput]}
               value={formData.clientAge}
               onChangeText={(text) => setFormData({ ...formData, clientAge: text })}
               placeholder="Enter age"
               placeholderTextColor="#9CA3AF"
               keyboardType="numeric"
+              editable={!fromScreening}
             />
           </View>
 
-          {/* Referral Reason */}
+          {/* Client Sex */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Referral Reason *</Text>
+            <Text style={styles.label}>Sex</Text>
+            {fromScreening ? (
+              <TextInput
+                style={[styles.input, styles.readOnlyInput]}
+                value={formData.clientSex}
+                editable={false}
+              />
+            ) : (
+              <TouchableOpacity
+                style={styles.dropdownButton}
+                onPress={() => setShowSexModal(true)}
+              >
+                <Text style={formData.clientSex ? styles.dropdownButtonText : styles.dropdownPlaceholderText}>
+                  {formData.clientSex || "Select sex"}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color="#666" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Client District */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>District</Text>
+            {fromScreening ? (
+              <TextInput
+                style={[styles.input, styles.readOnlyInput]}
+                value={formData.clientDistrict}
+                editable={false}
+              />
+            ) : (
+              <TouchableOpacity
+                style={styles.dropdownButton}
+                onPress={() => { setClientDistrictSearch(""); setShowClientDistrictModal(true); }}
+              >
+                <Text style={formData.clientDistrict ? styles.dropdownButtonText : styles.dropdownPlaceholderText}>
+                  {formData.clientDistrict || "Select district"}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color="#666" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Client Phone */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Phone</Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, fromScreening && styles.readOnlyInput]}
+              value={formData.clientPhone}
+              onChangeText={(text) => setFormData({ ...formData, clientPhone: text })}
+              placeholder="0700000000"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="phone-pad"
+              editable={!fromScreening}
+            />
+          </View>
+
+          {/* ===== SECTION: Reason for Referral ===== */}
+          <Text style={styles.sectionTitle}>Reason for Referral</Text>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Reason *</Text>
+            <TextInput
+              style={[styles.input, styles.textArea, fromScreening && styles.readOnlyInput]}
               value={formData.reason}
               onChangeText={(text) => setFormData({ ...formData, reason: text })}
               placeholder="Describe the reason for referral"
               placeholderTextColor="#9CA3AF"
               multiline
               numberOfLines={3}
+              editable={!fromScreening}
             />
           </View>
 
-          {/* Referral Type */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Referral Type</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={formData.referralType}
-                onValueChange={(value) => setFormData({ ...formData, referralType: value })}
-                style={styles.picker}
-              >
-                <Picker.Item label="Eye Care" value="Eye Care" />
-                <Picker.Item label="NCD Screening" value="NCD Screening" />
-                <Picker.Item label="General Health" value="General Health" />
-                <Picker.Item label="Emergency" value="Emergency" />
-              </Picker>
-            </View>
-          </View>
+          {/* ===== SECTION: Referral Facility ===== */}
+          <Text style={styles.sectionTitle}>Referral Facility Details</Text>
 
           {/* Facility Name */}
           <View style={styles.inputGroup}>
@@ -190,7 +295,7 @@ export default function CreateReferralScreen() {
             <Text style={styles.label}>Facility District</Text>
             <TouchableOpacity
               style={styles.dropdownButton}
-              onPress={() => { setDistrictSearch(""); setShowDistrictModal(true); }}
+              onPress={() => { setFacilityDistrictSearch(""); setShowFacilityDistrictModal(true); }}
             >
               <Text style={formData.facilityDistrict ? styles.dropdownButtonText : styles.dropdownPlaceholderText}>
                 {formData.facilityDistrict || "Select district"}
@@ -199,32 +304,34 @@ export default function CreateReferralScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Facility Subcounty */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Facility Subcounty</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.facilitySubcounty}
-              onChangeText={(text) => setFormData({ ...formData, facilitySubcounty: text })}
-              placeholder="Enter subcounty"
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
-
           {/* Urgency */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Urgency</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={formData.urgency}
-                onValueChange={(value) => setFormData({ ...formData, urgency: value })}
-                style={styles.picker}
-              >
-                <Picker.Item label="Low" value="low" />
-                <Picker.Item label="Medium" value="normal" />
-                <Picker.Item label="High" value="high" />
-                <Picker.Item label="Urgent" value="urgent" />
-              </Picker>
+            <View style={styles.urgencyRow}>
+              {[
+                { value: "low", label: "Low", color: "#6B7280", bg: "#F3F4F6" },
+                { value: "normal", label: "Medium", color: "#D97706", bg: "#FEF3C7" },
+                { value: "high", label: "High", color: "#DC2626", bg: "#FEE2E2" },
+                { value: "urgent", label: "Urgent", color: "#FFFFFF", bg: "#DC2626" },
+              ].map((opt) => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[
+                    styles.urgencyButton,
+                    formData.urgency === opt.value && { backgroundColor: opt.bg, borderColor: opt.value === "urgent" ? "#DC2626" : opt.color },
+                  ]}
+                  onPress={() => setFormData({ ...formData, urgency: opt.value })}
+                >
+                  <Text
+                    style={[
+                      styles.urgencyText,
+                      formData.urgency === opt.value && { color: opt.color, fontWeight: "700" },
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
@@ -244,10 +351,7 @@ export default function CreateReferralScreen() {
 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => navigation.goBack()}
-            >
+            <TouchableOpacity style={styles.cancelButton} onPress={handleBack}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
 
@@ -256,6 +360,7 @@ export default function CreateReferralScreen() {
               onPress={handleSubmit}
               disabled={loading}
             >
+              <Ionicons name="send" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
               <Text style={styles.submitButtonText}>
                 {loading ? "Creating..." : "Create Referral"}
               </Text>
@@ -263,27 +368,79 @@ export default function CreateReferralScreen() {
           </View>
         </View>
       </ScrollView>
-      {/* District Modal */}
-      <Modal visible={showDistrictModal} animationType="slide" transparent>
+
+      {/* Sex Selection Modal */}
+      <Modal visible={showSexModal} animationType="fade" transparent>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowSexModal(false)}>
+          <View style={styles.modalContentSmall}>
+            <Text style={styles.modalTitle}>Select Sex</Text>
+            {sexOptions.map((opt) => (
+              <TouchableOpacity
+                key={opt}
+                style={[styles.modalItem, formData.clientSex === opt && styles.modalItemActive]}
+                onPress={() => { setFormData({ ...formData, clientSex: opt }); setShowSexModal(false); }}
+              >
+                <Text style={[styles.modalItemText, formData.clientSex === opt && styles.modalItemTextActive]}>{opt}</Text>
+                {formData.clientSex === opt && <Ionicons name="checkmark" size={20} color="#2E7D32" />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Client District Modal */}
+      <Modal visible={showClientDistrictModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select District</Text>
-              <TouchableOpacity onPress={() => setShowDistrictModal(false)}>
+              <Text style={styles.modalTitle}>Select Client District</Text>
+              <TouchableOpacity onPress={() => setShowClientDistrictModal(false)}>
                 <Ionicons name="close" size={24} color="#374151" />
               </TouchableOpacity>
             </View>
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={20} color="#999" />
-              <TextInput style={styles.searchInput} placeholder="Search district..." value={districtSearch} onChangeText={setDistrictSearch} placeholderTextColor="#999" autoFocus />
+              <TextInput style={styles.searchInput} placeholder="Search district..." value={clientDistrictSearch} onChangeText={setClientDistrictSearch} placeholderTextColor="#999" autoFocus />
             </View>
             <FlatList
-              data={filteredDistricts}
+              data={filteredClientDistricts}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.modalItem, formData.clientDistrict === item && styles.modalItemActive]}
+                  onPress={() => { setFormData({ ...formData, clientDistrict: item }); setShowClientDistrictModal(false); }}
+                >
+                  <Text style={[styles.modalItemText, formData.clientDistrict === item && styles.modalItemTextActive]}>{item}</Text>
+                  {formData.clientDistrict === item && <Ionicons name="checkmark" size={20} color="#2E7D32" />}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={<Text style={styles.emptyText}>No districts found</Text>}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Facility District Modal */}
+      <Modal visible={showFacilityDistrictModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Facility District</Text>
+              <TouchableOpacity onPress={() => setShowFacilityDistrictModal(false)}>
+                <Ionicons name="close" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color="#999" />
+              <TextInput style={styles.searchInput} placeholder="Search district..." value={facilityDistrictSearch} onChangeText={setFacilityDistrictSearch} placeholderTextColor="#999" autoFocus />
+            </View>
+            <FlatList
+              data={filteredFacilityDistricts}
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[styles.modalItem, formData.facilityDistrict === item && styles.modalItemActive]}
-                  onPress={() => { setFormData({ ...formData, facilityDistrict: item }); setShowDistrictModal(false); }}
+                  onPress={() => { setFormData({ ...formData, facilityDistrict: item }); setShowFacilityDistrictModal(false); }}
                 >
                   <Text style={[styles.modalItemText, formData.facilityDistrict === item && styles.modalItemTextActive]}>{item}</Text>
                   {formData.facilityDistrict === item && <Ionicons name="checkmark" size={20} color="#2E7D32" />}
@@ -307,16 +464,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#2E7D32",
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    paddingTop: Platform.OS === "android" ? 85 : 16,
+    paddingBottom: 16,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111827",
+    color: "#FFFFFF",
   },
   scrollView: {
     flex: 1,
@@ -324,14 +480,45 @@ const styles = StyleSheet.create({
   form: {
     padding: 20,
   },
-  inputGroup: {
+  warningBanner: {
+    flexDirection: "row",
+    backgroundColor: "#FEF3C7",
+    borderWidth: 1,
+    borderColor: "#F59E0B",
+    borderRadius: 10,
+    padding: 14,
     marginBottom: 20,
+    alignItems: "flex-start",
+  },
+  warningTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#92400E",
+    marginBottom: 4,
+  },
+  warningText: {
+    fontSize: 13,
+    color: "#78350F",
+    lineHeight: 18,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 14,
+    marginTop: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+    paddingBottom: 8,
+  },
+  inputGroup: {
+    marginBottom: 16,
   },
   label: {
     fontSize: 14,
     fontWeight: "600",
     color: "#374151",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   input: {
     backgroundColor: "#FFFFFF",
@@ -343,19 +530,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#111827",
   },
+  readOnlyInput: {
+    backgroundColor: "#F3F4F6",
+    color: "#6B7280",
+  },
   textArea: {
     minHeight: 80,
     textAlignVertical: "top",
   },
-  pickerContainer: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    borderRadius: 8,
-    overflow: "hidden",
+  urgencyRow: {
+    flexDirection: "row",
+    gap: 8,
   },
-  picker: {
-    height: 50,
+  urgencyButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: "#D1D5DB",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  urgencyText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#6B7280",
   },
   buttonContainer: {
     flexDirection: "row",
@@ -376,11 +575,13 @@ const styles = StyleSheet.create({
     color: "#6B7280",
   },
   submitButton: {
-    flex: 1,
+    flex: 2,
     backgroundColor: "#2E7D32",
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
   },
   submitButtonDisabled: {
     backgroundColor: "#9CA3AF",
@@ -421,6 +622,14 @@ const styles = StyleSheet.create({
     maxHeight: "70%",
     paddingBottom: 30,
   },
+  modalContentSmall: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    margin: 40,
+    marginTop: "auto",
+    marginBottom: "auto",
+    padding: 8,
+  },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -433,6 +642,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#111827",
+    padding: 12,
   },
   searchContainer: {
     flexDirection: "row",

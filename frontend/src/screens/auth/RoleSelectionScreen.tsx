@@ -66,7 +66,7 @@ export default function RoleSelectionScreen() {
             <View style={styles.roleHeaderText}>
               <Text style={styles.roleTitle}>{t("communityHealthWorker")}</Text>
               <Text style={styles.roleSubtitle}>
-                {t("registerAsCHW")}
+                {t("registerAsCHWDescription")}
               </Text>
             </View>
           </View>

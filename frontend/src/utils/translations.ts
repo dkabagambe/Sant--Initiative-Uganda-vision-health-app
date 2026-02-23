@@ -8,11 +8,14 @@ export const translations = {
     enterPhone: "Enter your registered mobile number",
     sendOTP: "Send OTP",
     register: "Register",
+    registerAsCHW: "Register as CHW/Outlet",
+    forCHWDescription: "For Community Health Workers\nScreen clients, sell reading glasses, and track payments using mobile money",
+    worksOffline: "Works offline for screening",
     verifyOTP: "Verify OTP",
     enterOTP: "Enter 6-digit OTP",
     resendOTP: "Resend OTP",
-    
-    // Registration
+
+    // Registration fields
     firstName: "First Name",
     lastName: "Last Name",
     gender: "Gender",
@@ -24,16 +27,17 @@ export const translations = {
     parish: "Parish",
     subCounty: "Sub-County",
     district: "District",
+    county: "County/Municipality/Division",
     region: "Region",
     organizationName: "Organization Name",
     registrationNumber: "Registration Number",
     yearsOfExperience: "Years of Experience",
-    
+
     // Roles
     chw: "CHW",
     outlet: "Outlet",
     vsla: "VSLA",
-    
+
     // Dashboard
     dashboard: "Dashboard",
     welcome: "Welcome",
@@ -60,11 +64,11 @@ export const translations = {
     noPaymentsDue: "No payments due",
     recentActivity: "Recent Activity",
     viewAll: "View All",
-    vhtEyeScreening: "VHT Eye Screening",
     ugandaJobAid: "Uganda Job Aid Protocol",
     viewReports: "View Reports",
-    
+
     // Screening
+    vhtEyeScreening: "VHT Eye Screening",
     clientInformation: "Client Information",
     fullName: "Full Name",
     age: "Age",
@@ -78,207 +82,9 @@ export const translations = {
     failed: "Failed",
     needsGlasses: "Needs Glasses",
     needsReferral: "Needs Referral",
-    
-    // Inventory
-    inventoryAndSales: "Inventory & Sales",
-    totalStock: "Total stock",
-    pairs: "pairs",
-    lowStockAlert: "Low stock alert",
-    inStock: "In Stock",
-    soldWeek: "Sold (Week)",
-    currentStockByPower: "Current Stock by Power",
-    addStock: "Add Stock",
-    standard: "Standard",
-    metal: "Metal",
-    fashion: "Fashion",
-    critical: "Critical",
-    recentSales: "Recent Sales",
-    revenueSummary: "Revenue Summary",
-    totalSalesMonth: "Total Sales (This Month)",
-    fullPayments: "Full Payments",
-    hirePurchase: "Hire-Purchase",
-    requestReplenishment: "Request Stock Replenishment",
-    scanBarcode: "Scan Barcode",
-    manualEntry: "Manual Entry",
-    selectOption: "Select an option",
-    
-    // Payments
-    paymentsAndRevenue: "Payments & Revenue",
-    totalRevenue: "Total Revenue",
-    pendingPayments: "Pending Payments",
-    completedPayments: "Completed Payments",
-    allPayments: "All Payments",
-    pending: "Pending",
-    completed: "Completed",
-    failed: "Failed",
-    overdue: "Overdue",
-    amount: "Amount",
-    status: "Status",
-    date: "Date",
-    dueDate: "Due Date",
-    recordPayment: "Record Payment",
-    selectPaymentMethod: "Select payment method",
-    cash: "Cash",
-    mobileMoney: "Mobile Money",
-    enterAmount: "Enter amount received",
-    transactionId: "Transaction ID",
-    
-    // Referrals
-    referralsAndFollowUp: "Referrals & Follow-up",
-    totalReferrals: "Total Referrals",
-    needsFollowUp: "Needs Follow-up",
-    allReferrals: "All Referrals",
-    createNewReferral: "Create New Referral",
-    fromScreening: "From Screening",
-    manualReferral: "Manual Referral",
-    selectReferralType: "Select referral type",
-    reason: "Reason",
-    facility: "Facility",
-    urgency: "Urgency",
-    high: "High",
-    normal: "Normal",
-    low: "Low",
-    
-    // Settings
-    settings: "Settings",
-    profile: "Profile",
-    language: "Language",
-    notifications: "Notifications",
-    about: "About",
-    logout: "Logout",
-    changeLanguage: "Change Language",
-    english: "English",
-    luganda: "Luganda",
-    
-    // Common Actions
-    save: "Save",
-    cancel: "Cancel",
-    next: "Next",
-    previous: "Previous",
-    submit: "Submit",
-    continue: "Continue",
-    back: "Back",
-    close: "Close",
-    confirm: "Confirm",
-    delete: "Delete",
-    edit: "Edit",
-    search: "Search",
-    filter: "Filter",
-    refresh: "Refresh",
-    
-    // Status Messages
-    loading: "Loading...",
-    success: "Success",
-    error: "Error",
-    warning: "Warning",
-    info: "Information",
-    noData: "No data available",
-    tryAgain: "Try again",
-    comingSoon: "Coming soon",
-    
-    // Time
-    today: "Today",
-    yesterday: "Yesterday",
-    daysAgo: "days ago",
-    hoursAgo: "hours ago",
-    minutesAgo: "minutes ago",
-    justNow: "Just now",
-    
-    // Validation
-    required: "Required",
-    invalidPhone: "Invalid phone number",
-    invalidEmail: "Invalid email",
-    fieldRequired: "This field is required",
-    pleaseWait: "Please wait",
-    requiredFields: "Required Fields",
-    pleaseFillRequired: "Please fill in all required fields (marked with *)",
-    
-    // Form placeholders and hints
-    enterClientName: "Enter client name",
-    enterAge: "Enter age",
-    ageDeterminesTests: "Age determines which tests to perform",
-    enterBasicDetails: "Enter basic details to start VHT screening",
-    enterCounty: "e.g., Kawempe Division, Luweero County",
-    enterSubCounty: "e.g., Mpererwe Parish, Wobulenzi Sub-County",
-    enterParish: "e.g., Bombo Parish, City Ward",
-    county: "County/Municipality/Division",
-    
-    // Pre-screening questions
-    q1DifficultyFar: "Q1. Do you have difficulty seeing far away objects?",
-    q2DifficultyReading: "Q2. Do you have difficulty reading small print?",
-    q3VisionChanges: "Q3. Have you noticed any changes in your vision recently?",
-    q4EyePain: "Q4. Do you experience eye pain or discomfort?",
-    askTheseQuestions: "Ask these questions before examination",
-    answerAllQuestions: "Please answer all questions before proceeding",
-    
-    // Safety Education & Tests
-    safetyEducationTitle: "Safety & Eye Health Education",
-    importantInformation: "Important Information",
-    eyeHealthTips: "Eye Health Tips",
-    protectYourEyes: "Protect your eyes from direct sunlight",
-    regularCheckups: "Get regular eye checkups",
-    cleanHands: "Always wash hands before touching eyes",
-    avoidRubbing: "Avoid rubbing your eyes",
-    eatHealthy: "Eat foods rich in Vitamin A",
-    startTorchTest: "Start Torch Light Test",
-    
-    // Torch Light Test
-    torchTestInstructions: "Torch Light Test Instructions",
-    lookForAbnormalSigns: "Look for abnormal signs",
-    checkBothEyes: "Check both eyes carefully",
-    recordFindings: "Record your findings",
-    abnormalSigns: "Abnormal Signs",
-    discharge: "Discharge",
-    redness: "Redness",
-    swelling: "Swelling",
-    cloudiness: "Cloudiness",
-    selectAbnormalSigns: "Select any abnormal signs observed",
-    
-    // Distance Vision
-    distanceVisionInstructions: "Distance Vision Instructions",
-    standThreeMeters: "Stand 3 meters away",
-    coverOneEye: "Cover one eye",
-    askDirection: "Ask which way E points",
-    line1: "Line 1",
-    line2: "Line 2",
-    howManyCorrect: "How many correct?",
-    mustRead: "Must read at least",
-    toContinue: "to continue",
-    
-    // Near Vision
-    nearVisionInstructions: "Near Vision Instructions",
-    holdAtArmLength: "Hold chart at arm's length (40cm)",
-    testBothEyes: "Test both eyes together",
-    askToRead: "Ask client to read N8 row",
-    goodLighting: "Ensure good lighting",
-    
-    // Common phrases
-    prerequisites: "Prerequisites",
-    confirmed: "Confirmed",
-    testSetup: "Test Setup",
-    instructions: "Instructions",
-    result: "Result",
-    passed: "Passed",
-    failed: "Failed",
-    notTested: "Not Tested",
-    
-    // Screening
-    vhtEyeScreening: "VHT Eye Screening",
     step: "Step",
     of: "of",
-    clientInformation: "Client Information",
-    fullName: "Full Name",
-    age: "Age",
     years: "years",
-    phoneNumber: "Phone Number",
-    sex: "Sex",
-    male: "Male",
-    female: "Female",
-    district: "District",
-    county: "County",
-    subCounty: "Sub-County",
-    parish: "Parish",
-    village: "Village",
     preScreeningQuestions: "Pre-Screening Questions",
     safetyEducation: "Safety & Education",
     torchLightTest: "Torch Light Test",
@@ -304,12 +110,191 @@ export const translations = {
     referralRequired: "Referral Required",
     screeningComplete: "Screening Complete",
     savedOffline: "Saved Offline",
-    
-    // Registration
+
+    // Inventory
+    inventoryAndSales: "Inventory & Sales",
+    totalStock: "Total stock",
+    pairs: "pairs",
+    lowStockAlert: "Low stock alert",
+    inStock: "In Stock",
+    soldWeek: "Sold (Week)",
+    currentStockByPower: "Current Stock by Power",
+    addStock: "Add Stock",
+    standard: "Standard",
+    metal: "Metal",
+    fashion: "Fashion",
+    critical: "Critical",
+    recentSales: "Recent Sales",
+    revenueSummary: "Revenue Summary",
+    totalSalesMonth: "Total Sales (This Month)",
+    fullPayments: "Full Payments",
+    hirePurchase: "Hire-Purchase",
+    requestReplenishment: "Request Stock Replenishment",
+    scanBarcode: "Scan Barcode",
+    manualEntry: "Manual Entry",
+    selectOption: "Select an option",
+
+    // Payments
+    paymentsAndRevenue: "Payments & Revenue",
+    totalRevenue: "Total Revenue",
+    pendingPayments: "Pending Payments",
+    completedPayments: "Completed Payments",
+    allPayments: "All Payments",
+    pending: "Pending",
+    completed: "Completed",
+    overdue: "Overdue",
+    amount: "Amount",
+    status: "Status",
+    date: "Date",
+    dueDate: "Due Date",
+    recordPayment: "Record Payment",
+    selectPaymentMethod: "Select payment method",
+    cash: "Cash",
+    mobileMoney: "Mobile Money",
+    enterAmount: "Enter amount received",
+    transactionId: "Transaction ID",
+
+    // Referrals
+    referralsAndFollowUp: "Referrals & Follow-up",
+    totalReferrals: "Total Referrals",
+    needsFollowUp: "Needs Follow-up",
+    allReferrals: "All Referrals",
+    createNewReferral: "Create New Referral",
+    fromScreening: "From Screening",
+    manualReferral: "Manual Referral",
+    selectReferralType: "Select referral type",
+    reason: "Reason",
+    facility: "Facility",
+    urgency: "Urgency",
+    high: "High",
+    normal: "Normal",
+    low: "Low",
+
+    // Settings
+    settings: "Settings",
+    profile: "Profile",
+    language: "Language",
+    notifications: "Notifications",
+    about: "About",
+    logout: "Logout",
+    changeLanguage: "Change Language",
+    english: "English",
+    luganda: "Luganda",
+
+    // Common Actions
+    save: "Save",
+    cancel: "Cancel",
+    next: "Next",
+    previous: "Previous",
+    submit: "Submit",
+    continue: "Continue",
+    back: "Back",
+    close: "Close",
+    confirm: "Confirm",
+    delete: "Delete",
+    edit: "Edit",
+    search: "Search",
+    filter: "Filter",
+    refresh: "Refresh",
+
+    // Status Messages
+    loading: "Loading...",
+    success: "Success",
+    error: "Error",
+    warning: "Warning",
+    info: "Information",
+    noData: "No data available",
+    tryAgain: "Try again",
+    comingSoon: "Coming soon",
+
+    // Time
+    today: "Today",
+    yesterday: "Yesterday",
+    daysAgo: "days ago",
+    hoursAgo: "hours ago",
+    minutesAgo: "minutes ago",
+    justNow: "Just now",
+
+    // Validation
+    required: "Required",
+    invalidPhone: "Invalid phone number",
+    invalidEmail: "Invalid email",
+    fieldRequired: "This field is required",
+    pleaseWait: "Please wait",
+    requiredFields: "Required Fields",
+    pleaseFillRequired: "Please fill in all required fields (marked with *)",
+
+    // Form placeholders and hints
+    enterClientName: "Enter client name",
+    enterAge: "Enter age",
+    ageDeterminesTests: "Age determines which tests to perform",
+    enterBasicDetails: "Enter basic details to start VHT screening",
+    enterCounty: "e.g., Kawempe Division, Luweero County",
+    enterSubCounty: "e.g., Mpererwe Parish, Wobulenzi Sub-County",
+    enterParish: "e.g., Bombo Parish, City Ward",
+
+    // Pre-screening questions
+    q1DifficultyFar: "Q1. Do you have difficulty seeing far away objects?",
+    q2DifficultyReading: "Q2. Do you have difficulty reading small print?",
+    q3VisionChanges: "Q3. Have you noticed any changes in your vision recently?",
+    q4EyePain: "Q4. Do you experience eye pain or discomfort?",
+    askTheseQuestions: "Ask these questions before examination",
+    answerAllQuestions: "Please answer all questions before proceeding",
+
+    // Safety Education & Tests
+    safetyEducationTitle: "Safety & Eye Health Education",
+    importantInformation: "Important Information",
+    eyeHealthTips: "Eye Health Tips",
+    protectYourEyes: "Protect your eyes from direct sunlight",
+    regularCheckups: "Get regular eye checkups",
+    cleanHands: "Always wash hands before touching eyes",
+    avoidRubbing: "Avoid rubbing your eyes",
+    eatHealthy: "Eat foods rich in Vitamin A",
+    startTorchTest: "Start Torch Light Test",
+
+    // Torch Light Test
+    torchTestInstructions: "Torch Light Test Instructions",
+    lookForAbnormalSigns: "Look for abnormal signs",
+    checkBothEyes: "Check both eyes carefully",
+    recordFindings: "Record your findings",
+    abnormalSigns: "Abnormal Signs",
+    discharge: "Discharge",
+    redness: "Redness",
+    swelling: "Swelling",
+    cloudiness: "Cloudiness",
+    selectAbnormalSigns: "Select any abnormal signs observed",
+
+    // Distance Vision
+    distanceVisionInstructions: "Distance Vision Instructions",
+    standThreeMeters: "Stand 3 meters away",
+    coverOneEye: "Cover one eye",
+    askDirection: "Ask which way E points",
+    line1: "Line 1",
+    line2: "Line 2",
+    howManyCorrect: "How many correct?",
+    mustRead: "Must read at least",
+    toContinue: "to continue",
+
+    // Near Vision
+    nearVisionInstructions: "Near Vision Instructions",
+    holdAtArmLength: "Hold chart at arm's length (40cm)",
+    testBothEyes: "Test both eyes together",
+    askToRead: "Ask client to read N8 row",
+    goodLighting: "Ensure good lighting",
+
+    // Common phrases
+    prerequisites: "Prerequisites",
+    confirmed: "Confirmed",
+    testSetup: "Test Setup",
+    instructions: "Instructions",
+    result: "Result",
+    notTested: "Not Tested",
+
+    // Registration pages
     registerAccount: "Register Account",
     chooseAccountType: "Choose your account type",
     communityHealthWorker: "Community Health Worker",
-    registerAsCHW: "Register as a CHW to conduct vision screenings in your community",
+    registerAsCHWDescription: "Register as a CHW to conduct vision screenings in your community",
     conductScreenings: "Conduct near-vision screenings",
     distributeGlasses: "Distribute reading glasses",
     trackPayments: "Track hire-purchase payments",
@@ -341,11 +326,14 @@ export const translations = {
     enterPhone: "Yingiza namba ya simu yo",
     sendOTP: "Wereza OTP",
     register: "Wewandiise",
+    registerAsCHW: "Wewandiise nga CHW/Dduuka",
+    forCHWDescription: "Eri Abakozi b'Obulamu mu Kitundu\nKebera abalwadde, tunda endabirwamu z'amaaso, era goberera okusasula nga okozesa Mobile Money",
+    worksOffline: "Ekola n'oba tolina yintaneeti",
     verifyOTP: "Kakasa OTP",
     enterOTP: "Yingiza OTP ya namba 6",
     resendOTP: "Ddamu Wereza OTP",
-    
-    // Registration
+
+    // Registration fields
     firstName: "Erinnya Erisooka",
     lastName: "Erinnya Eryokubiri",
     gender: "Ekikula",
@@ -357,29 +345,30 @@ export const translations = {
     parish: "Muluka",
     subCounty: "Gombolola",
     district: "Disitulikiti",
+    county: "Ssaza/Municipality/Division",
     region: "Ekitundu",
     organizationName: "Erinnya ly'Ekibiina",
     registrationNumber: "Namba y'Okwewandiisa",
     yearsOfExperience: "Emyaka gy'Obumanyirivu",
-    
+
     // Roles
     chw: "Omukozi w'Obulamu",
     outlet: "Dduuka",
     vsla: "Ekibiina",
-    
+
     // Dashboard
     dashboard: "Omubala",
     welcome: "Tukusanyukidde",
     readyToScreen: "Oli mwetegefu okukebera leero?",
     thisWeek: "Wiiki Eno",
     screened: "Abakeberebwa",
-    glassesGiven: "Endabirwamu Ezaweebwa",
+    glassesGiven: "Endabirwamu z'amaaso Ezaweebwa",
     myClients: "Bakasitoma Bange",
     activeClients: "Bakasitoma abaliko",
     dueForRepayment: "balina okusasula",
     noRepaymentsDue: "Tewali kusasula",
     inventory: "Ebintu",
-    glassesInStock: "Endabirwamu mu sitoko",
+    glassesInStock: "Endabirwamu z'amaaso mu sitoko",
     goodStockLevel: "Sitoko nnungi",
     lowStock: "Sitoko ntono",
     outOfStock: "Sitoko ewedde",
@@ -393,12 +382,12 @@ export const translations = {
     noPaymentsDue: "Tewali kusasula",
     recentActivity: "Ebyo Byakolebwa Kaakano",
     viewAll: "Laba Byonna",
-    vhtEyeScreening: "Okukebera Amaaso",
     ugandaJobAid: "Enkola ya Uganda",
     viewReports: "Laba Alipoota",
-    
+
     // Screening
-    clientInformation: "Ebikwata ku Kasitoma",
+    vhtEyeScreening: "Okukebera Amaaso kwa VHT",
+    clientInformation: "Ebikwata ku Mulwadde",
     fullName: "Erinnya Lyonna",
     age: "Emyaka",
     sex: "Ekikula",
@@ -409,9 +398,37 @@ export const translations = {
     bothEyes: "Amaaso Gombi",
     passed: "Ayise",
     failed: "Taayise",
-    needsGlasses: "Yeetaaga Endabirwamu",
+    needsGlasses: "Yeetaaga Endabirwamu z'amaaso",
     needsReferral: "Yeetaaga Okusindikibwa",
-    
+    step: "Omutendera",
+    of: "ku",
+    years: "emyaka",
+    preScreeningQuestions: "Ebibuuzo Ebisooka",
+    safetyEducation: "Obukuumi n'Okusomesa",
+    torchLightTest: "Okukebera n'Ettaala",
+    distanceVisionTest: "Okukebera Okulaba Ewala",
+    nearVisionTest: "Okukebera Okulaba Okumpi",
+    readingGlasses: "Endabirwamu z'amaaso ez'Okusoma",
+    pass: "Kiwedde",
+    fail: "Kiremye",
+    yes: "Ye",
+    no: "Nedda",
+    completeScreening: "Maliriza Okukebera",
+    createReferral: "Sindika Eddwaliro",
+    selectReadingGlasses: "Londa Endabirwamu z'amaaso",
+    startTest: "Tandika Okukebera",
+    recordResult: "Wandiika Ekivudde",
+    noAbnormalSigns: "Tewali Bubonero Bubi",
+    abnormalSignsDetected: "Bubonero Bubi Bulabiddwa",
+    testRightEye: "Kebera Eriiso Lya Ddyo",
+    testLeftEye: "Kebera Eriiso Lya Kkono",
+    canRead: "Asobola Okusoma",
+    cannotRead: "Tasobola Okusoma",
+    dispensGlasses: "Gaba Endabirwamu z'amaaso",
+    referralRequired: "Kyetaagisa Okusindika",
+    screeningComplete: "Okukebera Kuwedde",
+    savedOffline: "Kiterekeddwa Offline",
+
     // Inventory
     inventoryAndSales: "Ebintu n'Okutunda",
     totalStock: "Sitoko yonna",
@@ -434,7 +451,7 @@ export const translations = {
     scanBarcode: "Kebera Barcode",
     manualEntry: "Yingiza Wekka",
     selectOption: "Londa ekimu",
-    
+
     // Payments
     paymentsAndRevenue: "Okusasula n'Ensimbi",
     totalRevenue: "Ensimbi Zonna",
@@ -443,7 +460,6 @@ export const translations = {
     allPayments: "Okusasula Kwonna",
     pending: "Kukyali",
     completed: "Kuwedde",
-    failed: "Kiremye",
     overdue: "Kyayitawo",
     amount: "Omuwendo",
     status: "Embeera",
@@ -455,7 +471,7 @@ export const translations = {
     mobileMoney: "Mobile Money",
     enterAmount: "Yingiza Omuwendo",
     transactionId: "Namba ya Transaction",
-    
+
     // Referrals
     referralsAndFollowUp: "Okusindika n'Okugoberera",
     totalReferrals: "Abasindikiddwa Bonna",
@@ -471,7 +487,7 @@ export const translations = {
     high: "Waggulu",
     normal: "Bulijjo",
     low: "Wansi",
-    
+
     // Settings
     settings: "Enteekateeka",
     profile: "Ebikukwata",
@@ -482,7 +498,7 @@ export const translations = {
     changeLanguage: "Kyusa Olulimi",
     english: "Olungereza",
     luganda: "Oluganda",
-    
+
     // Common Actions
     save: "Tereka",
     cancel: "Sazaamu",
@@ -498,7 +514,7 @@ export const translations = {
     search: "Noonya",
     filter: "Sengejja",
     refresh: "Zzaamu",
-    
+
     // Status Messages
     loading: "Tegeka...",
     success: "Kituuse",
@@ -508,7 +524,7 @@ export const translations = {
     noData: "Tewali Makulu",
     tryAgain: "Ddamu Gezaako",
     comingSoon: "Kijja Mangu",
-    
+
     // Time
     today: "Leero",
     yesterday: "Jjo",
@@ -516,7 +532,7 @@ export const translations = {
     hoursAgo: "essaawa eziyise",
     minutesAgo: "eddakiika eziyise",
     justNow: "Kaakano",
-    
+
     // Validation
     required: "Kyetaagisa",
     invalidPhone: "Namba ya simu si nnungi",
@@ -525,7 +541,7 @@ export const translations = {
     pleaseWait: "Lindawo",
     requiredFields: "Ebintu Ebyetaagisa",
     pleaseFillRequired: "Jjuza ebintu byonna ebyetaagisa (ebiriiko *)",
-    
+
     // Form placeholders and hints
     enterClientName: "Yingiza erinnya lya mulwadde",
     enterAge: "Yingiza emyaka",
@@ -534,8 +550,7 @@ export const translations = {
     enterCounty: "Okugeza: Kawempe Division, Luweero County",
     enterSubCounty: "Okugeza: Mpererwe Parish, Wobulenzi Sub-County",
     enterParish: "Okugeza: Bombo Parish, City Ward",
-    county: "Ssaza/Municipality/Division",
-    
+
     // Pre-screening questions
     q1DifficultyFar: "E1. Olina obuzibu okulaba ebintu ebiri ewala?",
     q2DifficultyReading: "E2. Olina obuzibu okusoma ebiwandiike ebitono?",
@@ -543,7 +558,7 @@ export const translations = {
     q4EyePain: "E4. Olina obulumi bw'amaaso oba obutali bulungi?",
     askTheseQuestions: "Buuza ebibuuzo bino nga tonnakebera",
     answerAllQuestions: "Ddamu ebibuuzo byonna nga tonnagenda mu maaso",
-    
+
     // Safety Education & Tests
     safetyEducationTitle: "Obukuumi n'Okusomesa ku Maaso",
     importantInformation: "Amakulu Agakulu",
@@ -554,7 +569,7 @@ export const translations = {
     avoidRubbing: "Weewale okusiimuula amaaso",
     eatHealthy: "Lya emmere erimu Vitamin A",
     startTorchTest: "Tandika Okukebera n'Ettaala",
-    
+
     // Torch Light Test
     torchTestInstructions: "Ebiragiro by'Okukebera n'Ettaala",
     lookForAbnormalSigns: "Noonya obubonero obubi",
@@ -566,7 +581,7 @@ export const translations = {
     swelling: "Okuzimba",
     cloudiness: "Ekire",
     selectAbnormalSigns: "Londa obubonero obubi bw'olabye",
-    
+
     // Distance Vision
     distanceVisionInstructions: "Ebiragiro by'Okulaba Ewala",
     standThreeMeters: "Yimirira mita 3 ewala",
@@ -577,79 +592,34 @@ export const translations = {
     howManyCorrect: "Mmeka ezituufu?",
     mustRead: "Ateekwa okusoma obungi",
     toContinue: "okugenda mu maaso",
-    
+
     // Near Vision
     nearVisionInstructions: "Ebiragiro by'Okulaba Okumpi",
     holdAtArmLength: "Kwata ekipande ku buwanvu bw'omukono (40cm)",
     testBothEyes: "Kebera amaaso gombi wamu",
     askToRead: "Saba mulwadde asomeyo lunyiriri N8",
     goodLighting: "Kakasa nti waliwo omusana omulungi",
-    
+
     // Common phrases
     prerequisites: "Ebisookerwako",
     confirmed: "Bikakasiddwa",
     testSetup: "Okutegeka Okukebera",
     instructions: "Ebiragiro",
     result: "Ekivudde",
-    passed: "Ayise",
-    failed: "Taayise",
     notTested: "Teyakeberebwa",
-    
-    // Screening
-    vhtEyeScreening: "Okukebera Amaaso kwa VHT",
-    step: "Omutendera",
-    of: "ku",
-    clientInformation: "Ebikwata ku Mulwadde",
-    fullName: "Erinnya Lyonna",
-    age: "Emyaka",
-    years: "emyaka",
-    phoneNumber: "Namba ya Simu",
-    sex: "Ekikula",
-    male: "Omusajja",
-    female: "Omukazi",
-    district: "Disitulikiti",
-    county: "Ssaza",
-    subCounty: "Gombolola",
-    parish: "Muluka",
-    village: "Kyalo",
-    preScreeningQuestions: "Ebibuuzo Ebisooka",
-    safetyEducation: "Obukuumi n'Okusomesa",
-    torchLightTest: "Okukebera n'Ettaala",
-    distanceVisionTest: "Okukebera Okulaba Ewala",
-    nearVisionTest: "Okukebera Okulaba Okumpi",
-    readingGlasses: "Endabirwamu z'Okusoma",
-    pass: "Kiwedde",
-    fail: "Kiremye",
-    yes: "Ye",
-    no: "Nedda",
-    completeScreening: "Maliriza Okukebera",
-    createReferral: "Sindika Eddwaliro",
-    selectReadingGlasses: "Londa Endabirwamu",
-    startTest: "Tandika Okukebera",
-    recordResult: "Wandiika Ekivudde",
-    noAbnormalSigns: "Tewali Bubonero Bubi",
-    abnormalSignsDetected: "Bubonero Bubi Bulabiddwa",
-    testRightEye: "Kebera Eriiso Lya Ddyo",
-    testLeftEye: "Kebera Eriiso Lya Kkono",
-    canRead: "Asobola Okusoma",
-    cannotRead: "Tasobola Okusoma",
-    dispensGlasses: "Gaba Endabirwamu",
-    referralRequired: "Kyetaagisa Okusindika",
-    screeningComplete: "Okukebera Kuwedde",
-    savedOffline: "Kiterekeddwa Offline",
-    
-    // Registration
+
+    // Registration pages
     registerAccount: "Wandiisa Akawunti",
     chooseAccountType: "Londa ekika kya akawunti yo",
     communityHealthWorker: "Omukozi w'Obulamu mu Kitundu",
-    registerAsCHW: "Wandiisa ng'omukozi w'obulamu okukola okukebera amaaso mu kitundu kyo",
+    registerAsCHWDescription: "Wandiisa ng'omukozi w'obulamu okukola okukebera amaaso mu kitundu kyo",
     conductScreenings: "Kola okukebera okulaba okumpi",
-    distributeGlasses: "Gaba endabirwamu z'okusoma",
+    distributeGlasses: "Gaba endabirwamu z'amaaso",
     trackPayments: "Goberera okusasula okupangisa",
     makeReferrals: "Sindika abalwadde eddwaliro",
     retailOutlet: "Dduuka / Sitoowa",
-    registerShop: "Wandiisa dduuka lyo okutunda endabirwamu nga okolagana ne Santé",
-    sellGlasses: "Tunda endabirwamu za Santé",
+    registerShop: "Wandiisa dduuka lyo okutunda endabirwamu z'amaaso nga okolagana ne Santé",
+    sellGlasses: "Tunda endabirwamu z'amaaso za Santé",
     manageInventory: "Kuuma sitoko n'ebintu",
     trackSales: "Goberera okutunda n'ensimbi",
     receiveStock: "Funa sitoko empya",

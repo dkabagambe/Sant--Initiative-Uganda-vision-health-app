@@ -16,7 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { getDistrictNames, getCountiesForDistrict } from "../../data/ugandaLocations";
+import { getDistrictNames, getCountiesForDistrict, getSubCountiesForCounty, getParishesForSubCounty } from "../../data/ugandaLocations";
 
 const { width } = Dimensions.get("window");
 
@@ -316,27 +316,17 @@ export default function VisionScreeningFlow() {
     [district]
   );
 
-  const subCounties = [
-    { label: "Luweero Town Council", value: "luweero_tc" },
-    { label: "Bombo Town Council", value: "bombo_tc" },
-    { label: "Kikyusa", value: "kikyusa" },
-    { label: "Wobulenzi", value: "wobulenzi" },
-  ];
+  const subCounties = useMemo(() => 
+    county ? getSubCountiesForCounty(county).map((sc) => ({ label: sc, value: sc })) : [],
+    [county]
+  );
 
-  const parishes = [
-    { label: "Central Ward", value: "central" },
-    { label: "Kasana Ward", value: "kasana" },
-    { label: "Kawempe Ward", value: "kawempe" },
-    { label: "Nakasero Ward", value: "nakasero" },
-    { label: "Bombo Parish", value: "bombo_parish" },
-  ];
+  const parishes = useMemo(() => 
+    subCounty ? getParishesForSubCounty(subCounty).map((p) => ({ label: p, value: p })) : [],
+    [subCounty]
+  );
 
-  const villages = [
-    { label: "Kasana Village", value: "kasana_village" },
-    { label: "Kawempe Village", value: "kawempe_village" },
-    { label: "Nakasero Village", value: "nakasero_village" },
-    { label: "Bombo Village", value: "bombo_village" },
-  ];
+  const villages: { label: string; value: string }[] = [];
 
   const powerOptions = [
     "+1.00D",
@@ -523,7 +513,7 @@ export default function VisionScreeningFlow() {
               value={district}
               placeholder="Select district"
               options={districts}
-              onSelect={(val) => { setDistrict(val); setCounty(""); }}
+              onSelect={(val) => { setDistrict(val); setCounty(""); setSubCounty(""); setParish(""); }}
             />
 
             <Dropdown
@@ -531,7 +521,7 @@ export default function VisionScreeningFlow() {
               value={county}
               placeholder="Select county/sub-county"
               options={counties}
-              onSelect={setCounty}
+              onSelect={(val) => { setCounty(val); setSubCounty(""); setParish(""); }}
               disabled={!district}
             />
 
@@ -540,18 +530,31 @@ export default function VisionScreeningFlow() {
               value={subCounty}
               placeholder="Select sub-county/parish"
               options={subCounties}
-              onSelect={setSubCounty}
+              onSelect={(val) => { setSubCounty(val); setParish(""); }}
               disabled={!county}
             />
 
-            <Dropdown
-              label="Parish/Ward"
-              value={parish}
-              placeholder="Select parish/ward"
-              options={parishes}
-              onSelect={setParish}
-              disabled={!subCounty}
-            />
+            {subCounty && parishes.length === 0 ? (
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Parish/Ward</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Type parish name"
+                  value={parish}
+                  onChangeText={setParish}
+                  placeholderTextColor="#9CA3AF"
+                />
+              </View>
+            ) : (
+              <Dropdown
+                label="Parish/Ward"
+                value={parish}
+                placeholder="Select parish/ward"
+                options={parishes}
+                onSelect={setParish}
+                disabled={!subCounty}
+              />
+            )}
 
             <Dropdown
               label="Village"

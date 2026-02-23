@@ -104,6 +104,11 @@ CREATE TABLE IF NOT EXISTS referrals (
     screening_id UUID REFERENCES screenings(id),
     client_id UUID REFERENCES clients(id),
     health_worker_id UUID REFERENCES users(id),
+    client_name VARCHAR(200),
+    client_phone VARCHAR(20),
+    client_age INTEGER,
+    client_gender VARCHAR(20),
+    client_district VARCHAR(100),
     reason TEXT NOT NULL,
     urgency VARCHAR(20) DEFAULT 'normal', -- urgent, normal, routine
     facility_name VARCHAR(200),

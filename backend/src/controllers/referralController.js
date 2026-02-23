@@ -7,6 +7,10 @@ exports.createReferral = async (req, res) => {
       screeningId,
       clientId,
       clientName,
+      clientPhone,
+      clientAge,
+      clientGender,
+      clientDistrict,
       reason,
       urgency,
       facilityName,
@@ -21,9 +25,11 @@ exports.createReferral = async (req, res) => {
     const referral = await sql`
       INSERT INTO referrals (
         screening_id, client_id, health_worker_id, client_name,
+        client_phone, client_age, client_gender, client_district,
         reason, urgency, facility_name, facility_location, notes
       ) VALUES (
         ${screeningId || null}, ${clientId || null}, ${healthWorkerId}, ${clientName || null},
+        ${clientPhone || null}, ${clientAge || null}, ${clientGender || null}, ${clientDistrict || null},
         ${reason}, ${urgency || 'normal'}, ${facilityName || null}, ${facilityLocation || null}, ${notes || null}
       )
       RETURNING *
@@ -53,10 +59,12 @@ exports.getReferrals = async (req, res) => {
         SELECT 
           r.id, r.screening_id, r.health_worker_id,
           COALESCE(r.client_name, s.client_name) as client_name,
+          COALESCE(r.client_phone, s.client_phone) as client_phone,
+          COALESCE(r.client_age, s.client_age) as client_age,
+          r.client_gender,
+          r.client_district,
           r.reason, r.urgency, r.facility_name, r.facility_location,
           r.status, r.referred_date, r.completed_date, r.notes, r.created_at,
-          s.client_phone,
-          s.client_age,
           u.full_name as health_worker_name
         FROM referrals r
         LEFT JOIN screenings s ON r.screening_id = s.id
@@ -71,10 +79,12 @@ exports.getReferrals = async (req, res) => {
         SELECT 
           r.id, r.screening_id, r.health_worker_id,
           COALESCE(r.client_name, s.client_name) as client_name,
+          COALESCE(r.client_phone, s.client_phone) as client_phone,
+          COALESCE(r.client_age, s.client_age) as client_age,
+          r.client_gender,
+          r.client_district,
           r.reason, r.urgency, r.facility_name, r.facility_location,
           r.status, r.referred_date, r.completed_date, r.notes, r.created_at,
-          s.client_phone,
-          s.client_age,
           u.full_name as health_worker_name
         FROM referrals r
         LEFT JOIN screenings s ON r.screening_id = s.id
@@ -110,9 +120,9 @@ exports.getReferralById = async (req, res) => {
     const referral = await sql`
       SELECT 
         r.*,
-        s.client_name,
-        s.client_phone,
-        s.client_age,
+        COALESCE(r.client_name, s.client_name) as client_name,
+        COALESCE(r.client_phone, s.client_phone) as client_phone,
+        COALESCE(r.client_age, s.client_age) as client_age,
         s.client_village,
         u.full_name as health_worker_name,
         u.phone_number as health_worker_phone
@@ -147,13 +157,18 @@ exports.updateReferralStatus = async (req, res) => {
       return res.status(400).json({ success: false, error: "Invalid status" });
     }
 
-    const updated = await sql`
+    const completedDate = status === 'completed' ? new Date().toISOString().split('T')[0] : null;
+
+    await sql`
       UPDATE referrals 
       SET status = ${status},
-          completed_date = ${status === 'completed' ? sql`CURRENT_DATE` : sql`NULL`},
-          notes = ${notes || sql`notes`}
+          completed_date = ${completedDate}
       WHERE id = ${id}
-      RETURNING *
+    `;
+
+    // Fetch the updated referral
+    const updated = await sql`
+      SELECT * FROM referrals WHERE id = ${id}
     `;
 
     if (updated.length === 0) {

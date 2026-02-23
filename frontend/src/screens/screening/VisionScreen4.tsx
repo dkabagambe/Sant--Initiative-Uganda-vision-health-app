@@ -92,85 +92,55 @@ export default function TorchLightStepScreen() {
 
     if (!passed) {
       // Abnormal signs detected - STOP and REFER immediately
+      // Get human-readable labels for the abnormal signs
+      const abnormalLabels = abnormalSignOptions
+        .filter((opt) => abnormalSigns.includes(opt.id))
+        .map((opt) => opt.label);
+      const reasonText = `Torch Light Test Failed — Abnormal signs: ${abnormalLabels.join(", ")}`;
+
       const referralData = {
         ...screeningData,
         torchTestPassed: false,
-        torchTestAbnormalSigns: abnormalSigns.join(", "),
+        torchTestAbnormalSigns: abnormalLabels.join(", "),
         distanceVisionResult: "not_tested",
         nearVisionResult: "not_tested",
         needsReferral: true,
         needsGlasses: false,
-        referralReason: `Abnormal eye signs detected: ${abnormalSigns.join(", ")}`,
+        referralReason: reasonText,
         referralUrgency: "high",
         referralStep: "Step 4 - Torch Light Test"
       };
 
       updateScreeningData(referralData);
 
-      Alert.alert(
-        "⚠️ Referral Required",
-        `Abnormal signs detected: ${abnormalSigns.join(", ")}\n\nClient must be referred to health facility immediately.\n\nDO NOT proceed with other vision tests.`,
-        [
-          {
-            text: "Create Referral Now",
-            onPress: async () => {
-              try {
-                // Create screening record
-                const result = await apiService.createScreening(referralData);
-                
-                if (result.success) {
-                  // Create referral
-                  const facilities = await apiService.getHealthFacilities(referralData.district);
-                  const facility = facilities.data?.[0];
-                  
-                  await apiService.createReferral({
-                    screeningId: result.data.id,
-                    clientName: referralData.clientName,
-                    reason: referralData.referralReason,
-                    urgency: "high",
-                    facilityName: facility?.name || "Nearest Health Facility",
-                    facilityLocation: facility?.location || referralData.district,
-                    notes: "Referred from Step 4 - Torch Light Test (Abnormal signs)"
-                  });
+      // Save screening record first, then navigate to referral form
+      let savedScreeningId: string | null = null;
+      try {
+        const result = await apiService.createScreening(referralData);
+        if (result.success) {
+          savedScreeningId = result.data?.id || null;
+        }
+      } catch (error) {
+        console.error("Failed to save screening, saving offline:", error);
+        await saveOffline(referralData);
+      }
 
-                  Alert.alert(
-                    "✅ Referral Created",
-                    `Client referred to ${facility?.name || "health facility"}.\n\nScreening ended - no other tests performed.`,
-                    [{ text: "OK", onPress: () => {
-                      updateScreeningData({});
-                      navigation.reset({
-                        index: 0,
-                        routes: [{ name: "CHWTabs" }],
-                      });
-                    }}]
-                  );
-                } else {
-                  throw new Error("Failed to create screening");
-                }
-              } catch (error) {
-                console.error("Referral creation error:", error);
-                const saved = await saveOffline(referralData);
-                if (saved) {
-                  Alert.alert(
-                    "📱 Referral Saved Offline",
-                    "No internet connection. Referral saved locally and will sync when online.",
-                    [{ text: "OK", onPress: () => {
-                      updateScreeningData({});
-                      navigation.reset({
-                        index: 0,
-                        routes: [{ name: "CHWTabs" }],
-                      });
-                    }}]
-                  );
-                } else {
-                  Alert.alert("Error", "Failed to create referral. Please try again.");
-                }
-              }
-            },
-            style: "default",
-          },
-        ],
-      );
+      // Navigate to pre-filled referral form
+      navigation.navigate("CreateReferralScreen", {
+        fromScreening: true,
+        screeningId: savedScreeningId,
+        clientName: screeningData.clientName || "",
+        clientPhone: screeningData.clientPhone || "",
+        clientAge: screeningData.clientAge || "",
+        clientSex: screeningData.clientGender || "",
+        district: screeningData.district || "",
+        county: screeningData.county || "",
+        subCounty: screeningData.subCounty || "",
+        parish: screeningData.parish || "",
+        reason: reasonText,
+        urgency: "high",
+        notes: `Referred from Step 4 — Torch Light Test.\nAbnormal signs: ${abnormalLabels.join(", ")}.\nDO NOT proceed with other vision tests.`,
+      });
     } else {
       // No abnormal signs - check age
       updateScreeningData({

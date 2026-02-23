@@ -12,6 +12,9 @@ exports.createScreening = async (req, res) => {
       clientGender,
       clientVillage,
       district,
+      county,
+      subCounty,
+      parish,
       // Vision test results - handle both old and new field names
       distanceVisionLeft,
       distanceVisionRight,
@@ -53,6 +56,7 @@ exports.createScreening = async (req, res) => {
     const screening = await sql`
       INSERT INTO screenings (
         health_worker_id, client_name, client_phone, client_age, client_gender, client_village,
+        client_district, client_county, client_sub_county, client_parish,
         distance_vision_left, distance_vision_right, distance_vision_both,
         near_vision_result, pinhole_test_left, pinhole_test_right,
         needs_glasses, needs_referral, referral_reason,
@@ -60,6 +64,7 @@ exports.createScreening = async (req, res) => {
         notes, offline_id, is_synced
       ) VALUES (
         ${healthWorkerId}, ${clientName || null}, ${clientPhone || null}, ${clientAge || null}, ${clientGender || null}, ${clientVillage || null},
+        ${district || null}, ${county || null}, ${subCounty || null}, ${parish || null},
         ${distanceVisionLeft || null}, ${distanceVisionRight || null}, ${distanceVisionBoth || null},
         ${nearVisionResult || null}, ${pinholeTestLeft || null}, ${pinholeTestRight || null},
         ${needsGlasses ? 1 : 0}, ${needsReferral ? 1 : 0}, ${referralReason || null},

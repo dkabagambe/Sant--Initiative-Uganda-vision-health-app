@@ -75,67 +75,36 @@ export default function DistanceVisionTestScreen() {
 
       updateScreeningData(referralData);
 
-      Alert.alert(
-        "🏥 Referral Required",
-        `${eyeTested} eye failed distance vision test.\n\nClient requires comprehensive eye examination.\n\nNear vision test will NOT be performed.`,
-        [
-          {
-            text: "Create Referral Now",
-            onPress: async () => {
-              try {
-                const result = await apiService.createScreening(referralData);
-                
-                if (result.success) {
-                  const facilities = await apiService.getHealthFacilities(referralData.district);
-                  const facility = facilities.data?.[0];
-                  
-                  await apiService.createReferral({
-                    screeningId: result.data.id,
-                    clientName: referralData.clientName,
-                    reason: referralData.referralReason,
-                    urgency: "normal",
-                    facilityName: facility?.name || "Nearest Health Facility",
-                    facilityLocation: facility?.location || referralData.district,
-                    notes: "Referred from Step 5 - Distance Vision Test Failed"
-                  });
+      // Save screening record first, then navigate to referral form
+      let savedScreeningId: string | null = null;
+      try {
+        const result = await apiService.createScreening(referralData);
+        if (result.success) {
+          savedScreeningId = result.data?.id || null;
+        }
+      } catch (error) {
+        console.error("Failed to save screening, saving offline:", error);
+        await saveOffline(referralData);
+      }
 
-                  Alert.alert(
-                    "✅ Referral Created",
-                    `Client referred to ${facility?.name || "health facility"}.\n\nScreening ended - near vision test not performed.`,
-                    [{ text: "OK", onPress: () => {
-                      updateScreeningData({});
-                      navigation.reset({
-                        index: 0,
-                        routes: [{ name: "CHWTabs" }],
-                      });
-                    }}]
-                  );
-                } else {
-                  throw new Error("Failed to create screening");
-                }
-              } catch (error) {
-                console.error("Referral creation error:", error);
-                const saved = await saveOffline(referralData);
-                if (saved) {
-                  Alert.alert(
-                    "📱 Referral Saved Offline",
-                    "No internet connection. Referral saved locally and will sync when online.",
-                    [{ text: "OK", onPress: () => {
-                      updateScreeningData({});
-                      navigation.reset({
-                        index: 0,
-                        routes: [{ name: "CHWTabs" }],
-                      });
-                    }}]
-                  );
-                } else {
-                  Alert.alert("Error", "Failed to create referral. Please try again.");
-                }
-              }
-            },
-          },
-        ]
-      );
+      const reasonText = referralData.referralReason;
+
+      // Navigate to pre-filled referral form
+      navigation.navigate("CreateReferralScreen", {
+        fromScreening: true,
+        screeningId: savedScreeningId,
+        clientName: screeningData.clientName || "",
+        clientPhone: screeningData.clientPhone || "",
+        clientAge: screeningData.clientAge || "",
+        clientSex: screeningData.clientGender || "",
+        district: screeningData.district || "",
+        county: screeningData.county || "",
+        subCounty: screeningData.subCounty || "",
+        parish: screeningData.parish || "",
+        reason: reasonText,
+        urgency: "normal",
+        notes: `Referred from Step 5 — Distance Vision Test.\n${eyeTested} eye failed. Line 1: ${line1Score}/3, Line 2: ${line2Score}/5.\nNear vision test NOT performed.`,
+      });
       return;
     }
 

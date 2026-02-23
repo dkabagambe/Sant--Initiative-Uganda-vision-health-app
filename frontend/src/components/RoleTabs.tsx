@@ -38,13 +38,13 @@ export default function RoleTabs({ value, onChange }: Props) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    marginVertical: 20,
+    marginVertical: 14,
     gap: 8,
   },
   tab: {
     flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
     borderRadius: 10,
     backgroundColor: "#F3F4F6",
     borderWidth: 2,
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   },
   text: {
     textAlign: "center",
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
     color: "#6B7280",
   },

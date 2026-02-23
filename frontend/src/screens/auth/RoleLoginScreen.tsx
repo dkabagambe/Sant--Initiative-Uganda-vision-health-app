@@ -172,7 +172,7 @@ export default function RoleLoginScreen() {
             onChangeText={formatPhoneInput}
             onSubmitEditing={handlePhoneSubmit}
             returnKeyType="done"
-            maxLength={11} // 9 digits + 2 spaces
+            maxLength={11}
             editable={!isLoading}
           />
         </View>
@@ -190,48 +190,43 @@ export default function RoleLoginScreen() {
         </Text>
 
         {/* Send OTP Button */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              (!phone.trim() || isLoading) && styles.sendButtonDisabled,
-            ]}
-            onPress={handleSendOTP}
-            disabled={!phone.trim() || isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={styles.sendButtonText}>{t("sendOTP")}</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[
+            styles.sendButton,
+            (!phone.trim() || isLoading) && styles.sendButtonDisabled,
+          ]}
+          onPress={handleSendOTP}
+          disabled={!phone.trim() || isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Text style={styles.sendButtonText}>{t("sendOTP")}</Text>
+          )}
+        </TouchableOpacity>
 
         {/* Register Button */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.registerButton}
-            onPress={handleRegisterPress}
-          >
-            <Text style={styles.registerButtonText}>
-              Register as CHW/Outlet
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.registerButton}
+          onPress={handleRegisterPress}
+        >
+          <Text style={styles.registerButtonText}>
+            {t("registerAsCHW")}
+          </Text>
+        </TouchableOpacity>
 
         {/* Info Card */}
         <View style={styles.infoCard}>
-          <Ionicons name="eye-outline" size={18} color="#1E40AF" />
+          <Ionicons name="eye-outline" size={16} color="#1E40AF" />
           <Text style={styles.infoText}>
-            For Community Health Workers{"\n"}
-            Screen clients, sell reading glasses, and track payments using
-            mobile money
+            {t("forCHWDescription")}
           </Text>
         </View>
 
-        {/* Divider */}
-        <View style={styles.divider}>
-          <Text style={styles.offlineText}>Works offline for screening</Text>
+        {/* Offline Badge */}
+        <View style={styles.offlineBadge}>
+          <Ionicons name="cloud-offline-outline" size={14} color="#666" />
+          <Text style={styles.offlineText}>{t("worksOffline")}</Text>
         </View>
 
         {/* Language Buttons */}
@@ -269,15 +264,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 20,
+    paddingTop: 20,
+    paddingBottom: 24,
   },
   languageContainer: {
     flexDirection: "row",
     justifyContent: "center",
     gap: 12,
-    marginTop: 24,
-    marginBottom: 24,
+    marginTop: 16,
+    marginBottom: 12,
   },
   langButton: {
     paddingHorizontal: 20,
@@ -303,25 +298,25 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   logo: {
-    width: 70,
-    height: 70,
+    width: 60,
+    height: 60,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
     textAlign: "center",
     color: "#333",
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     textAlign: "center",
     color: "#666",
     marginTop: 4,
-    marginBottom: 20,
-    lineHeight: 20,
+    marginBottom: 14,
+    lineHeight: 18,
   },
   label: {
     fontSize: 14,
@@ -382,10 +377,7 @@ const styles = StyleSheet.create({
   helperText: {
     fontSize: 12,
     color: "#777",
-    marginTop: 6,
-    marginBottom: 16,
-  },
-  buttonContainer: {
+    marginTop: 4,
     marginBottom: 12,
   },
   sendButton: {
@@ -394,6 +386,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 10,
   },
   sendButtonDisabled: {
     backgroundColor: "#93C5FD",
@@ -405,16 +398,17 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     backgroundColor: "transparent",
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1.5,
-    borderColor: "#1E40AF",
+    borderColor: "#2E7D32",
+    marginBottom: 12,
   },
   registerButtonText: {
-    color: "#1E40AF",
-    fontSize: 16,
+    color: "#2E7D32",
+    fontSize: 14,
     fontWeight: "600",
   },
   infoCard: {
@@ -422,8 +416,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#EAF2FF",
     borderRadius: 10,
     padding: 10,
-    marginTop: 12,
     gap: 8,
+    marginBottom: 10,
   },
   infoText: {
     fontSize: 12,
@@ -431,54 +425,26 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 16,
   },
-  divider: {
-    marginTop: 24,
-    paddingVertical: 10,
+  offlineBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
     backgroundColor: "#F3F4F6",
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#E5E7EB",
   },
   offlineText: {
-    textAlign: "center",
     fontSize: 12,
     color: "#666",
     fontWeight: "500",
   },
-  languageRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  langActive: {
-    backgroundColor: "#1E40AF",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  langActiveText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  langInactive: {
-    backgroundColor: "#E5E7EB",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  langInactiveText: {
-    fontSize: 12,
-    color: "#333",
-    fontWeight: "500",
-  },
   footerText: {
     textAlign: "center",
-    fontSize: 13,
+    fontSize: 12,
     color: "#6B7280",
-    marginTop: 16,
-    marginBottom: 0,
+    marginBottom: 8,
   },
 });
