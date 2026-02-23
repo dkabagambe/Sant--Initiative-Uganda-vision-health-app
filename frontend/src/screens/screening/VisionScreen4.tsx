@@ -466,11 +466,10 @@ export default function TorchLightStepScreen() {
           {hasAbnormalSigns && (
             <View style={styles.referralWarning}>
               <Text style={styles.warningTitle}>
-                ⚠️ Automatic Referral Required
+                ⚠️ Referral Required
               </Text>
               <Text style={styles.warningText}>
-                Clicking "No - Fail" will automatically generate a referral to a
-                health facility. Do NOT proceed with other vision tests.
+                Clicking "No - Fail" will open the referral form with client details pre-filled. Do NOT proceed with other vision tests.
               </Text>
             </View>
           )}
@@ -628,20 +627,18 @@ export default function TorchLightStepScreen() {
           <TouchableOpacity
             style={[
               styles.primaryButton,
-              testPassed === false && styles.disabledButton,
+              testPassed === null && styles.disabledButton,
             ]}
             onPress={() => {
               if (testPassed === true) {
                 setCurrentSubStep(4.5);
               }
             }}
-            disabled={testPassed === false}
+            disabled={testPassed === null || testPassed === false}
             activeOpacity={0.8}
           >
             <Text style={styles.primaryButtonText}>
-              {testPassed === false
-                ? "Referral Generated"
-                : "Continue to Next Step"}
+              Continue to Next Step
             </Text>
           </TouchableOpacity>
         ) : (
