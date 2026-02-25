@@ -22,7 +22,7 @@ exports.createReferral = async (req, res) => {
       return res.status(400).json({ success: false, error: "Referral reason required" });
     }
 
-    const insertResult = sql`
+    await sql`
       INSERT INTO referrals (
         screening_id, client_id, health_worker_id, client_name,
         client_phone, client_age, client_gender, client_district,
@@ -35,7 +35,7 @@ exports.createReferral = async (req, res) => {
     `;
 
     // Fetch the most recently created referral for this worker
-    const referral = sql`
+    const referral = await sql`
       SELECT * FROM referrals 
       WHERE health_worker_id = ${healthWorkerId} 
       ORDER BY created_at DESC LIMIT 1

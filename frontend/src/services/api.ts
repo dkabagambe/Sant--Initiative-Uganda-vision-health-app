@@ -43,14 +43,10 @@ export interface Screening {
   date: string;
 }
 
-// Base URL configuration
-// Production API (Heroku)
-//const API_BASE_URL = "https://sante-production-app-42dca70009b0.herokuapp.com/api";
-
-// Development API (local testing - uncomment for local development)
-const API_BASE_URL = "http://20.20.42.133:5000/api"; // Physical device/emulator
-// const API_BASE_URL = "http://10.0.2.2:5000/api"; // Android emulator
-// const API_BASE_URL = "http://localhost:5000/api"; // iOS simulator
+// Base URL: EXPO_PUBLIC_API_URL (e.g. https://yourapp.herokuapp.com/api) or default Heroku production
+const API_BASE_URL =
+  (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) ||
+  "https://sante-production-app-42dca70009b0.herokuapp.com/api";
 
 // Create axios instance
 const api = axios.create({

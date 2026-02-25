@@ -51,12 +51,12 @@ exports.updateProductStock = async (req, res) => {
       return res.status(400).json({ success: false, error: "Quantity change required" });
     }
 
-    const productRows = sql`SELECT * FROM products WHERE id = ${productId}`;
+    const productRows = await sql`SELECT * FROM products WHERE id = ${productId}`;
     if (!productRows || productRows.length === 0) {
       return res.status(404).json({ success: false, error: "Product not found" });
     }
 
-    const existing = sql`SELECT * FROM vht_stock WHERE health_worker_id = ${healthWorkerId} AND product_id = ${productId}`;
+    const existing = await sql`SELECT * FROM vht_stock WHERE health_worker_id = ${healthWorkerId} AND product_id = ${productId}`;
     const row = existing && existing[0];
 
     const addStandard = frameType === "standard" ? quantityChange : 0;
@@ -65,7 +65,7 @@ exports.updateProductStock = async (req, res) => {
     const addTotal = quantityChange;
 
     if (row) {
-      sql`
+      await sql`
         UPDATE vht_stock SET
           stock_quantity = stock_quantity + ${addTotal},
           stock_standard = stock_standard + ${addStandard},
@@ -74,13 +74,13 @@ exports.updateProductStock = async (req, res) => {
         WHERE health_worker_id = ${healthWorkerId} AND product_id = ${productId}
       `;
     } else {
-      sql`
+      await sql`
         INSERT INTO vht_stock (health_worker_id, product_id, stock_quantity, stock_standard, stock_metal, stock_fashion)
         VALUES (${healthWorkerId}, ${productId}, ${addTotal}, ${addStandard}, ${addMetal}, ${addFashion})
       `;
     }
 
-    const updated = sql`
+    const updated = await sql`
       SELECT v.*, p.name, p.power, p.price
       FROM vht_stock v
       JOIN products p ON p.id = v.product_id

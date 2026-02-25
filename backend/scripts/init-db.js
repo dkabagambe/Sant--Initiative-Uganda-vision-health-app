@@ -69,12 +69,17 @@ async function initDB() {
     await sql`
       CREATE TABLE IF NOT EXISTS screenings (
         id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+        client_id UUID,
         health_worker_id UUID REFERENCES users(id),
         client_name VARCHAR(200),
         client_phone VARCHAR(20),
         client_age INTEGER,
         client_gender VARCHAR(20),
         client_village VARCHAR(100),
+        client_district VARCHAR(100),
+        client_county VARCHAR(100),
+        client_sub_county VARCHAR(100),
+        client_parish VARCHAR(100),
         distance_vision_left VARCHAR(20),
         distance_vision_right VARCHAR(20),
         distance_vision_both VARCHAR(20),
@@ -101,7 +106,13 @@ async function initDB() {
       CREATE TABLE IF NOT EXISTS referrals (
         id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
         screening_id UUID REFERENCES screenings(id),
+        client_id UUID,
         health_worker_id UUID REFERENCES users(id),
+        client_name VARCHAR(200),
+        client_phone VARCHAR(20),
+        client_age INTEGER,
+        client_gender VARCHAR(20),
+        client_district VARCHAR(100),
         reason TEXT NOT NULL,
         urgency VARCHAR(20) DEFAULT 'normal',
         facility_name VARCHAR(200),
@@ -158,6 +169,39 @@ async function initDB() {
       )
     `;
     console.log('✓ Sync queue table created');
+
+    // Create vht_stock table (per-VHT inventory)
+    await sql`
+      CREATE TABLE IF NOT EXISTS vht_stock (
+        health_worker_id UUID NOT NULL REFERENCES users(id),
+        product_id UUID NOT NULL REFERENCES products(id),
+        stock_quantity INTEGER DEFAULT 0,
+        stock_standard INTEGER DEFAULT 0,
+        stock_metal INTEGER DEFAULT 0,
+        stock_fashion INTEGER DEFAULT 0,
+        PRIMARY KEY (health_worker_id, product_id)
+      )
+    `;
+    console.log('✓ vht_stock table created');
+
+    // Create clients table
+    await sql`
+      CREATE TABLE IF NOT EXISTS clients (
+        id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+        health_worker_id UUID REFERENCES users(id),
+        full_name VARCHAR(200) NOT NULL,
+        phone_number VARCHAR(20),
+        age INTEGER,
+        gender VARCHAR(20),
+        village VARCHAR(100),
+        parish VARCHAR(100),
+        sub_county VARCHAR(100),
+        county VARCHAR(100),
+        district VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    console.log('✓ Clients table created');
 
     // Insert sample products
     const existingProducts = await sql`SELECT COUNT(*) as count FROM products`;

@@ -90,21 +90,21 @@ exports.createScreening = async (req, res) => {
     // Deduct from this VHT's stock when glasses are dispensed
     if (needsGlasses && recommendedProductId && selectedFrameType) {
       if (selectedFrameType === 'standard') {
-        sql`
+        await sql`
           UPDATE vht_stock
           SET stock_quantity = stock_quantity - 1,
               stock_standard = stock_standard - 1
           WHERE health_worker_id = ${healthWorkerId} AND product_id = ${recommendedProductId}
         `;
       } else if (selectedFrameType === 'metal') {
-        sql`
+        await sql`
           UPDATE vht_stock
           SET stock_quantity = stock_quantity - 1,
               stock_metal = stock_metal - 1
           WHERE health_worker_id = ${healthWorkerId} AND product_id = ${recommendedProductId}
         `;
       } else if (selectedFrameType === 'fashion') {
-        sql`
+        await sql`
           UPDATE vht_stock
           SET stock_quantity = stock_quantity - 1,
               stock_fashion = stock_fashion - 1

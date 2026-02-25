@@ -6,19 +6,16 @@ require("dotenv").config();
 
 const app = express();
 
-// Database setup - local SQLite only
-const dbLocal = require("./db-local");
-const sql = dbLocal.sql;
-const db = dbLocal.db;
-
+// Database setup: Neon/Postgres when DATABASE_URL is set (production), else SQLite (local)
+const { sql, db } = require("./db");
 app.locals.sql = sql;
 app.locals.db = db;
 
 // --- Middleware ---
 app.use(cors({
-  origin: '*', // Allow all origins for development
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: process.env.CORS_ORIGIN || "*",
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 app.use(
   express.json({
@@ -33,8 +30,10 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/api/health", async (req, res) => {
   let dbStatus = "disconnected";
   try {
-    const result = await sql`SELECT datetime('now') as now`;
-    if (result && result[0] && result[0].now) dbStatus = "connected";
+    const result = process.env.DATABASE_URL
+      ? await sql`SELECT NOW() as now`
+      : await sql`SELECT datetime('now') as now`;
+    if (result && result[0] && (result[0].now != null || result[0].ok != null)) dbStatus = "connected";
   } catch (err) {
     console.error("DB health check error:", err.message);
   }
@@ -134,7 +133,9 @@ app.listen(PORT, async () => {
   
   // Test database connection
   try {
-    const result = await sql`SELECT NOW()`;
+    const result = process.env.DATABASE_URL
+      ? await sql`SELECT NOW()`
+      : await sql`SELECT datetime('now') as now`;
     console.log("✅ Database connected successfully");
   } catch (err) {
     console.error("❌ Database connection failed:", err.message);
