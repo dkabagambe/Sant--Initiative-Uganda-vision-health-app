@@ -9,8 +9,10 @@ const app = express();
 // Database setup - local SQLite only
 const dbLocal = require("./db-local");
 const sql = dbLocal.sql;
+const db = dbLocal.db;
 
 app.locals.sql = sql;
+app.locals.db = db;
 
 // --- Middleware ---
 app.use(cors({

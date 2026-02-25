@@ -10,7 +10,6 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
-  Share,
   Modal,
   TextInput,
 } from "react-native";
@@ -19,6 +18,7 @@ import { useNavigation } from "@react-navigation/native";
 import { apiService } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import AppHeader from "../../components/AppHeader";
+import { exportCsvFile } from "../../utils/export";
 
 interface Referral {
   id: string;
@@ -163,35 +163,57 @@ export default function ReferralManagementScreen() {
       const activeReferrals = referrals.filter((r) => r.status === "active" || r.status === "pending");
       const completedReferrals = referrals.filter((r) => r.status === "completed");
       const urgentCount = activeReferrals.filter((r) => r.urgency === "urgent" || r.urgency === "high").length;
-
-      const exportData = `Santé Initiative Uganda - ${period.toUpperCase()} Report\n\n` +
-        `CHW: ${userData?.fullName || "N/A"}\n` +
-        `District: ${userData?.district || "N/A"}\n` +
-        `Period: ${period}\n` +
-        `Generated: ${new Date().toLocaleDateString()}\n\n` +
-        `=== IMPACT SUMMARY ===\n` +
-        `People Screened: ${stats.data?.totalScreenings || 0}\n` +
-        `Glasses Provided: ${stats.data?.totalSales || 0}\n` +
-        `Repayments on Track: ${stats.data?.repaymentRate || 0}%\n` +
-        `Referrals Made: ${stats.data?.totalReferrals || 0}\n` +
-        `NCD Detected: ${stats.data?.ncdDetected || 0}\n\n` +
-        `=== REFERRALS ===\n` +
-        `Active: ${activeReferrals.length}\n` +
-        `High Priority: ${urgentCount}\n` +
-        `Completed: ${completedReferrals.length}\n\n` +
-        `--- Active Referrals ---\n` +
-        activeReferrals.map((r: Referral, i: number) => 
-          `${i + 1}. ${r.client_name} (${r.client_age}y, ${r.client_gender || "N/A"})\n` +
-          `   Phone: ${r.client_phone}\n` +
-          `   District: ${r.client_district || "N/A"}\n` +
-          `   Reason: ${r.reason}\n` +
-          `   Facility: ${r.facility_name}\n` +
-          `   Date: ${new Date(r.referred_date).toLocaleDateString()}\n`
-        ).join('\n');
-
-      await Share.share({
-        message: exportData,
-        title: `${period} Report`,
+      await exportCsvFile({
+        fileBaseName: `referrals-${period}-report`,
+        title: `${period.toUpperCase()} Referrals CSV`,
+        headers: [
+          "Period",
+          "CHW",
+          "District",
+          "People Screened",
+          "Glasses Provided",
+          "Repayments On Track %",
+          "Referrals Made",
+          "NCD Detected",
+          "Active Referrals",
+          "High Priority Referrals",
+          "Completed Referrals",
+          "Client Name",
+          "Phone",
+          "Age",
+          "Gender",
+          "District (Client)",
+          "Reason",
+          "Urgency",
+          "Facility",
+          "Facility Location",
+          "Status",
+          "Referred Date",
+        ],
+        rows: referrals.map((r) => [
+          period,
+          userData?.fullName || "N/A",
+          userData?.district || "N/A",
+          stats.data?.totalScreenings || 0,
+          stats.data?.totalSales || 0,
+          stats.data?.repaymentRate || 0,
+          stats.data?.totalReferrals || 0,
+          stats.data?.ncdDetected || 0,
+          activeReferrals.length,
+          urgentCount,
+          completedReferrals.length,
+          r.client_name || "",
+          r.client_phone || "",
+          r.client_age || "",
+          r.client_gender || "",
+          r.client_district || "",
+          r.reason || "",
+          r.urgency || "",
+          r.facility_name || "",
+          r.facility_location || "",
+          r.status || "",
+          r.referred_date ? new Date(r.referred_date).toLocaleDateString() : "",
+        ]),
       });
     } catch (error) {
       console.error('Export error:', error);

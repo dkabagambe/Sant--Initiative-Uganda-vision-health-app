@@ -164,91 +164,176 @@ exports.getInventorySummary = async (req, res) => {
 // Get reports data
 exports.getReports = async (req, res) => {
   try {
-    const { sql, db } = req.app.locals;
+    const { sql } = req.app.locals;
     const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A';
     const { startDate, endDate, reportType } = req.query;
 
     if (reportType === 'screenings') {
-      let query = `
-        SELECT 
-          s.*,
-          p.name as product_name,
-          p.power as product_power
-        FROM screenings s
-        LEFT JOIN products p ON s.recommended_product_id = p.id
-        WHERE s.health_worker_id = ?
-      `;
-      
-      const params = [healthWorkerId];
-      
+      let data;
       if (startDate && endDate) {
-        query += ` AND screening_date BETWEEN ? AND ?`;
-        params.push(startDate, endDate);
+        data = await sql`
+          SELECT 
+            s.*,
+            p.name as product_name,
+            p.power as product_power
+          FROM screenings s
+          LEFT JOIN products p ON s.recommended_product_id = p.id
+          WHERE s.health_worker_id = ${healthWorkerId}
+          AND date(s.screening_date) BETWEEN date(${startDate}) AND date(${endDate})
+          ORDER BY s.screening_date DESC
+        `;
+      } else {
+        data = await sql`
+          SELECT 
+            s.*,
+            p.name as product_name,
+            p.power as product_power
+          FROM screenings s
+          LEFT JOIN products p ON s.recommended_product_id = p.id
+          WHERE s.health_worker_id = ${healthWorkerId}
+          ORDER BY s.screening_date DESC
+        `;
       }
-      
-      query += ` ORDER BY s.screening_date DESC`;
-      
-      const stmt = db.prepare(query);
-      const data = stmt.all(...params);
       res.json({ success: true, data });
       
     } else if (reportType === 'payments') {
-      const query = `
-        SELECT 
-          p.*,
-          s.client_name,
-          pr.name as product_name
-        FROM payments p
-        JOIN screenings s ON p.screening_id = s.id
-        LEFT JOIN products pr ON p.product_id = pr.id
-        WHERE s.health_worker_id = ?
-        ORDER BY p.created_at DESC
-      `;
-      
-      const stmt = db.prepare(query);
-      const data = stmt.all(healthWorkerId);
+      let data;
+      if (startDate && endDate) {
+        data = await sql`
+          SELECT 
+            p.*,
+            COALESCE(p.client_name, s.client_name) as client_name,
+            pr.name as product_name
+          FROM payments p
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          LEFT JOIN products pr ON p.product_id = pr.id
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.screening_id IS NULL)
+          AND date(COALESCE(p.payment_date, p.created_at)) BETWEEN date(${startDate}) AND date(${endDate})
+          ORDER BY p.created_at DESC
+        `;
+      } else {
+        data = await sql`
+          SELECT 
+            p.*,
+            COALESCE(p.client_name, s.client_name) as client_name,
+            pr.name as product_name
+          FROM payments p
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          LEFT JOIN products pr ON p.product_id = pr.id
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.screening_id IS NULL)
+          ORDER BY p.created_at DESC
+        `;
+      }
       res.json({ success: true, data });
       
     } else if (reportType === 'referrals') {
-      const query = `
-        SELECT 
-          r.*,
-          s.client_name,
-          s.client_phone
-        FROM referrals r
-        LEFT JOIN screenings s ON r.screening_id = s.id
-        WHERE r.health_worker_id = ?
-        ORDER BY r.created_at DESC
-      `;
-      
-      const stmt = db.prepare(query);
-      const data = stmt.all(healthWorkerId);
+      let data;
+      if (startDate && endDate) {
+        data = await sql`
+          SELECT 
+            r.*,
+            COALESCE(r.client_name, s.client_name) as client_name,
+            COALESCE(r.client_phone, s.client_phone) as client_phone
+          FROM referrals r
+          LEFT JOIN screenings s ON r.screening_id = s.id
+          WHERE r.health_worker_id = ${healthWorkerId}
+          AND date(COALESCE(r.referred_date, r.created_at)) BETWEEN date(${startDate}) AND date(${endDate})
+          ORDER BY r.created_at DESC
+        `;
+      } else {
+        data = await sql`
+          SELECT 
+            r.*,
+            COALESCE(r.client_name, s.client_name) as client_name,
+            COALESCE(r.client_phone, s.client_phone) as client_phone
+          FROM referrals r
+          LEFT JOIN screenings s ON r.screening_id = s.id
+          WHERE r.health_worker_id = ${healthWorkerId}
+          ORDER BY r.created_at DESC
+        `;
+      }
       res.json({ success: true, data });
       
     } else {
-      // Summary report
-      const params = [healthWorkerId];
-      let dateFilter = '';
-      
+      // Summary report (real DB aggregates for selected date range)
+      let screeningSummary;
+      let referralSummary;
+      let paymentSummary;
+
       if (startDate && endDate) {
-        dateFilter = ` AND s.screening_date BETWEEN ? AND ?`;
-        params.push(startDate, endDate);
+        screeningSummary = await sql`
+          SELECT
+            COUNT(*) as total_screenings,
+            COUNT(CASE WHEN needs_glasses = 1 THEN 1 END) as glasses_sold
+          FROM screenings
+          WHERE health_worker_id = ${healthWorkerId}
+          AND date(screening_date) BETWEEN date(${startDate}) AND date(${endDate})
+        `;
+
+        referralSummary = await sql`
+          SELECT COUNT(*) as referrals_made
+          FROM referrals
+          WHERE health_worker_id = ${healthWorkerId}
+          AND date(COALESCE(referred_date, created_at)) BETWEEN date(${startDate}) AND date(${endDate})
+        `;
+
+        paymentSummary = await sql`
+          SELECT
+            COUNT(*) as total_payments,
+            COUNT(CASE WHEN p.status = 'completed' THEN 1 END) as completed_payments,
+            COALESCE(SUM(CASE WHEN p.status = 'completed' THEN p.amount ELSE 0 END), 0) as total_revenue,
+            COALESCE(SUM(CASE WHEN p.status = 'completed' AND p.payment_type = 'full' THEN p.amount ELSE 0 END), 0) as full_payment_revenue,
+            COALESCE(SUM(CASE WHEN p.status = 'completed' AND p.payment_type = 'installment' THEN p.amount ELSE 0 END), 0) as hire_purchase_revenue
+          FROM payments p
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.screening_id IS NULL)
+          AND date(COALESCE(p.payment_date, p.created_at)) BETWEEN date(${startDate}) AND date(${endDate})
+        `;
+      } else {
+        screeningSummary = await sql`
+          SELECT
+            COUNT(*) as total_screenings,
+            COUNT(CASE WHEN needs_glasses = 1 THEN 1 END) as glasses_sold
+          FROM screenings
+          WHERE health_worker_id = ${healthWorkerId}
+        `;
+
+        referralSummary = await sql`
+          SELECT COUNT(*) as referrals_made
+          FROM referrals
+          WHERE health_worker_id = ${healthWorkerId}
+        `;
+
+        paymentSummary = await sql`
+          SELECT
+            COUNT(*) as total_payments,
+            COUNT(CASE WHEN p.status = 'completed' THEN 1 END) as completed_payments,
+            COALESCE(SUM(CASE WHEN p.status = 'completed' THEN p.amount ELSE 0 END), 0) as total_revenue,
+            COALESCE(SUM(CASE WHEN p.status = 'completed' AND p.payment_type = 'full' THEN p.amount ELSE 0 END), 0) as full_payment_revenue,
+            COALESCE(SUM(CASE WHEN p.status = 'completed' AND p.payment_type = 'installment' THEN p.amount ELSE 0 END), 0) as hire_purchase_revenue
+          FROM payments p
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.screening_id IS NULL)
+        `;
       }
-      
-      const query = `
-        SELECT 
-          COUNT(DISTINCT s.id) as total_screenings,
-          COUNT(DISTINCT CASE WHEN s.needs_glasses = 1 THEN s.id END) as glasses_sold,
-          COUNT(DISTINCT CASE WHEN s.needs_referral = 1 THEN s.id END) as referrals_made,
-          COALESCE(SUM(p.amount), 0) as total_revenue
-        FROM screenings s
-        LEFT JOIN payments p ON s.id = p.screening_id AND p.status = 'completed'
-        WHERE s.health_worker_id = ?${dateFilter}
-      `;
-      
-      const stmt = db.prepare(query);
-      const data = stmt.get(...params);
-      res.json({ success: true, data });
+
+      const completedPayments = Number(paymentSummary[0]?.completed_payments || 0);
+      const totalRevenue = Number(paymentSummary[0]?.total_revenue || 0);
+
+      res.json({
+        success: true,
+        data: {
+          total_screenings: Number(screeningSummary[0]?.total_screenings || 0),
+          glasses_sold: Number(screeningSummary[0]?.glasses_sold || 0),
+          referrals_made: Number(referralSummary[0]?.referrals_made || 0),
+          total_payments: Number(paymentSummary[0]?.total_payments || 0),
+          completed_payments: completedPayments,
+          total_revenue: totalRevenue,
+          average_sale: completedPayments > 0 ? Math.round(totalRevenue / completedPayments) : 0,
+          full_payment_revenue: Number(paymentSummary[0]?.full_payment_revenue || 0),
+          hire_purchase_revenue: Number(paymentSummary[0]?.hire_purchase_revenue || 0),
+        },
+      });
     }
   } catch (error) {
     console.error("Get reports error:", error);

@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { apiService } from "../../services/api";
 import { moderateScale, scale, verticalScale, fontSize as responsiveFontSize } from "../../utils/responsive";
+import { exportCsvFile } from "../../utils/export";
 
 interface SaleItemProps {
   id: string;
@@ -189,7 +190,7 @@ export default function SalesDetailsScreen() {
     );
   };
 
-  const exportData = (period: "week" | "month" | "all") => {
+  const exportData = async (period: "week" | "month" | "all") => {
     let dataToExport = [...sales];
     
     if (period === "week") {
@@ -206,26 +207,32 @@ export default function SalesDetailsScreen() {
       });
     }
 
-    // Create CSV content
-    const headers = ["Client Name", "Power", "Frame Type", "Amount", "Time", "Payment Method", "Payment Type"];
-    const csvContent = [
-      headers.join(","),
-      ...dataToExport.map((sale) => [
-        sale.clientName,
-        sale.power,
-        sale.frameType,
-        sale.amount,
-        sale.time,
-        sale.paymentMethod,
-        sale.paymentType,
-      ].join(",")),
-    ].join("\n");
-
-    // In a real app, you would use Share API or File System API to save/share the CSV
-    Alert.alert(
-      "Export Complete",
-      `Exported ${dataToExport.length} sales records. In production, this would save/share a CSV file.`
-    );
+    try {
+      await exportCsvFile({
+        fileBaseName: `sales-${period}`,
+        title: `Sales ${period.toUpperCase()} CSV`,
+        headers: [
+          "Client Name",
+          "Power",
+          "Frame Type",
+          "Amount",
+          "Time",
+          "Payment Method",
+          "Payment Type",
+        ],
+        rows: dataToExport.map((sale) => [
+          sale.clientName,
+          sale.power,
+          sale.frameType,
+          sale.amount,
+          sale.time,
+          sale.paymentMethod,
+          sale.paymentType,
+        ]),
+      });
+    } catch (error) {
+      Alert.alert("Export Failed", "Could not export sales data.");
+    }
   };
 
   const getFilterLabel = () => {

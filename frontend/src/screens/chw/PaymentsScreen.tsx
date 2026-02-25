@@ -13,13 +13,13 @@ import {
   TextInput,
   ActivityIndicator,
   RefreshControl,
-  Share,
 } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { apiService } from "../../services/api";
 import AppHeader from "../../components/AppHeader";
+import { exportCsvFile } from "../../utils/export";
 
 type RootStackParamList = {
   PaymentsScreen: undefined;
@@ -461,30 +461,44 @@ export default function PaymentsScreen() {
 
   const handleExport = async () => {
     try {
-      const rows = filteredPayments.map((p) => {
-        const date = p.payment_date || p.created_at || p.date || "";
-        return [
-          p.client_name || "",
-          p.client_phone || "",
-          p.status || "",
-          p.payment_method || "",
-          p.provider || "",
-          p.amount || 0,
-          p.due_date || "",
-          p.transaction_id || "",
-          date ? new Date(date).toLocaleDateString() : "",
-        ].join(", ");
-      });
-
-      const report =
-        `Payments Export (${new Date().toLocaleString()})\n` +
-        `Filters: tab=${activeTab}, overdueOnly=${overdueOnly}, provider=${providerFilter}, method=${methodFilter}, search="${searchQuery}"\n\n` +
-        `Client, Phone, Status, Method, Provider, Amount, Due Date, Transaction ID, Date\n` +
-        rows.join("\n");
-
-      await Share.share({
-        title: "Payments Export",
-        message: report,
+      await exportCsvFile({
+        fileBaseName: "payments-export",
+        title: "Payments CSV Export",
+        headers: [
+          "Client",
+          "Phone",
+          "Status",
+          "Method",
+          "Provider",
+          "Amount",
+          "Due Date",
+          "Transaction ID",
+          "Date",
+          "Active Tab",
+          "Overdue Only",
+          "Provider Filter",
+          "Method Filter",
+          "Search Query",
+        ],
+        rows: filteredPayments.map((p) => {
+          const date = p.payment_date || p.created_at || p.date || "";
+          return [
+            p.client_name || "",
+            p.client_phone || "",
+            p.status || "",
+            p.payment_method || "",
+            p.provider || "",
+            p.amount || 0,
+            p.due_date || "",
+            p.transaction_id || "",
+            date ? new Date(date).toLocaleDateString() : "",
+            activeTab,
+            overdueOnly ? "yes" : "no",
+            providerFilter,
+            methodFilter,
+            searchQuery,
+          ];
+        }),
       });
     } catch (error) {
       Alert.alert("Error", "Failed to export payments");
