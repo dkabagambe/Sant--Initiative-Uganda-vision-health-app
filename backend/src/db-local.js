@@ -148,6 +148,17 @@ db.exec(`
     district TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS vht_stock (
+    health_worker_id TEXT NOT NULL,
+    product_id TEXT NOT NULL,
+    stock_quantity INTEGER DEFAULT 0,
+    stock_standard INTEGER DEFAULT 0,
+    stock_metal INTEGER DEFAULT 0,
+    stock_fashion INTEGER DEFAULT 0,
+    PRIMARY KEY (health_worker_id, product_id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+  );
 `);
 
 // Migrations: add columns that may be missing on existing databases
@@ -167,6 +178,20 @@ const migrations = [
 migrations.forEach(m => {
   try { db.exec(m); } catch (e) { /* column already exists */ }
 });
+
+// Seed vht_stock from products for each health worker (one-time so VHTs see current stock)
+try {
+  const vhtCount = db.prepare("SELECT COUNT(*) as n FROM vht_stock").get();
+  if (vhtCount && vhtCount.n === 0) {
+    db.exec(`
+      INSERT OR REPLACE INTO vht_stock (health_worker_id, product_id, stock_quantity, stock_standard, stock_metal, stock_fashion)
+      SELECT u.id, p.id, p.stock_quantity, p.stock_standard, p.stock_metal, p.stock_fashion
+      FROM users u
+      CROSS JOIN products p
+      WHERE u.role = 'health_worker' OR u.role IS NULL
+    `);
+  }
+} catch (e) { /* ignore */ }
 
 // Insert sample products
 const insertProduct = db.prepare(`

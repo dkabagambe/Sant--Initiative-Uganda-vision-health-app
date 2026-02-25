@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -6,18 +6,20 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
-  SafeAreaView,
   Platform,
   StatusBar,
   Alert,
   ActivityIndicator,
   RefreshControl,
+  LayoutChangeEvent,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { apiService } from "../../services/api";
 import AppHeader from "../../components/AppHeader";
+import { scale, verticalScale, moderateScale } from "../../utils/responsive";
 
 type RootStackParamList = {
   InventoryScreen: undefined;
@@ -151,6 +153,10 @@ const SaleItem = ({
 
 export default function InventoryScreen() {
   const navigation = useNavigation<InventoryScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
+  const [sectionY, setSectionY] = useState<{ stockList: number; recentSales: number }>({ stockList: 0, recentSales: 0 });
+
   const [showAddStockModal, setShowAddStockModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -169,6 +175,30 @@ export default function InventoryScreen() {
     fullPayments: 0,
     hirePurchase: 0,
   });
+
+  const onLayoutSection = (key: "stockList" | "recentSales") => (e: LayoutChangeEvent) => {
+    const { y } = e.nativeEvent.layout;
+    setSectionY((prev) => ({ ...prev, [key]: y }));
+  };
+
+  const handleStatInStock = () => {
+    if (sectionY.stockList > 0) {
+      scrollRef.current?.scrollTo({ y: sectionY.stockList - 24, animated: true });
+    }
+  };
+
+  const handleStatSoldWeek = () => {
+    navigation.navigate("SalesDetailsScreen");
+  };
+
+  const handleStatLowStock = () => {
+    const low = inventory.filter((p: any) => p.stock_quantity > 0 && p.stock_quantity < 20);
+    if (low.length > 0) {
+      scrollRef.current?.scrollTo({ y: sectionY.stockList - 24, animated: true });
+    } else {
+      Alert.alert("Low Stock", stats.lowStockCount === 0 ? "No low stock items." : "Scroll down to see current stock by power.");
+    }
+  };
 
   useEffect(() => {
     loadInventory();
@@ -406,12 +436,13 @@ export default function InventoryScreen() {
       />
 
       <ScrollView
+        ref={scrollRef}
         style={styles.scrollView}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]}
       >
         {/* Title Section */}
         <View style={styles.titleSection}>
@@ -453,24 +484,24 @@ export default function InventoryScreen() {
           </View>
         )}
 
-        {/* Stats Row */}
+        {/* Stats Row - clickable, data from API */}
         <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{totals.total_pairs || 0}</Text>
+          <TouchableOpacity style={styles.statCard} onPress={handleStatInStock} activeOpacity={0.7}>
+            <Text style={styles.statNumber}>{totals.total_pairs ?? 0}</Text>
             <Text style={styles.statLabel}>In Stock</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.weekSold}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.statCard} onPress={handleStatSoldWeek} activeOpacity={0.7}>
+            <Text style={styles.statNumber}>{stats.weekSold ?? 0}</Text>
             <Text style={styles.statLabel}>Sold (Week)</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.lowStockCount}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.statCard} onPress={handleStatLowStock} activeOpacity={0.7}>
+            <Text style={styles.statNumber}>{stats.lowStockCount ?? 0}</Text>
             <Text style={styles.statLabel}>Low Stock</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Current Stock by Power */}
-        <View style={styles.section}>
+        <View style={styles.section} onLayout={onLayoutSection("stockList")}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Current Stock by Power</Text>
             <TouchableOpacity style={styles.addButton} onPress={handleAddStock}>
@@ -497,7 +528,7 @@ export default function InventoryScreen() {
         </View>
 
         {/* Recent Sales */}
-        <View style={styles.section}>
+        <View style={styles.section} onLayout={onLayoutSection("recentSales")}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Sales</Text>
             <TouchableOpacity onPress={() => navigation.navigate("SalesDetailsScreen")}>
@@ -546,12 +577,10 @@ export default function InventoryScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Bottom Spacer */}
-        <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
+      {/* Bottom Navigation - safe area aware */}
+      <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate("CHWDashboard")}
@@ -771,21 +800,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 120,
+    paddingHorizontal: scale(20),
+    paddingTop: verticalScale(20),
   },
   titleSection: {
-    marginBottom: 20,
+    marginBottom: verticalScale(20),
   },
   screenTitle: {
-    fontSize: 24,
+    fontSize: moderateScale(22, 0.3),
     fontWeight: "700",
     color: "#1F2937",
     marginBottom: 6,
   },
   totalStock: {
-    fontSize: 16,
+    fontSize: moderateScale(15, 0.3),
     color: "#6B7280",
   },
   alertCard: {
@@ -815,15 +843,17 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: verticalScale(24),
+    gap: scale(8),
   },
   statCard: {
     flex: 1,
+    minWidth: 0,
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 4,
+    borderRadius: scale(12),
+    padding: scale(12),
     alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     borderColor: "#E5E7EB",
     shadowColor: "#000",
@@ -833,13 +863,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   statNumber: {
-    fontSize: 28,
+    fontSize: moderateScale(24, 0.3),
     fontWeight: "700",
     color: "#1E40AF",
     marginBottom: 4,
   },
   statLabel: {
-    fontSize: 13,
+    fontSize: moderateScale(12, 0.3),
     color: "#6B7280",
     textAlign: "center",
   },
@@ -1053,9 +1083,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  bottomSpacer: {
-    height: 100,
-  },
   bottomNav: {
     position: "absolute",
     bottom: 0,
@@ -1065,8 +1092,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: verticalScale(12),
+    paddingHorizontal: scale(16),
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.05,

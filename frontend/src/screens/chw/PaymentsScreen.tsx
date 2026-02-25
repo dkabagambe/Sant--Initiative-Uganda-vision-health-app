@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Platform,
   StatusBar,
   Alert,
@@ -14,6 +13,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -50,6 +50,7 @@ interface PaymentItem {
 
 export default function PaymentsScreen() {
   const navigation = useNavigation<PaymentsScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<"pending" | "completed">(
     "pending",
   );
@@ -568,7 +569,7 @@ export default function PaymentsScreen() {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]}
       >
         {/* Summary Cards */}
         <View style={styles.summaryRow}>
@@ -1181,7 +1182,7 @@ export default function PaymentsScreen() {
       </Modal>
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate("CHWDashboard")}

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Platform,
   StatusBar,
   RefreshControl,
@@ -14,6 +13,7 @@ import {
   Modal,
   TextInput,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -51,6 +51,7 @@ interface ReferralItem {
 
 export default function ReferralsScreen() {
   const navigation = useNavigation<ReferralsScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<"pending" | "completed">(
     "pending",
   );
@@ -328,7 +329,7 @@ export default function ReferralsScreen() {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 40 + insets.bottom }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

@@ -11,7 +11,7 @@ import {
   Alert,
   Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Ionicons,
   MaterialIcons,
@@ -46,6 +46,7 @@ const { width } = Dimensions.get("window");
 export default function CHWDashboard() {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
   const [offlineCount, setOfflineCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [userData, setUserData] = useState<any>(null);
@@ -431,11 +432,11 @@ export default function CHWDashboard() {
         </TouchableOpacity>
 
         {/* Spacer for bottom navigation */}
-        <View style={styles.spacer} />
+        <View style={[styles.spacer, { height: 80 + insets.bottom }]} />
       </ScrollView>
 
       {/* Bottom Navigation - Fixed at bottom */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         {[
           { name: "Home", icon: "home", screen: "CHWDashboard" },
           {

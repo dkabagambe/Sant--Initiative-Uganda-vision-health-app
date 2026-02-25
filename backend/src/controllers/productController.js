@@ -36,41 +36,70 @@ exports.getProducts = async (req, res) => {
   }
 };
 
-// Update product stock
+// Update product stock (VHT-scoped: updates vht_stock for the logged-in health worker)
 exports.updateProductStock = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id: productId } = req.params;
     const { quantityChange, frameType } = req.body;
     const sql = req.app.locals.sql;
+    const healthWorkerId = req.user?.userId;
 
+    if (!healthWorkerId) {
+      return res.status(401).json({ success: false, error: "Authentication required to update stock" });
+    }
     if (!quantityChange) {
       return res.status(400).json({ success: false, error: "Quantity change required" });
     }
 
-    // Check product exists first
-    const existing = sql`SELECT * FROM products WHERE id = ${id}`;
-    if (!existing || existing.length === 0) {
+    const productRows = sql`SELECT * FROM products WHERE id = ${productId}`;
+    if (!productRows || productRows.length === 0) {
       return res.status(404).json({ success: false, error: "Product not found" });
     }
 
-    // Update based on frame type
-    if (frameType === "standard") {
-      sql`UPDATE products SET stock_standard = stock_standard + ${quantityChange}, stock_quantity = stock_quantity + ${quantityChange} WHERE id = ${id}`;
-    } else if (frameType === "metal") {
-      sql`UPDATE products SET stock_metal = stock_metal + ${quantityChange}, stock_quantity = stock_quantity + ${quantityChange} WHERE id = ${id}`;
-    } else if (frameType === "fashion") {
-      sql`UPDATE products SET stock_fashion = stock_fashion + ${quantityChange}, stock_quantity = stock_quantity + ${quantityChange} WHERE id = ${id}`;
+    const existing = sql`SELECT * FROM vht_stock WHERE health_worker_id = ${healthWorkerId} AND product_id = ${productId}`;
+    const row = existing && existing[0];
+
+    const addStandard = frameType === "standard" ? quantityChange : 0;
+    const addMetal = frameType === "metal" ? quantityChange : 0;
+    const addFashion = frameType === "fashion" ? quantityChange : 0;
+    const addTotal = quantityChange;
+
+    if (row) {
+      sql`
+        UPDATE vht_stock SET
+          stock_quantity = stock_quantity + ${addTotal},
+          stock_standard = stock_standard + ${addStandard},
+          stock_metal = stock_metal + ${addMetal},
+          stock_fashion = stock_fashion + ${addFashion}
+        WHERE health_worker_id = ${healthWorkerId} AND product_id = ${productId}
+      `;
     } else {
-      sql`UPDATE products SET stock_quantity = stock_quantity + ${quantityChange} WHERE id = ${id}`;
+      sql`
+        INSERT INTO vht_stock (health_worker_id, product_id, stock_quantity, stock_standard, stock_metal, stock_fashion)
+        VALUES (${healthWorkerId}, ${productId}, ${addTotal}, ${addStandard}, ${addMetal}, ${addFashion})
+      `;
     }
 
-    // Fetch updated product
-    const updated = sql`SELECT * FROM products WHERE id = ${id}`;
+    const updated = sql`
+      SELECT v.*, p.name, p.power, p.price
+      FROM vht_stock v
+      JOIN products p ON p.id = v.product_id
+      WHERE v.health_worker_id = ${healthWorkerId} AND v.product_id = ${productId}
+    `;
 
     res.json({
       success: true,
       message: "Stock updated successfully",
-      product: updated[0],
+      product: updated && updated[0] ? {
+        id: updated[0].product_id,
+        name: updated[0].name,
+        power: updated[0].power,
+        price: updated[0].price,
+        stock_quantity: updated[0].stock_quantity,
+        stock_standard: updated[0].stock_standard,
+        stock_metal: updated[0].stock_metal,
+        stock_fashion: updated[0].stock_fashion,
+      } : productRows[0],
     });
   } catch (error) {
     console.error("Update stock error:", error);

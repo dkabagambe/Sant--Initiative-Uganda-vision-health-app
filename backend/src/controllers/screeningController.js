@@ -87,28 +87,28 @@ exports.createScreening = async (req, res) => {
       `;
     }
 
-    // Update product stock if glasses recommended
+    // Deduct from this VHT's stock when glasses are dispensed
     if (needsGlasses && recommendedProductId && selectedFrameType) {
       if (selectedFrameType === 'standard') {
-        await sql`
-          UPDATE products 
+        sql`
+          UPDATE vht_stock
           SET stock_quantity = stock_quantity - 1,
               stock_standard = stock_standard - 1
-          WHERE id = ${recommendedProductId}
+          WHERE health_worker_id = ${healthWorkerId} AND product_id = ${recommendedProductId}
         `;
       } else if (selectedFrameType === 'metal') {
-        await sql`
-          UPDATE products 
+        sql`
+          UPDATE vht_stock
           SET stock_quantity = stock_quantity - 1,
               stock_metal = stock_metal - 1
-          WHERE id = ${recommendedProductId}
+          WHERE health_worker_id = ${healthWorkerId} AND product_id = ${recommendedProductId}
         `;
       } else if (selectedFrameType === 'fashion') {
-        await sql`
-          UPDATE products 
+        sql`
+          UPDATE vht_stock
           SET stock_quantity = stock_quantity - 1,
               stock_fashion = stock_fashion - 1
-          WHERE id = ${recommendedProductId}
+          WHERE health_worker_id = ${healthWorkerId} AND product_id = ${recommendedProductId}
         `;
       }
     }

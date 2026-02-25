@@ -120,39 +120,49 @@ exports.getDashboardStats = async (req, res) => {
   }
 };
 
-// Get inventory summary
+// Get inventory summary (scoped to logged-in VHT's stock)
 exports.getInventorySummary = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
+    const healthWorkerId = req.user?.userId || null;
+
+    if (!healthWorkerId) {
+      return res.status(401).json({ success: false, error: "Authentication required for inventory" });
+    }
 
     const inventory = await sql`
       SELECT 
-        id, name, power, price,
-        stock_quantity, stock_standard, stock_metal, stock_fashion,
+        p.id, p.name, p.power, p.price,
+        COALESCE(v.stock_quantity, 0) as stock_quantity,
+        COALESCE(v.stock_standard, 0) as stock_standard,
+        COALESCE(v.stock_metal, 0) as stock_metal,
+        COALESCE(v.stock_fashion, 0) as stock_fashion,
         CASE 
-          WHEN stock_quantity = 0 THEN 'out_of_stock'
-          WHEN stock_quantity < 20 THEN 'critical'
-          WHEN stock_quantity < 50 THEN 'low'
+          WHEN COALESCE(v.stock_quantity, 0) = 0 THEN 'out_of_stock'
+          WHEN COALESCE(v.stock_quantity, 0) < 20 THEN 'critical'
+          WHEN COALESCE(v.stock_quantity, 0) < 50 THEN 'low'
           ELSE 'normal'
         END as status
-      FROM products
-      ORDER BY power ASC
+      FROM products p
+      LEFT JOIN vht_stock v ON v.product_id = p.id AND v.health_worker_id = ${healthWorkerId}
+      ORDER BY p.power ASC
     `;
 
     const totalStock = await sql`
       SELECT 
-        SUM(stock_quantity) as total_pairs,
-        SUM(stock_standard) as total_standard,
-        SUM(stock_metal) as total_metal,
-        SUM(stock_fashion) as total_fashion
-      FROM products
+        COALESCE(SUM(v.stock_quantity), 0) as total_pairs,
+        COALESCE(SUM(v.stock_standard), 0) as total_standard,
+        COALESCE(SUM(v.stock_metal), 0) as total_metal,
+        COALESCE(SUM(v.stock_fashion), 0) as total_fashion
+      FROM vht_stock v
+      WHERE v.health_worker_id = ${healthWorkerId}
     `;
 
     res.json({
       success: true,
       data: {
         products: inventory,
-        totals: totalStock[0],
+        totals: totalStock[0] || { total_pairs: 0, total_standard: 0, total_metal: 0, total_fashion: 0 },
       },
     });
   } catch (error) {
