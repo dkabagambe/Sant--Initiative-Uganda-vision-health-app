@@ -11,6 +11,8 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  Modal,
+  TextInput,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -56,6 +58,13 @@ export default function ReferralsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+  const [selectedReferral, setSelectedReferral] =
+    useState<ReferralItem | null>(null);
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [editFacilityName, setEditFacilityName] = useState("");
+  const [editFacilityLocation, setEditFacilityLocation] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [editUrgency, setEditUrgency] = useState<string>("normal");
 
   useEffect(() => {
     loadUserData();
@@ -144,6 +153,36 @@ export default function ReferralsScreen() {
   const currentReferrals =
     activeTab === "pending" ? pendingReferrals : completedReferrals;
 
+  const openReferralDetail = (referral: ReferralItem) => {
+    setSelectedReferral(referral);
+    setEditFacilityName(referral.facility_name || "");
+    setEditFacilityLocation(referral.facility_location || "");
+    setEditNotes(referral.notes || "");
+    setEditUrgency(referral.urgency || "normal");
+    setDetailVisible(true);
+  };
+
+  const handleSaveReferral = async () => {
+    if (!selectedReferral) return;
+    try {
+      const result = await apiService.updateReferral(selectedReferral.id, {
+        facilityName: editFacilityName,
+        facilityLocation: editFacilityLocation,
+        notes: editNotes,
+        urgency: editUrgency,
+      });
+      if (result.success) {
+        await loadReferrals();
+        setDetailVisible(false);
+      } else {
+        Alert.alert("Error", result.error || "Failed to update referral");
+      }
+    } catch (error) {
+      console.error("Failed to update referral:", error);
+      Alert.alert("Error", "Failed to update referral. Please try again.");
+    }
+  };
+
   const ReferralCard = ({ referral }: { referral: ReferralItem }) => {
     const urgencyColors: Record<string, { bg: string; text: string }> = {
       urgent: { bg: "#FEE2E2", text: "#DC2626" },
@@ -154,7 +193,11 @@ export default function ReferralsScreen() {
     const colors = urgencyColors[referral.urgency] || urgencyColors.normal;
 
     return (
-      <View style={styles.outlinedCard}>
+      <TouchableOpacity
+        style={styles.outlinedCard}
+        activeOpacity={0.9}
+        onPress={() => openReferralDetail(referral)}
+      >
         {/* Patient Header */}
         <View style={styles.patientHeader}>
           <Text style={styles.patientName}>{referral.client_name}</Text>
@@ -233,7 +276,7 @@ export default function ReferralsScreen() {
             <Text style={styles.markCompleteButtonText}>Mark Complete</Text>
           </TouchableOpacity>
         )}
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -388,6 +431,137 @@ export default function ReferralsScreen() {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* Referral Detail & Edit Modal */}
+      <Modal
+        visible={detailVisible && !!selectedReferral}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setDetailVisible(false)}
+      >
+        <View style={styles.detailModalOverlay}>
+          <View style={styles.detailModalContent}>
+            {selectedReferral && (
+              <>
+                <View style={styles.detailModalHeader}>
+                  <Text style={styles.detailModalTitle}>Referral Summary</Text>
+                  <TouchableOpacity onPress={() => setDetailVisible(false)}>
+                    <Ionicons name="close" size={24} color="#374151" />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView style={{ maxHeight: 480 }}>
+                  <Text style={styles.detailSectionTitle}>Client</Text>
+                  <Text style={styles.detailModalText}>
+                    {selectedReferral.client_name}
+                    {selectedReferral.client_age
+                      ? ` • Age ${selectedReferral.client_age}`
+                      : ""}
+                    {selectedReferral.client_gender
+                      ? ` • ${selectedReferral.client_gender}`
+                      : ""}
+                  </Text>
+                  {selectedReferral.client_phone ? (
+                    <Text style={styles.detailModalText}>
+                      Phone: {selectedReferral.client_phone}
+                    </Text>
+                  ) : null}
+
+                  <Text style={styles.detailSectionTitle}>Reason</Text>
+                  <Text style={styles.detailModalText}>
+                    {selectedReferral.reason}
+                  </Text>
+
+                  <Text style={styles.detailSectionTitle}>Facility</Text>
+                  <TextInput
+                    style={styles.detailInput}
+                    placeholder="Facility name"
+                    value={editFacilityName}
+                    onChangeText={setEditFacilityName}
+                  />
+                  <TextInput
+                    style={styles.detailInput}
+                    placeholder="Facility location"
+                    value={editFacilityLocation}
+                    onChangeText={setEditFacilityLocation}
+                  />
+
+                  <Text style={styles.detailSectionTitle}>Urgency</Text>
+                  <View style={styles.urgencyRow}>
+                    {["low", "normal", "high", "urgent"].map((level) => (
+                      <TouchableOpacity
+                        key={level}
+                        style={[
+                          styles.urgencyChip,
+                          editUrgency === level && styles.urgencyChipActive,
+                        ]}
+                        onPress={() => setEditUrgency(level)}
+                      >
+                        <Text
+                          style={[
+                            styles.urgencyChipText,
+                            editUrgency === level && styles.urgencyChipTextActive,
+                          ]}
+                        >
+                          {level}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <Text style={styles.detailSectionTitle}>Notes</Text>
+                  <TextInput
+                    style={[styles.detailInput, { height: 80 }]}
+                    multiline
+                    placeholder="Add or edit notes..."
+                    value={editNotes}
+                    onChangeText={setEditNotes}
+                  />
+
+                  <Text style={styles.detailSectionTitle}>Dates</Text>
+                  <Text style={styles.detailModalText}>
+                    Referred:{" "}
+                    {new Date(
+                      selectedReferral.referred_date,
+                    ).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </Text>
+                  {selectedReferral.completed_date ? (
+                    <Text style={styles.detailModalText}>
+                      Completed:{" "}
+                      {new Date(
+                        selectedReferral.completed_date,
+                      ).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </Text>
+                  ) : null}
+                </ScrollView>
+
+                <View style={styles.detailModalActions}>
+                  <TouchableOpacity
+                    style={styles.detailSecondaryButton}
+                    onPress={() => setDetailVisible(false)}
+                  >
+                    <Text style={styles.detailSecondaryText}>Close</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.detailPrimaryButton}
+                    onPress={handleSaveReferral}
+                  >
+                    <Text style={styles.detailPrimaryText}>Save Changes</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -770,6 +944,111 @@ const styles = StyleSheet.create({
   navTextActive: {
     fontSize: 11,
     color: "#2563EB",
+    fontWeight: "600",
+  },
+  // Detail modal styles
+  detailModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "flex-end",
+  },
+  detailModalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: "85%",
+  },
+  detailModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  detailModalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  detailSectionTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#6B7280",
+    marginTop: 12,
+    marginBottom: 4,
+    textTransform: "uppercase",
+  },
+  detailModalText: {
+    fontSize: 14,
+    color: "#111827",
+    marginBottom: 2,
+  },
+  detailInput: {
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+    backgroundColor: "#FFFFFF",
+    marginBottom: 8,
+  },
+  urgencyRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 8,
+  },
+  urgencyChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    backgroundColor: "#FFFFFF",
+  },
+  urgencyChipActive: {
+    backgroundColor: "#DCFCE7",
+    borderColor: "#16A34A",
+  },
+  urgencyChipText: {
+    fontSize: 13,
+    color: "#4B5563",
+    textTransform: "capitalize",
+  },
+  urgencyChipTextActive: {
+    color: "#166534",
+    fontWeight: "600",
+  },
+  detailModalActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 12,
+    gap: 10,
+  },
+  detailSecondaryButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    alignItems: "center",
+  },
+  detailSecondaryText: {
+    fontSize: 15,
+    color: "#374151",
+    fontWeight: "600",
+  },
+  detailPrimaryButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "#2E7D32",
+    alignItems: "center",
+  },
+  detailPrimaryText: {
+    fontSize: 15,
+    color: "#FFFFFF",
     fontWeight: "600",
   },
 });

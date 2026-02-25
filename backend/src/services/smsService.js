@@ -20,6 +20,8 @@ const initializeClient = () => {
 };
 
 const twilioService = initializeClient();
+const TWILIO_MESSAGING_SERVICE_SID = process.env.TWILIO_MESSAGING_SERVICE_SID;
+const TWILIO_SMS_FROM = process.env.TWILIO_SMS_FROM;
 
 /**
  * Send OTP via Twilio Verify API
@@ -116,6 +118,53 @@ exports.verifyOTP = async (phoneNumber, code) => {
     };
   } catch (error) {
     console.error('❌ OTP verification failed:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Send a generic SMS (e.g. receipts, reminders)
+ * Falls back to console logging when Twilio is not configured.
+ * @param {string} phoneNumber
+ * @param {string} message
+ */
+exports.sendSMS = async (phoneNumber, message) => {
+  // If SMS not configured, just log and pretend success (dev mode)
+  if (!twilioService || (!TWILIO_MESSAGING_SERVICE_SID && !TWILIO_SMS_FROM)) {
+    console.log(`📱 [DEV MODE] SMS to ${phoneNumber}: ${message}`);
+    return { success: true, devMode: true };
+  }
+
+  try {
+    let formattedPhone = phoneNumber;
+    if (phoneNumber.startsWith('0')) {
+      formattedPhone = `+256${phoneNumber.substring(1)}`;
+    } else if (!phoneNumber.startsWith('+')) {
+      formattedPhone = `+256${phoneNumber}`;
+    }
+
+    const smsConfig = {
+      to: formattedPhone,
+      body: message,
+    };
+
+    if (TWILIO_MESSAGING_SERVICE_SID) {
+      smsConfig.messagingServiceSid = TWILIO_MESSAGING_SERVICE_SID;
+    } else {
+      smsConfig.from = TWILIO_SMS_FROM;
+    }
+
+    const result = await twilioService.client.messages.create(smsConfig);
+
+    console.log('✅ SMS sent via Twilio:', {
+      to: formattedPhone,
+      sid: result.sid,
+      status: result.status,
+    });
+
+    return { success: true, sid: result.sid, status: result.status };
+  } catch (error) {
+    console.error('❌ SMS sending failed:', error.message);
     return { success: false, error: error.message };
   }
 };

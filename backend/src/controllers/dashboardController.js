@@ -17,11 +17,21 @@ exports.getDashboardStats = async (req, res) => {
       WHERE health_worker_id = ${healthWorkerId}
     `;
 
-    // Get clients count
+    // Get clients count (both registered and screened clients)
     const clientStats = await sql`
       SELECT COUNT(*) as total_clients
-      FROM clients
-      WHERE health_worker_id = ${healthWorkerId}
+      FROM (
+        SELECT id, full_name, phone_number FROM clients WHERE health_worker_id = ${healthWorkerId}
+        UNION
+        SELECT DISTINCT 
+          client_phone as phone_number,
+          client_name as full_name,
+          client_phone as id
+        FROM screenings 
+        WHERE health_worker_id = ${healthWorkerId} 
+        AND client_name IS NOT NULL 
+        AND client_phone IS NOT NULL
+      ) as all_clients
     `;
 
     // Get clients due for repayment

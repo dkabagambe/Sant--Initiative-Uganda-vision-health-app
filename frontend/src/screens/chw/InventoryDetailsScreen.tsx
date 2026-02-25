@@ -5,44 +5,38 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Modal,
   SafeAreaView,
-  Platform,
   StatusBar,
+  TextInput,
   Alert,
+  Modal,
+  FlatList,
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { apiService } from "../../services/api";
-import AppHeader from "../../components/AppHeader";
-
-type RootStackParamList = {
-  InventoryScreen: undefined;
-  InventoryDetailsScreen: undefined;
-  SalesDetailsScreen: undefined;
-  CHWDashboard: undefined;
-  VisionScreeningStep1: undefined;
-  Payments: undefined;
-  Referrals: undefined;
-};
-
-type InventoryScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "InventoryScreen"
->;
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { moderateScale, scale, verticalScale, fontSize as responsiveFontSize } from "../../utils/responsive";
 
 interface StockItemProps {
   power: string;
   totalPairs: number;
-  status?: "normal" | "low" | "critical";
+  status: "normal" | "low" | "critical";
   breakdown: {
     standard: number;
     metal: number;
     fashion: number;
   };
+}
+
+interface SaleItemProps {
+  clientName: string;
+  power: string;
+  frameType: string;
+  amount: string;
+  time: string;
 }
 
 const StockItem = ({
@@ -117,14 +111,6 @@ const StockItem = ({
   );
 };
 
-interface SaleItemProps {
-  clientName: string;
-  power: string;
-  frameType: string;
-  amount: string;
-  time: string;
-}
-
 const SaleItem = ({
   clientName,
   power,
@@ -149,19 +135,18 @@ const SaleItem = ({
   );
 };
 
-export default function InventoryScreen() {
-  const navigation = useNavigation<InventoryScreenNavigationProp>();
-  const [showAddStockModal, setShowAddStockModal] = useState(false);
+export default function InventoryDetailsScreen() {
+  const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [inventory, setInventory] = useState<any[]>([]);
-  const [totals, setTotals] = useState({ total_pairs: 0 });
-  const [userData, setUserData] = useState<any>(null);
-  const [recentSales, setRecentSales] = useState<any[]>([]);
-  const [addStockPower, setAddStockPower] = useState<string | null>(null);
-  const [addStockFrameType, setAddStockFrameType] = useState<string>("standard");
-  const [addStockQuantity, setAddStockQuantity] = useState(0);
-  const [addStockLoading, setAddStockLoading] = useState(false);
+  const [recentSales, setRecentSales] = useState<SaleItemProps[]>([]);
+  const [totals, setTotals] = useState({
+    total_pairs: 0,
+    total_standard: 0,
+    total_metal: 0,
+    total_fashion: 0,
+  });
   const [stats, setStats] = useState({
     weekSold: 0,
     lowStockCount: 0,
@@ -170,128 +155,99 @@ export default function InventoryScreen() {
     hirePurchase: 0,
   });
 
+  // Add Stock Modal State
+  const [showAddStockModal, setShowAddStockModal] = useState(false);
+  const [addStockPower, setAddStockPower] = useState<string | null>(null);
+  const [addStockFrameType, setAddStockFrameType] = useState("standard");
+  const [addStockQuantity, setAddStockQuantity] = useState(0);
+  const [addStockLoading, setAddStockLoading] = useState(false);
+
   useEffect(() => {
-    loadInventory();
-    loadUserData();
-    loadSalesData();
+    loadData();
   }, []);
 
-  const loadUserData = async () => {
-    try {
-      const user = await apiService.getCurrentUser();
-      setUserData(user);
-    } catch (error) {
-      console.error("Failed to load user data:", error);
-    }
+  const loadData = async () => {
+    await Promise.all([loadInventory(), loadSalesData()]);
+    setLoading(false);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
   };
 
   const loadInventory = async () => {
     try {
-      setLoading(true);
-      
-      // Try dashboard inventory first (requires auth)
-      let products: any[] = [];
-      let totalPairs = 0;
-      
-      try {
-        const response = await apiService.getInventorySummary();
-        if (response.success && response.data?.products?.length > 0) {
-          products = response.data.products;
-          totalPairs = response.data.totals?.total_pairs || 0;
-        }
-      } catch (e) {
-        console.log("Dashboard inventory failed, trying products endpoint...");
-      }
-      
-      // Fallback to products endpoint (no auth required)
-      if (products.length === 0) {
-        try {
-          const prodResponse = await apiService.getInventory();
-          if (prodResponse.success && prodResponse.data?.length > 0) {
-            products = prodResponse.data;
-            totalPairs = products.reduce((sum: number, p: any) => sum + (p.stock_quantity || 0), 0);
-          }
-        } catch (e) {
-          console.error("Products endpoint also failed:", e);
+      // Try getInventorySummary first (authenticated), fallback to getInventory
+      const response = await apiService.getInventorySummary();
+      if (response.success && response.data?.products?.length > 0) {
+        setInventory(response.data.products);
+        setTotals({
+          total_pairs: response.data.totalStock?.total_pairs || 0,
+          total_standard: response.data.totalStock?.total_standard || 0,
+          total_metal: response.data.totalStock?.total_metal || 0,
+          total_fashion: response.data.totalStock?.total_fashion || 0,
+        });
+      } else {
+        // Fallback to unauthenticated endpoint
+        const fallback = await apiService.getInventory();
+        if (fallback.success) {
+          setInventory(fallback.data || []);
         }
       }
-      
-      setInventory(products);
-      setTotals({ total_pairs: totalPairs });
-      
-      // Calculate stats
-      const lowStock = products.filter((p: any) => p.stock_quantity < 20).length;
-      setStats(prev => ({ ...prev, lowStockCount: lowStock }));
-      
     } catch (error) {
       console.error("Failed to load inventory:", error);
-      Alert.alert("Error", "Failed to load inventory");
-    } finally {
-      setLoading(false);
+      // Fallback to unauthenticated endpoint
+      try {
+        const fallback = await apiService.getInventory();
+        if (fallback.success) {
+          setInventory(fallback.data || []);
+        }
+      } catch (fallbackError) {
+        console.error("Fallback also failed:", fallbackError);
+      }
     }
   };
 
   const loadSalesData = async () => {
     try {
-      // Get screenings with glasses sold this week
-      const screenings = await apiService.getScreenings();
-      if (screenings.success && screenings.data) {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        
-        const weekSales = screenings.data.filter((s: any) => 
-          s.needs_glasses && new Date(s.created_at) >= weekAgo
-        );
-        
-        // Get recent sales (last 4)
-        const recent = weekSales.slice(0, 4).map((s: any) => ({
-          clientName: s.client_name || 'Unknown',
-          power: s.recommended_power || 'N/A',
-          frameType: s.selected_frame_type || 'Standard',
-          amount: `UGX ${(s.glasses_price || 15000).toLocaleString()}`,
-          time: getTimeAgo(s.created_at),
-        }));
-        
-        setRecentSales(recent);
-        
-        // Get payment stats
-        const payments = await apiService.getPayments();
-        if (payments.success && payments.data) {
-          const completed = payments.data.filter((p: any) => p.status === 'completed');
-          const fullPayments = completed.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
-          const pending = payments.data.filter((p: any) => p.status === 'pending');
-          const hirePurchase = pending.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
-          
-          setStats(prev => ({
-            ...prev,
-            weekSold: weekSales.length,
-            totalRevenue: fullPayments + hirePurchase,
-            fullPayments,
-            hirePurchase,
+      const response = await apiService.getPayments();
+      if (response.success) {
+        const sales = (response.data || [])
+          .slice(0, 5)
+          .map((payment: any) => ({
+            clientName: payment.client_name || "Unknown",
+            power: "+1.00", // TODO: Get from product when linked
+            frameType: "standard", // TODO: Get from product when linked
+            amount: `UGX ${(payment.amount || 0).toLocaleString()}`,
+            time: new Date(payment.payment_date || payment.created_at).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
           }));
-        }
+        setRecentSales(sales);
+
+        // Calculate stats
+        const weekSold = response.data?.length || 0;
+        const lowStockCount = inventory.filter((p: any) => p.stock_quantity < 10).length;
+        const totalRevenue = response.data?.reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
+        const fullPayments = response.data?.filter((p: any) => p.payment_type === "full").reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
+        const hirePurchase = totalRevenue - fullPayments;
+
+        setStats({
+          weekSold,
+          lowStockCount,
+          totalRevenue,
+          fullPayments,
+          hirePurchase,
+        });
       }
     } catch (error) {
       console.error("Failed to load sales data:", error);
     }
-  };
-
-  const getTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffDays > 0) return diffDays === 1 ? 'Yesterday' : `${diffDays} days ago`;
-    if (diffHours > 0) return `Today, ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')} ${date.getHours() >= 12 ? 'PM' : 'AM'}`;
-    return 'Just now';
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await Promise.all([loadInventory(), loadSalesData()]);
-    setRefreshing(false);
   };
 
   const getStatus = (quantity: number): "normal" | "low" | "critical" | undefined => {
@@ -309,31 +265,22 @@ export default function InventoryScreen() {
   };
 
   const handleSubmitAddStock = async () => {
-    if (!addStockPower) {
-      Alert.alert("Error", "Please select a power.");
-      return;
-    }
-    if (addStockQuantity <= 0) {
-      Alert.alert("Error", "Please enter a quantity greater than 0.");
+    if (!addStockPower || addStockQuantity <= 0) {
+      Alert.alert("Error", "Please select a power and enter a valid quantity");
       return;
     }
 
     setAddStockLoading(true);
     try {
-      // Find the product by power
-      const product = inventory.find((item: any) => item.power === addStockPower);
+      const product = inventory.find((p) => p.power === addStockPower);
       if (!product) {
-        Alert.alert("Error", `No product found for power ${addStockPower}. Please contact admin.`);
-        setAddStockLoading(false);
+        Alert.alert("Error", "Product not found");
         return;
       }
 
       const result = await apiService.addStock(product.id, addStockQuantity, addStockFrameType);
       if (result.success) {
-        Alert.alert(
-          "\u2705 Stock Added",
-          `Successfully added ${addStockQuantity} pairs of ${addStockPower} (${addStockFrameType}) glasses.`
-        );
+        Alert.alert("Success", "Stock added successfully");
         setShowAddStockModal(false);
         await loadInventory();
       } else {
@@ -349,35 +296,17 @@ export default function InventoryScreen() {
 
   const handleRequestReplenishment = async () => {
     try {
-      // Get low stock items
-      const lowStockItems = inventory.filter(item => item.stock_quantity < 20);
-      
+      const lowStockItems = inventory.filter((p: any) => p.stock_quantity < 10);
       if (lowStockItems.length === 0) {
-        Alert.alert("No Low Stock", "All items are well stocked. No replenishment needed.");
+        Alert.alert("Info", "No items need replenishment at the moment.");
         return;
       }
 
-      const itemsList = lowStockItems.map(item => 
-        `${item.power}: ${item.stock_quantity} pairs (need ${20 - item.stock_quantity} more)`
-      ).join('\n');
-
+      // In production, this would call an API
+      // await apiService.requestStockReplenishment({ items: lowStockItems });
       Alert.alert(
-        "Request Stock Replenishment",
-        `The following items need restocking:\n\n${itemsList}\n\nSubmit request?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Submit Request",
-            onPress: async () => {
-              // In production, this would call an API
-              // await apiService.requestStockReplenishment({ items: lowStockItems });
-              Alert.alert(
-                "✅ Request Submitted",
-                "Your stock replenishment request has been submitted successfully. You will be notified when stock arrives."
-              );
-            }
-          }
-        ]
+        "✅ Request Submitted",
+        "Your stock replenishment request has been submitted successfully. You will be notified when stock arrives."
       );
     } catch (error) {
       Alert.alert("Error", "Failed to submit request. Please try again.");
@@ -399,11 +328,14 @@ export default function InventoryScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FFF8" />
 
-      <AppHeader 
-        userName={userData?.full_name}
-        userRole="VHT"
-        district={userData?.district}
-      />
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#1E40AF" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Inventory Management</Text>
+        <View style={{ width: 24 }} />
+      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -432,23 +364,6 @@ export default function InventoryScreen() {
                 .map((p: any) => `${p.power}D has only ${p.stock_quantity} pairs left`)
                 .join(". ")}
               . Consider reordering.
-            </Text>
-          </View>
-        )}
-
-        {/* Out of Stock Alert */}
-        {inventory.filter((p: any) => p.stock_quantity === 0).length > 0 && (
-          <View style={[styles.alertCard, { backgroundColor: "#FEF2F2", borderColor: "#FCA5A5" }]}>
-            <View style={styles.alertHeader}>
-              <Ionicons name="warning" size={24} color="#B91C1C" />
-              <Text style={[styles.alertTitle, { color: "#B91C1C" }]}>Out of stock</Text>
-            </View>
-            <Text style={styles.alertText}>
-              {inventory
-                .filter((p: any) => p.stock_quantity === 0)
-                .map((p: any) => `${p.power}D`)
-                .join(", ")}
-              {" "}— no stock available. Add stock immediately.
             </Text>
           </View>
         )}
@@ -485,7 +400,7 @@ export default function InventoryScreen() {
                 key={item.id || index}
                 power={item.power}
                 totalPairs={item.stock_quantity}
-                status={getStatus(item.stock_quantity)}
+                status={getStatus(item.stock_quantity) || "normal"}
                 breakdown={{
                   standard: item.stock_standard || 0,
                   metal: item.stock_metal || 0,
@@ -549,46 +464,6 @@ export default function InventoryScreen() {
         {/* Bottom Spacer */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate("CHWDashboard")}
-        >
-          <Ionicons name="home-outline" size={24} color="#6B7280" />
-          <Text style={styles.navText}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate("VisionScreeningStep1")}
-        >
-          <Ionicons name="eye-outline" size={24} color="#6B7280" />
-          <Text style={styles.navText}>Screen</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItemActive}>
-          <Ionicons name="cube" size={24} color="#1E40AF" />
-          <Text style={styles.navTextActive}>Stock</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate("Payments")}
-        >
-          <Ionicons name="cash-outline" size={24} color="#6B7280" />
-          <Text style={styles.navText}>Payments</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate("Referrals")}
-        >
-          <Ionicons name="document-text-outline" size={24} color="#6B7280" />
-          <Text style={styles.navText}>Referrals</Text>
-        </TouchableOpacity>
-      </View>
 
       {/* Add Stock Modal */}
       <Modal
@@ -664,54 +539,57 @@ export default function InventoryScreen() {
                   style={styles.quantityButton}
                   onPress={() => setAddStockQuantity(Math.max(0, addStockQuantity - 1))}
                 >
-                  <Ionicons name="remove" size={24} color="#1E40AF" />
+                  <Ionicons name="remove" size={20} color="#6B7280" />
                 </TouchableOpacity>
-                <Text style={styles.quantityText}>{addStockQuantity}</Text>
+                <TextInput
+                  style={styles.quantityInput}
+                  value={addStockQuantity.toString()}
+                  onChangeText={(text) => setAddStockQuantity(parseInt(text) || 0)}
+                  keyboardType="numeric"
+                />
                 <TouchableOpacity
                   style={styles.quantityButton}
                   onPress={() => setAddStockQuantity(addStockQuantity + 1)}
                 >
-                  <Ionicons name="add" size={24} color="#1E40AF" />
+                  <Ionicons name="add" size={20} color="#6B7280" />
                 </TouchableOpacity>
               </View>
 
-              {/* Quick quantity buttons */}
+              {/* Quick Select */}
               <View style={styles.quickQuantityRow}>
-                {[5, 10, 20, 50].map((qty) => (
+                {[5, 10, 20, 50].map((num) => (
                   <TouchableOpacity
-                    key={qty}
+                    key={num}
                     style={styles.quickQuantityButton}
-                    onPress={() => setAddStockQuantity(qty)}
+                    onPress={() => setAddStockQuantity(addStockQuantity + num)}
                   >
-                    <Text style={styles.quickQuantityText}>{qty}</Text>
+                    <Text style={styles.quickQuantityText}>+{num}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
-              {/* Submit */}
-              <TouchableOpacity
-                style={[
-                  styles.modalButton,
-                  (!addStockPower || addStockQuantity <= 0) && { opacity: 0.5 },
-                ]}
-                onPress={handleSubmitAddStock}
-                disabled={!addStockPower || addStockQuantity <= 0 || addStockLoading}
-              >
-                {addStockLoading ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.modalButtonText}>
-                    Add {addStockQuantity > 0 ? `${addStockQuantity} Pairs` : "Stock"}
-                  </Text>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={() => setShowAddStockModal(false)}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
+              {/* Submit Buttons */}
+              <View style={styles.modalButtonRow}>
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() => setShowAddStockModal(false)}
+                >
+                  <Text style={styles.modalCancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalSubmitButton, addStockLoading && { opacity: 0.7 }]}
+                  onPress={handleSubmitAddStock}
+                  disabled={addStockLoading}
+                >
+                  {addStockLoading ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <Text style={styles.modalSubmitButtonText}>
+                      Add {addStockQuantity} Pairs
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </ScrollView>
           </View>
         </View>
@@ -726,220 +604,183 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8FFF8",
   },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(12),
     backgroundColor: "#FFFFFF",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 3,
   },
-  headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 8,
-  },
-  headerInfo: {
-    flex: 1,
-  },
-  organization: {
-    fontSize: 12,
-    color: "#6B7280",
-    fontWeight: "500",
-    marginBottom: 2,
-  },
-  userName: {
-    fontSize: 20,
-    fontWeight: "700",
+  headerTitle: {
+    fontSize: responsiveFontSize.large,
+    fontWeight: "600",
     color: "#1F2937",
-    marginBottom: 2,
   },
-  userRole: {
-    fontSize: 13,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: verticalScale(12),
+    fontSize: responsiveFontSize.medium,
     color: "#6B7280",
-  },
-  profileButton: {
-    padding: 4,
-    marginLeft: 8,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 120,
+    paddingBottom: verticalScale(120),
   },
   titleSection: {
-    marginBottom: 20,
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(16),
   },
   screenTitle: {
-    fontSize: 24,
+    fontSize: responsiveFontSize.xlarge,
     fontWeight: "700",
     color: "#1F2937",
-    marginBottom: 6,
   },
   totalStock: {
-    fontSize: 16,
+    fontSize: responsiveFontSize.medium,
     color: "#6B7280",
+    marginTop: verticalScale(4),
   },
   alertCard: {
     backgroundColor: "#FEF2F2",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
+    marginHorizontal: scale(16),
+    marginBottom: verticalScale(16),
+    padding: scale(16),
+    borderRadius: moderateScale(12),
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: "#FCA5A5",
   },
   alertHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: verticalScale(8),
+    gap: scale(8),
   },
   alertTitle: {
-    fontSize: 16,
+    fontSize: responsiveFontSize.medium,
     fontWeight: "600",
     color: "#DC2626",
-    marginLeft: 8,
   },
   alertText: {
-    fontSize: 14,
-    color: "#B91C1C",
-    lineHeight: 20,
+    fontSize: responsiveFontSize.regular,
+    color: "#7F1D1D",
+    lineHeight: verticalScale(20),
   },
   statsRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 24,
+    marginHorizontal: scale(16),
+    marginBottom: verticalScale(16),
+    gap: scale(12),
   },
   statCard: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 4,
+    padding: scale(16),
+    borderRadius: moderateScale(12),
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
     elevation: 2,
   },
   statNumber: {
-    fontSize: 28,
+    fontSize: responsiveFontSize.xlarge,
     fontWeight: "700",
-    color: "#1E40AF",
-    marginBottom: 4,
+    color: "#1F2937",
   },
   statLabel: {
-    fontSize: 13,
+    fontSize: responsiveFontSize.small,
     color: "#6B7280",
-    textAlign: "center",
+    marginTop: verticalScale(4),
   },
   section: {
-    marginBottom: 24,
+    marginHorizontal: scale(16),
+    marginBottom: verticalScale(16),
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: verticalScale(12),
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1F2937",
-  },
-  viewAllText: {
-    color: "#1E40AF",
-    fontSize: 14,
+    fontSize: responsiveFontSize.large,
     fontWeight: "600",
+    color: "#1F2937",
   },
   addButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#1E40AF",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: scale(12),
+    paddingVertical: verticalScale(8),
+    borderRadius: moderateScale(8),
+    gap: scale(6),
   },
   addButtonText: {
-    color: "#FFFFFF",
-    fontSize: 13,
+    fontSize: responsiveFontSize.small,
     fontWeight: "600",
-    marginLeft: 6,
+    color: "#FFFFFF",
   },
   stockList: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    gap: verticalScale(12),
   },
   stockItem: {
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    backgroundColor: "#FFFFFF",
+    padding: scale(16),
+    borderRadius: moderateScale(12),
+    elevation: 2,
   },
   stockItemHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: verticalScale(12),
   },
   stockPower: {
-    fontSize: 16,
+    fontSize: responsiveFontSize.large,
     fontWeight: "600",
     color: "#1F2937",
   },
   stockQuantityContainer: {
     flexDirection: "row",
     alignItems: "center",
+    gap: scale(8),
   },
   stockQuantity: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginRight: 8,
+    fontSize: responsiveFontSize.medium,
+    fontWeight: "600",
+    color: "#1F2937",
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingHorizontal: scale(8),
+    paddingVertical: verticalScale(4),
+    borderRadius: moderateScale(12),
   },
   statusText: {
-    fontSize: 11,
-    color: "#FFFFFF",
+    fontSize: responsiveFontSize.small,
     fontWeight: "600",
+    color: "#FFFFFF",
   },
   breakdownContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
+    gap: verticalScale(8),
   },
   frameBreakdownItem: {
     flexDirection: "row",
     alignItems: "center",
+    gap: scale(8),
   },
   frameDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
+    width: scale(8),
+    height: scale(8),
+    borderRadius: scale(4),
   },
   breakdownText: {
-    fontSize: 13,
+    fontSize: responsiveFontSize.regular,
     color: "#6B7280",
   },
   breakdownCount: {
@@ -947,152 +788,102 @@ const styles = StyleSheet.create({
     color: "#1F2937",
   },
   salesList: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    gap: verticalScale(12),
   },
   saleItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    backgroundColor: "#FFFFFF",
+    padding: scale(16),
+    borderRadius: moderateScale(12),
+    elevation: 2,
   },
   saleAvatar: {
-    marginRight: 12,
+    marginRight: scale(12),
   },
   saleDetails: {
     flex: 1,
   },
   saleClientName: {
-    fontSize: 15,
+    fontSize: responsiveFontSize.medium,
     fontWeight: "600",
     color: "#1F2937",
-    marginBottom: 2,
+    marginBottom: verticalScale(2),
   },
   saleDescription: {
-    fontSize: 13,
+    fontSize: responsiveFontSize.regular,
     color: "#6B7280",
-    marginBottom: 2,
+    marginBottom: verticalScale(2),
   },
   saleTime: {
-    fontSize: 11,
+    fontSize: responsiveFontSize.small,
     color: "#9CA3AF",
   },
   saleAmount: {
-    fontSize: 15,
+    fontSize: responsiveFontSize.medium,
     fontWeight: "600",
     color: "#059669",
   },
+  viewAllText: {
+    fontSize: responsiveFontSize.medium,
+    fontWeight: "600",
+    color: "#1E40AF",
+  },
   revenueCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    marginHorizontal: scale(16),
+    marginBottom: verticalScale(16),
+    padding: scale(20),
+    borderRadius: moderateScale(12),
     elevation: 2,
   },
   revenueTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: responsiveFontSize.large,
+    fontWeight: "600",
     color: "#1F2937",
-    marginBottom: 4,
+    marginBottom: verticalScale(8),
   },
   revenueSubtitle: {
-    fontSize: 14,
+    fontSize: responsiveFontSize.regular,
     color: "#6B7280",
-    marginBottom: 8,
+    marginBottom: verticalScale(12),
   },
   revenueAmount: {
-    fontSize: 28,
+    fontSize: responsiveFontSize.xxlarge,
     fontWeight: "700",
-    color: "#1E40AF",
-    marginBottom: 20,
+    color: "#1F2937",
+    marginBottom: verticalScale(20),
   },
   revenueBreakdown: {
-    gap: 12,
-    marginBottom: 24,
+    marginBottom: verticalScale(20),
   },
   breakdownItem: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    marginBottom: verticalScale(12),
   },
   breakdownLabel: {
-    fontSize: 15,
+    fontSize: responsiveFontSize.regular,
     color: "#6B7280",
   },
   breakdownValue: {
-    fontSize: 16,
+    fontSize: responsiveFontSize.regular,
     fontWeight: "600",
     color: "#1F2937",
   },
   requestButton: {
     backgroundColor: "#1E40AF",
-    paddingVertical: 14,
-    borderRadius: 10,
+    paddingVertical: verticalScale(16),
+    borderRadius: moderateScale(12),
     alignItems: "center",
   },
   requestButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: responsiveFontSize.medium,
     fontWeight: "600",
+    color: "#FFFFFF",
   },
   bottomSpacer: {
-    height: 100,
-  },
-  bottomNav: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 8,
-  },
-  navItem: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 6,
-  },
-  navItemActive: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 6,
-  },
-  navText: {
-    fontSize: 11,
-    color: "#6B7280",
-    marginTop: 4,
-  },
-  navTextActive: {
-    fontSize: 11,
-    color: "#1E40AF",
-    fontWeight: "600",
-    marginTop: 4,
+    height: verticalScale(100),
   },
   modalOverlay: {
     flex: 1,
@@ -1109,79 +900,73 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 20,
+    padding: scale(20),
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: responsiveFontSize.large,
     fontWeight: "600",
     color: "#1F2937",
   },
   modalBody: {
-    padding: 20,
-  },
-  modalText: {
-    fontSize: 15,
-    color: "#6B7280",
-    lineHeight: 22,
-    marginBottom: 24,
+    padding: scale(20),
   },
   modalLabel: {
-    fontSize: 15,
+    fontSize: responsiveFontSize.medium,
     fontWeight: "600",
-    color: "#374151",
-    marginBottom: 10,
-    marginTop: 16,
+    color: "#1F2937",
+    marginBottom: verticalScale(12),
   },
   powerGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: scale(8),
+    marginBottom: verticalScale(20),
   },
   powerOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
     backgroundColor: "#F9FAFB",
-    minWidth: 80,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: moderateScale(8),
+    padding: scale(12),
     alignItems: "center",
+    minWidth: scale(70),
   },
   powerOptionSelected: {
-    borderColor: "#1E40AF",
     backgroundColor: "#EFF6FF",
+    borderColor: "#1E40AF",
   },
   powerOptionText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize.regular,
     fontWeight: "600",
-    color: "#6B7280",
+    color: "#1F2937",
   },
   powerOptionTextSelected: {
     color: "#1E40AF",
   },
   frameTypeRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: scale(8),
+    marginBottom: verticalScale(20),
   },
   frameTypeOption: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
     backgroundColor: "#F9FAFB",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: moderateScale(8),
+    paddingVertical: verticalScale(12),
     alignItems: "center",
   },
   frameTypeOptionSelected: {
-    borderColor: "#1E40AF",
     backgroundColor: "#EFF6FF",
+    borderColor: "#1E40AF",
   },
   frameTypeText: {
-    fontSize: 14,
+    fontSize: responsiveFontSize.regular,
     fontWeight: "600",
-    color: "#6B7280",
+    color: "#1F2937",
   },
   frameTypeTextSelected: {
     color: "#1E40AF",
@@ -1190,77 +975,73 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 20,
-    marginVertical: 12,
+    gap: scale(16),
+    marginBottom: verticalScale(20),
   },
   quantityButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: "#1E40AF",
-    alignItems: "center",
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(20),
+    backgroundColor: "#F3F4F6",
     justifyContent: "center",
-    backgroundColor: "#EFF6FF",
+    alignItems: "center",
   },
-  quantityText: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#1F2937",
-    minWidth: 60,
+  quantityInput: {
+    width: scale(80),
+    height: scale(48),
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: moderateScale(8),
     textAlign: "center",
+    fontSize: responsiveFontSize.large,
+    fontWeight: "600",
+    color: "#1F2937",
   },
   quickQuantityRow: {
     flexDirection: "row",
-    justifyContent: "center",
-    gap: 10,
-    marginBottom: 20,
+    gap: scale(8),
+    marginBottom: verticalScale(20),
   },
   quickQuantityButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    flex: 1,
     backgroundColor: "#F3F4F6",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    paddingVertical: verticalScale(8),
+    borderRadius: moderateScale(8),
+    alignItems: "center",
   },
   quickQuantityText: {
-    fontSize: 14,
+    fontSize: responsiveFontSize.regular,
     fontWeight: "600",
-    color: "#374151",
+    color: "#6B7280",
   },
-  modalButton: {
-    backgroundColor: "#1E40AF",
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  modalButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
+  modalButtonRow: {
+    flexDirection: "row",
+    gap: scale(12),
   },
   modalCancelButton: {
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 8,
-    marginBottom: 20,
-  },
-  modalCancelText: {
-    color: "#6B7280",
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  loadingContainer: {
     flex: 1,
-    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    paddingVertical: verticalScale(16),
+    borderRadius: moderateScale(12),
     alignItems: "center",
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
+  modalCancelButtonText: {
+    fontSize: responsiveFontSize.medium,
+    fontWeight: "600",
     color: "#6B7280",
+  },
+  modalSubmitButton: {
+    flex: 2,
+    backgroundColor: "#1E40AF",
+    paddingVertical: verticalScale(16),
+    borderRadius: moderateScale(12),
+    alignItems: "center",
+  },
+  modalSubmitButtonText: {
+    fontSize: responsiveFontSize.medium,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 });

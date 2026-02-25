@@ -1,5 +1,12 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+  StatusBar,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
@@ -35,7 +42,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 20,
-    paddingTop: 20,
+    // Force header lower to avoid overlap on affected devices
+    paddingTop: 100,
     paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",

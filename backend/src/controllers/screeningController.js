@@ -78,9 +78,11 @@ exports.createScreening = async (req, res) => {
     if (needsReferral && referralReason) {
       await sql`
         INSERT INTO referrals (
-          screening_id, health_worker_id, reason, urgency
+          screening_id, health_worker_id, client_name, client_phone, 
+          client_age, client_gender, client_district, reason, urgency
         ) VALUES (
-          ${screening[0].id}, ${healthWorkerId}, ${referralReason}, 'normal'
+          ${screening[0].id}, ${healthWorkerId}, ${clientName || null}, ${clientPhone || null},
+          ${clientAge || null}, ${clientGender || null}, ${district || null}, ${referralReason}, 'normal'
         )
       `;
     }

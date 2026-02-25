@@ -13,15 +13,25 @@ const sql = dbLocal.sql;
 app.locals.sql = sql;
 
 // --- Middleware ---
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: '*', // Allow all origins for development
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      req.rawBody = buf.toString("utf8");
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true }));
 
 // --- Health check ---
 app.get("/api/health", async (req, res) => {
   let dbStatus = "disconnected";
   try {
-    const result = await sql`SELECT NOW()`;
+    const result = await sql`SELECT datetime('now') as now`;
     if (result && result[0] && result[0].now) dbStatus = "connected";
   } catch (err) {
     console.error("DB health check error:", err.message);
@@ -75,6 +85,7 @@ const referralRoutes = require("./routes/referrals");
 const dashboardRoutes = require("./routes/dashboard");
 const facilityRoutes = require("./routes/facilities");
 const uploadRoutes = require("./routes/upload");
+const { startPaymentReminderScheduler } = require("./services/paymentReminderScheduler");
 
 // --- Serve uploaded files ---
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
@@ -125,5 +136,12 @@ app.listen(PORT, async () => {
     console.log("✅ Database connected successfully");
   } catch (err) {
     console.error("❌ Database connection failed:", err.message);
+  }
+
+  // Start background payment reminder scheduler (hire purchase)
+  try {
+    startPaymentReminderScheduler(sql);
+  } catch (err) {
+    console.error("❌ Failed to start payment reminder scheduler:", err.message);
   }
 });

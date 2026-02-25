@@ -156,7 +156,12 @@ export default function VisionScreen6({
             <TouchableOpacity
               style={styles.nextButton}
               onPress={() => {
-                console.log("Button pressed - canRead:", canRead, "age:", clientAge);
+                console.log(
+                  "Button pressed - canRead:",
+                  canRead,
+                  "age:",
+                  clientAge,
+                );
                 onComplete(canRead === true);
               }}
             >
@@ -176,7 +181,12 @@ export default function VisionScreen6({
           <TouchableOpacity
             style={styles.recordingBottomButton}
             onPress={() => {
-              console.log("VisionScreen6 Button pressed - canRead:", canRead, "clientAge:", clientAge);
+              console.log(
+                "VisionScreen6 Button pressed - canRead:",
+                canRead,
+                "clientAge:",
+                clientAge,
+              );
               onComplete(canRead === true);
             }}
           >
@@ -310,19 +320,19 @@ export default function VisionScreen6({
           <View style={styles.chartCard}>
             <Text style={styles.chartTitle}>Near Vision Chart (40cm)</Text>
 
-            {/* N48 - Largest */}
+            {/* N48 - Largest sentence row */}
             <View style={styles.chartRow}>
               <Text style={styles.chartRowLabel}>N48 (Largest)</Text>
               <Text style={styles.chartRowTextLarge}>The quick brown</Text>
             </View>
 
-            {/* N24 */}
+            {/* N24 - Middle sentence row */}
             <View style={styles.chartRow}>
               <Text style={styles.chartRowLabel}>N24</Text>
               <Text style={styles.chartRowTextMedium}>The quick brown fox</Text>
             </View>
 
-            {/* N12 */}
+            {/* N12 - Smallest sentence row */}
             <View style={styles.chartRow}>
               <Text style={styles.chartRowLabel}>N12</Text>
               <Text style={styles.chartRowTextSmall}>
@@ -330,7 +340,7 @@ export default function VisionScreen6({
               </Text>
             </View>
 
-            {/* N8 - Target */}
+            {/* N8 - Target sentence row */}
             <View style={styles.targetRow}>
               <Text style={styles.targetRowLabel}>⭐ N8 ROW (TEST THIS)</Text>
               <Text style={styles.targetRowText}>
@@ -589,22 +599,25 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   chartRowTextLarge: {
-    fontSize: 24,
-    fontWeight: "400",
+    // N48 - biggest and bold
+    fontSize: 26,
+    fontWeight: "700",
     color: "#111827",
     lineHeight: 32,
   },
   chartRowTextMedium: {
+    // N24 - middle size
     fontSize: 18,
-    fontWeight: "400",
+    fontWeight: "500",
     color: "#111827",
     lineHeight: 28,
   },
   chartRowTextSmall: {
-    fontSize: 16,
+    // N12 - smallest and lighter
+    fontSize: 14,
     fontWeight: "400",
-    color: "#111827",
-    lineHeight: 24,
+    color: "#6B7280",
+    lineHeight: 20,
   },
   targetRow: {
     backgroundColor: "#FAF5FF", // Purple-50
@@ -621,10 +634,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   targetRowText: {
-    fontSize: moderateScale(18), // Increased from 14 for better readability
+    // N8 should be the smallest line on the chart, but still comfortably readable
+    fontSize: 13,
     fontWeight: "400",
     color: "#111827",
-    lineHeight: moderateScale(24),
+    lineHeight: 20,
     textAlign: "center",
   },
   // Client Instructions

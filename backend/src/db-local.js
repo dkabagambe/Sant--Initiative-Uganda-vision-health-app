@@ -101,6 +101,13 @@ db.exec(`
     due_date TEXT,
     payment_date TEXT DEFAULT CURRENT_TIMESTAMP,
     verified_at TEXT,
+    provider TEXT,
+    provider_reference TEXT,
+    provider_status TEXT,
+    provider_callback_payload TEXT,
+    provider_failure_reason TEXT,
+    provider_requested_at TEXT,
+    provider_completed_at TEXT,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     is_synced INTEGER DEFAULT 1,
     offline_id TEXT
@@ -149,6 +156,13 @@ const migrations = [
   'ALTER TABLE referrals ADD COLUMN client_age INTEGER',
   'ALTER TABLE referrals ADD COLUMN client_gender TEXT',
   'ALTER TABLE referrals ADD COLUMN client_district TEXT',
+  'ALTER TABLE payments ADD COLUMN provider TEXT',
+  'ALTER TABLE payments ADD COLUMN provider_reference TEXT',
+  'ALTER TABLE payments ADD COLUMN provider_status TEXT',
+  'ALTER TABLE payments ADD COLUMN provider_callback_payload TEXT',
+  'ALTER TABLE payments ADD COLUMN provider_failure_reason TEXT',
+  'ALTER TABLE payments ADD COLUMN provider_requested_at TEXT',
+  'ALTER TABLE payments ADD COLUMN provider_completed_at TEXT',
 ];
 migrations.forEach(m => {
   try { db.exec(m); } catch (e) { /* column already exists */ }
@@ -238,5 +252,72 @@ const sql = (strings, ...values) => {
     throw err;
   }
 };
+
+// Migration function to add missing columns
+function runMigrations() {
+  console.log('🔄 Running database migrations...');
+  
+  // List of columns to add to screenings table if they don't exist
+  const migrations = [
+    { table: 'screenings', column: 'client_district', type: 'TEXT' },
+    { table: 'screenings', column: 'client_county', type: 'TEXT' },
+    { table: 'screenings', column: 'client_sub_county', type: 'TEXT' },
+    { table: 'screenings', column: 'client_parish', type: 'TEXT' },
+    { table: 'screenings', column: 'offline_id', type: 'TEXT' },
+    { table: 'screenings', column: 'is_synced', type: 'INTEGER DEFAULT 1' },
+    { table: 'screenings', column: 'selected_frame_type', type: 'TEXT' },
+    { table: 'screenings', column: 'recommended_power', type: 'TEXT' },
+    { table: 'screenings', column: 'recommended_product_id', type: 'TEXT' },
+    { table: 'screenings', column: 'referral_reason', type: 'TEXT' },
+    { table: 'screenings', column: 'notes', type: 'TEXT' },
+    { table: 'screenings', column: 'pinhole_test_left', type: 'TEXT' },
+    { table: 'screenings', column: 'pinhole_test_right', type: 'TEXT' },
+    { table: 'screenings', column: 'near_vision_result', type: 'TEXT' },
+    { table: 'screenings', column: 'distance_vision_both', type: 'TEXT' },
+    { table: 'screenings', column: 'distance_vision_right', type: 'TEXT' },
+    { table: 'screenings', column: 'distance_vision_left', type: 'TEXT' },
+    { table: 'screenings', column: 'health_worker_id', type: 'TEXT' },
+    { table: 'screenings', column: 'client_village', type: 'TEXT' },
+    { table: 'screenings', column: 'client_gender', type: 'TEXT' },
+    { table: 'screenings', column: 'client_age', type: 'INTEGER' },
+    { table: 'screenings', column: 'client_phone', type: 'TEXT' },
+    { table: 'screenings', column: 'client_name', type: 'TEXT' },
+    { table: 'screenings', column: 'client_id', type: 'TEXT' },
+    
+    // Referrals table columns
+    { table: 'referrals', column: 'client_id', type: 'TEXT' },
+    { table: 'referrals', column: 'client_name', type: 'TEXT' },
+    { table: 'referrals', column: 'client_phone', type: 'TEXT' },
+    { table: 'referrals', column: 'client_age', type: 'INTEGER' },
+    { table: 'referrals', column: 'client_gender', type: 'TEXT' },
+    { table: 'referrals', column: 'client_district', type: 'TEXT' },
+    { table: 'referrals', column: 'facility_name', type: 'TEXT' },
+    { table: 'referrals', column: 'facility_location', type: 'TEXT' },
+    { table: 'referrals', column: 'status', type: 'TEXT DEFAULT "pending"' },
+    { table: 'referrals', column: 'referred_date', type: 'TEXT DEFAULT (date("now"))' },
+    { table: 'referrals', column: 'completed_date', type: 'TEXT' },
+    { table: 'referrals', column: 'notes', type: 'TEXT' },
+  ];
+
+  migrations.forEach(({ table, column, type }) => {
+    try {
+      // Check if column exists
+      const tableInfo = db.prepare(`PRAGMA table_info(${table})`).all();
+      const columnExists = tableInfo.some(col => col.name === column);
+      
+      if (!columnExists) {
+        console.log(`➕ Adding column ${column} to ${table}`);
+        db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+      }
+    } catch (error) {
+      console.log(`⚠️ Could not add column ${column} to ${table}: ${error.message}`);
+    }
+  });
+  
+  console.log('✅ Database migrations completed');
+}
+
+// Run migrations on startup
+runMigrations();
 
 module.exports = { sql, db };

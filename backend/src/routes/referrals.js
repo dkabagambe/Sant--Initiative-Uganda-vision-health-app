@@ -7,6 +7,7 @@ router.post("/", referralController.createReferral);
 router.get("/", referralController.getReferrals);
 router.get("/stats", referralController.getReferralStats);
 router.get("/:id", referralController.getReferralById);
+router.patch("/:id", referralController.updateReferral);
 router.patch("/:id/status", referralController.updateReferralStatus);
 
 module.exports = router;

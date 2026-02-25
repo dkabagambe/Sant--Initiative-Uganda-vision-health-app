@@ -114,6 +114,14 @@ export default function ClientRegistration() {
     setLoading(true);
 
     try {
+      // Calculate next payment date (30 days from now) for hire-purchase
+      let nextPaymentDate: string | undefined;
+      if (paymentMethod === "hire-purchase") {
+        const nextDate = new Date();
+        nextDate.setDate(nextDate.getDate() + 30);
+        nextPaymentDate = nextDate.toISOString().slice(0, 10); // YYYY-MM-DD for backend
+      }
+
       // Create payment record
       const paymentData = {
         screeningId,
@@ -122,33 +130,73 @@ export default function ClientRegistration() {
         clientPhone: mobileNumber,
         amount: selectedProduct.price,
         mobileMoneyNumber: mobileNumber,
-        paymentMethod: paymentMethod === "hire-purchase" ? "mobile_money" : "cash",
+        paymentMethod:
+          paymentMethod === "hire-purchase" ? "mobile_money" : "cash",
         paymentType: paymentMethod === "hire-purchase" ? "installment" : "full",
         totalInstallments: paymentMethod === "hire-purchase" ? 3 : 1,
         installmentNumber: 1,
+        // Used by backend for reminders / SMS text
+        dueDate: nextPaymentDate,
       };
 
-      const result = await apiService.createPayment(paymentData);
-
-      if (result.success) {
-        // Calculate next payment date (30 days from now)
-        const nextDate = new Date();
-        nextDate.setDate(nextDate.getDate() + 30);
-        const nextPaymentDate = nextDate.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
+      let result: any;
+      if (paymentMethod === "hire-purchase") {
+        // Initiate real-time mobile money request and poll for completion
+        result = await apiService.initiateMobileMoneyPayment({
+          ...paymentData,
+          provider: mobileProvider.toLowerCase(),
         });
+
+        if (!result.success || !result.data?.id) {
+          throw new Error(result.error || "Failed to initiate mobile money");
+        }
+
+        const paymentId = result.data.id;
+        let currentStatus = result.data.status || "pending";
+
+        for (let i = 0; i < 20; i += 1) {
+          if (currentStatus === "completed" || currentStatus === "failed") break;
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          const statusResult = await apiService.getPaymentStatus(paymentId);
+          if (statusResult.success) {
+            currentStatus = statusResult.data?.status || currentStatus;
+          }
+        }
+
+        if (currentStatus !== "completed") {
+          Alert.alert(
+            "Payment Pending",
+            "Mobile money request was sent. Ask the client to complete approval on phone; the payment status will update automatically.",
+          );
+          return;
+        }
+      } else {
+        result = await apiService.createPayment(paymentData);
+      }
+
+      if (result?.success) {
+        // Format next payment date nicely for UI (if hire-purchase)
+        let displayNextPaymentDate: string | undefined;
+        if (nextPaymentDate) {
+          const d = new Date(nextPaymentDate);
+          displayNextPaymentDate = d.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
+        }
 
         // Save sale data and show completion screen
         setSaleData({
           clientName: clientData.clientName,
-          clientPhone: clientData.clientPhone,
-          productName: `${selectedProduct.power} - ${selectedProduct.name || "Reading Glasses"}`,
+          clientPhone: mobileNumber,
+          productName: `${selectedProduct.power} - ${
+            selectedProduct.name || "Reading Glasses"
+          }`,
           totalAmount: selectedProduct.price,
           paymentMethod,
           installmentAmount,
-          nextPaymentDate,
+          nextPaymentDate: displayNextPaymentDate,
         });
         setShowSaleComplete(true);
       } else {

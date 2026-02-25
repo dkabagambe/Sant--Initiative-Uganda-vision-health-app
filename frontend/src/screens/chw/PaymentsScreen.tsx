@@ -13,6 +13,7 @@ import {
   TextInput,
   ActivityIndicator,
   RefreshControl,
+  Share,
 } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -54,6 +55,27 @@ export default function PaymentsScreen() {
   );
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [overdueOnly, setOverdueOnly] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [providerFilter, setProviderFilter] = useState<
+    "all" | "mtn" | "airtel"
+  >("all");
+  const [methodFilter, setMethodFilter] = useState<
+    "all" | "cash" | "mobile_money"
+  >("all");
+  const [recordModalVisible, setRecordModalVisible] = useState(false);
+  const [recordPaymentMethod, setRecordPaymentMethod] = useState<
+    "cash" | "mobile_money"
+  >("cash");
+  const [recordClientName, setRecordClientName] = useState("");
+  const [recordClientPhone, setRecordClientPhone] = useState("");
+  const [recordAmount, setRecordAmount] = useState("");
+  const [recordProvider, setRecordProvider] = useState<"mtn" | "airtel">("mtn");
+  const [submittingRecord, setSubmittingRecord] = useState(false);
+  const [clientSummaryVisible, setClientSummaryVisible] = useState(false);
+  const [selectedClientPayments, setSelectedClientPayments] = useState<any[]>([]);
+  const [selectedClientName, setSelectedClientName] = useState("");
+  const [selectedClientPhone, setSelectedClientPhone] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -96,37 +118,145 @@ export default function PaymentsScreen() {
   };
 
   const handleRecordPayment = () => {
-    Alert.alert(
-      "Record Payment",
-      "Select payment method:",
-      [
-        {
-          text: "Cash",
-          onPress: () => {
-            Alert.prompt(
-              "Cash Payment",
-              "Enter amount received:",
-              (amount) => {
-                if (amount && !isNaN(Number(amount))) {
-                  Alert.alert("✅ Payment Recorded", `Cash payment of UGX ${Number(amount).toLocaleString()} recorded successfully.`);
-                  loadPayments(); // Refresh list
-                }
-              },
-              "plain-text",
-              "",
-              "numeric"
-            );
+    setRecordPaymentMethod("cash");
+    setRecordClientName("");
+    setRecordClientPhone("");
+    setRecordAmount("");
+    setRecordProvider("mtn");
+    setRecordModalVisible(true);
+  };
+
+  const formatPhoneInput = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return "";
+    if (digits.startsWith("256")) {
+      return `0${digits.slice(3, 12)}`.slice(0, 10);
+    }
+    if (digits.startsWith("7")) {
+      return `0${digits}`.slice(0, 10);
+    }
+    return digits.slice(0, 10);
+  };
+
+  const normalizePhoneToE164 = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (digits.startsWith("256")) return `+${digits}`;
+    if (digits.startsWith("0")) return `+256${digits.slice(1)}`;
+    if (digits.startsWith("7")) return `+256${digits}`;
+    return `+${digits}`;
+  };
+
+  const isValidUgMobile = (value: string) => {
+    const normalized = normalizePhoneToE164(value);
+    return /^\+2567\d{8}$/.test(normalized);
+  };
+
+  const pollPaymentCompletion = async (paymentId: string, maxAttempts = 20) => {
+    let currentStatus = "pending";
+    for (let i = 0; i < maxAttempts; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      const statusResult = await apiService.getPaymentStatus(paymentId);
+      if (statusResult.success) {
+        currentStatus = statusResult.data?.status || currentStatus;
+      }
+      if (currentStatus === "completed" || currentStatus === "failed") break;
+    }
+    return currentStatus;
+  };
+
+  const askRetryPending = () =>
+    new Promise<boolean>((resolve) => {
+      Alert.alert(
+        "Payment Pending",
+        "Mobile Money request sent. Ask client to approve payment on phone.",
+        [
+          { text: "Close", style: "cancel", onPress: () => resolve(false) },
+          { text: "Retry Status Check", onPress: () => resolve(true) },
+        ],
+      );
+    });
+
+  const submitRecordedPayment = async () => {
+    const amountNumber = Number(recordAmount);
+    const normalizedPhone = normalizePhoneToE164(recordClientPhone.trim());
+    if (!recordClientName.trim()) {
+      Alert.alert("Validation", "Client name is required.");
+      return;
+    }
+    if (!recordClientPhone.trim() || !isValidUgMobile(recordClientPhone.trim())) {
+      Alert.alert(
+        "Validation",
+        "Enter a valid Uganda mobile number (e.g. 0773445535).",
+      );
+      return;
+    }
+    if (!recordAmount || Number.isNaN(amountNumber) || amountNumber <= 0) {
+      Alert.alert("Validation", "Enter a valid payment amount.");
+      return;
+    }
+
+    setSubmittingRecord(true);
+    try {
+      if (recordPaymentMethod === "cash") {
+        const result = await apiService.createPayment({
+          clientName: recordClientName.trim(),
+          clientPhone: normalizedPhone,
+          amount: amountNumber,
+          mobileMoneyNumber: normalizedPhone,
+          paymentMethod: "cash",
+          paymentType: "full",
+        });
+
+        if (!result.success) {
+          throw new Error(result.error || "Cash payment recording failed");
+        }
+      } else {
+        const initiated = await apiService.initiateMobileMoneyPayment({
+          clientName: recordClientName.trim(),
+          clientPhone: normalizedPhone,
+          amount: amountNumber,
+          mobileMoneyNumber: normalizedPhone,
+          paymentMethod: "mobile_money",
+          paymentType: "full",
+          provider: recordProvider,
+        });
+
+        if (!initiated.success || !initiated.data?.id) {
+          throw new Error(initiated.error || "Failed to initiate mobile money");
+        }
+
+        const paymentId = initiated.data.id;
+        let currentStatus = await pollPaymentCompletion(paymentId, 12);
+
+        if (currentStatus === "failed") {
+          throw new Error("Mobile money payment failed or was rejected.");
+        }
+
+        if (currentStatus !== "completed") {
+          const retry = await askRetryPending();
+          if (retry) {
+            currentStatus = await pollPaymentCompletion(paymentId, 10);
           }
-        },
-        {
-          text: "Mobile Money",
-          onPress: () => {
-            Alert.alert("Mobile Money", "Enter transaction ID and amount:\n\n(Full form coming soon)");
-          }
-        },
-        { text: "Cancel", style: "cancel" }
-      ]
-    );
+        }
+
+        if (currentStatus !== "completed") {
+          Alert.alert(
+            "Still Pending",
+            "Payment is still pending approval. You can check again from the payments list.",
+          );
+          await loadPayments();
+          return;
+        }
+      }
+
+      setRecordModalVisible(false);
+      await loadPayments();
+      Alert.alert("Success", "Payment recorded successfully.");
+    } catch (error: any) {
+      Alert.alert("Error", error?.message || "Failed to record payment.");
+    } finally {
+      setSubmittingRecord(false);
+    }
   };
 
   const filteredPayments = payments.filter((p) => {
@@ -134,11 +264,23 @@ export default function PaymentsScreen() {
       activeTab === "pending"
         ? p.status === "pending" || p.status === "overdue"
         : p.status === "completed";
+    const matchesOverdue = overdueOnly ? p.status === "overdue" : true;
     const matchesSearch =
       searchQuery === "" ||
       p.client_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.client_phone?.includes(searchQuery);
-    return matchesTab && matchesSearch;
+      p.client_phone?.includes(searchQuery) ||
+      String(p.amount || "").includes(searchQuery) ||
+      String(p.transaction_id || "")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      String(p.due_date || "")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+    const matchesProvider =
+      providerFilter === "all" ? true : (p.provider || "").toLowerCase() === providerFilter;
+    const matchesMethod =
+      methodFilter === "all" ? true : (p.payment_method || "").toLowerCase() === methodFilter;
+    return matchesTab && matchesOverdue && matchesSearch && matchesProvider && matchesMethod;
   });
 
   if (loading) {
@@ -171,13 +313,51 @@ export default function PaymentsScreen() {
     }
   };
 
+  const getClientPayments = (clientPhone: string) => {
+    return payments
+      .filter((p) => p.client_phone === clientPhone)
+      .sort((a, b) => {
+        const aDate = new Date(a.created_at || a.payment_date || 0).getTime();
+        const bDate = new Date(b.created_at || b.payment_date || 0).getTime();
+        return bDate - aDate;
+      });
+  };
+
+  const getNextPendingDueDate = (clientPhone: string) => {
+    const pendingWithDates = payments
+      .filter(
+        (p) =>
+          p.client_phone === clientPhone &&
+          (p.status === "pending" || p.status === "overdue") &&
+          !!p.due_date,
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.due_date).getTime() - new Date(b.due_date).getTime(),
+      );
+    return pendingWithDates.length > 0 ? pendingWithDates[0].due_date : null;
+  };
+
+  const openClientSummary = (payment: any) => {
+    const clientPhone = payment.client_phone;
+    const clientName = payment.client_name || "Client";
+    const clientPayments = getClientPayments(clientPhone);
+
+    setSelectedClientName(clientName);
+    setSelectedClientPhone(clientPhone || "");
+    setSelectedClientPayments(clientPayments);
+    setClientSummaryVisible(true);
+  };
+
   const PaymentItemCard = ({ payment }: { payment: any }) => {
     const isOverdue = payment.status === "overdue";
     const isPending = payment.status === "pending" || isOverdue;
+    const nextDueDate = getNextPendingDueDate(payment.client_phone);
 
     return (
       <TouchableOpacity
         style={[styles.paymentCard, isOverdue && styles.overdueCard]}
+        onPress={() => openClientSummary(payment)}
       >
         <View style={styles.paymentHeader}>
           <View style={styles.clientInfo}>
@@ -224,7 +404,7 @@ export default function PaymentsScreen() {
               payment.status === 'overdue' && styles.overdueText,
             ]}>
               {isPending
-                ? `Due: ${payment.due_date || "N/A"}`
+                ? `Due: ${payment.due_date || nextDueDate || "N/A"}`
                 : `Paid: ${new Date(payment.payment_date).toLocaleDateString()}`}
             </Text>
           </View>
@@ -269,6 +449,76 @@ export default function PaymentsScreen() {
     ),
   };
 
+  const handleSummaryCardPress = (target: "pending" | "overdue" | "completed") => {
+    if (target === "completed") {
+      setActiveTab("completed");
+      setOverdueOnly(false);
+      return;
+    }
+    setActiveTab("pending");
+    setOverdueOnly(target === "overdue");
+  };
+
+  const handleExport = async () => {
+    try {
+      const rows = filteredPayments.map((p) => {
+        const date = p.payment_date || p.created_at || p.date || "";
+        return [
+          p.client_name || "",
+          p.client_phone || "",
+          p.status || "",
+          p.payment_method || "",
+          p.provider || "",
+          p.amount || 0,
+          p.due_date || "",
+          p.transaction_id || "",
+          date ? new Date(date).toLocaleDateString() : "",
+        ].join(", ");
+      });
+
+      const report =
+        `Payments Export (${new Date().toLocaleString()})\n` +
+        `Filters: tab=${activeTab}, overdueOnly=${overdueOnly}, provider=${providerFilter}, method=${methodFilter}, search="${searchQuery}"\n\n` +
+        `Client, Phone, Status, Method, Provider, Amount, Due Date, Transaction ID, Date\n` +
+        rows.join("\n");
+
+      await Share.share({
+        title: "Payments Export",
+        message: report,
+      });
+    } catch (error) {
+      Alert.alert("Error", "Failed to export payments");
+    }
+  };
+
+  // Monthly overview (real values from database records already loaded)
+  const now = new Date();
+  const monthlyPayments = payments.filter((p) => {
+    const sourceDate = p.payment_date || p.created_at || p.date;
+    if (!sourceDate) return false;
+    const d = new Date(sourceDate);
+    return (
+      !Number.isNaN(d.getTime()) &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear()
+    );
+  });
+
+  const monthlyExpected = monthlyPayments.reduce(
+    (sum, p) => sum + (Number(p.amount) || 0),
+    0,
+  );
+  const monthlyCollected = monthlyPayments
+    .filter((p) => p.status === "completed")
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const monthlyRemaining = Math.max(monthlyExpected - monthlyCollected, 0);
+  const monthlyCollectionPercent =
+    monthlyExpected > 0 ? (monthlyCollected / monthlyExpected) * 100 : 0;
+  const monthlyPeriod = now.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -308,15 +558,27 @@ export default function PaymentsScreen() {
       >
         {/* Summary Cards */}
         <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
+          <TouchableOpacity
+            style={[
+              styles.summaryCard,
+              activeTab === "pending" && !overdueOnly && styles.summaryCardActive,
+            ]}
+            onPress={() => handleSummaryCardPress("pending")}
+          >
             <View style={styles.summaryIconContainer}>
               <MaterialIcons name="pending-actions" size={24} color="#F59E0B" />
             </View>
             <Text style={styles.summaryNumber}>{stats.pending}</Text>
             <Text style={styles.summaryLabel}>Pending</Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.summaryCard}>
+          <TouchableOpacity
+            style={[
+              styles.summaryCard,
+              overdueOnly && styles.summaryCardActive,
+            ]}
+            onPress={() => handleSummaryCardPress("overdue")}
+          >
             <View style={styles.summaryIconContainer}>
               <FontAwesome5
                 name="exclamation-triangle"
@@ -326,9 +588,15 @@ export default function PaymentsScreen() {
             </View>
             <Text style={styles.summaryNumber}>{stats.overdue}</Text>
             <Text style={styles.summaryLabel}>Overdue</Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.summaryCard}>
+          <TouchableOpacity
+            style={[
+              styles.summaryCard,
+              activeTab === "completed" && styles.summaryCardActive,
+            ]}
+            onPress={() => handleSummaryCardPress("completed")}
+          >
             <View style={styles.summaryIconContainer}>
               <Ionicons
                 name="checkmark-done-circle"
@@ -338,7 +606,7 @@ export default function PaymentsScreen() {
             </View>
             <Text style={styles.summaryNumber}>{stats.completed}</Text>
             <Text style={styles.summaryLabel}>Completed</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Record Payment Button */}
@@ -354,7 +622,10 @@ export default function PaymentsScreen() {
         <View style={styles.tabsContainer}>
           <TouchableOpacity
             style={[styles.tab, activeTab === "pending" && styles.activeTab]}
-            onPress={() => setActiveTab("pending")}
+            onPress={() => {
+              setActiveTab("pending");
+              setOverdueOnly(false);
+            }}
           >
             <Text
               style={[
@@ -362,12 +633,15 @@ export default function PaymentsScreen() {
                 activeTab === "pending" && styles.activeTabText,
               ]}
             >
-              Pending ({stats.pending})
+              {overdueOnly ? `Overdue (${stats.overdue})` : `Pending (${stats.pending})`}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === "completed" && styles.activeTab]}
-            onPress={() => setActiveTab("completed")}
+            onPress={() => {
+              setActiveTab("completed");
+              setOverdueOnly(false);
+            }}
           >
             <Text
               style={[
@@ -403,27 +677,26 @@ export default function PaymentsScreen() {
         <View style={styles.monthlySummary}>
           <View style={styles.summaryHeader}>
             <Text style={styles.summaryTitle}>Monthly Overview</Text>
-            <Text style={styles.summaryPeriod}>January 2026</Text>
+            <Text style={styles.summaryPeriod}>{monthlyPeriod}</Text>
           </View>
 
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Expected</Text>
               <Text style={styles.summaryAmount}>
-                UGX {stats.totalAmount.toLocaleString()}
+                UGX {monthlyExpected.toLocaleString()}
               </Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Collected</Text>
               <Text style={[styles.summaryAmount, { color: "#059669" }]}>
-                UGX {stats.collectedAmount.toLocaleString()}
+                UGX {monthlyCollected.toLocaleString()}
               </Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Remaining</Text>
               <Text style={[styles.summaryAmount, { color: "#DC2626" }]}>
-                UGX{" "}
-                {(stats.totalAmount - stats.collectedAmount).toLocaleString()}
+                UGX {monthlyRemaining.toLocaleString()}
               </Text>
             </View>
           </View>
@@ -435,9 +708,9 @@ export default function PaymentsScreen() {
                 style={[
                   styles.progressFill,
                   {
-                    width: `${stats.collectedAmount > 0 ? (stats.collectedAmount / stats.totalAmount) * 100 : 0}%`,
+                    width: `${monthlyCollectionPercent}%`,
                     backgroundColor:
-                      stats.collectedAmount >= stats.totalAmount
+                      monthlyCollected >= monthlyExpected && monthlyExpected > 0
                         ? "#059669"
                         : "#F59E0B",
                   },
@@ -445,9 +718,7 @@ export default function PaymentsScreen() {
               />
             </View>
             <Text style={styles.progressPercentageText}>
-              {((stats.collectedAmount / stats.totalAmount) * 100 || 0).toFixed(
-                0,
-              )}
+              {monthlyCollectionPercent.toFixed(0)}
               % collected
             </Text>
           </View>
@@ -455,15 +726,18 @@ export default function PaymentsScreen() {
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleRecordPayment}>
             <Ionicons name="add-circle" size={24} color="#2563EB" />
             <Text style={styles.actionText}>New Payment</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleExport}>
             <Ionicons name="download-outline" size={24} color="#2563EB" />
             <Text style={styles.actionText}>Export</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => setFilterModalVisible(true)}
+          >
             <Ionicons name="filter" size={24} color="#2563EB" />
             <Text style={styles.actionText}>Filter</Text>
           </TouchableOpacity>
@@ -471,6 +745,301 @@ export default function PaymentsScreen() {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* Record Payment Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={recordModalVisible}
+        onRequestClose={() => setRecordModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Record Payment</Text>
+              <TouchableOpacity onPress={() => setRecordModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.fieldLabel}>Select payment method</Text>
+            <View style={styles.methodRow}>
+              <TouchableOpacity
+                style={[
+                  styles.methodButton,
+                  recordPaymentMethod === "cash" && styles.methodButtonActive,
+                ]}
+                onPress={() => setRecordPaymentMethod("cash")}
+              >
+                <Text
+                  style={[
+                    styles.methodButtonText,
+                    recordPaymentMethod === "cash" && styles.methodButtonTextActive,
+                  ]}
+                >
+                  CASH
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.methodButton,
+                  recordPaymentMethod === "mobile_money" &&
+                    styles.methodButtonActive,
+                ]}
+                onPress={() => setRecordPaymentMethod("mobile_money")}
+              >
+                <Text
+                  style={[
+                    styles.methodButtonText,
+                    recordPaymentMethod === "mobile_money" &&
+                      styles.methodButtonTextActive,
+                  ]}
+                >
+                  MOBILE MONEY
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.fieldLabel}>Client Name</Text>
+            <TextInput
+              style={styles.fieldInput}
+              placeholder="Enter client name"
+              value={recordClientName}
+              onChangeText={setRecordClientName}
+            />
+
+            <Text style={styles.fieldLabel}>Phone Number</Text>
+            <TextInput
+              style={styles.fieldInput}
+              placeholder="0773445535"
+              value={recordClientPhone}
+              onChangeText={(value) =>
+                setRecordClientPhone(formatPhoneInput(value))
+              }
+              keyboardType="phone-pad"
+            />
+
+            <Text style={styles.fieldLabel}>Amount (UGX)</Text>
+            <TextInput
+              style={styles.fieldInput}
+              placeholder="e.g. 15000"
+              value={recordAmount}
+              onChangeText={setRecordAmount}
+              keyboardType="numeric"
+            />
+
+            {recordPaymentMethod === "mobile_money" && (
+              <>
+                <Text style={styles.fieldLabel}>Provider</Text>
+                <View style={styles.methodRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.methodButton,
+                      recordProvider === "mtn" && styles.methodButtonActive,
+                    ]}
+                    onPress={() => setRecordProvider("mtn")}
+                  >
+                    <Text
+                      style={[
+                        styles.methodButtonText,
+                        recordProvider === "mtn" &&
+                          styles.methodButtonTextActive,
+                      ]}
+                    >
+                      MTN
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.methodButton,
+                      recordProvider === "airtel" && styles.methodButtonActive,
+                    ]}
+                    onPress={() => setRecordProvider("airtel")}
+                  >
+                    <Text
+                      style={[
+                        styles.methodButtonText,
+                        recordProvider === "airtel" &&
+                          styles.methodButtonTextActive,
+                      ]}
+                    >
+                      AIRTEL
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.gatewayHint}>
+                  A payment request will be sent to the client phone for approval.
+                </Text>
+              </>
+            )}
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setRecordModalVisible(false)}
+                disabled={submittingRecord}
+              >
+                <Text style={styles.cancelButtonText}>CANCEL</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={submitRecordedPayment}
+                disabled={submittingRecord}
+              >
+                {submittingRecord ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.confirmButtonText}>SUBMIT</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Filter Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={filterModalVisible}
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filter Payments</Text>
+              <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.fieldLabel}>Provider</Text>
+            <View style={styles.methodRow}>
+              <TouchableOpacity
+                style={[
+                  styles.methodButton,
+                  providerFilter === "all" && styles.methodButtonActive,
+                ]}
+                onPress={() => setProviderFilter("all")}
+              >
+                <Text
+                  style={[
+                    styles.methodButtonText,
+                    providerFilter === "all" && styles.methodButtonTextActive,
+                  ]}
+                >
+                  ALL
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.methodButton,
+                  providerFilter === "mtn" && styles.methodButtonActive,
+                ]}
+                onPress={() => setProviderFilter("mtn")}
+              >
+                <Text
+                  style={[
+                    styles.methodButtonText,
+                    providerFilter === "mtn" && styles.methodButtonTextActive,
+                  ]}
+                >
+                  MTN
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.methodButton,
+                  providerFilter === "airtel" && styles.methodButtonActive,
+                ]}
+                onPress={() => setProviderFilter("airtel")}
+              >
+                <Text
+                  style={[
+                    styles.methodButtonText,
+                    providerFilter === "airtel" && styles.methodButtonTextActive,
+                  ]}
+                >
+                  AIRTEL
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.fieldLabel}>Method</Text>
+            <View style={styles.methodRow}>
+              <TouchableOpacity
+                style={[
+                  styles.methodButton,
+                  methodFilter === "all" && styles.methodButtonActive,
+                ]}
+                onPress={() => setMethodFilter("all")}
+              >
+                <Text
+                  style={[
+                    styles.methodButtonText,
+                    methodFilter === "all" && styles.methodButtonTextActive,
+                  ]}
+                >
+                  ALL
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.methodButton,
+                  methodFilter === "cash" && styles.methodButtonActive,
+                ]}
+                onPress={() => setMethodFilter("cash")}
+              >
+                <Text
+                  style={[
+                    styles.methodButtonText,
+                    methodFilter === "cash" && styles.methodButtonTextActive,
+                  ]}
+                >
+                  CASH
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.methodButton,
+                  methodFilter === "mobile_money" && styles.methodButtonActive,
+                ]}
+                onPress={() => setMethodFilter("mobile_money")}
+              >
+                <Text
+                  style={[
+                    styles.methodButtonText,
+                    methodFilter === "mobile_money" &&
+                      styles.methodButtonTextActive,
+                  ]}
+                >
+                  MOBILE MONEY
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => {
+                  setProviderFilter("all");
+                  setMethodFilter("all");
+                  setOverdueOnly(false);
+                  setActiveTab("pending");
+                }}
+              >
+                <Text style={styles.cancelButtonText}>RESET</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={() => setFilterModalVisible(false)}
+              >
+                <Text style={styles.confirmButtonText}>APPLY</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Mark as Paid Modal */}
       <Modal
@@ -530,6 +1099,69 @@ export default function PaymentsScreen() {
                 </View>
               </>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Client Payment Summary Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={clientSummaryVisible}
+        onRequestClose={() => setClientSummaryVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Client Payment Summary</Text>
+              <TouchableOpacity onPress={() => setClientSummaryVisible(false)}>
+                <Ionicons name="close" size={24} color="#374151" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalClientName}>{selectedClientName}</Text>
+            <Text style={styles.modalClientPhone}>{selectedClientPhone}</Text>
+
+            <View style={styles.summaryMiniRow}>
+              <Text style={styles.summaryMiniLabel}>Total payments</Text>
+              <Text style={styles.summaryMiniValue}>{selectedClientPayments.length}</Text>
+            </View>
+            <View style={styles.summaryMiniRow}>
+              <Text style={styles.summaryMiniLabel}>Total paid</Text>
+              <Text style={styles.summaryMiniValue}>
+                UGX{" "}
+                {selectedClientPayments
+                  .filter((p) => p.status === "completed")
+                  .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)
+                  .toLocaleString()}
+              </Text>
+            </View>
+            <View style={styles.summaryMiniRow}>
+              <Text style={styles.summaryMiniLabel}>Next pending date</Text>
+              <Text style={styles.summaryMiniValue}>
+                {getNextPendingDueDate(selectedClientPhone) || "N/A"}
+              </Text>
+            </View>
+
+            <ScrollView style={{ maxHeight: 250, marginTop: 12 }}>
+              {selectedClientPayments.map((p) => (
+                <View key={p.id} style={styles.paymentHistoryItem}>
+                  <Text style={styles.paymentHistoryTitle}>
+                    UGX {(parseFloat(p.amount) || 0).toLocaleString()} • {p.status}
+                  </Text>
+                  <Text style={styles.paymentHistorySub}>
+                    Date:{" "}
+                    {new Date(p.payment_date || p.created_at).toLocaleDateString()}
+                    {p.due_date ? ` • Due: ${p.due_date}` : ""}
+                  </Text>
+                  {p.installment_number ? (
+                    <Text style={styles.paymentHistorySub}>
+                      Installment {p.installment_number} of {p.total_installments}
+                    </Text>
+                  ) : null}
+                </View>
+              ))}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -680,7 +1312,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 120,
+    paddingBottom: 24,
   },
   summaryRow: {
     flexDirection: "row",
@@ -722,6 +1354,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  summaryCardActive: {
+    borderColor: "#2563EB",
+    backgroundColor: "#EFF6FF",
   },
   summaryIconContainer: {
     width: 40,
@@ -994,13 +1630,9 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   bottomSpacer: {
-    height: 100,
+    height: 20,
   },
   bottomNav: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
@@ -1097,6 +1729,91 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: "row",
     gap: 12,
+  },
+  summaryMiniRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#F9FAFB",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 8,
+  },
+  summaryMiniLabel: {
+    fontSize: 14,
+    color: "#6B7280",
+  },
+  summaryMiniValue: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1F2937",
+  },
+  paymentHistoryItem: {
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
+    backgroundColor: "#FFFFFF",
+  },
+  paymentHistoryTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1F2937",
+  },
+  paymentHistorySub: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 2,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#374151",
+    marginBottom: 6,
+    marginTop: 6,
+  },
+  fieldInput: {
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: "#111827",
+    marginBottom: 8,
+  },
+  methodRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 8,
+  },
+  methodButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  methodButtonActive: {
+    borderColor: "#2563EB",
+    backgroundColor: "#EFF6FF",
+  },
+  methodButtonText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#374151",
+  },
+  methodButtonTextActive: {
+    color: "#1E40AF",
+  },
+  gatewayHint: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginBottom: 6,
   },
   cancelButton: {
     flex: 1,

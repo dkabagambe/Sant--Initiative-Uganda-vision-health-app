@@ -45,7 +45,7 @@ export interface Screening {
 
 // Base URL configuration
 // Production API (Heroku)
-// const API_BASE_URL = "https://sante-production-app-42dca70009b0.herokuapp.com/api";
+//const API_BASE_URL = "https://sante-production-app-42dca70009b0.herokuapp.com/api";
 
 // Development API (local testing - uncomment for local development)
 const API_BASE_URL = "http://20.20.42.133:5000/api"; // Physical device/emulator
@@ -219,6 +219,16 @@ export const apiService = {
     return response.data;
   },
 
+  async initiateMobileMoneyPayment(paymentData: any) {
+    const response = await api.post("/payments/initiate", paymentData);
+    return response.data;
+  },
+
+  async getPaymentStatus(paymentId: string) {
+    const response = await api.get(`/payments/${paymentId}/status`);
+    return response.data;
+  },
+
   async getPayments(): Promise<{
     success: boolean;
     data: Payment[];
@@ -263,6 +273,16 @@ export const apiService = {
 
   async getReferrals(status?: string) {
     const response = await api.get("/referrals", { params: { status } });
+    return response.data;
+  },
+
+  async getReferralById(id: string) {
+    const response = await api.get(`/referrals/${id}`);
+    return response.data;
+  },
+
+  async updateReferral(referralId: string, data: any) {
+    const response = await api.patch(`/referrals/${referralId}`, data);
     return response.data;
   },
 
@@ -313,7 +333,11 @@ export const apiService = {
     return response.data;
   },
 
-  async addStock(productId: string, quantityChange: number, frameType?: string) {
+  async addStock(
+    productId: string,
+    quantityChange: number,
+    frameType?: string,
+  ) {
     const response = await api.patch(`/products/${productId}/stock`, {
       quantityChange,
       frameType,

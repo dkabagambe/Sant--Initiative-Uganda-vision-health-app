@@ -64,11 +64,26 @@ exports.getReferrals = async (req, res) => {
       referrals = await sql`
         SELECT 
           r.id, r.screening_id, r.health_worker_id,
-          COALESCE(r.client_name, s.client_name) as client_name,
-          COALESCE(r.client_phone, s.client_phone) as client_phone,
-          COALESCE(r.client_age, s.client_age) as client_age,
-          r.client_gender,
-          r.client_district,
+          CASE 
+            WHEN r.screening_id IS NOT NULL THEN COALESCE(s.client_name, r.client_name)
+            ELSE r.client_name
+          END as client_name,
+          CASE 
+            WHEN r.screening_id IS NOT NULL THEN COALESCE(s.client_phone, r.client_phone)
+            ELSE r.client_phone
+          END as client_phone,
+          CASE 
+            WHEN r.screening_id IS NOT NULL THEN COALESCE(s.client_age, r.client_age)
+            ELSE r.client_age
+          END as client_age,
+          CASE 
+            WHEN r.screening_id IS NOT NULL THEN COALESCE(s.client_gender, r.client_gender)
+            ELSE r.client_gender
+          END as client_gender,
+          CASE 
+            WHEN r.screening_id IS NOT NULL THEN COALESCE(s.client_district, r.client_district)
+            ELSE r.client_district
+          END as client_district,
           r.reason, r.urgency, r.facility_name, r.facility_location,
           r.status, r.referred_date, r.completed_date, r.notes, r.created_at,
           u.full_name as health_worker_name
@@ -84,11 +99,26 @@ exports.getReferrals = async (req, res) => {
       referrals = await sql`
         SELECT 
           r.id, r.screening_id, r.health_worker_id,
-          COALESCE(r.client_name, s.client_name) as client_name,
-          COALESCE(r.client_phone, s.client_phone) as client_phone,
-          COALESCE(r.client_age, s.client_age) as client_age,
-          r.client_gender,
-          r.client_district,
+          CASE 
+            WHEN r.screening_id IS NOT NULL THEN COALESCE(s.client_name, r.client_name)
+            ELSE r.client_name
+          END as client_name,
+          CASE 
+            WHEN r.screening_id IS NOT NULL THEN COALESCE(s.client_phone, r.client_phone)
+            ELSE r.client_phone
+          END as client_phone,
+          CASE 
+            WHEN r.screening_id IS NOT NULL THEN COALESCE(s.client_age, r.client_age)
+            ELSE r.client_age
+          END as client_age,
+          CASE 
+            WHEN r.screening_id IS NOT NULL THEN COALESCE(s.client_gender, r.client_gender)
+            ELSE r.client_gender
+          END as client_gender,
+          CASE 
+            WHEN r.screening_id IS NOT NULL THEN COALESCE(s.client_district, r.client_district)
+            ELSE r.client_district
+          END as client_district,
           r.reason, r.urgency, r.facility_name, r.facility_location,
           r.status, r.referred_date, r.completed_date, r.notes, r.created_at,
           u.full_name as health_worker_name
@@ -149,6 +179,64 @@ exports.getReferralById = async (req, res) => {
   } catch (error) {
     console.error("Get referral error:", error);
     res.status(500).json({ success: false, error: "Failed to fetch referral" });
+  }
+};
+
+// Update referral details (reason, urgency, facility, notes)
+exports.updateReferral = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sql = req.app.locals.sql;
+    const {
+      reason,
+      urgency,
+      facilityName,
+      facilityLocation,
+      notes,
+    } = req.body;
+
+    const existing = await sql`
+      SELECT * FROM referrals WHERE id = ${id}
+    `;
+
+    if (existing.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Referral not found" });
+    }
+
+    const current = existing[0];
+
+    const nextReason = reason ?? current.reason;
+    const nextUrgency = urgency ?? current.urgency;
+    const nextFacilityName = facilityName ?? current.facility_name;
+    const nextFacilityLocation = facilityLocation ?? current.facility_location;
+    const nextNotes = notes ?? current.notes;
+
+    await sql`
+      UPDATE referrals
+      SET reason = ${nextReason},
+          urgency = ${nextUrgency},
+          facility_name = ${nextFacilityName},
+          facility_location = ${nextFacilityLocation},
+          notes = ${nextNotes}
+      WHERE id = ${id}
+    `;
+
+    const updated = await sql`
+      SELECT * FROM referrals WHERE id = ${id}
+    `;
+
+    res.json({
+      success: true,
+      message: "Referral updated successfully",
+      data: updated[0],
+    });
+  } catch (error) {
+    console.error("Update referral error:", error);
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to update referral" });
   }
 };
 

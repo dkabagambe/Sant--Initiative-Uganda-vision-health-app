@@ -35,6 +35,8 @@ import VisionScreeningStep2 from "../screens/screening/VisionScreeningStep2";
 // CHW Feature Screens
 import MyClientsScreen from "../screens/chw/MyClientsScreen";
 import InventoryScreen from "../screens/chw/InventoryScreen";
+import InventoryDetailsScreen from "../screens/chw/InventoryDetailsScreen";
+import SalesDetailsScreen from "../screens/chw/SalesDetailsScreen";
 import ReferralsScreen from "../screens/chw/ReferralsScreen";
 import ReferralManagementScreen from "../screens/chw/ReferralManagementScreen";
 import CreateReferralScreen from "../screens/chw/CreateReferralScreen";
@@ -468,6 +470,8 @@ export default function AppNavigator() {
       <Stack.Screen name="ReferralManagementScreen" component={ReferralManagementScreen} />
       <Stack.Screen name="CreateReferralScreen" component={CreateReferralScreen} />
       <Stack.Screen name="InventoryScreen" component={InventoryScreen} />
+      <Stack.Screen name="InventoryDetailsScreen" component={InventoryDetailsScreen} />
+      <Stack.Screen name="SalesDetailsScreen" component={SalesDetailsScreen} />
       <Stack.Screen name="PaymentsScreen" component={PaymentsScreen} />
       <Stack.Screen name="VisionScreen1" component={VisionScreen1} />
       <Stack.Screen name="VisionScreen2" component={VisionScreen2} />
