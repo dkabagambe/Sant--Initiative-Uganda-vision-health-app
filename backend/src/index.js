@@ -2,6 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const { execSync } = require("child_process");
 require("dotenv").config();
 
 const app = express();
@@ -159,6 +160,16 @@ app.listen(PORT, async () => {
       await sql`SELECT datetime('now') as now`;
     }
     console.log("✅ Database connected successfully");
+    // Auto-run init-db when using Postgres (creates tables if missing; safe & idempotent)
+    if (usingPostgresStartup) {
+      try {
+        const initScript = path.join(__dirname, "..", "scripts", "init-db.js");
+        execSync(`node "${initScript}"`, { stdio: "inherit", env: process.env, cwd: path.join(__dirname, "..") });
+        console.log("✅ Database schema ready");
+      } catch (initErr) {
+        console.error("⚠️ Init-db run failed (tables may already exist):", initErr.message);
+      }
+    }
   } catch (err) {
     console.error("❌ Database connection failed:", err.message);
     if (usingPostgresStartup) {

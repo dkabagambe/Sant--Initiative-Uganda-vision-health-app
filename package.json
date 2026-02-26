@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "start": "cd backend && npm start",
-    "install": "cd backend && npm install"
+    "install": "cd backend && npm install",
+    "init-db": "cd backend && npm run init-db"
   },
   "engines": {
     "node": "18.x"

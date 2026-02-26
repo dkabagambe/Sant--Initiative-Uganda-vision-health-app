@@ -43,15 +43,15 @@ export interface Screening {
   date: string;
 }
 
-// Base URL: EXPO_PUBLIC_API_URL (e.g. https://yourapp.herokuapp.com/api) or default Heroku production
+// Base URL: EXPO_PUBLIC_API_URL or default Render production
 const API_BASE_URL =
   (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) ||
-  "https://sante-production-app-42dca70009b0.herokuapp.com/api";
+  "https://sante-initiative-uganda-app.onrender.com/api";
 
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // Increased to 30 seconds for Heroku cold starts
+  timeout: 30000, // 30s for Render cold starts (free tier spin-down)
   headers: {
     "Content-Type": "application/json",
   },

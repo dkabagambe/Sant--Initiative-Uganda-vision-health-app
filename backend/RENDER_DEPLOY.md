@@ -50,11 +50,14 @@ After the first deploy, run the init script once so tables exist:
 node scripts/init-db.js
 ```
 
-Or locally with the production DB (set `DATABASE_URL` to the same URL Render uses):
+**Free tier has no Shell** — run init from your machine. From **project root**:
 
 ```bash
-cd backend && DATABASE_URL="postgresql://..." node scripts/init-db.js
+chmod +x run-init-db.sh
+DATABASE_URL='your-postgres-url-same-as-on-render' ./run-init-db.sh
 ```
+
+Get `DATABASE_URL` from Render: Dashboard → your service → Environment.
 
 ## 6. Point the frontend to Render
 
