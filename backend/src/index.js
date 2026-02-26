@@ -29,23 +29,40 @@ app.use(express.urlencoded({ extended: true }));
 // --- Health check ---
 app.get("/api/health", async (req, res) => {
   let dbStatus = "disconnected";
+  let dbError = null;
+  const forceSqlite = process.env.USE_SQLITE && ["true", "1", "yes"].includes(String(process.env.USE_SQLITE).toLowerCase());
+  const usingPostgres = !forceSqlite && !!(process.env.DATABASE_URL && process.env.DATABASE_URL.trim() && (process.env.DATABASE_URL.startsWith("postgresql://") || process.env.DATABASE_URL.startsWith("postgres://")));
   try {
-    const result = process.env.DATABASE_URL
+    const result = usingPostgres
       ? await sql`SELECT NOW() as now`
       : await sql`SELECT datetime('now') as now`;
-    if (result && result[0] && (result[0].now != null || result[0].ok != null)) dbStatus = "connected";
+    const row = result && result[0];
+    const hasValidRow = row && (
+      row.now != null ||
+      row.ok === 1 ||
+      row.ok === "1" ||
+      (typeof row.now !== "undefined")
+    );
+    if (hasValidRow) dbStatus = "connected";
   } catch (err) {
+    dbError = err.message;
     console.error("DB health check error:", err.message);
   }
 
-  res.json({
+  const payload = {
     status: "OK",
     app: "Santé Initiative Uganda Backend",
     version: "1.0.0",
     database: dbStatus,
+    databaseDialect: usingPostgres ? "postgres" : "sqlite",
     environment: process.env.NODE_ENV || "development",
     timestamp: new Date().toISOString(),
-    endpoints: [
+  };
+  if (dbStatus === "disconnected" && process.env.NODE_ENV === "production" && !usingPostgres) {
+    payload.hint = "Set DATABASE_URL and JWT_SECRET in your host's env (Heroku/Render). See backend/HEROKU_CONFIG.md or backend/RENDER_DEPLOY.md";
+  }
+  if (dbError && process.env.NODE_ENV !== "production") payload.databaseError = dbError;
+  payload.endpoints = [
       "POST /api/auth/login",
       "POST /api/auth/verify-otp",
       "GET  /api/auth/check",
@@ -72,8 +89,8 @@ app.get("/api/health", async (req, res) => {
       "GET  /api/dashboard/reports",
       "GET  /api/dashboard/clients",
       "POST /api/sync",
-    ],
-  });
+    ];
+  res.json(payload);
 });
 
 // --- Import Routes ---
@@ -131,14 +148,22 @@ app.listen(PORT, async () => {
 📊 Health check: http://localhost:${PORT}/api/health
   `);
   
-  // Test database connection
+  // Test database connection at startup (read-only check; no data modified)
+  const forceSqliteStartup = process.env.USE_SQLITE && ["true", "1", "yes"].includes(String(process.env.USE_SQLITE).toLowerCase());
+  const usingPostgresStartup = !forceSqliteStartup && !!(process.env.DATABASE_URL && process.env.DATABASE_URL.trim() && (process.env.DATABASE_URL.startsWith("postgresql://") || process.env.DATABASE_URL.startsWith("postgres://")));
+  console.log(usingPostgresStartup ? "📦 Using Postgres (DATABASE_URL set)" : "📦 Using SQLite (no DATABASE_URL or USE_SQLITE=true)");
   try {
-    const result = process.env.DATABASE_URL
-      ? await sql`SELECT NOW()`
-      : await sql`SELECT datetime('now') as now`;
+    if (usingPostgresStartup) {
+      await sql`SELECT 1 as ok`;
+    } else {
+      await sql`SELECT datetime('now') as now`;
+    }
     console.log("✅ Database connected successfully");
   } catch (err) {
     console.error("❌ Database connection failed:", err.message);
+    if (usingPostgresStartup) {
+      console.error("   Check DATABASE_URL is correct and the database is reachable.");
+    }
   }
 
   // Start background payment reminder scheduler (hire purchase)

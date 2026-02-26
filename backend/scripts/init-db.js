@@ -1,11 +1,17 @@
 const { neon } = require('@neondatabase/serverless');
 require('dotenv').config();
 
-const sql = neon(process.env.DATABASE_URL);
+const dbUrl = process.env.DATABASE_URL && process.env.DATABASE_URL.trim();
+if (!dbUrl || (!dbUrl.startsWith('postgresql://') && !dbUrl.startsWith('postgres://'))) {
+  console.error('❌ DATABASE_URL must be set to a Postgres URL (e.g. postgresql://... or postgres://...). No data is modified until this script runs.');
+  process.exit(1);
+}
+const sql = neon(dbUrl);
 
 async function initDB() {
   try {
     console.log('📦 Initializing database...\n');
+    console.log('   Safe: only creates missing tables and seeds products when empty. Existing data is never deleted.\n');
 
     // Enable UUID extension
     await sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;

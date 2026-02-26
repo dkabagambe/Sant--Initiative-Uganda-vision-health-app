@@ -15,7 +15,7 @@ if ! command -v heroku &> /dev/null; then
 fi
 
 # Set app name
-APP_NAME="sante-production-app"
+APP_NAME="${HEROKU_APP_NAME:-sante-production-app-42dca70009b0}"
 
 echo "📦 Setting environment variables..."
 

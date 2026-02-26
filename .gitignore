@@ -33,6 +33,9 @@ yarn-error.*
 # local env files
 .env*.local
 
+# local SQLite DB (backend uses Postgres in production)
+backend/sante.db
+
 # typescript
 *.tsbuildinfo
 

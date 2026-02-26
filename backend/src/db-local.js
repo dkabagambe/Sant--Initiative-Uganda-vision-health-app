@@ -227,18 +227,18 @@ const sql = (strings, ...values) => {
   query = query.replace(/CURRENT_DATE/gi, "date('now')");
   query = query.replace(/uuid_generate_v4\(\)/gi, "hex(randomblob(16))");
   
-  // Handle RETURNING clause (SQLite doesn't support it in UPDATE)
-  const hasReturning = /RETURNING\s+\*/i.test(query);
-  if (hasReturning && /UPDATE/i.test(query)) {
-    query = query.replace(/\s+RETURNING\s+\*/i, '');
+  // Handle RETURNING clause for SQLite compatibility (UPDATE and INSERT)
+  const hasReturningAny = /\s+RETURNING\s+/i.test(query);
+  const isInsert = query.trim().toUpperCase().startsWith('INSERT');
+  const isUpdate = query.trim().toUpperCase().startsWith('UPDATE');
+  if (hasReturningAny && (isUpdate || isInsert)) {
+    query = query.replace(/\s+RETURNING\s+[\w\s,]+\s*$/i, '');
   }
-  
+
   try {
     const stmt = db.prepare(query);
     const isSelect = query.trim().toUpperCase().startsWith('SELECT');
-    const isUpdate = query.trim().toUpperCase().startsWith('UPDATE');
-    const isInsert = query.trim().toUpperCase().startsWith('INSERT');
-    
+
     if (isSelect) {
       const rows = stmt.all(...values);
       // Convert datetime('now') result to 'now' field for compatibility
@@ -246,28 +246,33 @@ const sql = (strings, ...values) => {
         rows[0].now = rows[0]["datetime('now')"];
       }
       return rows;
-    } else if (isUpdate && hasReturning) {
+    } else if (isUpdate && hasReturningAny) {
       // For UPDATE with RETURNING, run update then select
       const info = stmt.run(...values);
       if (info.changes > 0) {
-        // Extract table name and WHERE clause
         const tableName = query.match(/UPDATE\s+(\w+)/i)?.[1];
-        const whereMatch = query.match(/WHERE\s+(.+?)\s+RETURNING/is);
-        
+        const whereMatch = query.match(/WHERE\s+(.+?)(?:\s+RETURNING|$)/is);
         if (tableName && whereMatch) {
-          // Get the WHERE clause parameters
           const whereClause = whereMatch[1].trim();
-          // Count placeholders in WHERE clause
           const wherePlaceholders = (whereClause.match(/\?/g) || []).length;
-          // Get the last N values for WHERE clause
           const whereValues = values.slice(-wherePlaceholders);
-          
           const selectQuery = `SELECT * FROM ${tableName} WHERE ${whereClause}`;
           const selectStmt = db.prepare(selectQuery);
           return selectStmt.all(...whereValues);
         }
       }
       return [];
+    } else if (isInsert && hasReturningAny) {
+      // For INSERT with RETURNING, run insert then select by rowid
+      const info = stmt.run(...values);
+      if (info.changes > 0 && info.lastInsertRowid) {
+        const tableName = query.match(/INSERT\s+INTO\s+(\w+)/i)?.[1];
+        if (tableName) {
+          const selectStmt = db.prepare(`SELECT * FROM ${tableName} WHERE rowid = ?`);
+          return selectStmt.all(info.lastInsertRowid);
+        }
+      }
+      return [{ id: info.lastInsertRowid, changes: info.changes }];
     } else {
       const info = stmt.run(...values);
       return [{ id: info.lastInsertRowid, changes: info.changes }];

@@ -1,0 +1,24 @@
+# Render Blueprint: Santé Initiative backend
+# Deploy from dashboard: Connect repo -> New -> Blueprint -> point to this file
+# Or use "New Web Service" and set root directory to "backend" with the same env/build/start.
+
+services:
+  - type: web
+    name: sante-backend
+    runtime: node
+    region: oregon
+
+    # Repo root; build and run from backend folder
+    rootDir: backend
+
+    buildCommand: npm install
+    startCommand: npm start
+
+    # Render sets PORT automatically. Do not set USE_SQLITE in production.
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Add in Render dashboard (or here with sync: false so they're not in git):
+      # DATABASE_URL = your Postgres URL (Neon or Render Postgres)
+      # JWT_SECRET = your secret
+      # Optional: CORS_ORIGIN = https://your-frontend-origin.com
