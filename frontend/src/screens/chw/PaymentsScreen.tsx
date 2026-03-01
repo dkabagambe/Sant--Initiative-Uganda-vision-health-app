@@ -540,7 +540,7 @@ export default function PaymentsScreen() {
 
       <AppHeader 
         userName={userData?.full_name}
-        userRole="VHT"
+        userRole={userData?.role}
         district={userData?.district}
       />
 

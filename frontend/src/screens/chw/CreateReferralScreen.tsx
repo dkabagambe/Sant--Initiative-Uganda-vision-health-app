@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -17,14 +17,29 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { apiService } from "../../services/api";
 import { getDistrictNames } from "../../data/ugandaLocations";
+import AppHeader from "../../components/AppHeader";
 
 export default function CreateReferralScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const [userData, setUserData] = useState<any>(null);
 
   // Accept pre-filled data from screening flow
   const fromScreening = route.params?.fromScreening || false;
   const screeningId = route.params?.screeningId || null;
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const user = await apiService.getCurrentUser();
+      setUserData(user);
+    } catch (error) {
+      console.error("Failed to load user data:", error);
+    }
+  };
 
   const [formData, setFormData] = useState({
     clientName: route.params?.clientName || "",
@@ -141,20 +156,24 @@ export default function CreateReferralScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#2E7D32" barStyle="light-content" />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack}>
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {fromScreening ? "Referral from Screening" : "Create Referral"}
-        </Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+      
+      <AppHeader 
+        userName={userData?.full_name}
+        userRole={userData?.role}
+        district={userData?.district}
+      />
 
       <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled">
+        <View style={styles.titleSection}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#1E40AF" />
+          </TouchableOpacity>
+          <Text style={styles.pageTitle}>
+            {fromScreening ? "Referral from Screening" : "Create Referral"}
+          </Text>
+        </View>
+        
         <View style={styles.form}>
 
           {/* Pre-filled banner when from screening */}
@@ -460,19 +479,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FAFB",
   },
-  header: {
+  titleSection: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#2E7D32",
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "android" ? 85 : 16,
-    paddingBottom: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    gap: 12,
   },
-  headerTitle: {
-    fontSize: 18,
+  backButton: {
+    padding: 4,
+  },
+  pageTitle: {
+    fontSize: 20,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "#1F2937",
+    flex: 1,
   },
   scrollView: {
     flex: 1,

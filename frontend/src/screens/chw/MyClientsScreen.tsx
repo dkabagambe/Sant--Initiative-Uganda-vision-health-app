@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { apiService } from "../../services/api";
+import AppHeader from "../../components/AppHeader";
 
 interface Client {
   id?: string;
@@ -30,10 +31,24 @@ export default function MyClientsScreen() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
-    loadClients();
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    await Promise.all([loadClients(), loadUserData()]);
+  };
+
+  const loadUserData = async () => {
+    try {
+      const user = await apiService.getCurrentUser();
+      setUserData(user);
+    } catch (error) {
+      console.error("Failed to load user data:", error);
+    }
+  };
 
   const loadClients = async () => {
     try {
@@ -68,17 +83,23 @@ export default function MyClientsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <AppHeader 
+        userName={userData?.full_name}
+        userRole={userData?.role}
+        district={userData?.district}
+      />
+      
       <ScrollView 
         style={styles.scrollView}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#2E7D32"]} />
         }
       >
-        <View style={styles.header}>
+        <View style={styles.titleSection}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="#1E40AF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>My Clients</Text>
+          <Text style={styles.pageTitle}>My Clients</Text>
           <TouchableOpacity>
             <Ionicons name="search" size={24} color="#6B7280" />
           </TouchableOpacity>

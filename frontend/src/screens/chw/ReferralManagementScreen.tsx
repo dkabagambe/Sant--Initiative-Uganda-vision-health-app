@@ -66,9 +66,9 @@ export default function ReferralManagementScreen() {
 
   const loadUserData = async () => {
     try {
-      const userStr = await AsyncStorage.getItem("userData");
-      if (userStr) {
-        setUserData(JSON.parse(userStr));
+      const user = await apiService.getCurrentUser();
+      if (user) {
+        setUserData(user);
       }
     } catch (error) {
       console.error("Failed to load user data:", error);
@@ -278,7 +278,7 @@ export default function ReferralManagementScreen() {
 
       <AppHeader 
         userName={userData?.fullName || userData?.full_name}
-        userRole="CHW"
+        userRole={userData?.role}
         district={userData?.district}
       />
 

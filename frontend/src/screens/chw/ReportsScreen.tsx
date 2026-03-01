@@ -158,7 +158,8 @@ export default function ReportsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [userName, setUserName] = useState("CHW");
+  const [userName, setUserName] = useState("");
+  const [userDistrict, setUserDistrict] = useState("");
 
   const periods = ["Daily", "Weekly", "Monthly", "Quarterly", "6 Months", "Yearly"];
 
@@ -169,11 +170,10 @@ export default function ReportsScreen() {
 
   const loadUserData = async () => {
     try {
-      const userData = await AsyncStorage.getItem("userData");
-      if (userData) {
-        const parsed = JSON.parse(userData);
-        const name = parsed?.full_name || parsed?.fullName || parsed?.name;
-        if (name) setUserName(name);
+      const user = await apiService.getCurrentUser();
+      if (user) {
+        setUserName(user.full_name || user.fullName || "");
+        setUserDistrict(user.district || "");
       }
     } catch (error) {
       console.error("load user data error:", error);
@@ -542,9 +542,9 @@ export default function ReportsScreen() {
         <View style={styles.headerRight}>
           <View style={styles.userInfo}>
             <Text style={styles.userName} numberOfLines={1}>
-              {userName}
+              {userName || "User"}
             </Text>
-            <Text style={styles.userRole}>CHW - Lusiro</Text>
+            <Text style={styles.userRole}>CHW - {userDistrict || "District"}</Text>
           </View>
           <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate("Settings")}>
             <Ionicons name="menu" size={18} color="#4B5563" />

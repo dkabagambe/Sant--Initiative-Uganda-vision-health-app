@@ -223,7 +223,6 @@ export default function InventoryScreen() {
     try {
       setLoading(true);
       
-      // Try dashboard inventory first (requires auth)
       let products: any[] = [];
       let totalPairs = 0;
       
@@ -234,10 +233,9 @@ export default function InventoryScreen() {
           totalPairs = response.data.totals?.total_pairs || 0;
         }
       } catch (e) {
-        console.log("Dashboard inventory failed, trying products endpoint...");
+        // Silently fall back to products endpoint
       }
       
-      // Fallback to products endpoint (no auth required)
       if (products.length === 0) {
         try {
           const prodResponse = await apiService.getInventory();
@@ -246,14 +244,13 @@ export default function InventoryScreen() {
             totalPairs = products.reduce((sum: number, p: any) => sum + (p.stock_quantity || 0), 0);
           }
         } catch (e) {
-          console.error("Products endpoint also failed:", e);
+          console.error("Failed to load inventory:", e);
         }
       }
       
       setInventory(products);
       setTotals({ total_pairs: totalPairs });
       
-      // Calculate stats
       const lowStock = products.filter((p: any) => p.stock_quantity < 20).length;
       setStats(prev => ({ ...prev, lowStockCount: lowStock }));
       
@@ -445,7 +442,7 @@ export default function InventoryScreen() {
 
       <AppHeader 
         userName={userData?.full_name}
-        userRole="VHT"
+        userRole={userData?.role}
         district={userData?.district}
       />
 
@@ -830,7 +827,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: scale(20),
-    paddingTop: verticalScale(20),
+    paddingTop: verticalScale(100),
   },
   titleSection: {
     marginBottom: verticalScale(20),

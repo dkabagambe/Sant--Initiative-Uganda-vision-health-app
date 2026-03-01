@@ -91,12 +91,15 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    console.error("API Error:", {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      message: error.message,
-    });
+    // Don't log 401 errors for dashboard endpoints (expected when using fallback)
+    if (error.response?.status !== 401 || !error.config?.url?.includes('/dashboard/')) {
+      console.error("API Error:", {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        message: error.message,
+      });
+    }
 
     // Handle specific errors
     if (error.response?.status === 401) {

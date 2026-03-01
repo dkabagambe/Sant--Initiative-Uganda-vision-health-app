@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { apiService } from "../../services/api";
 
 type RootStackParamList = {
   VisionScreeningStep1: undefined;
@@ -24,6 +25,20 @@ type ScreeningScreenNavigationProp = NativeStackNavigationProp<
 
 export default function VisionScreeningStep2() {
   const navigation = useNavigation<ScreeningScreenNavigationProp>();
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const user = await apiService.getCurrentUser();
+      setUserData(user);
+    } catch (error) {
+      console.error("Failed to load user data:", error);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -31,8 +46,8 @@ export default function VisionScreeningStep2() {
         <View style={styles.headerTop}>
           <View>
             <Text style={styles.organization}>Santé Initiative Uganda</Text>
-            <Text style={styles.userName}>Jane Nambi</Text>
-            <Text style={styles.userRole}>CHW - Luweero</Text>
+            <Text style={styles.userName}>{userData?.full_name || "User"}</Text>
+            <Text style={styles.userRole}>CHW - {userData?.district || "District"}</Text>
           </View>
           <TouchableOpacity style={styles.profileButton}>
             <Ionicons name="person-circle" size={40} color="#1E40AF" />

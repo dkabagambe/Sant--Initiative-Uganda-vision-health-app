@@ -14,6 +14,19 @@ export default function AppHeader({ userName, userRole, district }: AppHeaderPro
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
 
+  // Map database role to display name
+  const getRoleDisplay = (role?: string) => {
+    if (!role) return "CHW";
+    const roleMap: { [key: string]: string } = {
+      'health_worker': 'VHT',
+      'chw': 'CHW',
+      'vht': 'VHT',
+      'outlet': 'Outlet Manager',
+      'vsla': 'VSLA Coordinator',
+    };
+    return roleMap[role.toLowerCase()] || role.toUpperCase();
+  };
+
   return (
     <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
       <View style={styles.headerContent}>
@@ -22,7 +35,7 @@ export default function AppHeader({ userName, userRole, district }: AppHeaderPro
           <Text style={styles.userName}>{userName || "User"}</Text>
           <View style={styles.divider} />
           <Text style={styles.userRole}>
-            {userRole || "CHW"} - {district || "District"}
+            {getRoleDisplay(userRole)} - {district || "District"}
           </Text>
         </View>
         <TouchableOpacity onPress={() => navigation.navigate("Settings")}>

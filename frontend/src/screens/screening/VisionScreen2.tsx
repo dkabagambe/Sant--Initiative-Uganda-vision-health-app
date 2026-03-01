@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,10 +12,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useLanguage } from "../../context/LanguageContext";
+import { apiService } from "../../services/api";
 
 export default function PreScreeningQuestionsScreen() {
   const navigation = useNavigation<any>();
   const { t } = useLanguage();
+  const [userData, setUserData] = useState<any>(null);
 
   const [answers, setAnswers] = useState<Array<"Yes" | "No" | null>>([
     null,
@@ -23,6 +25,19 @@ export default function PreScreeningQuestionsScreen() {
     null,
     null,
   ]);
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const user = await apiService.getCurrentUser();
+      setUserData(user);
+    } catch (error) {
+      console.error("Failed to load user data:", error);
+    }
+  };
 
   const questions = [
     t("q1DifficultyFar"),
@@ -52,13 +67,13 @@ export default function PreScreeningQuestionsScreen() {
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
       {/* Top Header with User Info */}
-      {/* <View style={styles.header}>
+      <View style={styles.header}>
         <View style={styles.headerContent}>
           <Text style={styles.organization}>Santé Initiative Uganda</Text>
-          <Text style={styles.userName}>Jane Nambi</Text>
-          <Text style={styles.userRole}>CHW - Luweero</Text>
+          <Text style={styles.userName}>{userData?.full_name || "User"}</Text>
+          <Text style={styles.userRole}>CHW - {userData?.district || "District"}</Text>
         </View>
-      </View> */}
+      </View>
 
       <ScrollView
         style={styles.scrollView}
