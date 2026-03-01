@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { apiService } from "../../services/api";
-import AppHeader from "../../components/AppHeader";
+import CHWHeader from "../../components/CHWHeader";
 
 interface Client {
   id?: string;
@@ -83,11 +83,7 @@ export default function MyClientsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <AppHeader 
-        userName={userData?.full_name}
-        userRole={userData?.role}
-        district={userData?.district}
-      />
+      <CHWHeader />
       
       <ScrollView 
         style={styles.scrollView}
@@ -95,16 +91,7 @@ export default function MyClientsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#2E7D32"]} />
         }
       >
-        <View style={styles.titleSection}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="#1E40AF" />
-          </TouchableOpacity>
-          <Text style={styles.pageTitle}>My Clients</Text>
-          <TouchableOpacity>
-            <Ionicons name="search" size={24} color="#6B7280" />
-          </TouchableOpacity>
-        </View>
-
+        
         <View style={styles.content}>
           <View style={styles.statsRow}>
             <View style={styles.statCard}>

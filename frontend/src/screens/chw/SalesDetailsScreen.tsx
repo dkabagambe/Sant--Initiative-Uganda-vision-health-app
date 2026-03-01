@@ -19,6 +19,7 @@ import { useNavigation } from "@react-navigation/native";
 import { apiService } from "../../services/api";
 import { moderateScale, scale, verticalScale, fontSize as responsiveFontSize } from "../../utils/responsive";
 import { exportCsvFile } from "../../utils/export";
+import CHWHeader from "../../components/CHWHeader";
 
 interface SaleItemProps {
   id: string;
@@ -265,16 +266,7 @@ export default function SalesDetailsScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FFF8" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#1E40AF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Sales Management</Text>
-        <TouchableOpacity onPress={handleExport}>
-          <Ionicons name="download-outline" size={24} color="#1E40AF" />
-        </TouchableOpacity>
-      </View>
+      <CHWHeader />
 
       <ScrollView
         style={styles.scrollView}

@@ -8,23 +8,18 @@ import {
   SafeAreaView,
   StatusBar,
   Platform,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useLanguage } from "../../context/LanguageContext";
 import { apiService } from "../../services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function PreScreeningQuestionsScreen() {
   const navigation = useNavigation<any>();
   const { t } = useLanguage();
   const [userData, setUserData] = useState<any>(null);
-
-  const [answers, setAnswers] = useState<Array<"Yes" | "No" | null>>([
-    null,
-    null,
-    null,
-    null,
-  ]);
 
   useEffect(() => {
     loadUserData();
@@ -32,12 +27,22 @@ export default function PreScreeningQuestionsScreen() {
 
   const loadUserData = async () => {
     try {
-      const user = await apiService.getCurrentUser();
-      setUserData(user);
+      const userDataString = await AsyncStorage.getItem("userData");
+      if (userDataString) {
+        const parsedUserData = JSON.parse(userDataString);
+        setUserData(parsedUserData);
+      }
     } catch (error) {
-      console.error("Failed to load user data:", error);
+      console.error("Error loading user data:", error);
     }
   };
+
+  const [answers, setAnswers] = useState<Array<"Yes" | "No" | null>>([
+    null,
+    null,
+    null,
+    null,
+  ]);
 
   const questions = [
     t("q1DifficultyFar"),
@@ -66,12 +71,31 @@ export default function PreScreeningQuestionsScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
-      {/* Top Header with User Info */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.organization}>Santé Initiative Uganda</Text>
-          <Text style={styles.userName}>{userData?.full_name || "User"}</Text>
-          <Text style={styles.userRole}>CHW - {userData?.district || "District"}</Text>
+      {/* Top Header with Logo and Menu - Fixed at top */}
+      <View style={styles.topHeader}>
+        <View style={styles.headerLeft}>
+          <View style={styles.logoBox}>
+            <Image
+              source={require("../../assets/logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+        </View>
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>
+            {userData?.full_name || "Santé Initiative Uganda"}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {userData?.district ? `VHT - ${userData.district} District` : ""}
+          </Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
+            <Ionicons name="menu" size={28} color="#1A4D8F" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -207,37 +231,61 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8FAFC",
   },
-  header: {
+  topHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 20,
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 12 : 56,
-    paddingBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 44,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
-  headerContent: {
+  headerLeft: {
+    flex: 1,
+  },
+  logoBox: {
+    alignSelf: "center",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+  },
+  headerCenter: {
+    flex: 1,
     alignItems: "center",
   },
-  organization: {
+  headerTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1A4D8F",
-    marginBottom: 4,
-  },
-  userName: {
-    fontSize: 20,
-    fontWeight: "700",
     color: "#1A1A1A",
-    marginBottom: 2,
   },
-  userRole: {
-    fontSize: 14,
-    color: "#666666",
-    fontWeight: "500",
+  headerSubtitle: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 2,
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: "flex-end",
   },
   scrollView: {
     flex: 1,
-    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 20 : 70,
+    marginTop: StatusBar.currentHeight ? StatusBar.currentHeight + 70 : 100,
   },
   contentContainer: {
     paddingHorizontal: 20,

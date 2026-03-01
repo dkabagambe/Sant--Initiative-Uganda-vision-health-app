@@ -18,7 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { apiService } from "../../services/api";
-import AppHeader from "../../components/AppHeader";
+import CHWHeader from "../../components/CHWHeader";
 import { scale, verticalScale, moderateScale } from "../../utils/responsive";
 
 type RootStackParamList = {
@@ -440,11 +440,7 @@ export default function InventoryScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FFF8" />
 
-      <AppHeader 
-        userName={userData?.full_name}
-        userRole={userData?.role}
-        district={userData?.district}
-      />
+      <CHWHeader />
 
       <ScrollView
         ref={scrollRef}

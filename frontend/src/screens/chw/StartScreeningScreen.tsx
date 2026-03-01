@@ -9,6 +9,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import CHWHeader from "../../components/CHWHeader";
 
 // Fix: Add VisionScreen1 to the navigation params
 type RootStackParamList = {
@@ -26,13 +27,7 @@ export default function StartScreeningScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#1E40AF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Start Screening</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <CHWHeader />
 
       <View style={styles.content}>
         <View style={styles.iconContainer}>

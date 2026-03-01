@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,17 +12,36 @@ import {
   Alert,
   Modal,
   FlatList,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { getDistrictNames, getCountiesForDistrict, getSubCountiesForCounty, getParishesForSubCounty } from "../../data/ugandaLocations";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function VisionScreen1() {
   const navigation = useNavigation<any>();
   const { updateScreeningData } = useScreening();
   const { t } = useLanguage();
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const userDataString = await AsyncStorage.getItem("userData");
+      if (userDataString) {
+        const parsedUserData = JSON.parse(userDataString);
+        setUserData(parsedUserData);
+      }
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    }
+  };
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -131,20 +150,35 @@ export default function VisionScreen1() {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
-      {/* Top Header */}
-      <View style={styles.topHeader}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="#1A4D8F" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{t("vhtEyeScreening")}</Text>
-        </View>
-
-        <View style={styles.headerRight} />
-      </View>
+      {/* Top Header with Logo and Menu - Fixed at top */}
+     
+           {/* Top Header with Logo and Menu - Fixed at top */}
+           <View style={styles.topHeader}>
+             <View style={styles.headerLeft}>
+               <View style={styles.logoBox}>
+                 <Image
+                   source={require("../../../assets/logo.png")}
+                   style={styles.logo}
+                   resizeMode="contain"
+                 />
+               </View>
+             </View>
+     
+             <View style={styles.headerCenter}>
+               <Text style={styles.headerTitle}>
+                 {userData?.full_name || "Santé Initiative Uganda"}
+               </Text>
+               <Text style={styles.headerSubtitle}>
+                 {userData?.district ? `VHT - ${userData.district} District` : ""}
+               </Text>
+             </View>
+     
+             <View style={styles.headerRight}>
+               <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
+                 <Ionicons name="menu" size={28} color="#1A4D8F" />
+               </TouchableOpacity>
+             </View>
+           </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -638,38 +672,54 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    paddingTop:
-      Platform.OS === "android"
-        ? StatusBar.currentHeight
-          ? StatusBar.currentHeight + 10
-          : 44
-        : 44,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 44,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
     elevation: 2,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   headerLeft: {
     flex: 1,
-    alignItems: "flex-start",
+  },
+  logoBox: {
+    alignSelf: "center",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  logo: {
+    width: 80,
+    height: 80,
   },
   headerCenter: {
-    flex: 2,
+    flex: 1,
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#1A1A1A",
   },
+  headerSubtitle: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 2,
+  },
   headerRight: {
     flex: 1,
+    alignItems: "flex-end",
   },
   scrollView: {
     flex: 1,
+    marginTop: StatusBar.currentHeight ? StatusBar.currentHeight + 70 : 100,
   },
   scrollContent: {
     paddingHorizontal: 20,

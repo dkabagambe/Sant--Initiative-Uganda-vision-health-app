@@ -18,7 +18,7 @@ import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { apiService } from "../../services/api";
-import AppHeader from "../../components/AppHeader";
+import CHWHeader from "../../components/CHWHeader";
 import { exportCsvFile } from "../../utils/export";
 
 type RootStackParamList = {
@@ -538,11 +538,7 @@ export default function PaymentsScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <AppHeader 
-        userName={userData?.full_name}
-        userRole={userData?.role}
-        district={userData?.district}
-      />
+      <CHWHeader />
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>

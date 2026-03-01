@@ -18,6 +18,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { apiService } from "../../services/api";
 import SaleComplete from "./SaleComplete";
 import { moderateScale, scale, verticalScale, fontSize as responsiveFontSize } from "../../utils/responsive";
+import CHWHeader from "../../components/CHWHeader";
 
 interface ClientRegistrationProps {
   clientData: {
@@ -236,12 +237,7 @@ export default function ClientRegistration() {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#10B981" barStyle="light-content" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Santé Initiative Uganda</Text>
-        <Text style={styles.headerSubtitle}>Client Registration</Text>
-      </View>
-
+      
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Client Details Card */}
         <View style={styles.card}>

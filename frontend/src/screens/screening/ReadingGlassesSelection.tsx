@@ -9,6 +9,7 @@ import {
   StatusBar,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { moderateScale, scale, verticalScale, fontSize as responsiveFontSize } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import CHWHeader from "../../components/CHWHeader";
 
 const GLASSES_POWERS = [
   { value: "+1.00", label: "+1.00D", description: "Mild presbyopia" },
@@ -29,7 +31,24 @@ const GLASSES_POWERS = [
 export default function ReadingGlassesSelection() {
   const navigation = useNavigation<any>();
   const { screeningData, updateScreeningData, resetScreeningData } = useScreening();
-  
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const userDataString = await AsyncStorage.getItem("userData");
+      if (userDataString) {
+        const parsedUserData = JSON.parse(userDataString);
+        setUserData(parsedUserData);
+      }
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    }
+  };
+
   const [selectedPower, setSelectedPower] = useState<string | null>(null);
   const [canReadWithGlasses, setCanReadWithGlasses] = useState<boolean | null>(null);
   const [currentStep, setCurrentStep] = useState<"select" | "test" | "confirm">("select");
@@ -432,16 +451,32 @@ export default function ReadingGlassesSelection() {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#1A4D8F" />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>VHT Eye Screening</Text>
-          <Text style={styles.headerStep}>Step 7 of 7</Text>
+      {/* Top Header with Logo and Menu - Fixed at top */}
+      <View style={styles.topHeader}>
+        <View style={styles.headerLeft}>
+          <View style={styles.logoBox}>
+            <Image
+              source={require("../../assets/logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
         </View>
-        <View style={styles.headerRight} />
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>
+            {userData?.full_name || "Santé Initiative Uganda"}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {userData?.district ? `VHT - ${userData.district} District` : ""}
+          </Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
+            <Ionicons name="menu" size={28} color="#1A4D8F" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Progress Bar */}
@@ -488,35 +523,57 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8FFF8",
   },
-  header: {
+  topHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
     backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: 44,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: "#E0E0E0",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
-  backButton: {
-    padding: 8,
+  headerLeft: {
+    flex: 1,
+  },
+  logoBox: {
+    alignSelf: "center",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  logo: {
+    width: 80,
+    height: 80,
   },
   headerCenter: {
     flex: 1,
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1A4D8F",
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1A1A1A",
   },
-  headerStep: {
+  headerSubtitle: {
     fontSize: 12,
     color: "#6B7280",
     marginTop: 2,
   },
   headerRight: {
-    width: 40,
+    flex: 1,
+    alignItems: "flex-end",
   },
   progressBar: {
     height: 4,
@@ -528,6 +585,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    marginTop: 100,
   },
   scrollContent: {
     padding: 16,

@@ -19,6 +19,7 @@ import { useNavigation } from "@react-navigation/native";
 import { apiService } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { moderateScale, scale, verticalScale, fontSize as responsiveFontSize } from "../../utils/responsive";
+import CHWHeader from "../../components/CHWHeader";
 
 interface StockItemProps {
   power: string;
@@ -328,14 +329,7 @@ export default function InventoryDetailsScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FFF8" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#1E40AF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Inventory Management</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <CHWHeader />
 
       <ScrollView
         style={styles.scrollView}

@@ -18,6 +18,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { apiService } from "../../services/api";
 import { exportCsvFile, exportPdfFromHtml } from "../../utils/export";
+import CHWHeader from "../../components/CHWHeader";
 
 type RootStackParamList = {
   CHWDashboard: undefined;
@@ -172,7 +173,7 @@ export default function ReportsScreen() {
     try {
       const user = await apiService.getCurrentUser();
       if (user) {
-        setUserName(user.full_name || user.fullName || "");
+        setUserName(user.fullName || "");
         setUserDistrict(user.district || "");
       }
     } catch (error) {
@@ -535,29 +536,7 @@ export default function ReportsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Image source={require("../../../assets/logo.png")} style={styles.logo} />
-        </View>
-        <View style={styles.headerRight}>
-          <View style={styles.userInfo}>
-            <Text style={styles.userName} numberOfLines={1}>
-              {userName || "User"}
-            </Text>
-            <Text style={styles.userRole}>CHW - {userDistrict || "District"}</Text>
-          </View>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate("Settings")}>
-            <Ionicons name="menu" size={18} color="#4B5563" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.exportIconBtn}
-            onPress={handleExport}
-            disabled={actionLoading}
-          >
-            <Ionicons name="download-outline" size={16} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <CHWHeader />
 
       <ScrollView
         style={styles.scroll}

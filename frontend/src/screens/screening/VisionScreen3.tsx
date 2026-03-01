@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,12 +8,31 @@ import {
   SafeAreaView,
   StatusBar,
   Dimensions,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function SafetyInformationScreen() {
   const navigation = useNavigation<any>();
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const userDataString = await AsyncStorage.getItem("userData");
+      if (userDataString) {
+        const parsedUserData = JSON.parse(userDataString);
+        setUserData(parsedUserData);
+      }
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    }
+  };
 
   const warnings = [
     {
@@ -53,21 +72,32 @@ export default function SafetyInformationScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#F8FAFC" barStyle="dark-content" />
 
-      {/* Top Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="arrow-back" size={24} color="#1A4D8F" />
-        </TouchableOpacity>
-
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>VHT Eye Screening</Text>
+      {/* Top Header with Logo and Menu - Fixed at top */}
+      <View style={styles.topHeader}>
+        <View style={styles.headerLeft}>
+          <View style={styles.logoBox}>
+            <Image
+              source={require("../../assets/logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
         </View>
 
-        <View style={styles.headerRightPlaceholder} />
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>
+            {userData?.full_name || "Santé Initiative Uganda"}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {userData?.district ? `VHT - ${userData.district} District` : ""}
+          </Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
+            <Ionicons name="menu" size={28} color="#1A4D8F" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -167,20 +197,57 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8FAFC",
   },
-  header: {
+  topHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
     backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: 44,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
     borderBottomWidth: 1,
-    borderBottomColor: "#E8EAED",
+    borderBottomColor: "#E0E0E0",
+    elevation: 2,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 2,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  logoBox: {
+    alignSelf: "center",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1A1A1A",
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 2,
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: "flex-end",
   },
   backButton: {
     width: 40,
@@ -188,22 +255,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1A4D8F",
-    letterSpacing: -0.3,
-  },
   headerRightPlaceholder: {
     width: 40,
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 100,
     paddingBottom: 140,
   },
   progressContainer: {

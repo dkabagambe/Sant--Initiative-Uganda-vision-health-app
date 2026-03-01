@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,13 +8,17 @@ import {
   SafeAreaView,
   StatusBar,
   Dimensions,
+  Image,
   Alert,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import CHWHeader from "../../components/CHWHeader";
 import {
   moderateScale,
   fontSize as responsiveFontSize,
 } from "../../utils/responsive";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
@@ -29,8 +33,26 @@ export default function VisionScreen6({
   onComplete,
   onRefer,
 }: VisionScreen6Props) {
+  const navigation = useNavigation<any>();
   const [canRead, setCanRead] = useState<boolean | null>(null);
   const [showRecording, setShowRecording] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const userDataString = await AsyncStorage.getItem("userData");
+      if (userDataString) {
+        const parsedUserData = JSON.parse(userDataString);
+        setUserData(parsedUserData);
+      }
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    }
+  };
 
   const handleTestComplete = (passed: boolean) => {
     console.log("VisionScreen6 - Test completed:", passed);
@@ -45,18 +67,31 @@ export default function VisionScreen6({
       <SafeAreaView style={styles.container}>
         <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerRow}>
-              <Text style={styles.headerTitle}>VHT Eye Screening</Text>
-              <Text style={styles.headerStep}>Step 6 of 6</Text>
-            </View>
-            <View style={styles.progressBar}>
-              <View
-                style={[styles.progressFill, { width: `${(6 / 6) * 100}%` }]}
+        {/* Top Header with Logo and Menu - Fixed at top */}
+        <View style={styles.topHeader}>
+          <View style={styles.headerLeft}>
+            <View style={styles.logoBox}>
+              <Image
+                source={require("../../assets/logo.png")}
+                style={styles.logo}
+                resizeMode="contain"
               />
             </View>
+          </View>
+
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>
+              {userData?.full_name || "Santé Initiative Uganda"}
+            </Text>
+            <Text style={styles.headerSubtitle}>
+              {userData?.district ? `VHT - ${userData.district} District` : ""}
+            </Text>
+          </View>
+
+          <View style={styles.headerRight}>
+            <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
+              <Ionicons name="menu" size={28} color="#1A4D8F" />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -207,18 +242,31 @@ export default function VisionScreen6({
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerRow}>
-            <Text style={styles.headerTitle}>VHT Eye Screening</Text>
-            <Text style={styles.headerStep}>Step 6 of 6</Text>
-          </View>
-          <View style={styles.progressBar}>
-            <View
-              style={[styles.progressFill, { width: `${(6 / 6) * 100}%` }]}
+      {/* Top Header with Logo and Menu - Fixed at top */}
+      <View style={styles.topHeader}>
+        <View style={styles.headerLeft}>
+          <View style={styles.logoBox}>
+            <Image
+              source={require("../../assets/logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
             />
           </View>
+        </View>
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>
+            {userData?.full_name || "Santé Initiative Uganda"}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {userData?.district ? `VHT - ${userData.district} District` : ""}
+          </Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
+            <Ionicons name="menu" size={28} color="#1A4D8F" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -424,35 +472,57 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
   },
-  header: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  headerContent: {
-    gap: 12,
-  },
-  headerRow: {
+  topHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingTop: 44,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  logoBox: {
+    alignSelf: "center",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
+    color: "#1A1A1A",
   },
-  headerStep: {
-    fontSize: 14,
+  headerSubtitle: {
+    fontSize: 12,
     color: "#6B7280",
+    marginTop: 2,
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: "flex-end",
   },
   progressBar: {
     height: 6,
@@ -467,6 +537,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    marginTop: 100,
   },
   scrollContent: {
     paddingHorizontal: 16,

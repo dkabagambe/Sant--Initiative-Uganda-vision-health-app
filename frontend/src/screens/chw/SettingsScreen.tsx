@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { apiService } from "../../services/api";
+import CHWHeader from "../../components/CHWHeader";
 
 export default function SettingsScreen() {
   const navigation = useNavigation<any>();
@@ -250,33 +251,9 @@ export default function SettingsScreen() {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Header with Logo */}
-        <View style={styles.topHeader}>
-          <View style={styles.logoBox}>
-            <Image
-              source={require("../../../assets/logo.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
-          <View style={styles.topHeaderText}>
-            <Text style={styles.topHeaderTitle}>Santé Initiative Uganda</Text>
-            <Text style={styles.topHeaderName}>{userData?.full_name || "User"}</Text>
-            <Text style={styles.topHeaderRole}>
-              CHW - {userData?.district || "District"}
-            </Text>
-          </View>
-        </View>
+        <CHWHeader />
 
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="#1E40AF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Settings</Text>
-          <View style={styles.placeholder} />
-        </View>
-
+        
         <Text style={styles.settingsTitle}>Manage your app preferences</Text>
 
         {/* User Profile Section */}

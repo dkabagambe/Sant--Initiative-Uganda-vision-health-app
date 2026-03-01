@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { apiService } from "../../services/api";
 import { getDistrictNames } from "../../data/ugandaLocations";
-import AppHeader from "../../components/AppHeader";
+import CHWHeader from "../../components/CHWHeader";
 
 export default function CreateReferralScreen() {
   const navigation = useNavigation<any>();
@@ -158,11 +158,7 @@ export default function CreateReferralScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
       
-      <AppHeader 
-        userName={userData?.full_name}
-        userRole={userData?.role}
-        district={userData?.district}
-      />
+      <CHWHeader />
 
       <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled">
         <View style={styles.titleSection}>

@@ -18,6 +18,7 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { apiService } from "../../services/api";
+import CHWHeader from "../../components/CHWHeader";
 
 type RootStackParamList = {
   CHWDashboard: undefined;
@@ -306,28 +307,7 @@ export default function ReferralsScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="#374151" />
-          </TouchableOpacity>
-          <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>
-              {userData?.full_name || "Referral Management"}
-            </Text>
-            <Text style={styles.headerSubtitle}>
-              VHT -{" "}
-              {userData?.district
-                ? `${userData.district} District`
-                : "Advanced eye care"}
-            </Text>
-          </View>
-          <TouchableOpacity>
-            <Ionicons name="ellipsis-vertical" size={24} color="#374151" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <CHWHeader />
 
       <ScrollView
         style={styles.scrollView}

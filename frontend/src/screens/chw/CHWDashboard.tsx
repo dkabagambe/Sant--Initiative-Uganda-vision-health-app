@@ -330,7 +330,7 @@ export default function CHWDashboard() {
 
             <TouchableOpacity 
               style={styles.weekStatCard}
-              onPress={() => navigation.navigate("Stock")}
+              onPress={() => navigation.navigate("Inventory")}
               activeOpacity={0.7}
             >
               <View

@@ -14,8 +14,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { apiService } from "../../services/api";
+import { apiService, User } from "../../services/api";
 import { getDistrictNames, getCountiesForDistrict, getSubCountiesForCounty, getParishesForSubCounty } from "../../data/ugandaLocations";
+import CHWHeader from "../../components/CHWHeader";
 
 export default function EditProfileScreen() {
   const navigation = useNavigation<any>();
@@ -96,14 +97,14 @@ export default function EditProfileScreen() {
       const user = await apiService.getCurrentUser();
       if (user) {
         setFormData({
-          fullName: user.full_name || user.fullName || "",
-          age: user.age?.toString() || "",
-          phoneNumber: user.phone_number || user.phoneNumber || "",
-          sex: user.sex || user.gender || "",
+          fullName: user.fullName || "",
+          age: "", // Age not in User interface
+          phoneNumber: user.phoneNumber || "",
+          sex: "", // Gender not in User interface
           district: user.district || "",
-          county: user.county || "",
-          subCounty: user.sub_county || user.subCounty || "",
-          parish: user.parish || user.village || "",
+          county: "", // County not in User interface
+          subCounty: "", // SubCounty not in User interface
+          parish: user.village || "",
         });
       }
     } catch (error) {
@@ -153,22 +154,21 @@ export default function EditProfileScreen() {
       if (result.success) {
         // Update local storage
         const user = await apiService.getCurrentUser();
-        const updatedUser = {
-          ...user,
-          full_name: formData.fullName,
+        if (!user) {
+          throw new Error("User not found");
+        }
+        
+        const updatedUser: User = {
+          id: user.id,
           fullName: formData.fullName,
-          age: formData.age ? parseInt(formData.age) : null,
-          sex: formData.sex,
-          gender: formData.sex,
+          phoneNumber: formData.phoneNumber,
           district: formData.district,
-          county: formData.county,
-          sub_county: formData.subCounty,
-          subCounty: formData.subCounty,
-          parish: formData.parish,
           village: formData.parish,
+          role: user.role,
+          profile_image: user.profile_image,
         };
         
-        await apiService.storeUserData(updatedUser, user?.id || "");
+        await apiService.storeUserData(updatedUser, user.id);
         
         Alert.alert("Success", "Profile updated successfully", [
           { text: "OK", onPress: () => navigation.goBack() }
@@ -193,13 +193,7 @@ export default function EditProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="#1E40AF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit Profile</Text>
-          <View style={styles.placeholder} />
-        </View>
+        <CHWHeader />
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
