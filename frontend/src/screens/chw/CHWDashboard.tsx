@@ -204,25 +204,25 @@ export default function CHWDashboard() {
   const dashboardStats = [
     {
       label: "My Clients",
-      value: stats.clients.toString(),
+      value: (stats.clients || 0).toString(),
       subtitle: "Active clients",
       subValue: stats.clientsDueRepayment ? `${stats.clientsDueRepayment} due for repayment` : "No repayments due",
     },
     {
       label: "Inventory",
-      value: stats.inventory.toString(),
+      value: (stats.inventory || 0).toString(),
       subtitle: "Glasses in stock",
       subValue: stats.inventory === 0 ? "Out of stock" : stats.inventory < 100 ? "Low stock" : "Good stock level",
     },
     {
       label: "Referrals",
-      value: stats.referrals.toString(),
+      value: (stats.referrals || 0).toString(),
       subtitle: "Pending referrals",
       subValue: stats.referralsOutstanding ? `${stats.referralsOutstanding} outstanding` : "All up to date",
     },
     {
       label: "Payments Due",
-      value: stats.paymentsDue.toString(),
+      value: (stats.paymentsDue || 0).toString(),
       subtitle: "Clients due today",
       subValue: stats.expectedAmount ? `UGX ${stats.expectedAmount.toLocaleString()} expected` : "No payments due",
     },
@@ -316,15 +316,23 @@ export default function CHWDashboard() {
         <View style={styles.weekStatsSection}>
           <Text style={styles.sectionTitle}>{t('thisWeek')}</Text>
           <View style={styles.weekStatsRow}>
-            <View style={styles.weekStatCard}>
+            <TouchableOpacity 
+              style={styles.weekStatCard}
+              onPress={() => navigation.navigate("MyClients")}
+              activeOpacity={0.7}
+            >
               <View style={styles.statIconContainer}>
                 <FontAwesome5 name="users" size={20} color="#FFFFFF" />
               </View>
-              <Text style={styles.weekStatNumber}>{stats.weekScreenings}</Text>
+              <Text style={styles.weekStatNumber}>{stats.weekScreenings || 0}</Text>
               <Text style={styles.weekStatLabel}>{t('screened')}</Text>
-            </View>
+            </TouchableOpacity>
 
-            <View style={styles.weekStatCard}>
+            <TouchableOpacity 
+              style={styles.weekStatCard}
+              onPress={() => navigation.navigate("Stock")}
+              activeOpacity={0.7}
+            >
               <View
                 style={[
                   styles.statIconContainer,
@@ -333,9 +341,9 @@ export default function CHWDashboard() {
               >
                 <MaterialIcons name="school" size={20} color="#FFFFFF" />
               </View>
-              <Text style={styles.weekStatNumber}>{stats.glassesGiven}</Text>
+              <Text style={styles.weekStatNumber}>{stats.glassesGiven || 0}</Text>
               <Text style={styles.weekStatLabel}>{t('glassesGiven')}</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
