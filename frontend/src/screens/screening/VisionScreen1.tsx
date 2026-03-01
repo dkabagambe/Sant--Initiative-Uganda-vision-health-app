@@ -19,7 +19,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { getDistrictNames, getCountiesForDistrict, getSubCountiesForCounty, getParishesForSubCounty } from "../../data/ugandaLocations";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiService } from "../../services/api";
 
 export default function VisionScreen1() {
   const navigation = useNavigation<any>();
@@ -33,11 +33,8 @@ export default function VisionScreen1() {
 
   const loadUserData = async () => {
     try {
-      const userDataString = await AsyncStorage.getItem("userData");
-      if (userDataString) {
-        const parsedUserData = JSON.parse(userDataString);
-        setUserData(parsedUserData);
-      }
+      const user = await apiService.getCurrentUser();
+      if (user) setUserData(user);
     } catch (error) {
       console.error("Error loading user data:", error);
     }
@@ -166,7 +163,7 @@ export default function VisionScreen1() {
      
              <View style={styles.headerCenter}>
                <Text style={styles.headerTitle}>
-                 {userData?.fullName || "Santé Initiative Uganda"}
+                 {userData?.fullName || userData?.full_name || "Santé Initiative Uganda"}
                </Text>
                <Text style={styles.headerSubtitle}>
                  {userData?.district ? `VHT - ${userData.district} District` : ""}

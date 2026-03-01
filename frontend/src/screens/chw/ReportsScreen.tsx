@@ -173,7 +173,7 @@ export default function ReportsScreen() {
     try {
       const user = await apiService.getCurrentUser();
       if (user) {
-        setUserName(user.fullName || "");
+        setUserName(user.fullName || user.full_name || "");
         setUserDistrict(user.district || "");
       }
     } catch (error) {

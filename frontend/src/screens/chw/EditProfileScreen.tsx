@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiService, User } from "../../services/api";
 import { getDistrictNames, getCountiesForDistrict, getSubCountiesForCounty, getParishesForSubCounty } from "../../data/ugandaLocations";
 import CHWHeader from "../../components/CHWHeader";
@@ -97,9 +98,9 @@ export default function EditProfileScreen() {
       const user = await apiService.getCurrentUser();
       if (user) {
         setFormData({
-          fullName: user.fullName || "",
+          fullName: user.fullName || user.full_name || "",
           age: "", // Age not in User interface
-          phoneNumber: user.phoneNumber || "",
+          phoneNumber: user.phoneNumber || user.phone_number || "",
           sex: "", // Gender not in User interface
           district: user.district || "",
           county: "", // County not in User interface
@@ -161,14 +162,15 @@ export default function EditProfileScreen() {
         const updatedUser: User = {
           id: user.id,
           fullName: formData.fullName,
-          phoneNumber: formData.phoneNumber,
+          phoneNumber: user.phoneNumber || user.phone_number,
           district: formData.district,
           village: formData.parish,
           role: user.role,
           profile_image: user.profile_image,
         };
         
-        await apiService.storeUserData(updatedUser, user.id);
+        const token = await AsyncStorage.getItem("authToken");
+        if (token) await apiService.storeUserData(updatedUser, token);
         
         Alert.alert("Success", "Profile updated successfully", [
           { text: "OK", onPress: () => navigation.goBack() }

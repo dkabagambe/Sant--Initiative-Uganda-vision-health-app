@@ -8,7 +8,6 @@ import {
   Image,
   Alert,
   SafeAreaView,
-  TextInput,
   Platform,
   StatusBar,
 } from "react-native";
@@ -19,10 +18,11 @@ import { colors } from "../../theme/colors";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { apiService } from "../../services/api";
+import { normalizePhoneForApi } from "../../utils/phoneUtils";
 
 type RootStackParamList = {
   OutletRegistrationStep3: { step1Data: any; step2Data: any };
-  OutletRegistrationStep4: { formData: any; phone: string; otp: string };
+  OutletRegistrationStep4: { formData: any; phone: string };
   AppTabs: { role: string };
   [key: string]: any;
 };
@@ -46,9 +46,7 @@ interface SelectedFile {
 const OutletRegistrationStep4 = () => {
   const navigation = useNavigation<OutletRegistrationStep4NavigationProp>();
   const route = useRoute<OutletRegistrationStep4RouteProp>();
-  const { formData: registrationData, phone, otp: devOtp } = route.params || {};
-
-  const [otpInput, setOtpInput] = useState(devOtp || "");
+  const { formData: registrationData, phone } = route.params || {};
   const [agreements, setAgreements] = useState({
     infoAccurate: false,
     partnershipTerms: false,
@@ -67,6 +65,7 @@ const OutletRegistrationStep4 = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -78,7 +77,6 @@ const OutletRegistrationStep4 = () => {
 
   const pickImage = async (type: keyof typeof selectedFiles) => {
     try {
-      // Request permissions
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -102,7 +100,6 @@ const OutletRegistrationStep4 = () => {
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
 
-        // Check file size (5MB limit)
         if (asset.fileSize && asset.fileSize > 5 * 1024 * 1024) {
           Alert.alert(
             "File Too Large",
@@ -112,18 +109,19 @@ const OutletRegistrationStep4 = () => {
           return;
         }
 
-        const file: SelectedFile = {
-          name: asset.fileName || `photo_${type}_${Date.now()}.jpg`,
-          uri: asset.uri,
-          type: asset.type || "image",
-        };
+        const mimeType = asset.mimeType || "image/jpeg";
+        const fileName = asset.fileName || `photo_${type}_${Date.now()}.jpg`;
 
         setSelectedFiles((prev) => ({
           ...prev,
-          [type]: file,
+          [type]: {
+            name: fileName,
+            uri: asset.uri,
+            type: mimeType,
+          },
         }));
 
-        Alert.alert("Photo Selected", "Photo has been uploaded successfully", [
+        Alert.alert("Photo Selected", "Photo selected. It will be uploaded when you submit.", [
           { text: "OK" },
         ]);
       }
@@ -143,13 +141,9 @@ const OutletRegistrationStep4 = () => {
         multiple: false,
       });
 
-      if (result.canceled) {
-        return;
-      }
+      if (result.canceled) return;
 
       const file = result.assets[0];
-
-      // Check file size (5MB limit)
       const maxSize = 5 * 1024 * 1024;
       if (file.size && file.size > maxSize) {
         Alert.alert("File Too Large", "Please select a file smaller than 5MB", [
@@ -167,7 +161,7 @@ const OutletRegistrationStep4 = () => {
         },
       }));
 
-      Alert.alert("File Selected", `${file.name} has been uploaded`, [
+      Alert.alert("File Selected", `${file.name} selected. It will be uploaded when you submit.`, [
         { text: "OK" },
       ]);
     } catch (error) {
@@ -204,16 +198,63 @@ const OutletRegistrationStep4 = () => {
       return;
     }
 
+    if (!selectedFiles.shopFront || !selectedFiles.ownerId) {
+      Alert.alert("Documents Required", "Please upload both Shop Front photo and Owner National ID photo.");
+      return;
+    }
+
     setIsSubmitting(true);
+    setIsUploading(true);
 
     try {
+      let shopFrontUrl: string | null = null;
+      let ownerIdUrl: string | null = null;
+
+      if (selectedFiles.shopFront) {
+        const uploadResult = await apiService.uploadFile({
+          uri: selectedFiles.shopFront.uri,
+          name: selectedFiles.shopFront.name,
+          type: selectedFiles.shopFront.type,
+        });
+        if (uploadResult.success && uploadResult.data?.url) {
+          shopFrontUrl = uploadResult.data.url;
+        } else {
+          throw new Error("Failed to upload shop front photo");
+        }
+      }
+
+      if (selectedFiles.ownerId) {
+        const uploadResult = await apiService.uploadFile({
+          uri: selectedFiles.ownerId.uri,
+          name: selectedFiles.ownerId.name,
+          type: selectedFiles.ownerId.type,
+        });
+        if (uploadResult.success && uploadResult.data?.url) {
+          ownerIdUrl = uploadResult.data.url;
+        } else {
+          throw new Error("Failed to upload owner ID photo");
+        }
+      }
+
+      setIsUploading(false);
+
       const completeRegistrationData = {
         ...registrationData,
         role: "outlet",
+        shopFrontImage: shopFrontUrl,
+        ownerIdImage: ownerIdUrl,
+        ownerFullName: registrationData?.ownerFullName,
       };
 
-      // OTP not required for registration — backend skips verification when registrationData is present
-      const result = await apiService.verifyOTP(phone, otpInput || "000000", completeRegistrationData);
+      const normalizedPhone = normalizePhoneForApi(phone);
+      if (!normalizedPhone) {
+        Alert.alert("Error", "Invalid phone number");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // OTP not sent on registration; backend skips verification when registrationData present
+      const result = await apiService.verifyOTP(normalizedPhone, "000000", completeRegistrationData);
 
       if (result.success) {
         Alert.alert(
@@ -233,11 +274,12 @@ const OutletRegistrationStep4 = () => {
       console.error("Submission error:", error);
       Alert.alert(
         "Submission Failed",
-        "There was an error submitting your registration. Please check your connection and try again.",
+        (error as Error)?.message || "There was an error submitting your registration. Please check your connection and try again.",
         [{ text: "OK" }],
       );
     } finally {
       setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 
@@ -279,20 +321,6 @@ const OutletRegistrationStep4 = () => {
             <View style={styles.stepActive} />
           </View>
         </View>
-
-        {/* OTP Verification */}
-        <Text style={styles.sectionTitle}>Verify Phone Number</Text>
-        <Text style={styles.sectionSubtitle}>
-          Enter the 6-digit code sent to {phone}
-        </Text>
-        <TextInput
-          style={styles.otpInput}
-          placeholder="Enter 6-digit OTP"
-          value={otpInput}
-          onChangeText={setOtpInput}
-          keyboardType="number-pad"
-          maxLength={6}
-        />
 
         {/* Form Title */}
         <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Required Documents</Text>
@@ -661,18 +689,6 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: -16,
     marginBottom: 12,
-  },
-  otpInput: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 24,
-    fontWeight: "600",
-    textAlign: "center",
-    letterSpacing: 8,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
   },
   documentLabel: {
     fontSize: 14,

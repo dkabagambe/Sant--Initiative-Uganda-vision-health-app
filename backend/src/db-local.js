@@ -287,8 +287,14 @@ const sql = (strings, ...values) => {
 function runMigrations() {
   console.log('🔄 Running database migrations...');
   
-  // List of columns to add to screenings table if they don't exist
+  // List of columns to add if they don't exist
   const migrations = [
+    // Users - registration documents (CHW, Outlet, VSLA)
+    { table: 'users', column: 'recommendation_letter', type: 'TEXT' },
+    { table: 'users', column: 'shop_front_image', type: 'TEXT' },
+    { table: 'users', column: 'owner_id_image', type: 'TEXT' },
+    { table: 'users', column: 'registration_documents', type: 'TEXT' },
+    // Screenings
     { table: 'screenings', column: 'client_district', type: 'TEXT' },
     { table: 'screenings', column: 'client_county', type: 'TEXT' },
     { table: 'screenings', column: 'client_sub_county', type: 'TEXT' },

@@ -24,7 +24,7 @@ type RootStackParamList = {
   CHWRegistrationStep1: undefined;
   CHWRegistrationStep2: { step1Data?: any };
   CHWRegistrationStep3: { step1Data?: any; step2Data?: any };
-  CHWRegistrationStep4: { formData: any; phone: string; otp: string };
+  CHWRegistrationStep4: { formData: any; phone: string };
   AppTabs: { role: string };
 };
 

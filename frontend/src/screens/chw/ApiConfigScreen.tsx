@@ -128,11 +128,11 @@ const ApiConfigScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       });
 
       const response = await testApi.get('/health');
-      
-      if (response.data.success) {
+      const ok = response.data?.status === 'OK';
+      if (ok) {
         Alert.alert(
           'Connection Test',
-          '✅ Successfully connected to the API!\n\nDatabase: ' + response.data.database
+          '✅ Successfully connected!\n\nDatabase: ' + (response.data?.database || 'unknown')
         );
       } else {
         Alert.alert('Connection Test', '❌ API responded but with an error');

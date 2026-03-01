@@ -3,14 +3,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CONFIG_KEY = 'app_config';
 
+// Vercel production API
+export const VERCEL_API_URL = 'https://backend-tau-sepia-43.vercel.app/api';
+// Local backend — localhost for emulator; use machine IP for physical device
+export const LOCAL_API_URL = 'http://localhost:5000/api';
+
 export interface AppConfig {
   apiBaseUrl: string;
   environment: 'development' | 'production';
 }
 
+// Env override: EXPO_PUBLIC_API_URL in .env — physical device: http://YOUR_IP:5000/api
+const envApiUrl = typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL;
+
 const defaultConfig: AppConfig = {
-  apiBaseUrl: 'https://sante-initiative-uganda-app.onrender.com/api',
-  environment: 'production'
+  apiBaseUrl: envApiUrl || (__DEV__ ? LOCAL_API_URL : VERCEL_API_URL),
+  environment: __DEV__ ? 'development' : 'production'
 };
 
 export class ConfigService {
@@ -41,10 +49,14 @@ export class ConfigService {
     }
   }
 
-  // Reset to default configuration
+  // Reset to default configuration (uses localhost in dev, Vercel in prod)
   static async resetToDefault(): Promise<boolean> {
     try {
-      await AsyncStorage.setItem(CONFIG_KEY, JSON.stringify(defaultConfig));
+      const config: AppConfig = {
+        apiBaseUrl: __DEV__ ? LOCAL_API_URL : VERCEL_API_URL,
+        environment: __DEV__ ? 'development' : 'production'
+      };
+      await AsyncStorage.setItem(CONFIG_KEY, JSON.stringify(config));
       return true;
     } catch (error) {
       console.error('Failed to reset config:', error);

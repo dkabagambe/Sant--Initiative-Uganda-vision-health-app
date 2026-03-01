@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ConfigService } from "./configService";
+import { ConfigService, LOCAL_API_URL, VERCEL_API_URL } from "./configService";
 
 // Define types
 export interface User {
@@ -44,29 +44,35 @@ export interface Screening {
   date: string;
 }
 
-// Dynamic API base URL using remote configuration
-let API_BASE_URL = "https://sante-initiative-uganda-app.onrender.com/api";
+// API base URL: uses ConfigService (localhost in dev, Vercel in prod) or fallback
+const getDefaultBaseUrl = () =>
+  typeof __DEV__ !== "undefined" && __DEV__
+    ? LOCAL_API_URL
+    : VERCEL_API_URL;
 
-// Initialize API URL from remote config
+let API_BASE_URL = getDefaultBaseUrl();
+
+// Initialize API URL from remote config (AsyncStorage override)
 const initializeApiUrl = async () => {
   try {
     API_BASE_URL = await ConfigService.getApiUrl();
+    api.defaults.baseURL = API_BASE_URL;
   } catch (error) {
-    console.warn('Failed to load remote API config, using default:', error);
+    console.warn("Failed to load remote API config, using default:", error);
   }
 };
-
-// Initialize immediately
-initializeApiUrl();
 
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // 30s for Render cold starts (free tier spin-down)
+  timeout: 30000, // 30s for Vercel cold starts; localhost is usually faster
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+// Load saved API URL (or use default: localhost in dev, Vercel in prod)
+initializeApiUrl();
 
 // Request interceptor for adding token
 api.interceptors.request.use(
@@ -144,7 +150,22 @@ export const apiService = {
 
     if (response.data.token && response.data.user) {
       await AsyncStorage.setItem("authToken", response.data.token);
-      await AsyncStorage.setItem("user", JSON.stringify(response.data.user));
+      // Normalize user: backend returns snake_case, frontend expects camelCase for consistency
+      const u = response.data.user;
+      const normalizedUser = {
+        ...u,
+        id: u.id,
+        phoneNumber: u.phone_number ?? u.phoneNumber,
+        fullName: u.full_name ?? u.fullName,
+        role: u.role,
+        district: u.district,
+        village: u.village,
+        first_name: u.first_name,
+        last_name: u.last_name,
+        full_name: u.full_name,
+        phone_number: u.phone_number,
+      };
+      await AsyncStorage.setItem("user", JSON.stringify(normalizedUser));
     }
 
     return response.data;

@@ -87,7 +87,7 @@ export default function CHWDashboardScreen() {
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.organization}>Santé Initiative Uganda</Text>
-              <Text style={styles.userName}>{user.fullName}</Text>
+              <Text style={styles.userName}>{user.fullName || user.full_name}</Text>
             </View>
             <TouchableOpacity style={styles.profileButton}>
               <Ionicons name="person-circle" size={40} color="#1E40AF" />

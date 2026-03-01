@@ -22,7 +22,7 @@ import { apiService } from "../../services/api";
 type RootStackParamList = {
   OutletRegistrationStep2: { step1Data: any };
   OutletRegistrationStep3: { step1Data: any; step2Data: any };
-  OutletRegistrationStep4: { formData: any; phone: string; otp: string };
+  OutletRegistrationStep4: { formData: any; phone: string };
   [key: string]: any;
 };
 
@@ -87,7 +87,6 @@ const OutletRegistrationStep3 = () => {
     navigation.navigate("OutletRegistrationStep4", {
       formData: completeFormData,
       phone,
-      otp: "",
     });
   };
 

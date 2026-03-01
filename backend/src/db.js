@@ -25,6 +25,14 @@ if (hasPostgresUrl && !useSqliteEnv) {
     throw err;
   }
 } else {
+  // Vercel serverless: SQLite does not work (read-only filesystem). Must use Postgres.
+  if (process.env.VERCEL) {
+    throw new Error(
+      "Vercel deployment requires DATABASE_URL (Neon Postgres). " +
+      "Add it in Vercel Dashboard → Project Settings → Environment Variables. " +
+      "Do not set USE_SQLITE=true on Vercel."
+    );
+  }
   // Local: SQLite via db-local (sync). Wrap in Promise so callers can await.
   if (useSqliteEnv) {
     console.log("📦 USE_SQLITE=true: using SQLite (ignore DATABASE_URL for this run).");

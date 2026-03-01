@@ -151,14 +151,21 @@ app.use((err, req, res, next) => {
   });
 });
 
-// --- Start Server ---
+// Export for Vercel serverless (no app.listen on Vercel)
+module.exports = app;
+
+// Start server only when NOT on Vercel (local or traditional hosting)
+if (!process.env.VERCEL) {
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, async () => {
+// Bind to 0.0.0.0 so frontend can connect from localhost, emulator, or physical device on same network
+const HOST = process.env.HOST || "0.0.0.0";
+app.listen(PORT, HOST, async () => {
   console.log(`
 🚀 Santé Initiative Uganda Backend
 📂 Environment: ${process.env.NODE_ENV || "development"}
-🌐 Server running on port ${PORT}
+🌐 Server running at http://${HOST}:${PORT}
 📊 Health check: http://localhost:${PORT}/api/health
+📱 For physical device: use your machine IP, e.g. http://YOUR_IP:${PORT}/api
   `);
   
   // Test database connection at startup (read-only check; no data modified)
@@ -196,3 +203,4 @@ app.listen(PORT, async () => {
     console.error("❌ Failed to start payment reminder scheduler:", err.message);
   }
 });
+}

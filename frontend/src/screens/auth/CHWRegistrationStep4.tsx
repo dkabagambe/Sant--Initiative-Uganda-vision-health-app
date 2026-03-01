@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  TextInput,
   Platform,
   StatusBar,
 } from "react-native";
@@ -16,6 +15,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
 import * as DocumentPicker from "expo-document-picker";
 import { apiService } from "../../services/api";
+import { normalizePhoneForApi } from "../../utils/phoneUtils";
 
 type RootStackParamList = {
   Login: undefined;
@@ -24,7 +24,7 @@ type RootStackParamList = {
   CHWRegistrationStep1: undefined;
   CHWRegistrationStep2: undefined;
   CHWRegistrationStep3: undefined;
-  CHWRegistrationStep4: { formData: any; phone: string; otp: string };
+  CHWRegistrationStep4: { formData: any; phone: string };
   AppTabs: { role: string };
 };
 
@@ -46,9 +46,7 @@ interface SelectedFile {
 export default function CHWRegistrationStep4() {
   const navigation = useNavigation<CHWRegistrationStep4NavigationProp>();
   const route = useRoute<CHWRegistrationStep4RouteProp>();
-  const { formData: registrationData, phone, otp: devOtp } = route.params || {};
-
-  const [otpInput, setOtpInput] = useState(devOtp || "");
+  const { formData: registrationData, phone } = route.params || {};
   const [agreements, setAgreements] = useState({
     infoAccurate: false,
     dataProtection: false,
@@ -200,8 +198,15 @@ export default function CHWRegistrationStep4() {
         recommendationLetter: selectedFiles.recommendation?.uploadedUrl || null,
       };
 
-      // OTP not required for registration — backend skips verification when registrationData is present
-      const result = await apiService.verifyOTP(phone, otpInput || "000000", completeRegistrationData);
+      const normalizedPhone = normalizePhoneForApi(phone);
+      if (!normalizedPhone) {
+        Alert.alert("Error", "Invalid phone number");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // OTP not sent on registration; backend skips verification when registrationData present
+      const result = await apiService.verifyOTP(normalizedPhone, "000000", completeRegistrationData);
 
       if (result.success) {
         Alert.alert(
@@ -263,20 +268,6 @@ export default function CHWRegistrationStep4() {
             <View style={styles.stepActive} />
           </View>
         </View>
-
-        {/* OTP Verification */}
-        <Text style={styles.sectionTitle}>Verify Phone Number</Text>
-        <Text style={styles.sectionSubtitle}>
-          Enter the 6-digit code sent to {phone}
-        </Text>
-        <TextInput
-          style={styles.otpInput}
-          placeholder="Enter 6-digit OTP"
-          value={otpInput}
-          onChangeText={setOtpInput}
-          keyboardType="number-pad"
-          maxLength={6}
-        />
 
         {/* Form Title */}
         <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Required Documents</Text>
@@ -640,19 +631,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#000000",
     marginBottom: 24,
-  },
-  otpInput: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 24,
-    fontWeight: "600",
-    textAlign: "center",
-    letterSpacing: 8,
-    marginTop: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
   },
   sectionSubtitle: {
     fontSize: 14,

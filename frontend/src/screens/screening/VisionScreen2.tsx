@@ -14,7 +14,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useLanguage } from "../../context/LanguageContext";
 import { apiService } from "../../services/api";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function PreScreeningQuestionsScreen() {
   const navigation = useNavigation<any>();
@@ -27,11 +26,8 @@ export default function PreScreeningQuestionsScreen() {
 
   const loadUserData = async () => {
     try {
-      const userDataString = await AsyncStorage.getItem("userData");
-      if (userDataString) {
-        const parsedUserData = JSON.parse(userDataString);
-        setUserData(parsedUserData);
-      }
+      const user = await apiService.getCurrentUser();
+      if (user) setUserData(user);
     } catch (error) {
       console.error("Error loading user data:", error);
     }
@@ -85,7 +81,7 @@ export default function PreScreeningQuestionsScreen() {
 
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>
-            {userData?.fullName || "Santé Initiative Uganda"}
+            {userData?.fullName || userData?.full_name || "Santé Initiative Uganda"}
           </Text>
           <Text style={styles.headerSubtitle}>
             {userData?.district ? `VHT - ${userData.district} District` : ""}

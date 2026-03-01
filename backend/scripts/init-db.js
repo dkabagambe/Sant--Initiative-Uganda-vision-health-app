@@ -1,11 +1,38 @@
-const { neon } = require('@neondatabase/serverless');
 require('dotenv').config();
 
+const useSqlite = process.env.USE_SQLITE && ['true', '1', 'yes'].includes(String(process.env.USE_SQLITE).toLowerCase());
+
+if (useSqlite) {
+  // SQLite: db-local creates tables and seeds on load; add any missing columns
+  console.log('📦 Initializing SQLite (local development)\n');
+  const dbLocal = require('../src/db-local');
+  const db = dbLocal.db;
+  try {
+    const addCol = (table, col, type) => {
+      try {
+        const info = db.prepare(`PRAGMA table_info(${table})`).all();
+        if (!info.some(c => c.name === col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}`);
+      } catch (e) { /* ignore */ }
+    };
+    addCol('users', 'recommendation_letter', 'TEXT');
+    addCol('users', 'shop_front_image', 'TEXT');
+    addCol('users', 'owner_id_image', 'TEXT');
+    addCol('users', 'registration_documents', 'TEXT');
+    console.log('✅ SQLite initialized (tables and products ready)\n');
+  } catch (err) {
+    console.error('❌ SQLite init failed:', err.message);
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
+// Postgres/Neon path
 const dbUrl = process.env.DATABASE_URL && process.env.DATABASE_URL.trim();
 if (!dbUrl || (!dbUrl.startsWith('postgresql://') && !dbUrl.startsWith('postgres://'))) {
-  console.error('❌ DATABASE_URL must be set to a Postgres URL (e.g. postgresql://... or postgres://...). No data is modified until this script runs.');
+  console.error('❌ DATABASE_URL must be set for Postgres, or set USE_SQLITE=true for local SQLite.');
   process.exit(1);
 }
+const { neon } = require('@neondatabase/serverless');
 const sql = neon(dbUrl);
 
 async function initDB() {
@@ -50,6 +77,17 @@ async function initDB() {
       )
     `;
     console.log('✓ Users table created');
+
+    // Add registration document columns if they don't exist (migration for existing DBs)
+    try {
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS recommendation_letter VARCHAR(500)`;
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_front_image VARCHAR(500)`;
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS owner_id_image VARCHAR(500)`;
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS registration_documents JSONB`;
+      console.log('✓ Registration document columns ensured');
+    } catch (migErr) {
+      console.warn('Migration note:', migErr.message);
+    }
 
     // Create products table
     await sql`

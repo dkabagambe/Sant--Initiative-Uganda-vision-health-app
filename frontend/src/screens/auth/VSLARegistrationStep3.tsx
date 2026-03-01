@@ -21,7 +21,7 @@ import { apiService } from "../../services/api";
 type RootStackParamList = {
   VSLARegistrationStep2: undefined;
   VSLARegistrationStep3: { step1Data?: any; step2Data?: any };
-  VSLARegistrationStep4: { formData: any; phone: string; otp: string };
+  VSLARegistrationStep4: { formData: any; phone: string };
 };
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
@@ -109,7 +109,6 @@ const VSLARegistrationStep3 = () => {
     navigation.navigate("VSLARegistrationStep4", {
       formData: completeFormData,
       phone,
-      otp: "",
     });
   };
 

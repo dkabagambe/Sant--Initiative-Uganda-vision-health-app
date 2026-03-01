@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CHWHeader from "../../components/CHWHeader";
+import { apiService } from "../../services/api";
 import {
   moderateScale,
   fontSize as responsiveFontSize,
@@ -44,11 +45,8 @@ export default function VisionScreen6({
 
   const loadUserData = async () => {
     try {
-      const userDataString = await AsyncStorage.getItem("userData");
-      if (userDataString) {
-        const parsedUserData = JSON.parse(userDataString);
-        setUserData(parsedUserData);
-      }
+      const user = await apiService.getCurrentUser();
+      if (user) setUserData(user);
     } catch (error) {
       console.error("Error loading user data:", error);
     }

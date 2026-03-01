@@ -78,11 +78,22 @@ exports.verifyOTP = async (req, res) => {
       console.log(`📝 [REGISTRATION] Skipping OTP verification for ${phoneNumber}`);
     }
 
-    // Get user from database
-    const user = await sql`
+    // Get user from database (or create if registering)
+    let user = await sql`
       SELECT * FROM users 
       WHERE phone_number = ${phoneNumber}
     `;
+
+    // When registering, create user if they don't exist yet
+    if (user.length === 0 && registrationData) {
+      await sql`
+        INSERT INTO users (phone_number)
+        VALUES (${phoneNumber})
+      `;
+      user = await sql`
+        SELECT * FROM users WHERE phone_number = ${phoneNumber}
+      `;
+    }
 
     if (user.length === 0) {
       return res.status(401).json({ success: false, error: "User not found" });
@@ -95,6 +106,7 @@ exports.verifyOTP = async (req, res) => {
       const {
         firstName,
         lastName,
+        fullName: providedFullName,
         gender,
         nationalId,
         dateOfBirth,
@@ -109,12 +121,24 @@ exports.verifyOTP = async (req, res) => {
         registrationNumber,
         yearsOfExperience,
         trainingCertificate,
+        recommendationLetter,
         businessName,
         businessType,
         tinNumber,
+        shopFrontImage,
+        ownerIdImage,
+        registrationDocuments,
+        // Outlet: ownerFullName; VSLA: chairperson, groupName
+        ownerFullName,
+        chairperson,
+        groupName,
       } = registrationData;
 
-      const fullName = `${firstName || ""} ${lastName || ""}`.trim();
+      // Derive fullName for outlet/VSLA when firstName/lastName not provided
+      let fullName = `${firstName || ""} ${lastName || ""}`.trim();
+      if (!fullName && providedFullName) fullName = providedFullName;
+      if (!fullName && ownerFullName) fullName = ownerFullName;
+      if (!fullName && chairperson?.name) fullName = chairperson.name;
       const currentTime = new Date().toISOString();
 
       await sql`
@@ -132,13 +156,17 @@ exports.verifyOTP = async (req, res) => {
           county = ${county || null},
           district = ${district || null},
           region = ${region || null},
-          organization_name = ${organizationName || null},
+          organization_name = ${organizationName || groupName || null},
           registration_number = ${registrationNumber || null},
           years_of_experience = ${yearsOfExperience || null},
           training_certificate = ${trainingCertificate || null},
+          recommendation_letter = ${recommendationLetter || null},
           business_name = ${businessName || null},
           business_type = ${businessType || null},
           tin_number = ${tinNumber || null},
+          shop_front_image = ${shopFrontImage || null},
+          owner_id_image = ${ownerIdImage || null},
+          registration_documents = ${registrationDocuments ? JSON.stringify(registrationDocuments) : null},
           otp_code = NULL,
           otp_expires_at = NULL,
           last_login = ${currentTime}

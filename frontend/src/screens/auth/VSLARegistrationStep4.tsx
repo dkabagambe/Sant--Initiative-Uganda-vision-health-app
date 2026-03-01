@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
-  TextInput,
   Platform,
   StatusBar,
 } from "react-native";
@@ -16,11 +15,12 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { apiService } from "../../services/api";
+import { normalizePhoneForApi } from "../../utils/phoneUtils";
 
 // Define navigation types
 type RootStackParamList = {
   VSLARegistrationStep3: undefined;
-  VSLARegistrationStep4: { formData: any; phone: string; otp: string };
+  VSLARegistrationStep4: { formData: any; phone: string };
   AppTabs: { role: string };
   Login: undefined;
 };
@@ -64,9 +64,7 @@ type DocumentPickerResult =
 const VSLARegistrationStep4 = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<VSLAStep4RouteProp>();
-  const { formData: registrationData, phone, otp: devOtp } = route.params || {};
-
-  const [otpInput, setOtpInput] = useState(devOtp || "");
+  const { formData: registrationData, phone } = route.params || {};
   const [documents, setDocuments] = useState<Document[]>([
     {
       id: 1,
@@ -99,6 +97,7 @@ const VSLARegistrationStep4 = () => {
   ]);
 
   const [errors, setErrors] = useState<{ [key: number]: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handlePrevious = () => {
     navigation.goBack();
@@ -142,7 +141,7 @@ const VSLARegistrationStep4 = () => {
   const pickDocument = async (id: number) => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: "*/*",
+        type: ["image/*", "application/pdf"],
         copyToCacheDirectory: true,
       });
 
@@ -203,29 +202,53 @@ const VSLARegistrationStep4 = () => {
   };
 
   const handleSubmit = async () => {
-    // Validate required documents
     if (!validateForm()) {
       Alert.alert("Missing Documents", "Please upload all required documents");
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
-      // Collect document file names
-      const documentFiles = documents.reduce((acc, doc) => {
+      const registrationDocuments: Record<string, string> = {};
+
+      for (const doc of documents) {
         if (doc.file) {
-          acc[`document_${doc.id}`] = doc.file.name;
+          let mimeType = doc.file.type || (doc.id === 1 ? "image/jpeg" : "application/pdf");
+          if (!mimeType.includes("/")) mimeType = "image/jpeg";
+          if (!["image/jpeg", "image/jpg", "image/png", "application/pdf"].includes(mimeType)) {
+            mimeType = doc.file.name?.toLowerCase().endsWith(".pdf") ? "application/pdf" : "image/jpeg";
+          }
+          const uploadResult = await apiService.uploadFile({
+            uri: doc.file.uri,
+            name: doc.file.name,
+            type: mimeType,
+          });
+          if (uploadResult.success && uploadResult.data?.url) {
+            registrationDocuments[`document_${doc.id}`] = uploadResult.data.url;
+          } else {
+            throw new Error(`Failed to upload ${doc.label}`);
+          }
         }
-        return acc;
-      }, {} as Record<string, string>);
+      }
 
       const completeRegistrationData = {
         ...registrationData,
         role: "vsla",
-        ...documentFiles, // Include document file names
+        groupName: registrationData?.groupName,
+        chairperson: registrationData?.chairperson,
+        registrationDocuments,
       };
 
-      // OTP not required for registration — backend skips verification when registrationData is present
-      const result = await apiService.verifyOTP(phone, otpInput || "000000", completeRegistrationData);
+      const normalizedPhone = normalizePhoneForApi(phone);
+      if (!normalizedPhone) {
+        Alert.alert("Error", "Invalid phone number");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // OTP not sent on registration; backend skips verification when registrationData present
+      const result = await apiService.verifyOTP(normalizedPhone, "000000", completeRegistrationData);
 
       if (result.success) {
         Alert.alert(
@@ -245,8 +268,10 @@ const VSLARegistrationStep4 = () => {
       console.error("Submission error:", error);
       Alert.alert(
         "Submission Failed",
-        "There was an error submitting your registration. Please check your connection and try again.",
+        (error as Error)?.message || "There was an error submitting your registration. Please check your connection and try again.",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -314,22 +339,6 @@ const VSLARegistrationStep4 = () => {
         {/* Progress Bar */}
         <View style={styles.progressWrapper}>
           <ProgressBar currentStep={4} totalSteps={4} />
-        </View>
-
-        {/* OTP Verification */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Verify Phone Number</Text>
-          <Text style={styles.sectionSubtitle}>
-            Enter the 6-digit code sent to {phone}
-          </Text>
-          <TextInput
-            style={styles.otpInput}
-            placeholder="Enter 6-digit OTP"
-            value={otpInput}
-            onChangeText={setOtpInput}
-            keyboardType="number-pad"
-            maxLength={6}
-          />
         </View>
 
         <View style={styles.section}>
@@ -432,14 +441,18 @@ const VSLARegistrationStep4 = () => {
           <TouchableOpacity
             style={[styles.button, styles.previousButton]}
             onPress={handlePrevious}
+            disabled={isSubmitting}
           >
             <Text style={styles.previousButtonText}>Previous</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.button, styles.submitButton]}
+            style={[styles.button, styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
             onPress={handleSubmit}
+            disabled={isSubmitting}
           >
-            <Text style={styles.submitButtonText}>Submit Registration</Text>
+            <Text style={styles.submitButtonText}>
+              {isSubmitting ? "Uploading & Submitting..." : "Submit Registration"}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -544,18 +557,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     marginBottom: 12,
-  },
-  otpInput: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 24,
-    fontWeight: "600",
-    textAlign: "center",
-    letterSpacing: 8,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
   },
   documentItem: {
     marginBottom: 24,
@@ -676,6 +677,10 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: "#4CAF50",
+  },
+  submitButtonDisabled: {
+    backgroundColor: "#9E9E9E",
+    opacity: 0.8,
   },
   previousButtonText: {
     fontSize: 16,
