@@ -118,7 +118,10 @@ export default function ReferralsScreen() {
             try {
               const result = await apiService.updateReferralStatus(referralId, "completed");
               if (result.success) {
-                await loadReferrals();
+                // Remove from local state immediately
+                setReferrals(prev => prev.map(r => 
+                  r.id === referralId ? { ...r, status: "completed" as const } : r
+                ));
                 Alert.alert("Success", "Referral marked as completed");
               } else {
                 Alert.alert("Error", result.error || "Failed to update referral");
