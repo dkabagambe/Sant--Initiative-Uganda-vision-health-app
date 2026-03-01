@@ -44,6 +44,10 @@ import PaymentsScreen from "../screens/chw/PaymentsScreen";
 import ReportsScreen from "../screens/chw/ReportsScreen";
 import StartScreeningScreen from "../screens/chw/StartScreeningScreen";
 import SettingsScreen from "../screens/chw/SettingsScreen";
+import EditProfileScreen from "../screens/chw/EditProfileScreen";
+import NotificationSettingsScreen from "../screens/chw/NotificationSettingsScreen";
+import AccessibilityScreen from "../screens/chw/AccessibilityScreen";
+import ChangePasswordScreen from "../screens/chw/ChangePasswordScreen";
 
 // NEW Vision Screening Flow (7 Steps)
 import VisionScreen1 from "../screens/screening/VisionScreen1";
@@ -495,6 +499,10 @@ export default function AppNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+      <Stack.Screen name="Accessibility" component={AccessibilityScreen} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
     </Stack.Navigator>
   );
 }

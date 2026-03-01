@@ -45,6 +45,7 @@ interface StockItemProps {
     metal: number;
     fashion: number;
   };
+  onPress?: () => void;
 }
 
 const StockItem = ({
@@ -52,6 +53,7 @@ const StockItem = ({
   totalPairs,
   status,
   breakdown,
+  onPress,
 }: StockItemProps) => {
   const getStatusColor = () => {
     switch (status) {
@@ -76,7 +78,7 @@ const StockItem = ({
   };
 
   return (
-    <View style={styles.stockItem}>
+    <TouchableOpacity style={styles.stockItem} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.stockItemHeader}>
         <Text style={styles.stockPower}>{power}D</Text>
         <View style={styles.stockQuantityContainer}>
@@ -115,7 +117,7 @@ const StockItem = ({
           </Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -158,6 +160,8 @@ export default function InventoryScreen() {
   const [sectionY, setSectionY] = useState<{ stockList: number; recentSales: number }>({ stockList: 0, recentSales: 0 });
 
   const [showAddStockModal, setShowAddStockModal] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [inventory, setInventory] = useState<any[]>([]);
@@ -332,7 +336,18 @@ export default function InventoryScreen() {
   };
 
   const handleAddStock = () => {
+    setEditMode(false);
+    setEditingProduct(null);
     setAddStockPower(null);
+    setAddStockFrameType("standard");
+    setAddStockQuantity(0);
+    setShowAddStockModal(true);
+  };
+
+  const handleEditStock = (product: any) => {
+    setEditMode(true);
+    setEditingProduct(product);
+    setAddStockPower(product.power);
     setAddStockFrameType("standard");
     setAddStockQuantity(0);
     setShowAddStockModal(true);
@@ -350,8 +365,7 @@ export default function InventoryScreen() {
 
     setAddStockLoading(true);
     try {
-      // Find the product by power
-      const product = inventory.find((item: any) => item.power === addStockPower);
+      const product = editingProduct || inventory.find((item: any) => item.power === addStockPower);
       if (!product) {
         Alert.alert("Error", `No product found for power ${addStockPower}. Please contact admin.`);
         setAddStockLoading(false);
@@ -361,17 +375,17 @@ export default function InventoryScreen() {
       const result = await apiService.addStock(product.id, addStockQuantity, addStockFrameType);
       if (result.success) {
         Alert.alert(
-          "\u2705 Stock Added",
-          `Successfully added ${addStockQuantity} pairs of ${addStockPower} (${addStockFrameType}) glasses.`
+          "✅ Stock Updated",
+          `Successfully ${editMode ? 'updated' : 'added'} ${addStockQuantity} pairs of ${addStockPower} (${addStockFrameType}) glasses.`
         );
         setShowAddStockModal(false);
         await loadInventory();
       } else {
-        throw new Error("Failed to add stock");
+        throw new Error("Failed to update stock");
       }
     } catch (error) {
-      console.error("Add stock error:", error);
-      Alert.alert("Error", "Failed to add stock. Please try again.");
+      console.error("Update stock error:", error);
+      Alert.alert("Error", "Failed to update stock. Please try again.");
     } finally {
       setAddStockLoading(false);
     }
@@ -522,6 +536,7 @@ export default function InventoryScreen() {
                   metal: item.stock_metal || 0,
                   fashion: item.stock_fashion || 0,
                 }}
+                onPress={() => handleEditStock(item)}
               />
             ))}
           </View>
@@ -629,12 +644,21 @@ export default function InventoryScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Stock</Text>
+              <Text style={styles.modalTitle}>{editMode ? 'Edit Stock' : 'Add Stock'}</Text>
               <TouchableOpacity onPress={() => setShowAddStockModal(false)}>
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalBody}>
+              {editMode && (
+                <View style={styles.editInfoBox}>
+                  <Ionicons name="information-circle" size={20} color="#1E40AF" />
+                  <Text style={styles.editInfoText}>
+                    Editing {addStockPower}D glasses. Current stock: {editingProduct?.stock_quantity || 0} pairs
+                  </Text>
+                </View>
+              )}
+              
               {/* Power Selection - from database */}
               <Text style={styles.modalLabel}>Select Power *</Text>
               <View style={styles.powerGrid}>
@@ -645,12 +669,17 @@ export default function InventoryScreen() {
                       styles.powerOption,
                       addStockPower === product.power && styles.powerOptionSelected,
                     ]}
-                    onPress={() => setAddStockPower(product.power)}
+                    onPress={() => {
+                      setAddStockPower(product.power);
+                      setEditingProduct(product);
+                    }}
+                    disabled={editMode}
                   >
                     <Text
                       style={[
                         styles.powerOptionText,
                         addStockPower === product.power && styles.powerOptionTextSelected,
+                        editMode && addStockPower !== product.power && { opacity: 0.4 },
                       ]}
                     >
                       {product.power}D
@@ -730,7 +759,7 @@ export default function InventoryScreen() {
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
                   <Text style={styles.modalButtonText}>
-                    Add {addStockQuantity > 0 ? `${addStockQuantity} Pairs` : "Stock"}
+                    {editMode ? 'Update Stock' : `Add ${addStockQuantity > 0 ? `${addStockQuantity} Pairs` : 'Stock'}`}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -1289,5 +1318,19 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: "#6B7280",
+  },
+  editInfoBox: {
+    flexDirection: "row",
+    backgroundColor: "#EFF6FF",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  editInfoText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#1E40AF",
+    marginLeft: 8,
   },
 });

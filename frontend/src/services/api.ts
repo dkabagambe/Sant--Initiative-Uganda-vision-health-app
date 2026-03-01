@@ -43,10 +43,22 @@ export interface Screening {
   date: string;
 }
 
-// Base URL: EXPO_PUBLIC_API_URL or default Render production
-const API_BASE_URL =
-  (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) ||
-  "https://sante-initiative-uganda-app.onrender.com/api";
+// Auto-detect environment: local network IP for dev, Render for production
+const getApiBaseUrl = () => {
+  if (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+  
+  // Check if running in development mode
+  if (__DEV__) {
+    return "http://20.20.42.133:5000/api";
+  }
+  
+  // Production: use Render
+  return "https://sante-initiative-uganda-app.onrender.com/api";
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Create axios instance
 const api = axios.create({
@@ -169,6 +181,11 @@ export const apiService = {
       console.error("Store user data error:", err);
       return { success: false, error: err.message };
     }
+  },
+
+  async updateUserProfile(data: any) {
+    const response = await api.patch("/auth/profile", data);
+    return response.data;
   },
 
   // ============ PRODUCTS ============

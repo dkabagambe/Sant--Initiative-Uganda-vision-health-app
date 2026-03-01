@@ -240,3 +240,39 @@ exports.checkAuth = async (req, res) => {
     res.status(500).json({ success: false, error: "Failed to check auth" });
   }
 };
+
+// Update user profile
+exports.updateProfile = async (req, res) => {
+  try {
+    const sql = req.app.locals.sql;
+    const userId = req.user.userId;
+    const { full_name, age, sex, district, county, sub_county, parish } = req.body;
+
+    await sql`
+      UPDATE users SET
+        full_name = ${full_name || null},
+        age = ${age || null},
+        sex = ${sex || null},
+        district = ${district || null},
+        county = ${county || null},
+        sub_county = ${sub_county || null},
+        parish = ${parish || null},
+        village = ${parish || null}
+      WHERE id = ${userId}
+    `;
+
+    const updatedUser = await sql`
+      SELECT id, phone_number, full_name, age, sex, role, district, county, sub_county, parish, village
+      FROM users WHERE id = ${userId}
+    `;
+
+    res.json({
+      success: true,
+      message: "Profile updated successfully",
+      user: updatedUser[0],
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ success: false, error: "Failed to update profile" });
+  }
+};
