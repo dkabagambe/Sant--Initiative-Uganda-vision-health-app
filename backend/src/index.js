@@ -109,6 +109,7 @@ const diagnosticRoutes = require("./routes/diagnostic");
 const populateUsersRoutes = require("./routes/populateUsers");
 const seedDataRoutes = require("./routes/seedData");
 const simpleSeedRoutes = require("./routes/simpleSeed");
+const remoteConfigRoutes = require("./routes/remoteConfig");
 const { startPaymentReminderScheduler } = require("./services/paymentReminderScheduler");
 
 // --- Serve uploaded files ---
@@ -129,6 +130,7 @@ app.use("/api/diagnostic", diagnosticRoutes);
 app.use("/api/populate-users", populateUsersRoutes);
 app.use("/api/seed-data", seedDataRoutes);
 app.use("/api/simple-seed", simpleSeedRoutes);
+app.use("/api/remote-config", remoteConfigRoutes);
 
 // --- 404 Handler ---
 app.use("*", (req, res) => {

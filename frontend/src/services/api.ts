@@ -1,5 +1,6 @@
 import axios, { AxiosError } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ConfigService } from "./configService";
 
 // Define types
 export interface User {
@@ -43,24 +44,20 @@ export interface Screening {
   date: string;
 }
 
-// Auto-detect environment: local network IP for dev, Render for production
-const getApiBaseUrl = () => {
-  if (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
+// Dynamic API base URL using remote configuration
+let API_BASE_URL = "https://sante-initiative-uganda-app.onrender.com/api";
+
+// Initialize API URL from remote config
+const initializeApiUrl = async () => {
+  try {
+    API_BASE_URL = await ConfigService.getApiUrl();
+  } catch (error) {
+    console.warn('Failed to load remote API config, using default:', error);
   }
-  
-  // Check if running in development mode
-  if (__DEV__) {
-    // Temporarily use Render backend for testing
-    return "https://sante-initiative-uganda-app.onrender.com/api";
-    // return "http://20.20.42.133:5000/api";
-  }
-  
-  // Production: use Render
-  return "https://sante-initiative-uganda-app.onrender.com/api";
 };
 
-const API_BASE_URL = getApiBaseUrl();
+// Initialize immediately
+initializeApiUrl();
 
 // Create axios instance
 const api = axios.create({
