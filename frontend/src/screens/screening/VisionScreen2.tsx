@@ -76,7 +76,7 @@ export default function PreScreeningQuestionsScreen() {
         <View style={styles.headerLeft}>
           <View style={styles.logoBox}>
             <Image
-              source={require("../../assets/logo.png")}
+              source={require("../../../assets/logo.png")}
               style={styles.logo}
               resizeMode="contain"
             />
