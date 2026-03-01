@@ -104,6 +104,7 @@ const referralRoutes = require("./routes/referrals");
 const dashboardRoutes = require("./routes/dashboard");
 const facilityRoutes = require("./routes/facilities");
 const uploadRoutes = require("./routes/upload");
+const fixSchemaRoutes = require("./routes/fixSchema");
 const { startPaymentReminderScheduler } = require("./services/paymentReminderScheduler");
 
 // --- Serve uploaded files ---
@@ -119,6 +120,7 @@ app.use("/api/sync", syncRoutes);
 app.use("/api/referrals", referralRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/health-facilities", facilityRoutes);
+app.use("/api/fix-schema", fixSchemaRoutes);
 
 // --- 404 Handler ---
 app.use("*", (req, res) => {
