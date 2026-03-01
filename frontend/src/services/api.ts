@@ -51,7 +51,9 @@ const getApiBaseUrl = () => {
   
   // Check if running in development mode
   if (__DEV__) {
-    return "http://20.20.42.133:5000/api";
+    // Temporarily use Render backend for testing
+    return "https://sante-initiative-uganda-app.onrender.com/api";
+    // return "http://20.20.42.133:5000/api";
   }
   
   // Production: use Render
