@@ -61,7 +61,7 @@ export default function DistanceVisionTestScreen() {
 
     if (line1Score < 2 || line2Score < 4) {
       const eyeTested = testStage === "rightEye" ? "Right" : "Left";
-      
+
       const referralData = {
         ...screeningData,
         distanceVisionResult: "failed",
@@ -70,7 +70,7 @@ export default function DistanceVisionTestScreen() {
         needsGlasses: false,
         referralReason: `${eyeTested} eye failed distance vision test. Line 1: ${line1Score}/3, Line 2: ${line2Score}/5`,
         referralUrgency: "normal",
-        referralStep: "Step 5 - Distance Vision Test"
+        referralStep: "Step 5 - Distance Vision Test",
       };
 
       updateScreeningData(referralData);
@@ -149,30 +149,74 @@ export default function DistanceVisionTestScreen() {
 
     // Base E points RIGHT: 3 horizontal bars on the left side
     const baseE = (
-      <View style={{ width: size, height: size, backgroundColor: "transparent" }}>
+      <View
+        style={{ width: size, height: size, backgroundColor: "transparent" }}
+      >
         {/* Vertical bar (spine) */}
-        <View style={{ position: "absolute", left: 0, top: 0, width: barThickness, height: size, backgroundColor: "#111827" }} />
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: barThickness,
+            height: size,
+            backgroundColor: "#111827",
+          }}
+        />
         {/* Top bar */}
-        <View style={{ position: "absolute", left: 0, top: 0, width: barLength, height: barThickness, backgroundColor: "#111827" }} />
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: barLength,
+            height: barThickness,
+            backgroundColor: "#111827",
+          }}
+        />
         {/* Middle bar */}
-        <View style={{ position: "absolute", left: 0, top: Math.round((size - barThickness) / 2), width: barLength, height: barThickness, backgroundColor: "#111827" }} />
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            top: Math.round((size - barThickness) / 2),
+            width: barLength,
+            height: barThickness,
+            backgroundColor: "#111827",
+          }}
+        />
         {/* Bottom bar */}
-        <View style={{ position: "absolute", left: 0, bottom: 0, width: barLength, height: barThickness, backgroundColor: "#111827" }} />
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            bottom: 0,
+            width: barLength,
+            height: barThickness,
+            backgroundColor: "#111827",
+          }}
+        />
       </View>
     );
 
     let rotationDeg = "0deg";
     switch (rotation) {
-      case "right": rotationDeg = "0deg"; break;
-      case "down": rotationDeg = "90deg"; break;
-      case "left": rotationDeg = "180deg"; break;
-      case "up": rotationDeg = "270deg"; break;
+      case "right":
+        rotationDeg = "0deg";
+        break;
+      case "down":
+        rotationDeg = "90deg";
+        break;
+      case "left":
+        rotationDeg = "180deg";
+        break;
+      case "up":
+        rotationDeg = "270deg";
+        break;
     }
 
     return (
-      <View style={{ transform: [{ rotate: rotationDeg }] }}>
-        {baseE}
-      </View>
+      <View style={{ transform: [{ rotate: rotationDeg }] }}>{baseE}</View>
     );
   };
 
@@ -305,7 +349,7 @@ export default function DistanceVisionTestScreen() {
           {/* Line 1 */}
           <View style={styles.eChartLine}>
             <Text style={styles.lineLabel}>Line 1: 6/60 (Largest)</Text>
-            <View style={[styles.eContainer, { alignItems: 'center' }]}>
+            <View style={[styles.eContainer, { alignItems: "center" }]}>
               {renderBlockE("right", 80)}
               {renderBlockE("down", 80)}
               {renderBlockE("left", 80)}
@@ -318,7 +362,13 @@ export default function DistanceVisionTestScreen() {
           {/* Line 2 */}
           <View style={styles.eChartLine}>
             <Text style={styles.lineLabel}>Line 2: 6/12 (Smaller)</Text>
-            <View style={[styles.eContainer, styles.smallEContainer, { alignItems: 'center' }]}>
+            <View
+              style={[
+                styles.eContainer,
+                styles.smallEContainer,
+                { alignItems: "center" },
+              ]}
+            >
               {renderBlockE("right", 40)}
               {renderBlockE("up", 40)}
               {renderBlockE("down", 40)}
@@ -466,7 +516,6 @@ export default function DistanceVisionTestScreen() {
         </View>
         <View style={{ height: 190 }} />
       </ScrollView>
-
     </SafeAreaView>
   );
 }
@@ -679,12 +728,12 @@ const styles = StyleSheet.create({
     borderColor: "#D1D5DB",
   },
   smallEContainer: {
-    gap: 16,
+    gap: 10,
     flexWrap: "wrap",
     paddingHorizontal: 12,
   },
   lettersNote: {
-    fontSize: 14,
+    fontSize: 10,
     color: "#6B7280",
     textAlign: "center",
   },
@@ -722,7 +771,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 10,
+    gap: 7,
     marginBottom: 8,
   },
   scoreButton: {
