@@ -86,7 +86,7 @@ export default function SafetyInformationScreen() {
 
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>
-            {userData?.full_name || "Santé Initiative Uganda"}
+            {userData?.fullName || "Santé Initiative Uganda"}
           </Text>
           <Text style={styles.headerSubtitle}>
             {userData?.district ? `VHT - ${userData.district} District` : ""}
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 100,
+    paddingTop: 150,
     paddingBottom: 140,
   },
   progressContainer: {

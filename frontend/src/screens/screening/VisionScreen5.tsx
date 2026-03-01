@@ -257,7 +257,7 @@ export default function DistanceVisionTestScreen() {
 
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>
-            {userData?.full_name || "Santé Initiative Uganda"}
+            {userData?.fullName || "Santé Initiative Uganda"}
           </Text>
           <Text style={styles.headerSubtitle}>
             {userData?.district ? `VHT - ${userData.district} District` : ""}
@@ -641,7 +641,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    marginTop: 100,
+    marginTop: 150,
   },
   scrollContent: {
     paddingHorizontal: 20,
