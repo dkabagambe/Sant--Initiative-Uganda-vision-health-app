@@ -107,6 +107,7 @@ const uploadRoutes = require("./routes/upload");
 const fixSchemaRoutes = require("./routes/fixSchema");
 const diagnosticRoutes = require("./routes/diagnostic");
 const populateUsersRoutes = require("./routes/populateUsers");
+const seedDataRoutes = require("./routes/seedData");
 const { startPaymentReminderScheduler } = require("./services/paymentReminderScheduler");
 
 // --- Serve uploaded files ---
@@ -125,6 +126,7 @@ app.use("/api/health-facilities", facilityRoutes);
 app.use("/api/fix-schema", fixSchemaRoutes);
 app.use("/api/diagnostic", diagnosticRoutes);
 app.use("/api/populate-users", populateUsersRoutes);
+app.use("/api/seed-data", seedDataRoutes);
 
 // --- 404 Handler ---
 app.use("*", (req, res) => {
