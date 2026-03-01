@@ -10,6 +10,9 @@ router.post('/apply-fix', async (req, res) => {
     
     // Add missing columns
     await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS currency VARCHAR(3) DEFAULT 'UGX'`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS stock_standard INTEGER DEFAULT 0`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS stock_metal INTEGER DEFAULT 0`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS stock_fashion INTEGER DEFAULT 0`;
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name VARCHAR(100)`;
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name VARCHAR(100)`;
     await sql`ALTER TABLE referrals ADD COLUMN IF NOT EXISTS client_name VARCHAR(200)`;
