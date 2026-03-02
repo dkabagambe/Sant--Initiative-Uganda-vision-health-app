@@ -141,8 +141,10 @@ app.get("/", (req, res) => {
     health: "/api/health",
   });
 });
-app.get("/favicon.ico", (req, res) => res.status(204).end());
-app.get("/favicon.png", (req, res) => res.status(204).end());
+// Proper favicon handling - return 204 No Content instead of errors
+app.get(["/favicon.ico", "/favicon.png"], (req, res) => {
+  res.status(204).end();
+});
 
 // --- Use Routes ---
 app.use("/api/auth", authRoutes);
