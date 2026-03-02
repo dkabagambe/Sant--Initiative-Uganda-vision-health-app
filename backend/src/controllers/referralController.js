@@ -1,8 +1,28 @@
-// Create new referral
+// Create new referral (requires authenticate middleware so req.user.userId is set)
 exports.createReferral = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A'; // Default to Jane for testing
+    let healthWorkerId = req.user?.userId;
+    
+    // Auto-create CHW user if no authenticated user (for testing/fallback)
+    if (!healthWorkerId) {
+      console.log('No authenticated user, checking for fallback CHW...');
+      const chwUsers = await sql`SELECT id FROM users WHERE role = 'CHW' LIMIT 1`;
+      
+      if (chwUsers.length === 0) {
+        // Create a CHW user automatically
+        const newChw = await sql`
+          INSERT INTO users (id, phone_number, full_name, role, created_at)
+          VALUES (gen_random_uuid(), '0700000001', 'Auto-Generated CHW', 'CHW', CURRENT_TIMESTAMP)
+          RETURNING id
+        `;
+        healthWorkerId = newChw[0].id;
+        console.log('Auto-created CHW user:', healthWorkerId);
+      } else {
+        healthWorkerId = chwUsers[0].id;
+        console.log('Using existing CHW user:', healthWorkerId);
+      }
+    }
     const {
       screeningId,
       clientId,
@@ -22,14 +42,17 @@ exports.createReferral = async (req, res) => {
       return res.status(400).json({ success: false, error: "Referral reason required" });
     }
 
+    // screening_id only (client_id column may not exist in production referrals table)
+    const screeningIdVal = screeningId && String(screeningId).trim() ? screeningId : null;
+
     await sql`
       INSERT INTO referrals (
-        screening_id, client_id, health_worker_id, client_name,
+        screening_id, health_worker_id, client_name,
         client_phone, client_age, client_gender, client_district,
         reason, urgency, facility_name, facility_location, notes
       ) VALUES (
-        ${screeningId || null}, ${clientId || null}, ${healthWorkerId}, ${clientName || null},
-        ${clientPhone || null}, ${clientAge || null}, ${clientGender || null}, ${clientDistrict || null},
+        ${screeningIdVal}, ${healthWorkerId}, ${clientName || null},
+        ${clientPhone || null}, ${clientAge ?? null}, ${clientGender || null}, ${clientDistrict || null},
         ${reason}, ${urgency || 'normal'}, ${facilityName || null}, ${facilityLocation || null}, ${notes || null}
       )
     `;
@@ -48,7 +71,8 @@ exports.createReferral = async (req, res) => {
     });
   } catch (error) {
     console.error("Create referral error:", error);
-    res.status(500).json({ success: false, error: "Failed to create referral" });
+    const message = error.message || "Failed to create referral";
+    res.status(500).json({ success: false, error: message });
   }
 };
 
@@ -56,7 +80,10 @@ exports.createReferral = async (req, res) => {
 exports.getReferrals = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A'; // Default to Jane for testing
+    const healthWorkerId = req.user?.userId;
+    if (!healthWorkerId) {
+      return res.status(401).json({ success: false, error: "Authentication required" });
+    }
     const { status, limit = 50, offset = 0 } = req.query;
 
     let referrals;
@@ -80,10 +107,7 @@ exports.getReferrals = async (req, res) => {
             WHEN r.screening_id IS NOT NULL THEN COALESCE(s.client_gender, r.client_gender)
             ELSE r.client_gender
           END as client_gender,
-          CASE 
-            WHEN r.screening_id IS NOT NULL THEN COALESCE(s.client_district, r.client_district)
-            ELSE r.client_district
-          END as client_district,
+          r.client_district,
           r.reason, r.urgency, r.facility_name, r.facility_location,
           r.status, r.referred_date, r.completed_date, r.notes, r.created_at,
           u.full_name as health_worker_name
@@ -115,10 +139,7 @@ exports.getReferrals = async (req, res) => {
             WHEN r.screening_id IS NOT NULL THEN COALESCE(s.client_gender, r.client_gender)
             ELSE r.client_gender
           END as client_gender,
-          CASE 
-            WHEN r.screening_id IS NOT NULL THEN COALESCE(s.client_district, r.client_district)
-            ELSE r.client_district
-          END as client_district,
+          r.client_district,
           r.reason, r.urgency, r.facility_name, r.facility_location,
           r.status, r.referred_date, r.completed_date, r.notes, r.created_at,
           u.full_name as health_worker_name
@@ -280,11 +301,14 @@ exports.updateReferralStatus = async (req, res) => {
   }
 };
 
-// Get referral statistics
+// Get referral statistics (requires authenticate)
 exports.getReferralStats = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A';
+    const healthWorkerId = req.user?.userId;
+    if (!healthWorkerId) {
+      return res.status(401).json({ success: false, error: "Authentication required" });
+    }
 
     const stats = await sql`
       SELECT 

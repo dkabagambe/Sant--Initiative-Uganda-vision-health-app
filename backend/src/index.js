@@ -123,6 +123,7 @@ const simpleSeedRoutes = require("./routes/simpleSeed");
 const remoteConfigRoutes = require("./routes/remoteConfig");
 const emergencyFixRoutes = require("./routes/emergencyFix");
 const testDbRoutes = require("./routes/testDb");
+const autoFixRoutes = require("./routes/autoFix");
 // const seedProductionRoutes = require("./routes/seedProduction"); // Module doesn't exist
 const { startPaymentReminderScheduler } = require("./services/paymentReminderScheduler");
 const os = require("os");
@@ -164,6 +165,7 @@ app.use("/api/simple-seed", simpleSeedRoutes);
 app.use("/api/remote-config", remoteConfigRoutes);
 app.use("/api/emergency-fix", emergencyFixRoutes);
 app.use("/api/test-db", testDbRoutes);
+app.use("/api/auto-fix", autoFixRoutes);
 // app.use("/api/seed-production", seedProductionRoutes); // Module doesn't exist
 
 // --- 404 Handler ---
