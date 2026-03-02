@@ -121,10 +121,27 @@ const populateUsersRoutes = require("./routes/populateUsers");
 const seedDataRoutes = require("./routes/seedData");
 const simpleSeedRoutes = require("./routes/simpleSeed");
 const remoteConfigRoutes = require("./routes/remoteConfig");
+const emergencyFixRoutes = require("./routes/emergencyFix");
+const seedProductionRoutes = require("./routes/seedProduction");
 const { startPaymentReminderScheduler } = require("./services/paymentReminderScheduler");
+const os = require("os");
 
-// --- Serve uploaded files ---
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+// --- Serve uploaded files (on Vercel use /tmp; local use backend/uploads) ---
+const uploadsPath = process.env.VERCEL
+  ? path.join(os.tmpdir(), "sante-uploads")
+  : path.join(__dirname, "../uploads");
+app.use("/uploads", express.static(uploadsPath));
+
+// --- Root and favicon (avoid 404 when opening backend URL in browser) ---
+app.get("/", (req, res) => {
+  res.status(200).json({
+    app: "Santé Initiative Uganda Backend",
+    message: "API only. Use /api/health for status.",
+    health: "/api/health",
+  });
+});
+app.get("/favicon.ico", (req, res) => res.status(204).end());
+app.get("/favicon.png", (req, res) => res.status(204).end());
 
 // --- Use Routes ---
 app.use("/api/auth", authRoutes);
@@ -142,6 +159,8 @@ app.use("/api/populate-users", populateUsersRoutes);
 app.use("/api/seed-data", seedDataRoutes);
 app.use("/api/simple-seed", simpleSeedRoutes);
 app.use("/api/remote-config", remoteConfigRoutes);
+app.use("/api/emergency-fix", emergencyFixRoutes);
+app.use("/api/seed-production", seedProductionRoutes);
 
 // --- 404 Handler ---
 app.use("*", (req, res) => {
