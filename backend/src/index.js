@@ -122,6 +122,7 @@ const seedDataRoutes = require("./routes/seedData");
 const simpleSeedRoutes = require("./routes/simpleSeed");
 const remoteConfigRoutes = require("./routes/remoteConfig");
 const emergencyFixRoutes = require("./routes/emergencyFix");
+const testDbRoutes = require("./routes/testDb");
 const seedProductionRoutes = require("./routes/seedProduction");
 const { startPaymentReminderScheduler } = require("./services/paymentReminderScheduler");
 const os = require("os");
@@ -160,6 +161,7 @@ app.use("/api/seed-data", seedDataRoutes);
 app.use("/api/simple-seed", simpleSeedRoutes);
 app.use("/api/remote-config", remoteConfigRoutes);
 app.use("/api/emergency-fix", emergencyFixRoutes);
+app.use("/api/test-db", testDbRoutes);
 app.use("/api/seed-production", seedProductionRoutes);
 
 // --- 404 Handler ---
