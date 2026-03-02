@@ -93,6 +93,75 @@ exports.getDashboardStats = async (req, res) => {
       healthWorkerId = chwUsers.length > 0 ? chwUsers[0].id : null;
     }
 
+    // If no health worker, return overall stats (for testing)
+    if (!healthWorkerId) {
+      const overallStats = await sql`
+        SELECT 
+          (SELECT COUNT(*) FROM screenings) as total_screenings,
+          (SELECT COUNT(*) FROM screenings WHERE needs_glasses = true) as clients_needing_glasses,
+          (SELECT COUNT(*) FROM screenings WHERE needs_referral = true) as clients_referred,
+          (SELECT COUNT(*) FROM screenings WHERE screening_date >= CURRENT_DATE - INTERVAL '7 days') as screenings_this_week,
+          (SELECT COUNT(*) FROM screenings WHERE screening_date >= CURRENT_DATE - INTERVAL '30 days') as screenings_this_month,
+          (SELECT COUNT(*) FROM screenings WHERE screening_date = CURRENT_DATE) as screenings_today
+      `;
+      
+      const clientStats = await sql`
+        SELECT COUNT(DISTINCT client_phone) as total_clients FROM screenings
+      `;
+      
+      const paymentStats = await sql`
+        SELECT 
+          COUNT(*) as total_payments,
+          COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_payments,
+          COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_payments,
+          COUNT(CASE WHEN status = 'pending' AND due_date <= CURRENT_DATE THEN 1 END) as due_today,
+          COALESCE(SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END), 0) as total_revenue,
+          COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) as pending_amount
+        FROM payments
+      `;
+      
+      const referralStats = await sql`
+        SELECT 
+          COUNT(*) as total_referrals,
+          COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_referrals,
+          COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_referrals,
+          COUNT(CASE WHEN status = 'pending' AND referred_date < CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as outstanding_referrals
+        FROM referrals
+      `;
+      
+      const inventoryStats = await sql`
+        SELECT 
+          COUNT(*) as total_products,
+          COALESCE(SUM(stock_quantity), 0) as total_stock
+        FROM products
+      `;
+
+      return res.json({
+        success: true,
+        data: {
+          total_screenings: overallStats[0]?.total_screenings || 0,
+          clients_needing_glasses: overallStats[0]?.clients_needing_glasses || 0,
+          clients_referred: overallStats[0]?.clients_referred || 0,
+          screenings_this_week: overallStats[0]?.screenings_this_week || 0,
+          screenings_this_month: overallStats[0]?.screenings_this_month || 0,
+          screenings_today: overallStats[0]?.screenings_today || 0,
+          total_clients: clientStats[0]?.total_clients || 0,
+          total_payments: paymentStats[0]?.total_payments || 0,
+          completed_payments: paymentStats[0]?.completed_payments || 0,
+          pending_payments: paymentStats[0]?.pending_payments || 0,
+          due_today: paymentStats[0]?.due_today || 0,
+          total_revenue: paymentStats[0]?.total_revenue || 0,
+          pending_amount: paymentStats[0]?.pending_amount || 0,
+          total_referrals: referralStats[0]?.total_referrals || 0,
+          pending_referrals: referralStats[0]?.pending_referrals || 0,
+          completed_referrals: referralStats[0]?.completed_referrals || 0,
+          outstanding_referrals: referralStats[0]?.outstanding_referrals || 0,
+          total_stock: inventoryStats[0]?.total_stock || 0,
+          total_products: inventoryStats[0]?.total_products || 0,
+        }
+      });
+    }
+
     let screeningStats = [{ total_screenings: 0, clients_needing_glasses: 0, clients_referred: 0, screenings_this_week: 0, screenings_this_month: 0, screenings_today: 0 }];
     let clientStats = [{ total_clients: 0 }];
     let clientsDue = [{ clients_due_repayment: 0 }];
