@@ -1,11 +1,20 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+// On Vercel the filesystem is read-only except /tmp; use /tmp for uploads there
+const uploadsDir = process.env.VERCEL
+  ? path.join(os.tmpdir(), 'sante-uploads')
+  : path.join(__dirname, '../../uploads');
+
+// Only create directory if not on Vercel (Vercel uses /tmp which already exists)
+if (!process.env.VERCEL && !fs.existsSync(uploadsDir)) {
+  try {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  } catch (err) {
+    console.warn('Uploads dir not created (may be read-only):', err.message);
+  }
 }
 
 // Configure storage
