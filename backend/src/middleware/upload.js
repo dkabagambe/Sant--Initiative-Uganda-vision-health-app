@@ -4,23 +4,27 @@ const fs = require('fs');
 const os = require('os');
 
 // On Vercel the filesystem is read-only except /tmp; use /tmp for uploads there
-const uploadsDir = process.env.VERCEL
-  ? path.join(os.tmpdir(), 'sante-uploads')
-  : path.join(__dirname, '../../uploads');
+const getUploadsDir = () => {
+  const uploadsDir = process.env.VERCEL
+    ? path.join(os.tmpdir(), 'sante-uploads')
+    : path.join(__dirname, '../../uploads');
 
-// Only create directory if not on Vercel (Vercel uses /tmp which already exists)
-if (!process.env.VERCEL && !fs.existsSync(uploadsDir)) {
-  try {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  } catch (err) {
-    console.warn('Uploads dir not created (may be read-only):', err.message);
+  // Only create directory if not on Vercel (Vercel uses /tmp which already exists)
+  if (!process.env.VERCEL && !fs.existsSync(uploadsDir)) {
+    try {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    } catch (err) {
+      console.warn('Uploads dir not created (may be read-only):', err.message);
+    }
   }
-}
+
+  return uploadsDir;
+};
 
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadsDir);
+    cb(null, getUploadsDir());
   },
   filename: (req, file, cb) => {
     // Generate unique filename: timestamp-randomstring-originalname
