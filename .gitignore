@@ -31,6 +31,7 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # local SQLite DB (backend uses Postgres in production)
@@ -42,3 +43,4 @@ backend/sante.db
 # generated native folders
 /ios
 /android
+.vercel

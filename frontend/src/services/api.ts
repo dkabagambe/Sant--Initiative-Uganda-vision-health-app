@@ -2,6 +2,11 @@ import axios, { AxiosError } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ConfigService, LOCAL_API_URL, VERCEL_API_URL } from "./configService";
 
+// Env override for physical device (must match configService)
+const envApiUrl = typeof process !== "undefined"
+  ? (process.env.EXPO_PUBLIC_API_URL ?? "")
+  : "";
+
 // Define types
 export interface User {
   id: string;
@@ -44,11 +49,11 @@ export interface Screening {
   date: string;
 }
 
-// API base URL: uses ConfigService (localhost in dev, Vercel in prod) or fallback
+// API base URL: env override > ConfigService (localhost in dev, Vercel in prod)
 const getDefaultBaseUrl = () =>
-  typeof __DEV__ !== "undefined" && __DEV__
+  envApiUrl || (typeof __DEV__ !== "undefined" && __DEV__
     ? LOCAL_API_URL
-    : VERCEL_API_URL;
+    : VERCEL_API_URL);
 
 let API_BASE_URL = getDefaultBaseUrl();
 

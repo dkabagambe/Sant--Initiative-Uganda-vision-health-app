@@ -23,18 +23,27 @@ const twilioService = initializeClient();
 const TWILIO_MESSAGING_SERVICE_SID = process.env.TWILIO_MESSAGING_SERVICE_SID;
 const TWILIO_SMS_FROM = process.env.TWILIO_SMS_FROM;
 
+// Normalize phone to E.164 (+256...) — handles 0702612079, 256702612079, +256702612079
+const toE164 = (phone) => {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('256')) return `+${digits}`;
+  if (digits.startsWith('0')) return `+256${digits.slice(1)}`;
+  return `+256${digits}`;
+};
+
 /**
  * Send OTP via Twilio Verify API
- * @param {string} phoneNumber - Phone number in format: 0700123456 or +256700123456
+ * @param {string} phoneNumber - Phone in format: 0700123456, 256700123456, or +256700123456
  * @param {string} otp - Ignored, Twilio Verify generates its own OTP
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-// Dev bypass numbers — these skip Twilio entirely, use OTP "123456"
+// Dev bypass — developer number only; use OTP "123456" to avoid wasting Twilio credits
 const DEV_BYPASS_NUMBERS = ['0705686573', '+256705686573'];
 
 exports.sendOTP = async (phoneNumber, otp) => {
-  // Bypass OTP for dev numbers
-  if (DEV_BYPASS_NUMBERS.includes(phoneNumber)) {
+  const normalized = toE164(phoneNumber);
+  if (DEV_BYPASS_NUMBERS.includes(phoneNumber) || normalized === '+256705686573') {
     console.log(`📱 [DEV BYPASS] Skipping OTP send for ${phoneNumber} — use code 123456`);
     return { success: true, devMode: true };
   }
@@ -45,14 +54,12 @@ exports.sendOTP = async (phoneNumber, otp) => {
     return { success: true, devMode: true };
   }
 
+  const formattedPhone = normalized || toE164(phoneNumber);
+  if (!formattedPhone) {
+    return { success: false, error: 'Invalid phone number' };
+  }
+
   try {
-    // Format phone number for Twilio (must start with +)
-    let formattedPhone = phoneNumber;
-    if (phoneNumber.startsWith('0')) {
-      formattedPhone = `+256${phoneNumber.substring(1)}`;
-    } else if (!phoneNumber.startsWith('+')) {
-      formattedPhone = `+256${phoneNumber}`;
-    }
 
     const verification = await twilioService.client.verify.v2
       .services(twilioService.verifyServiceSid)
@@ -80,8 +87,9 @@ exports.sendOTP = async (phoneNumber, otp) => {
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 exports.verifyOTP = async (phoneNumber, code) => {
-  // Bypass OTP verification for dev numbers — accept "123456"
-  if (DEV_BYPASS_NUMBERS.includes(phoneNumber)) {
+  const normalized = toE164(phoneNumber);
+  // Bypass OTP verification for dev number only — accept "123456"
+  if (DEV_BYPASS_NUMBERS.includes(phoneNumber) || normalized === '+256705686573') {
     const valid = code === '123456';
     console.log(`📱 [DEV BYPASS] Verifying OTP for ${phoneNumber}: ${code} → ${valid ? 'approved' : 'rejected'}`);
     return { success: valid, devMode: true };
@@ -93,12 +101,7 @@ exports.verifyOTP = async (phoneNumber, code) => {
   }
 
   try {
-    let formattedPhone = phoneNumber;
-    if (phoneNumber.startsWith('0')) {
-      formattedPhone = `+256${phoneNumber.substring(1)}`;
-    } else if (!phoneNumber.startsWith('+')) {
-      formattedPhone = `+256${phoneNumber}`;
-    }
+    const formattedPhone = normalized || toE164(phoneNumber);
 
     const verificationCheck = await twilioService.client.verify.v2
       .services(twilioService.verifyServiceSid)

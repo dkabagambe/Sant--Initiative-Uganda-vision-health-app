@@ -156,16 +156,17 @@ module.exports = app;
 
 // Start server only when NOT on Vercel (local or traditional hosting)
 if (!process.env.VERCEL) {
-const PORT = process.env.PORT || 5000;
-// Bind to 0.0.0.0 so frontend can connect from localhost, emulator, or physical device on same network
+const DEFAULT_PORT = parseInt(process.env.PORT || "5000", 10);
 const HOST = process.env.HOST || "0.0.0.0";
-app.listen(PORT, HOST, async () => {
+
+function startServer(port) {
+  const server = app.listen(port, HOST, async () => {
   console.log(`
 🚀 Santé Initiative Uganda Backend
 📂 Environment: ${process.env.NODE_ENV || "development"}
-🌐 Server running at http://${HOST}:${PORT}
-📊 Health check: http://localhost:${PORT}/api/health
-📱 For physical device: use your machine IP, e.g. http://YOUR_IP:${PORT}/api
+🌐 Server running at http://${HOST}:${port}
+📊 Health check: http://localhost:${port}/api/health
+📱 For physical device: use your machine IP, e.g. http://YOUR_IP:${port}/api
   `);
   
   // Test database connection at startup (read-only check; no data modified)
@@ -203,4 +204,19 @@ app.listen(PORT, HOST, async () => {
     console.error("❌ Failed to start payment reminder scheduler:", err.message);
   }
 });
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE" && port < DEFAULT_PORT + 10) {
+      console.warn(`⚠️ Port ${port} in use, trying ${port + 1}...`);
+      startServer(port + 1);
+    } else if (err.code === "EADDRINUSE") {
+      console.error(`\n❌ Could not bind to ports ${DEFAULT_PORT}-${port}. Kill processes: kill $(lsof -t -i:5000)\n`);
+      process.exit(1);
+    } else {
+      console.error("Server error:", err);
+      process.exit(1);
+    }
+  });
+}
+
+startServer(DEFAULT_PORT);
 }

@@ -75,27 +75,44 @@ const OutletRegistrationStep4 = () => {
     navigation.goBack();
   };
 
-  const pickImage = async (type: keyof typeof selectedFiles) => {
+  const pickImage = async (type: keyof typeof selectedFiles, useCamera: boolean) => {
     try {
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const libStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const camStatus = useCamera
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : { status: "granted" as const };
 
-      if (status !== "granted") {
+      if (!useCamera && libStatus.status !== "granted") {
         Alert.alert(
           "Permission Required",
-          "Sorry, we need camera roll permissions to upload photos.",
+          "We need gallery access to choose photos.",
+          [{ text: "OK" }],
+        );
+        return;
+      }
+      if (useCamera && camStatus.status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "We need camera access to take a clear photo.",
           [{ text: "OK" }],
         );
         return;
       }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
+      // Shop front: wide crop so more of the building is visible; ID: portrait for document
+      const aspect = type === "shopFront" ? [3, 2] as const : [3, 4] as const;
+
+      const launchOptions = {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
+        aspect,
+        quality: 1,
         base64: false,
-      });
+      };
+
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync(launchOptions)
+        : await ImagePicker.launchImageLibraryAsync(launchOptions);
 
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
@@ -120,14 +137,10 @@ const OutletRegistrationStep4 = () => {
             type: mimeType,
           },
         }));
-
-        Alert.alert("Photo Selected", "Photo selected. It will be uploaded when you submit.", [
-          { text: "OK" },
-        ]);
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to pick image. Please try again.", [
+      Alert.alert("Error", "Failed to capture image. Please try again.", [
         { text: "OK" },
       ]);
     }
@@ -328,7 +341,7 @@ const OutletRegistrationStep4 = () => {
         {/* Shop Front Photo */}
         <Text style={styles.documentLabel}>Shop Front Photo *</Text>
         <Text style={styles.documentHint}>
-          Clear photo showing shop exterior
+          Take or choose a photo showing the full shop front (signboard and entrance). You will then crop to a wide frame—include as much of the shop as possible so the crop area is clear.
         </Text>
         <View style={styles.documentCard}>
           {selectedFiles.shopFront ? (
@@ -344,28 +357,41 @@ const OutletRegistrationStep4 = () => {
               >
                 <Ionicons name="close-circle" size={28} color="#DC2626" />
               </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.uploadButton, { marginTop: 12 }]}
+                onPress={() => pickImage("shopFront", false)}
+              >
+                <Text style={styles.uploadButtonText}>Replace photo</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <>
-              <TouchableOpacity
-                style={styles.uploadButton}
-                onPress={() => pickImage("shopFront")}
-              >
-                <Ionicons
-                  name="camera-outline"
-                  size={24}
-                  color={colors.primary}
-                />
-                <Text style={styles.uploadButtonText}>Choose File</Text>
-              </TouchableOpacity>
-              <Text style={styles.fileStatus}>No file chosen</Text>
+              <View style={styles.imageButtonRow}>
+                <TouchableOpacity
+                  style={styles.uploadButton}
+                  onPress={() => pickImage("shopFront", true)}
+                >
+                  <Ionicons name="camera" size={22} color={colors.primary} />
+                  <Text style={styles.uploadButtonText}>Take photo</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.uploadButton, styles.uploadButtonSecondary]}
+                  onPress={() => pickImage("shopFront", false)}
+                >
+                  <Ionicons name="images-outline" size={22} color={colors.primary} />
+                  <Text style={[styles.uploadButtonText, { color: colors.primary }]}>Gallery</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.cropHint}>After selecting, crop to show the shop front clearly (wide frame).</Text>
             </>
           )}
         </View>
 
         {/* Owner National ID Photo */}
         <Text style={styles.documentLabel}>Owner National ID Photo *</Text>
-        <Text style={styles.documentHint}>Clear photo of owner's ID</Text>
+        <Text style={styles.documentHint}>
+          Take or choose a photo of the National ID card. You will then crop so the face, full name and ID number are clearly visible in the frame.
+        </Text>
         <View style={styles.documentCard}>
           {selectedFiles.ownerId ? (
             <View style={styles.photoPreviewContainer}>
@@ -380,21 +406,32 @@ const OutletRegistrationStep4 = () => {
               >
                 <Ionicons name="close-circle" size={28} color="#DC2626" />
               </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.uploadButton, { marginTop: 12 }]}
+                onPress={() => pickImage("ownerId", false)}
+              >
+                <Text style={styles.uploadButtonText}>Replace photo</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <>
-              <TouchableOpacity
-                style={styles.uploadButton}
-                onPress={() => pickImage("ownerId")}
-              >
-                <Ionicons
-                  name="camera-outline"
-                  size={24}
-                  color={colors.primary}
-                />
-                <Text style={styles.uploadButtonText}>Choose File</Text>
-              </TouchableOpacity>
-              <Text style={styles.fileStatus}>No file chosen</Text>
+              <View style={styles.imageButtonRow}>
+                <TouchableOpacity
+                  style={styles.uploadButton}
+                  onPress={() => pickImage("ownerId", true)}
+                >
+                  <Ionicons name="camera" size={22} color={colors.primary} />
+                  <Text style={styles.uploadButtonText}>Take photo</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.uploadButton, styles.uploadButtonSecondary]}
+                  onPress={() => pickImage("ownerId", false)}
+                >
+                  <Ionicons name="images-outline" size={22} color={colors.primary} />
+                  <Text style={[styles.uploadButtonText, { color: colors.primary }]}>Gallery</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.cropHint}>After selecting, crop so the ID (face, name, number) is clear and readable.</Text>
             </>
           )}
         </View>
@@ -697,9 +734,25 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   documentHint: {
-    fontSize: 12,
-    color: "#666666",
+    fontSize: 13,
+    color: "#444",
     marginBottom: 12,
+    lineHeight: 20,
+  },
+  imageButtonRow: {
+    flexDirection: "row",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  uploadButtonSecondary: {
+    backgroundColor: "#F0F4FF",
+    borderColor: colors.primary,
+  },
+  cropHint: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 12,
+    fontStyle: "italic",
   },
   documentCard: {
     backgroundColor: "#F8F8F8",

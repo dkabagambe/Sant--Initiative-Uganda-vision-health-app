@@ -5,22 +5,33 @@ const router = express.Router();
 router.get('/check-db', async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    
-    // Check products table structure
-    const productColumns = await sql`
-      SELECT column_name, data_type 
-      FROM information_schema.columns 
-      WHERE table_name = 'products' 
-      ORDER BY ordinal_position
-    `;
-    
-    // Check users table structure  
-    const userColumns = await sql`
-      SELECT column_name, data_type 
-      FROM information_schema.columns 
-      WHERE table_name = 'users' 
-      ORDER BY ordinal_position
-    `;
+    const db = req.app.locals.db;
+    const usingSqlite = !!db; // db is set only when using SQLite
+
+    let productColumns = [];
+    let userColumns = [];
+
+    if (usingSqlite && db) {
+      // SQLite: use PRAGMA table_info
+        const productInfo = db.prepare('PRAGMA table_info(products)').all();
+        const userInfo = db.prepare('PRAGMA table_info(users)').all();
+        productColumns = productInfo.map((c) => ({ column_name: c.name, data_type: c.type }));
+        userColumns = userInfo.map((c) => ({ column_name: c.name, data_type: c.type }));
+    } else if (!usingSqlite) {
+      // Postgres: use information_schema
+      productColumns = await sql`
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'products' 
+        ORDER BY ordinal_position
+      `;
+      userColumns = await sql`
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'users' 
+        ORDER BY ordinal_position
+      `;
+    }
     
     // Test actual queries
     let productTest = null;

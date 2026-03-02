@@ -14,25 +14,34 @@ export interface AppConfig {
 }
 
 // Env override: EXPO_PUBLIC_API_URL in .env — physical device: http://YOUR_IP:5000/api
-const envApiUrl = typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL;
+// Use static property access for Expo to inline the value
+const envApiUrl = typeof process !== 'undefined'
+  ? (process.env.EXPO_PUBLIC_API_URL ?? '')
+  : '';
 
-const defaultConfig: AppConfig = {
+const getDefaultConfig = (): AppConfig => ({
   apiBaseUrl: envApiUrl || (__DEV__ ? LOCAL_API_URL : VERCEL_API_URL),
   environment: __DEV__ ? 'development' : 'production'
-};
+});
 
 export class ConfigService {
   // Get current configuration
   static async getConfig(): Promise<AppConfig> {
     try {
+      const base = getDefaultConfig();
       const stored = await AsyncStorage.getItem(CONFIG_KEY);
       if (stored) {
-        return { ...defaultConfig, ...JSON.parse(stored) };
+        const parsed = JSON.parse(stored);
+        // Env override always wins (critical for physical device with EXPO_PUBLIC_API_URL)
+        if (envApiUrl) {
+          return { ...base, ...parsed, apiBaseUrl: envApiUrl };
+        }
+        return { ...base, ...parsed };
       }
-      return defaultConfig;
+      return base;
     } catch (error) {
       console.warn('Failed to load config, using default:', error);
-      return defaultConfig;
+      return getDefaultConfig();
     }
   }
 
@@ -49,12 +58,12 @@ export class ConfigService {
     }
   }
 
-  // Reset to default configuration (uses localhost in dev, Vercel in prod)
+  // Reset to default configuration (uses env / localhost in dev, Vercel in prod)
   static async resetToDefault(): Promise<boolean> {
     try {
+      const defaultCfg = getDefaultConfig();
       const config: AppConfig = {
-        apiBaseUrl: __DEV__ ? LOCAL_API_URL : VERCEL_API_URL,
-        environment: __DEV__ ? 'development' : 'production'
+        ...defaultCfg,
       };
       await AsyncStorage.setItem(CONFIG_KEY, JSON.stringify(config));
       return true;
