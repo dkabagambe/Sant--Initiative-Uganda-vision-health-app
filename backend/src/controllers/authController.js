@@ -57,6 +57,9 @@ exports.verifyOTP = async (req, res) => {
   try {
     const { phoneNumber, otp, registrationData } = req.body;
     const sql = req.app.locals.sql;
+    
+    // Save phoneNumber for use in SQL queries
+    const userPhoneNumber = phoneNumber;
 
     if (!phoneNumber || !otp) {
       return res.status(400).json({ success: false, error: "Phone number and OTP required" });
@@ -81,17 +84,17 @@ exports.verifyOTP = async (req, res) => {
     // Get user from database (or create if registering)
     let user = await sql`
       SELECT * FROM users 
-      WHERE phone_number = ${phoneNumber}
+      WHERE phone_number = ${userPhoneNumber}
     `;
 
     // When registering, create user if they don't exist yet
     if (user.length === 0 && registrationData) {
       await sql`
         INSERT INTO users (phone_number)
-        VALUES (${phoneNumber})
+        VALUES (${userPhoneNumber})
       `;
       user = await sql`
-        SELECT * FROM users WHERE phone_number = ${phoneNumber}
+        SELECT * FROM users WHERE phone_number = ${userPhoneNumber}
       `;
     }
 
@@ -170,12 +173,12 @@ exports.verifyOTP = async (req, res) => {
           otp_code = NULL,
           otp_expires_at = NULL,
           last_login = ${currentTime}
-        WHERE phone_number = ${phoneNumber}
+        WHERE phone_number = ${userPhoneNumber}
       `;
 
       // Fetch the updated user
       const updatedUser = await sql`
-        SELECT * FROM users WHERE phone_number = ${phoneNumber}
+        SELECT * FROM users WHERE phone_number = ${userPhoneNumber}
       `;
       userData = updatedUser[0];
     } else {
@@ -187,12 +190,12 @@ exports.verifyOTP = async (req, res) => {
           otp_code = NULL,
           otp_expires_at = NULL,
           last_login = ${currentTime}
-        WHERE phone_number = ${phoneNumber}
+        WHERE phone_number = ${userPhoneNumber}
       `;
       
       // Fetch the updated user
       const updatedUser = await sql`
-        SELECT * FROM users WHERE phone_number = ${phoneNumber}
+        SELECT * FROM users WHERE phone_number = ${userPhoneNumber}
       `;
       userData = updatedUser[0];
     }
