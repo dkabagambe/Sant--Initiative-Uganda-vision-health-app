@@ -12,6 +12,8 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -236,37 +238,47 @@ export default function ClientRegistration() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#10B981" barStyle="light-content" />
+      <CHWHeader />
 
-      
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Client Details Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>{clientData.clientName}</Text>
-          
-          <View style={styles.detailRow}>
-            <Ionicons name="calendar" size={16} color="#6B7280" />
-            <Text style={styles.detailText}>Age: {clientData.clientAge} years</Text>
-          </View>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Client Details Card */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle} numberOfLines={2}>{clientData.clientName}</Text>
 
-          <View style={styles.detailRow}>
-            <Ionicons name="call" size={16} color="#6B7280" />
-            <Text style={styles.detailText}>Phone: {clientData.clientPhone}</Text>
-          </View>
-
-          {clientData.recommendedPower && (
             <View style={styles.detailRow}>
-              <Ionicons name="glasses" size={16} color="#6B7280" />
-              <Text style={styles.detailText}>Power: {clientData.recommendedPower}</Text>
+              <Ionicons name="calendar" size={16} color="#6B7280" style={styles.detailIcon} />
+              <Text style={styles.detailText}>Age: {clientData.clientAge} years</Text>
             </View>
-          )}
 
-          <View style={styles.detailRow}>
-            <Ionicons name="location" size={16} color="#6B7280" />
-            <Text style={styles.detailText}>
-              {clientData.clientVillage}, {clientData.parish}, {clientData.subCounty}, {clientData.county}, {clientData.district}
-            </Text>
+            <View style={styles.detailRow}>
+              <Ionicons name="call" size={16} color="#6B7280" style={styles.detailIcon} />
+              <Text style={styles.detailText}>Phone: {clientData.clientPhone}</Text>
+            </View>
+
+            {clientData.recommendedPower && (
+              <View style={styles.detailRow}>
+                <Ionicons name="glasses" size={16} color="#6B7280" style={styles.detailIcon} />
+                <Text style={styles.detailText}>Power: {clientData.recommendedPower}</Text>
+              </View>
+            )}
+
+            <View style={styles.detailRow}>
+              <Ionicons name="location" size={16} color="#6B7280" style={styles.detailIcon} />
+              <Text style={[styles.detailText, styles.detailTextWrap]}>
+                {clientData.clientVillage}, {clientData.parish}, {clientData.subCounty}, {clientData.county}, {clientData.district}
+              </Text>
+            </View>
           </View>
-        </View>
 
         {/* Issue Glasses Section */}
         <View style={styles.section}>
@@ -425,57 +437,58 @@ export default function ClientRegistration() {
           </TouchableOpacity>
         </View>
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
 
-      {/* VSLA Group Dropdown Modal */}
-      <Modal
-        visible={showVslaDropdown}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowVslaDropdown(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select VSLA Group</Text>
-              <TouchableOpacity onPress={() => setShowVslaDropdown(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={vslaGroups}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.vslaItem,
-                    vslaGroup?.id === item.id && styles.vslaItemSelected,
-                  ]}
-                  onPress={() => {
-                    setVslaGroup(item);
-                    setShowVslaDropdown(false);
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={[
-                      styles.vslaName,
-                      vslaGroup?.id === item.id && { color: "#10B981" },
-                    ]}>{item.name}</Text>
-                    <Text style={styles.vslaLocation}>
-                      {item.district} • {item.subCounty}
-                    </Text>
-                  </View>
-                  {vslaGroup?.id === item.id && (
-                    <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                  )}
+        {/* VSLA Group Dropdown Modal */}
+        <Modal
+          visible={showVslaDropdown}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowVslaDropdown(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Select VSLA Group</Text>
+                <TouchableOpacity onPress={() => setShowVslaDropdown(false)}>
+                  <Ionicons name="close" size={24} color="#6B7280" />
                 </TouchableOpacity>
-              )}
-              ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: "#F3F4F6" }} />}
-            />
+              </View>
+              <FlatList
+                data={vslaGroups}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[
+                      styles.vslaItem,
+                      vslaGroup?.id === item.id && styles.vslaItemSelected,
+                    ]}
+                    onPress={() => {
+                      setVslaGroup(item);
+                      setShowVslaDropdown(false);
+                    }}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[
+                        styles.vslaName,
+                        vslaGroup?.id === item.id && { color: "#10B981" },
+                      ]}>{item.name}</Text>
+                      <Text style={styles.vslaLocation}>
+                        {item.district} • {item.subCounty}
+                      </Text>
+                    </View>
+                    {vslaGroup?.id === item.id && (
+                      <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                    )}
+                  </TouchableOpacity>
+                )}
+                ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: "#F3F4F6" }} />}
+              />
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -501,8 +514,15 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginTop: verticalScale(4),
   },
+  keyboardAvoid: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: verticalScale(120),
   },
   card: {
     backgroundColor: "#FFFFFF",
@@ -519,13 +539,20 @@ const styles = StyleSheet.create({
   },
   detailRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginTop: verticalScale(8),
     gap: scale(8),
   },
+  detailIcon: {
+    marginTop: 2,
+  },
   detailText: {
+    flex: 1,
     fontSize: responsiveFontSize.regular,
     color: "#6B7280",
+  },
+  detailTextWrap: {
+    flex: 1,
   },
   section: {
     marginHorizontal: scale(16),
@@ -792,5 +819,8 @@ const styles = StyleSheet.create({
     fontSize: responsiveFontSize.small,
     color: "#6B7280",
     marginTop: verticalScale(2),
+  },
+  bottomSpacer: {
+    height: verticalScale(24),
   },
 });
