@@ -114,7 +114,7 @@ const syncRoutes = require("./routes/sync");
 const referralRoutes = require("./routes/referrals");
 const dashboardRoutes = require("./routes/dashboard");
 const facilityRoutes = require("./routes/facilities");
-const uploadRoutes = require("./routes/upload");
+// const uploadRoutes = require("./routes/upload"); // Temporarily disabled for Vercel debugging
 const fixSchemaRoutes = require("./routes/fixSchema");
 const diagnosticRoutes = require("./routes/diagnostic");
 const populateUsersRoutes = require("./routes/populateUsers");
@@ -148,7 +148,7 @@ app.get("/favicon.png", (req, res) => res.status(204).end());
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/screenings", screeningRoutes);
-app.use("/api/upload", uploadRoutes);
+// app.use("/api/upload", uploadRoutes); // Temporarily disabled for Vercel debugging
 app.use("/api/payments", paymentRoutes);
 app.use("/api/sync", syncRoutes);
 app.use("/api/referrals", referralRoutes);
