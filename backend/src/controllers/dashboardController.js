@@ -85,7 +85,13 @@ exports.getDashboardStats = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     const isSqlite = !!req.app.locals.db;
-    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A'; // Default to Jane for testing
+    let healthWorkerId = req.user?.userId;
+    
+    // Get a valid CHW ID for testing if no authenticated user
+    if (!healthWorkerId) {
+      const chwUsers = await sql`SELECT id FROM users WHERE role = 'CHW' LIMIT 1`;
+      healthWorkerId = chwUsers.length > 0 ? chwUsers[0].id : null;
+    }
 
     let screeningStats = [{ total_screenings: 0, clients_needing_glasses: 0, clients_referred: 0, screenings_this_week: 0, screenings_this_month: 0, screenings_today: 0 }];
     let clientStats = [{ total_clients: 0 }];
@@ -213,7 +219,13 @@ exports.getDashboardStats = async (req, res) => {
 exports.getInventorySummary = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user?.userId || null;
+    let healthWorkerId = req.user?.userId;
+    
+    // Get a valid CHW ID for testing if no authenticated user
+    if (!healthWorkerId) {
+      const chwUsers = await sql`SELECT id FROM users WHERE role = 'CHW' LIMIT 1`;
+      healthWorkerId = chwUsers.length > 0 ? chwUsers[0].id : null;
+    }
 
     if (!healthWorkerId) {
       return res.status(401).json({ success: false, error: "Authentication required for inventory" });
@@ -264,7 +276,13 @@ exports.getInventorySummary = async (req, res) => {
 exports.getReports = async (req, res) => {
   try {
     const { sql } = req.app.locals;
-    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A';
+    let healthWorkerId = req.user?.userId;
+    
+    // Get a valid CHW ID for testing if no authenticated user
+    if (!healthWorkerId) {
+      const chwUsers = await sql`SELECT id FROM users WHERE role = 'CHW' LIMIT 1`;
+      healthWorkerId = chwUsers.length > 0 ? chwUsers[0].id : null;
+    }
     const { startDate, endDate, reportType } = req.query;
 
     if (reportType === 'screenings') {
@@ -444,7 +462,13 @@ exports.getReports = async (req, res) => {
 exports.getClients = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A';
+    let healthWorkerId = req.user?.userId;
+    
+    // Get a valid CHW ID for testing if no authenticated user
+    if (!healthWorkerId) {
+      const chwUsers = await sql`SELECT id FROM users WHERE role = 'CHW' LIMIT 1`;
+      healthWorkerId = chwUsers.length > 0 ? chwUsers[0].id : null;
+    }
     const { limit = 50, offset = 0 } = req.query;
 
     // First get clients from the clients table
