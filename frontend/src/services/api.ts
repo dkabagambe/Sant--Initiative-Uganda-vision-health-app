@@ -158,27 +158,35 @@ export const apiService = {
       registrationData,
     });
 
-    if (response.data.token && response.data.user) {
-      await AsyncStorage.setItem("authToken", response.data.token);
-      // Normalize user: backend returns snake_case, frontend expects camelCase for consistency
-      const u = response.data.user;
-      const normalizedUser = {
-        ...u,
-        id: u.id,
-        phoneNumber: u.phone_number ?? u.phoneNumber,
-        fullName: u.full_name ?? u.fullName,
-        role: u.role,
-        district: u.district,
-        village: u.village,
-        first_name: u.first_name,
-        last_name: u.last_name,
-        full_name: u.full_name,
-        phone_number: u.phone_number,
-      };
-      await AsyncStorage.setItem("user", JSON.stringify(normalizedUser));
+    const data = response?.data;
+    if (!data) {
+      return { success: false, error: "Invalid response from server" };
     }
 
-    return response.data;
+    if (data.token && data.user) {
+      try {
+        await AsyncStorage.setItem("authToken", data.token);
+        const u = data.user;
+        const normalizedUser = {
+          ...u,
+          id: u.id,
+          phoneNumber: u.phone_number ?? u.phoneNumber,
+          fullName: u.full_name ?? u.fullName,
+          role: u.role ?? "health_worker",
+          district: u.district,
+          village: u.village,
+          first_name: u.first_name,
+          last_name: u.last_name,
+          full_name: u.full_name,
+          phone_number: u.phone_number ?? u.phoneNumber,
+        };
+        await AsyncStorage.setItem("user", JSON.stringify(normalizedUser));
+      } catch (e) {
+        console.warn("Storage write after login:", e);
+      }
+    }
+
+    return data;
   },
 
   async logout() {
@@ -358,7 +366,7 @@ export const apiService = {
 
   // ============ DASHBOARD ============
   async getDashboardStats() {
-    const response = await api.get("/dashboard/stats");
+    const response = await api.get("/simple-dashboard/stats");
     return response.data;
   },
 
