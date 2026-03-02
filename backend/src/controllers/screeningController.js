@@ -135,7 +135,13 @@ exports.createScreening = async (req, res) => {
 exports.getScreenings = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A'; // Default to Jane for testing
+    let healthWorkerId = req.user?.userId;
+    
+    // Get a valid CHW ID for testing if no authenticated user
+    if (!healthWorkerId) {
+      const chwUsers = await sql`SELECT id FROM users WHERE role = 'CHW' LIMIT 1`;
+      healthWorkerId = chwUsers.length > 0 ? chwUsers[0].id : null;
+    }
     const { limit = 50, offset = 0 } = req.query;
 
     const screenings = await sql`
@@ -204,7 +210,13 @@ exports.getScreeningById = async (req, res) => {
 exports.getScreeningStats = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A';
+    let healthWorkerId = req.user?.userId;
+    
+    // Get a valid CHW ID for testing if no authenticated user
+    if (!healthWorkerId) {
+      const chwUsers = await sql`SELECT id FROM users WHERE role = 'CHW' LIMIT 1`;
+      healthWorkerId = chwUsers.length > 0 ? chwUsers[0].id : null;
+    }
 
     const stats = await sql`
       SELECT 
