@@ -10,8 +10,11 @@ exports.uploadFile = async (req, res) => {
       });
     }
 
-    // Return file info
-    const fileUrl = `/uploads/${req.file.filename}`;
+    // Return file info - for Vercel, use the full path since /tmp is not web-accessible
+    // For registration, we'll store the file path and handle retrieval differently
+    const fileUrl = process.env.VERCEL 
+      ? req.file.path // Use full path on Vercel
+      : `/uploads/${req.file.filename}`; // Use relative path locally
     
     res.json({
       success: true,
@@ -22,7 +25,8 @@ exports.uploadFile = async (req, res) => {
         mimetype: req.file.mimetype,
         size: req.file.size,
         url: fileUrl,
-        path: req.file.path
+        path: req.file.path,
+        isVercel: !!process.env.VERCEL
       }
     });
   } catch (error) {

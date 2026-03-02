@@ -9,10 +9,11 @@ const getUploadsDir = () => {
     ? path.join(os.tmpdir(), 'sante-uploads')
     : path.join(__dirname, '../../uploads');
 
-  // Only create directory if not on Vercel (Vercel uses /tmp which already exists)
-  if (!process.env.VERCEL && !fs.existsSync(uploadsDir)) {
+  // Create directory if it doesn't exist (both local and Vercel)
+  if (!fs.existsSync(uploadsDir)) {
     try {
       fs.mkdirSync(uploadsDir, { recursive: true });
+      console.log(`✅ Created uploads directory: ${uploadsDir}`);
     } catch (err) {
       console.warn('Uploads dir not created (may be read-only):', err.message);
     }
