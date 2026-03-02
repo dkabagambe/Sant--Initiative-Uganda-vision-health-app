@@ -18,7 +18,7 @@
         "gradleCommand": ":app:bundleRelease"
       },
       "env": {
-        "ANDROID_NDK_HOME": "/usr/local/lib/android/sdk/ndk/25.1.8937393"
+        "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
       }
     }
   },

@@ -13,6 +13,7 @@
     "dev": "node scripts/kill-port.js 5000 2>/dev/null; nodemon src/index.js",
     "dev:local": "node scripts/kill-port.js 5000 2>/dev/null; USE_SQLITE=1 nodemon src/index.js",
     "init-db": "node scripts/init-db.js",
+    "seed:production": "FORCE_POSTGRES=1 node scripts/init-db.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:api": "node scripts/smoke-test-api.js",
     "test:api:vercel": "BASE_URL=https://backend-tau-sepia-43.vercel.app/api node scripts/smoke-test-api.js"

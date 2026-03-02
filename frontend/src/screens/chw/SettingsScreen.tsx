@@ -16,6 +16,7 @@ import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { apiService } from "../../services/api";
 import CHWHeader from "../../components/CHWHeader";
+import ApiConfigScreen from "./ApiConfigScreen";
 
 export default function SettingsScreen() {
   const navigation = useNavigation<any>();
@@ -226,6 +227,10 @@ export default function SettingsScreen() {
         { text: "Cancel", style: "cancel" },
       ]
     );
+  };
+
+  const handleApiConfig = () => {
+    navigation.navigate("ApiConfigScreen");
   };
 
   const handleDemoVideos = () => {

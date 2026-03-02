@@ -33,6 +33,7 @@ First run: Vercel will prompt you to log in, set up the project, and link to you
 | `TWILIO_AUTH_TOKEN` | Yes* | Twilio auth token |
 | `TWILIO_VERIFY_SERVICE_SID` | Yes* | Twilio Verify service SID |
 | `CORS_ORIGIN` | No | Frontend URL for CORS (e.g. `https://yourapp.vercel.app`) |
+| `SEED_SECRET` | No | Secret for one-time product seed: `POST /api/seed-production` with header `x-seed-secret: YOUR_SECRET`. See `SEED_PRODUCTION.md`. |
 
 \* Required for SMS OTP login
 

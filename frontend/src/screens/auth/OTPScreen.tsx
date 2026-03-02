@@ -102,29 +102,29 @@ export default function OTPScreen() {
     setErrorMessage(null);
 
     try {
-      // Verify OTP and get user data from database
       const result = await apiService.verifyOTP(phone, otpString);
-      console.log("OTP verification result:", result);
-
+      if (!result) {
+        setErrorMessage("Invalid response from server");
+        return;
+      }
       if (result.success && result.user) {
-        // Data is already stored by verifyOTP
-        console.log("User logged in successfully:", result.user);
-        
-        // Map database role to navigation role
         const roleMap: { [key: string]: string } = {
           'health_worker': 'CHW',
           'outlet': 'Outlet',
           'vsla': 'VSLA'
         };
-        const navRole = roleMap[result.user.role] || 'CHW';
-        
-        navigation.navigate("AppTabs", { role: navRole });
+        const role = result.user.role ?? 'health_worker';
+        const navRole = roleMap[role] || 'CHW';
+        setLoading(false);
+        requestAnimationFrame(() => {
+          navigation.navigate("AppTabs", { role: navRole });
+        });
       } else {
         setErrorMessage(result.error || "Invalid OTP");
       }
     } catch (error: any) {
-      console.error("OTP verification error:", error);
-      setErrorMessage(error.response?.data?.error || "Verification failed");
+      const msg = error?.response?.data?.error || error?.message || "Verification failed";
+      setErrorMessage(msg);
     } finally {
       setLoading(false);
     }

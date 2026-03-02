@@ -5,8 +5,8 @@ const CONFIG_KEY = 'app_config';
 
 // Production API (used when __DEV__ is false — release/store builds)
 export const VERCEL_API_URL = 'https://backend-tau-sepia-43.vercel.app/api';
-// Local backend — localhost for emulator; use machine IP for physical device
-export const LOCAL_API_URL = 'http://localhost:5000/api';
+// Local backend — use same Vercel backend for consistency
+export const LOCAL_API_URL = 'https://backend-tau-sepia-43.vercel.app/api';
 
 export interface AppConfig {
   apiBaseUrl: string;

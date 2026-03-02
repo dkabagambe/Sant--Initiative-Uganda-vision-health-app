@@ -1,5 +1,8 @@
 require('dotenv').config();
 
+// Allow forcing Postgres for production seed: FORCE_POSTGRES=1 node scripts/init-db.js
+if (process.env.FORCE_POSTGRES) process.env.USE_SQLITE = '';
+
 const useSqlite = process.env.USE_SQLITE && ['true', '1', 'yes'].includes(String(process.env.USE_SQLITE).toLowerCase());
 
 if (useSqlite) {

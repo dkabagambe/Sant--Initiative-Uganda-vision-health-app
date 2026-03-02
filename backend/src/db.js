@@ -1,7 +1,7 @@
 /**
- * Database layer: uses Neon (Postgres) when DATABASE_URL is set (production/Heroku),
- * otherwise uses local SQLite (db-local).
- * Set USE_SQLITE=true (or 1) in .env to force SQLite locally when Neon is unreachable.
+ * Database layer: uses Neon (Postgres) when DATABASE_URL is set and USE_SQLITE is not true.
+ * Use the same Neon DATABASE_URL locally and in Vercel so dev and production share one DB.
+ * Set USE_SQLITE=true (or 1) in .env only when Neon is unreachable (falls back to SQLite).
  * Exposes async `sql` so controllers can always use await.
  * Connecting never deletes or overwrites data; init-db and migrations are additive only.
  */
