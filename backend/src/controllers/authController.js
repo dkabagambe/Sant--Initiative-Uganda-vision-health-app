@@ -233,8 +233,7 @@ exports.verifyOTP = async (req, res) => {
     console.error("Error details:", {
       message: error.message,
       stack: error.stack,
-      phoneNumber,
-      hasRegistrationData: !!registrationData
+      requestBody: req.body
     });
     res.status(500).json({ 
       success: false, 
