@@ -101,18 +101,23 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    // Don't log 401 errors for dashboard endpoints (expected when using fallback)
-    if (error.response?.status !== 401 || !error.config?.url?.includes('/dashboard/')) {
+    const status = error.response?.status;
+    const isNotRegistered = status === 400
+      && error.config?.url?.includes("/auth/login")
+      && (error.response?.data as { code?: string })?.code === "NOT_REGISTERED";
+    // Don't log 401 for dashboard (fallback), or 400 NOT_REGISTERED (expected "register first" flow)
+    const skipLog = (status === 401 && error.config?.url?.includes("/dashboard/")) || isNotRegistered;
+    if (!skipLog) {
       console.error("API Error:", {
         url: error.config?.url,
         method: error.config?.method,
-        status: error.response?.status,
+        status,
         message: error.message,
       });
     }
 
     // Handle specific errors
-    if (error.response?.status === 401) {
+    if (status === 401) {
       // Token expired
       AsyncStorage.removeItem("authToken");
       AsyncStorage.removeItem("user");

@@ -26,7 +26,7 @@ First run: Vercel will prompt you to log in, set up the project, and link to you
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `DATABASE_URL` | Yes | Neon Postgres connection string (e.g. `postgresql://user:pass@host/db?sslmode=require`) |
-| `JWT_SECRET` | Yes | Secret for JWT tokens |
+| `JWT_SECRET` | Yes | Secret for JWT tokens (min 16 characters) |
 | `NODE_ENV` | No | Set to `production` (default) |
 | `USE_SQLITE` | No | Leave **unset** or set to `false` – SQLite does not work on Vercel |
 | `TWILIO_ACCOUNT_SID` | Yes* | Twilio account SID (for OTP) |

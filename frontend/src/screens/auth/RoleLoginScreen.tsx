@@ -76,12 +76,34 @@ export default function RoleLoginScreen() {
         const errorMsg = result.error || "Failed to send OTP";
         if (errorMsg.includes("blocked") || errorMsg.includes("fraudulent")) {
           Alert.alert("Number Blocked", "This phone number is temporarily blocked. Please contact support or use a different number.");
+        } else if (result.code === "NOT_REGISTERED" || errorMsg.toLowerCase().includes("not registered")) {
+          Alert.alert(
+            "Not Registered",
+            "This phone number is not registered. Please register first (CHW, Outlet, or VSLA), then you can log in with OTP.",
+            [
+              { text: "OK" },
+              { text: "Register", onPress: () => navigation.navigate("RoleSelection") },
+            ]
+          );
         } else {
           Alert.alert("Error", errorMsg);
         }
       }
-    } catch (error) {
-      Alert.alert("Error", "Failed to connect to server. Please try again.");
+    } catch (error: any) {
+      const errMsg = error?.response?.data?.error;
+      const code = error?.response?.data?.code;
+      if (code === "NOT_REGISTERED" || (errMsg && String(errMsg).toLowerCase().includes("not registered"))) {
+        Alert.alert(
+          "Not Registered",
+          "This phone number is not registered. Please register first (CHW, Outlet, or VSLA), then you can log in with OTP.",
+          [
+            { text: "OK" },
+            { text: "Register", onPress: () => navigation.navigate("RoleSelection") },
+          ]
+        );
+      } else {
+        Alert.alert("Error", errMsg || "Failed to connect to server. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }

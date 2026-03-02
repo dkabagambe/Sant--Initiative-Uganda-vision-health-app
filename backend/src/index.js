@@ -5,6 +5,17 @@ const path = require("path");
 const { execSync } = require("child_process");
 require("dotenv").config();
 
+// Production safeguard: require critical env vars on Vercel or NODE_ENV=production
+const isProduction = process.env.VERCEL || process.env.NODE_ENV === "production";
+if (isProduction) {
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.trim().length < 16) {
+    throw new Error("Production requires JWT_SECRET (min 16 chars). Set in Vercel Dashboard → Environment Variables.");
+  }
+  if (!process.env.DATABASE_URL || !process.env.DATABASE_URL.startsWith("postgres")) {
+    throw new Error("Production requires DATABASE_URL (Neon Postgres). Set in Vercel Dashboard → Environment Variables.");
+  }
+}
+
 const app = express();
 
 // Database setup: Neon/Postgres when DATABASE_URL is set (production), else SQLite (local)

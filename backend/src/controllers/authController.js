@@ -16,17 +16,17 @@ exports.login = async (req, res) => {
       return res.status(400).json({ success: false, error: "Phone number required" });
     }
 
-    // Check if user exists or create new user
+    // Only send OTP to users who have already registered (CHW / Outlet / VSLA)
     const existingUser = await sql`
       SELECT id, phone_number, full_name, role FROM users WHERE phone_number = ${phoneNumber}
     `;
 
     if (existingUser.length === 0) {
-      // Create new user
-      await sql`
-        INSERT INTO users (phone_number)
-        VALUES (${phoneNumber})
-      `;
+      return res.status(400).json({
+        success: false,
+        error: "Phone number not registered. Please register first.",
+        code: "NOT_REGISTERED",
+      });
     }
 
     // Send OTP via Twilio Verify (Twilio generates the OTP)
