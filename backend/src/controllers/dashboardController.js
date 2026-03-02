@@ -1,11 +1,8 @@
 // Get dashboard statistics for CHW
-exports.getDashboardStats = async (req, res) => {
-  try {
-    const sql = req.app.locals.sql;
-    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A'; // Default to Jane for testing
-
-    // Get screening stats
-    const screeningStats = await sql`
+// Use Postgres date syntax when !req.app.locals.db (Neon), SQLite otherwise
+function getScreeningStatsQuery(sql, healthWorkerId, isSqlite) {
+  if (isSqlite) {
+    return sql`
       SELECT 
         COUNT(*) as total_screenings,
         COUNT(CASE WHEN needs_glasses = 1 THEN 1 END) as clients_needing_glasses,
@@ -16,42 +13,23 @@ exports.getDashboardStats = async (req, res) => {
       FROM screenings
       WHERE health_worker_id = ${healthWorkerId}
     `;
+  }
+  return sql`
+    SELECT 
+      COUNT(*) as total_screenings,
+      COUNT(CASE WHEN needs_glasses = true THEN 1 END) as clients_needing_glasses,
+      COUNT(CASE WHEN needs_referral = true THEN 1 END) as clients_referred,
+      COUNT(CASE WHEN (screening_date::date) >= (CURRENT_DATE - INTERVAL '7 days') THEN 1 END) as screenings_this_week,
+      COUNT(CASE WHEN (screening_date::date) >= (CURRENT_DATE - INTERVAL '30 days') THEN 1 END) as screenings_this_month,
+      COUNT(CASE WHEN (screening_date::date) = CURRENT_DATE THEN 1 END) as screenings_today
+    FROM screenings
+    WHERE health_worker_id = ${healthWorkerId}
+  `;
+}
 
-    // Get clients count (both registered and screened clients)
-    const clientStats = await sql`
-      SELECT COUNT(*) as total_clients
-      FROM (
-        SELECT id, full_name, phone_number FROM clients WHERE health_worker_id = ${healthWorkerId}
-        UNION
-        SELECT DISTINCT 
-          client_phone as phone_number,
-          client_name as full_name,
-          client_phone as id
-        FROM screenings 
-        WHERE health_worker_id = ${healthWorkerId} 
-        AND client_name IS NOT NULL 
-        AND client_phone IS NOT NULL
-      ) as all_clients
-    `;
-
-    // Get clients due for repayment
-    const clientsDue = await sql`
-      SELECT COUNT(DISTINCT c.id) as clients_due_repayment
-      FROM clients c
-      JOIN screenings s ON c.id = s.client_id
-      JOIN payments p ON s.id = p.screening_id
-      WHERE c.health_worker_id = ${healthWorkerId}
-      AND p.status = 'pending'
-    `;
-
-    // Get inventory count
-    const inventoryStats = await sql`
-      SELECT COALESCE(SUM(stock_quantity), 0) as total_stock
-      FROM products
-    `;
-
-    // Get payment stats
-    const paymentStats = await sql`
+function getPaymentStatsQuery(sql, healthWorkerId, isSqlite) {
+  if (isSqlite) {
+    return sql`
       SELECT 
         COUNT(*) as total_payments,
         COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_payments,
@@ -64,9 +42,25 @@ exports.getDashboardStats = async (req, res) => {
       JOIN screenings s ON p.screening_id = s.id
       WHERE s.health_worker_id = ${healthWorkerId}
     `;
+  }
+  return sql`
+    SELECT 
+      COUNT(*) as total_payments,
+      COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_payments,
+      COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_payments,
+      COUNT(CASE WHEN status = 'pending' AND (p.due_date::date) <= CURRENT_DATE THEN 1 END) as due_today,
+      COALESCE(SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END), 0) as total_revenue,
+      COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) as pending_amount,
+      COALESCE(SUM(CASE WHEN status = 'pending' AND (p.due_date::date) <= CURRENT_DATE THEN amount ELSE 0 END), 0) as expected_today
+    FROM payments p
+    JOIN screenings s ON p.screening_id = s.id
+    WHERE s.health_worker_id = ${healthWorkerId}
+  `;
+}
 
-    // Get referral stats
-    const referralStats = await sql`
+function getReferralStatsQuery(sql, healthWorkerId, isSqlite) {
+  if (isSqlite) {
+    return sql`
       SELECT 
         COUNT(*) as total_referrals,
         COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_referrals,
@@ -75,16 +69,111 @@ exports.getDashboardStats = async (req, res) => {
       FROM referrals
       WHERE health_worker_id = ${healthWorkerId}
     `;
+  }
+  return sql`
+    SELECT 
+      COUNT(*) as total_referrals,
+      COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_referrals,
+      COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_referrals,
+      COUNT(CASE WHEN status = 'pending' AND (referred_date::date) < (CURRENT_DATE - INTERVAL '7 days') THEN 1 END) as outstanding_referrals
+    FROM referrals
+    WHERE health_worker_id = ${healthWorkerId}
+  `;
+}
 
-    // Get recent activity
-    const recentScreenings = await sql`
-      SELECT 
-        id, client_name, client_age, screening_date, needs_glasses, needs_referral
-      FROM screenings
-      WHERE health_worker_id = ${healthWorkerId}
-      ORDER BY created_at DESC
-      LIMIT 5
-    `;
+exports.getDashboardStats = async (req, res) => {
+  try {
+    const sql = req.app.locals.sql;
+    const isSqlite = !!req.app.locals.db;
+    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A'; // Default to Jane for testing
+
+    let screeningStats = [{ total_screenings: 0, clients_needing_glasses: 0, clients_referred: 0, screenings_this_week: 0, screenings_this_month: 0, screenings_today: 0 }];
+    let clientStats = [{ total_clients: 0 }];
+    let clientsDue = [{ clients_due_repayment: 0 }];
+    let inventoryStats = [{ total_stock: 0 }];
+    let paymentStats = [{ total_payments: 0, completed_payments: 0, pending_payments: 0, due_today: 0, total_revenue: 0, pending_amount: 0, expected_today: 0 }];
+    let referralStats = [{ total_referrals: 0, pending_referrals: 0, completed_referrals: 0, outstanding_referrals: 0 }];
+    let recentScreenings = [];
+
+    try {
+      screeningStats = await getScreeningStatsQuery(sql, healthWorkerId, isSqlite);
+      if (!screeningStats || !screeningStats[0]) screeningStats = [{ total_screenings: 0, clients_needing_glasses: 0, clients_referred: 0, screenings_this_week: 0, screenings_this_month: 0, screenings_today: 0 }];
+    } catch (e) {
+      console.warn('Dashboard screening stats error:', e.message);
+    }
+
+    try {
+      clientStats = await sql`
+        SELECT COUNT(*) as total_clients
+        FROM (
+          SELECT id, full_name, phone_number FROM clients WHERE health_worker_id = ${healthWorkerId}
+          UNION
+          SELECT DISTINCT 
+            client_phone as phone_number,
+            client_name as full_name,
+            client_phone as id
+          FROM screenings 
+          WHERE health_worker_id = ${healthWorkerId} 
+          AND client_name IS NOT NULL 
+          AND client_phone IS NOT NULL
+        ) as all_clients
+      `;
+      if (!clientStats || !clientStats[0]) clientStats = [{ total_clients: 0 }];
+    } catch (e) {
+      console.warn('Dashboard client stats error:', e.message);
+    }
+
+    try {
+      // Count distinct clients (by phone) with pending payments; avoid clients table and s.client_id (may not exist in production)
+      clientsDue = await sql`
+        SELECT COUNT(DISTINCT COALESCE(p.client_phone, s.client_phone)) as clients_due_repayment
+        FROM payments p
+        JOIN screenings s ON p.screening_id = s.id
+        WHERE s.health_worker_id = ${healthWorkerId}
+        AND p.status = 'pending'
+      `;
+      if (!clientsDue || !clientsDue[0]) clientsDue = [{ clients_due_repayment: 0 }];
+    } catch (e) {
+      console.warn('Dashboard clients due error:', e.message);
+    }
+
+    try {
+      inventoryStats = await sql`
+        SELECT COALESCE(SUM(stock_quantity), 0) as total_stock
+        FROM products
+      `;
+      if (!inventoryStats || !inventoryStats[0]) inventoryStats = [{ total_stock: 0 }];
+    } catch (e) {
+      console.warn('Dashboard inventory error:', e.message);
+    }
+
+    try {
+      paymentStats = await getPaymentStatsQuery(sql, healthWorkerId, isSqlite);
+      if (!paymentStats || !paymentStats[0]) paymentStats = [{ total_payments: 0, completed_payments: 0, pending_payments: 0, due_today: 0, total_revenue: 0, pending_amount: 0, expected_today: 0 }];
+    } catch (e) {
+      console.warn('Dashboard payment stats error:', e.message);
+    }
+
+    try {
+      referralStats = await getReferralStatsQuery(sql, healthWorkerId, isSqlite);
+      if (!referralStats || !referralStats[0]) referralStats = [{ total_referrals: 0, pending_referrals: 0, completed_referrals: 0, outstanding_referrals: 0 }];
+    } catch (e) {
+      console.warn('Dashboard referral stats error:', e.message);
+    }
+
+    try {
+      recentScreenings = await sql`
+        SELECT 
+          id, client_name, client_age, screening_date, needs_glasses, needs_referral
+        FROM screenings
+        WHERE health_worker_id = ${healthWorkerId}
+        ORDER BY created_at DESC
+        LIMIT 5
+      `;
+      if (!Array.isArray(recentScreenings)) recentScreenings = [];
+    } catch (e) {
+      console.warn('Dashboard recent screenings error:', e.message);
+    }
 
     res.json({
       success: true,
