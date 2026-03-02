@@ -29,10 +29,25 @@ router.get('/stats', async (req, res) => {
       SELECT COUNT(*) as total FROM screenings 
       WHERE screening_date = CURRENT_DATE
     `;
+    
+    // Get inventory data
+    const inventoryData = await sql`
+      SELECT COALESCE(SUM(stock_quantity), 0) as total_stock FROM products
+    `;
 
     res.json({
       success: true,
       data: {
+        // Match frontend expected field names
+        clients: parseInt(clients[0]?.total || 0),
+        clientsDueRepayment: 0, // Can be calculated later
+        inventory: parseInt(inventoryData[0]?.total_stock || 0),
+        referrals: parseInt(pendingReferrals[0]?.total || 0),
+        referralsOutstanding: 0, // Can be calculated later
+        paymentsDue: 0, // Can be calculated later
+        expectedAmount: 0, // Can be calculated later
+        
+        // Also include the original data for other uses
         total_screenings: parseInt(screenings[0]?.total || 0),
         clients_needing_glasses: parseInt(glasses[0]?.total || 0),
         clients_referred: parseInt(referrals[0]?.total || 0),
@@ -45,13 +60,13 @@ router.get('/stats', async (req, res) => {
         pending_referrals: parseInt(pendingReferrals[0]?.total || 0),
         screenings_this_week: parseInt(weekScreenings[0]?.total || 0),
         screenings_today: parseInt(todayScreenings[0]?.total || 0),
-        screenings_this_month: parseInt(screenings[0]?.total || 0), // Using total for now
-        due_today: 0, // Can be calculated later
-        pending_amount: 0, // Can be calculated later
-        completed_referrals: 0, // Can be calculated later
-        outstanding_referrals: 0, // Can be calculated later
-        total_stock: 0, // Can be calculated later
-        total_products: 0, // Can be calculated later
+        screenings_this_month: parseInt(screenings[0]?.total || 0),
+        due_today: 0,
+        pending_amount: 0,
+        completed_referrals: 0,
+        outstanding_referrals: 0,
+        total_stock: 0,
+        total_products: 0,
       }
     });
     
