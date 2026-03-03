@@ -143,6 +143,8 @@ const simpleUploadRoutes = require("./routes/simpleUpload");
 const vslaUploadRoutes = require("./routes/vslaUpload");
 const outletUploadRoutes = require("./routes/outletUpload");
 const chwUploadRoutes = require("./routes/chwUpload");
+const debugOTPRoutes = require("./routes/debugOTP");
+const checkOTPStatusRoutes = require("./routes/checkOTPStatus");
 // const seedProductionRoutes = require("./routes/seedProduction"); // Module doesn't exist
 const { startPaymentReminderScheduler } = require("./services/paymentReminderScheduler");
 const os = require("os");
@@ -211,6 +213,8 @@ app.use("/api/simple-upload", simpleUploadRoutes);
 app.use("/api/vsla-upload", vslaUploadRoutes);
 app.use("/api/outlet-upload", outletUploadRoutes);
 app.use("/api/chw-upload", chwUploadRoutes);
+app.use("/api/debug-otp", debugOTPRoutes);
+app.use("/api/check-otp", checkOTPStatusRoutes);
 // app.use("/api/seed-production", seedProductionRoutes); // Module doesn't exist
 
 // --- 404 Handler ---
