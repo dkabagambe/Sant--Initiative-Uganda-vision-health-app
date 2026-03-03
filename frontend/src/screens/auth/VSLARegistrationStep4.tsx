@@ -601,6 +601,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 40,
+    paddingHorizontal: 20,
   },
   // Exact header style as requested
   headerTop: {
@@ -630,7 +631,6 @@ const styles = StyleSheet.create({
   },
   // Progress Bar Styles
   progressWrapper: {
-    marginHorizontal: 20,
     marginBottom: 32,
   },
   progressBarContainer: {
@@ -675,7 +675,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
-    marginHorizontal: 20,
   },
   agreementSection: {
     marginBottom: 24,
@@ -851,7 +850,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 12,
-    marginHorizontal: 20,
     marginTop: 10,
   },
   button: {
