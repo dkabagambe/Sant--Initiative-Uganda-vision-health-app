@@ -36,14 +36,14 @@ exports.uploadFile = async (req, res) => {
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(413).json({
         success: false,
-        error: 'File too large. Maximum size is 1.5MB. Please compress your image.'
+        error: 'File too large. Maximum size is 800KB. Please compress your image or use a smaller file.'
       });
     }
     
     if (error.code === 'LIMIT_FILE_COUNT') {
       return res.status(413).json({
         success: false,
-        error: 'Too many files. Maximum 2 files allowed.'
+        error: 'Too many files. Maximum 1 file allowed at a time.'
       });
     }
     
