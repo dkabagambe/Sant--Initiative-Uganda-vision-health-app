@@ -48,6 +48,8 @@ import EditProfileScreen from "../screens/chw/EditProfileScreen";
 import NotificationSettingsScreen from "../screens/chw/NotificationSettingsScreen";
 import AccessibilityScreen from "../screens/chw/AccessibilityScreen";
 import ChangePasswordScreen from "../screens/chw/ChangePasswordScreen";
+import UserDirectoryScreen from "../screens/chw/UserDirectoryScreen";
+import UserDetailScreen from "../screens/chw/UserDetailScreen";
 
 // NEW Vision Screening Flow (7 Steps)
 import VisionScreen1 from "../screens/screening/VisionScreen1";
@@ -114,6 +116,8 @@ function CHWHomeStack() {
       <Stack.Screen name="Referrals" component={ReferralsScreen} />
       <Stack.Screen name="ReferralManagement" component={ReferralManagementScreen} />
       <Stack.Screen name="Payments" component={PaymentsScreen} />
+      <Stack.Screen name="UserDirectoryScreen" component={UserDirectoryScreen} />
+      <Stack.Screen name="UserDetailScreen" component={UserDetailScreen} />
       <Stack.Screen name="Reports" component={ReportsScreen} />
       <Stack.Screen name="StartScreening" component={StartScreeningScreen} />
     </Stack.Navigator>

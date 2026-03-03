@@ -590,6 +590,27 @@ export const apiService = {
     }
   },
 
+  // ============ USER DIRECTORY ============
+  async getVHTs() {
+    const response = await api.get("/user-directory/vhts");
+    return response.data;
+  },
+
+  async getVSLAs() {
+    const response = await api.get("/user-directory/vslas");
+    return response.data;
+  },
+
+  async getRetailSellers() {
+    const response = await api.get("/user-directory/retail-sellers");
+    return response.data;
+  },
+
+  async getUserDetails(userId: string) {
+    const response = await api.get(`/user-directory/user/${userId}`);
+    return response.data;
+  },
+
   async uploadMultipleFiles(
     files: Array<{ uri: string; name: string; type: string }>,
   ) {

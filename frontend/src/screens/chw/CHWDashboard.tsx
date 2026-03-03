@@ -34,6 +34,7 @@ type RootStackParamList = {
   StartScreening: undefined;
   VisionScreeningStep1: undefined;
   Settings: undefined;
+  UserDirectoryScreen: undefined;
 };
 
 type DashboardScreenNavigationProp = NativeStackNavigationProp<
@@ -444,6 +445,18 @@ export default function CHWDashboard() {
           </Text>
         </TouchableOpacity>
 
+        {/* User Directory Button */}
+        <TouchableOpacity
+          style={styles.directoryButton}
+          onPress={() => navigation.navigate("UserDirectoryScreen")}
+        >
+          <Ionicons name="people" size={24} color="#1A4D8F" />
+          <Text style={styles.directoryButtonText}>User Directory</Text>
+          <Text style={styles.directorySubtitle}>
+            View all VHTs, VSLAs & Retail Sellers
+          </Text>
+        </TouchableOpacity>
+
         {/* Spacer for bottom navigation */}
         <View style={[styles.spacer, { height: 80 + insets.bottom }]} />
       </ScrollView>
@@ -827,6 +840,28 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   reportsSubtitle: {
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
+  },
+  // User Directory Button
+  directoryButton: {
+    backgroundColor: "#F0FDF4",
+    borderRadius: 12,
+    padding: 20,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#10B981",
+    marginBottom: 16,
+  },
+  directoryButtonText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#10B981",
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  directorySubtitle: {
     fontSize: 14,
     color: "#666666",
     textAlign: "center",
