@@ -127,6 +127,7 @@ const autoFixRoutes = require("./routes/autoFix");
 const tempFixRoutes = require("./routes/tempFix");
 const debugDashboardRoutes = require("./routes/debugDashboard");
 const simpleDashboardRoutes = require("./routes/simpleDashboard");
+const checkSchemaRoutes = require("./routes/checkSchema");
 // const seedProductionRoutes = require("./routes/seedProduction"); // Module doesn't exist
 const { startPaymentReminderScheduler } = require("./services/paymentReminderScheduler");
 const os = require("os");
@@ -172,6 +173,7 @@ app.use("/api/auto-fix", autoFixRoutes);
 app.use("/api/temp-fix", tempFixRoutes);
 app.use("/api/debug-dashboard", debugDashboardRoutes);
 app.use("/api/simple-dashboard", simpleDashboardRoutes);
+app.use("/api/check-schema", checkSchemaRoutes);
 // app.use("/api/seed-production", seedProductionRoutes); // Module doesn't exist
 
 // --- 404 Handler ---
