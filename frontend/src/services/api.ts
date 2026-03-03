@@ -424,7 +424,7 @@ export const apiService = {
   },
 
   async getClients() {
-    const response = await api.get("/dashboard/clients");
+    const response = await api.get("/simple-clients/list");
     return response.data;
   },
 

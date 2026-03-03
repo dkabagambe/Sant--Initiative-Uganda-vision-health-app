@@ -552,9 +552,19 @@ exports.getClients = async (req, res) => {
     
     // Get a valid CHW ID for testing if no authenticated user
     if (!healthWorkerId) {
-      const chwUsers = await sql`SELECT id FROM users WHERE role = 'CHW' LIMIT 1`;
+      const chwUsers = await sql`SELECT id FROM users WHERE role = 'CHW' OR role = 'health_worker' LIMIT 1`;
       healthWorkerId = chwUsers.length > 0 ? chwUsers[0].id : null;
     }
+    
+    // If still no health worker ID, return empty list
+    if (!healthWorkerId) {
+      return res.json({
+        success: true,
+        data: [],
+        message: 'No health worker found'
+      });
+    }
+    
     const { limit = 50, offset = 0 } = req.query;
 
     // First get clients from the clients table
