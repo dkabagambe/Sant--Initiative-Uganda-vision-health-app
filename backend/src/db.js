@@ -18,7 +18,35 @@ if (hasPostgresUrl && !useSqliteEnv) {
   // Production/Heroku: Neon/Postgres (async). Connection is per-query; no data is modified on connect.
   try {
     const { neon } = require("@neondatabase/serverless");
-    sql = neon(rawUrl);
+    const neonSql = neon(rawUrl);
+    
+    // Wrap with retry mechanism for network issues
+    sql = async function(strings, ...values) {
+      const maxRetries = 3;
+      const retryDelay = 1000; // 1 second
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const result = await neonSql(strings, ...values);
+          return result;
+        } catch (error) {
+          console.warn(`Neon query attempt ${attempt} failed:`, error.message);
+          
+          if (attempt === maxRetries) {
+            console.error('Neon connection failed after retries, falling back to SQLite');
+            // Fallback to SQLite for this query
+            const dbLocal = require("./db-local");
+            const syncSql = dbLocal.sql;
+            return syncSql.apply(null, [strings, ...values]);
+          }
+          
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+        }
+      }
+    };
+    
+    console.log('🔗 Using Neon database with automatic retry fallback');
     module.exports = { sql, db };
   } catch (err) {
     console.error("Failed to load Neon client:", err.message);
