@@ -445,25 +445,49 @@ export const apiService = {
   // ============ FILE UPLOAD ============
   async uploadFile(file: { uri: string; name: string; type: string }) {
     try {
-      // For now, use a simple mock upload to bypass multer issues
-      // This allows VSLA registration to proceed
-      const mockResponse = {
-        success: true,
-        message: 'File uploaded successfully',
-        data: {
-          filename: file.name,
-          originalName: file.name,
-          mimetype: file.type,
-          size: 0,
-          url: `/uploads/${file.name}`,
-          path: `/uploads/${file.name}`,
-          isVercel: false
-        }
-      };
+      const formData = new FormData();
+      formData.append("file", {
+        uri: file.uri,
+        name: file.name,
+        type: file.type,
+      } as any);
 
-      return mockResponse;
+      const response = await api.post("/upload/single", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        timeout: 30000, // 30 second timeout for larger files
+      });
+
+      return response.data;
     } catch (error) {
       console.error("File upload error:", error);
+      throw error;
+    }
+  },
+
+  async uploadVSLADocuments(files: Array<{ uri: string; name: string; type: string }>) {
+    try {
+      const formData = new FormData();
+      
+      files.forEach((file, index) => {
+        formData.append("files", {
+          uri: file.uri,
+          name: file.name,
+          type: file.type,
+        } as any);
+      });
+
+      const response = await api.post("/vsla-upload/documents", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        timeout: 60000, // 60 second timeout for multiple files
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("VSLA documents upload error:", error);
       throw error;
     }
   },

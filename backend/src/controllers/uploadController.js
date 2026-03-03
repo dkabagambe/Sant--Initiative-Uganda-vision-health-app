@@ -36,7 +36,7 @@ exports.uploadFile = async (req, res) => {
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(413).json({
         success: false,
-        error: 'File too large. Maximum size is 800KB. Please compress your image or use a smaller file.'
+        error: 'File too large. Maximum size is 5MB. Please compress your image or use a smaller file.'
       });
     }
     

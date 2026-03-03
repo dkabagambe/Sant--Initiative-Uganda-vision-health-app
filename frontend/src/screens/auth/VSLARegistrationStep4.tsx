@@ -240,24 +240,58 @@ const VSLARegistrationStep4 = () => {
     try {
       const registrationDocuments: Record<string, string> = {};
 
-      for (const doc of documents) {
-        if (doc.file) {
+      // Collect all files that need to be uploaded
+      const filesToUpload = documents
+        .filter(doc => doc.file)
+        .map(doc => {
           let mimeType = doc.file.type || (doc.id === 1 ? "image/jpeg" : "application/pdf");
           if (!mimeType.includes("/")) mimeType = "image/jpeg";
           if (!["image/jpeg", "image/jpg", "image/png", "application/pdf"].includes(mimeType)) {
             mimeType = doc.file.name?.toLowerCase().endsWith(".pdf") ? "application/pdf" : "image/jpeg";
           }
-          const uploadResult = await apiService.uploadFile({
+          
+          return {
+            id: doc.id,
             uri: doc.file.uri,
             name: doc.file.name,
             type: mimeType,
+            label: doc.label
+          };
+        });
+
+      // Upload files in batch if there are multiple
+      if (filesToUpload.length > 0) {
+        console.log(`Uploading ${filesToUpload.length} VSLA documents...`);
+        
+        if (filesToUpload.length === 1) {
+          // Single file upload
+          const file = filesToUpload[0];
+          const uploadResult = await apiService.uploadFile({
+            uri: file.uri,
+            name: file.name,
+            type: file.type,
           });
+          
           if (uploadResult.success && uploadResult.data?.url) {
-            registrationDocuments[`document_${doc.id}`] = uploadResult.data.url;
+            registrationDocuments[`document_${file.id}`] = uploadResult.data.url;
           } else {
-            throw new Error(`Failed to upload ${doc.label}`);
+            throw new Error(`Failed to upload ${file.label}`);
+          }
+        } else {
+          // Multiple files upload
+          const uploadResult = await apiService.uploadVSLADocuments(filesToUpload);
+          
+          if (uploadResult.success && uploadResult.data) {
+            uploadResult.data.forEach((uploadedFile: any, index: number) => {
+              const originalFile = filesToUpload[index];
+              registrationDocuments[`document_${originalFile.id}`] = uploadedFile.url;
+            });
+          } else {
+            throw new Error("Failed to upload documents");
           }
         }
+        
+        console.log("Successfully uploaded all VSLA documents");
       }
 
       const completeRegistrationData = {

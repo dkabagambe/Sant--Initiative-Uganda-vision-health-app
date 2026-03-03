@@ -52,9 +52,9 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 800 * 1024, // 800KB limit (very safe for Vercel)
-    fieldSize: 200 * 1024, // 200KB for form fields
-    files: 1 // Only 1 file at a time to stay within limits
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fieldSize: 1 * 1024 * 1024, // 1MB for form fields
+    files: 10 // Allow up to 10 files at a time
   }
 });
 
