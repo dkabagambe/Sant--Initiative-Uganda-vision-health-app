@@ -31,9 +31,33 @@ exports.uploadFile = async (req, res) => {
     });
   } catch (error) {
     console.error('Upload error:', error);
+    
+    // Handle specific multer errors
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({
+        success: false,
+        error: 'File too large. Maximum size is 1.5MB. Please compress your image.'
+      });
+    }
+    
+    if (error.code === 'LIMIT_FILE_COUNT') {
+      return res.status(413).json({
+        success: false,
+        error: 'Too many files. Maximum 2 files allowed.'
+      });
+    }
+    
+    if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({
+        success: false,
+        error: 'Unexpected file field. Use "file" as field name.'
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      error: 'Failed to upload file'
+      error: 'Failed to upload file',
+      details: error.message
     });
   }
 };

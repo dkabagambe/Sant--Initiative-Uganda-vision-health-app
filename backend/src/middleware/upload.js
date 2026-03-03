@@ -52,9 +52,9 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB limit (under Vercel 4.5MB limit)
-    fieldSize: 500 * 1024, // 500KB for form fields
-    files: 1 // Only 1 file at a time to reduce payload
+    fileSize: 1.5 * 1024 * 1024, // 1.5MB limit (well under Vercel 4.5MB limit)
+    fieldSize: 300 * 1024, // 300KB for form fields
+    files: 2 // Allow 2 files for outlet registration (shop front + owner ID)
   }
 });
 
