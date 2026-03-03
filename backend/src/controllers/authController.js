@@ -144,37 +144,60 @@ exports.verifyOTP = async (req, res) => {
       if (!fullName && chairperson?.name) fullName = chairperson.name;
       const currentTime = new Date().toISOString();
 
-      await sql`
-        UPDATE users SET
-          first_name = ${firstName || null},
-          last_name = ${lastName || null},
-          full_name = ${fullName || null},
-          gender = ${gender || null},
-          national_id = ${nationalId || null},
-          date_of_birth = ${dateOfBirth || null},
-          role = ${role || "health_worker"},
-          village = ${village || null},
-          parish = ${parish || null},
-          sub_county = ${subCounty || null},
-          county = ${county || null},
-          district = ${district || null},
-          region = ${region || null},
-          organization_name = ${organizationName || groupName || null},
-          registration_number = ${registrationNumber || null},
-          years_of_experience = ${yearsOfExperience || null},
-          training_certificate = ${trainingCertificate || null},
-          recommendation_letter = ${recommendationLetter || null},
-          business_name = ${businessName || null},
-          business_type = ${businessType || null},
-          tin_number = ${tinNumber || null},
-          shop_front_image = ${shopFrontImage || null},
-          owner_id_image = ${ownerIdImage || null},
-          registration_documents = ${registrationDocuments ? JSON.stringify(registrationDocuments) : null},
-          otp_code = NULL,
-          otp_expires_at = NULL,
-          last_login = ${currentTime}
-        WHERE phone_number = ${userPhoneNumber}
-      `;
+      // Try full update first, fall back to basic fields if schema doesn't support
+      try {
+        await sql`
+          UPDATE users SET
+            first_name = ${firstName || null},
+            last_name = ${lastName || null},
+            full_name = ${fullName || null},
+            gender = ${gender || null},
+            national_id = ${nationalId || null},
+            date_of_birth = ${dateOfBirth || null},
+            role = ${role || "health_worker"},
+            village = ${village || null},
+            parish = ${parish || null},
+            sub_county = ${subCounty || null},
+            county = ${county || null},
+            district = ${district || null},
+            region = ${region || null},
+            organization_name = ${organizationName || groupName || null},
+            registration_number = ${registrationNumber || null},
+            years_of_experience = ${yearsOfExperience || null},
+            training_certificate = ${trainingCertificate || null},
+            recommendation_letter = ${recommendationLetter || null},
+            business_name = ${businessName || null},
+            business_type = ${businessType || null},
+            tin_number = ${tinNumber || null},
+            shop_front_image = ${shopFrontImage || null},
+            owner_id_image = ${ownerIdImage || null},
+            registration_documents = ${registrationDocuments ? JSON.stringify(registrationDocuments) : null},
+            otp_code = NULL,
+            otp_expires_at = NULL,
+            last_login = ${currentTime}
+          WHERE phone_number = ${userPhoneNumber}
+        `;
+      } catch (schemaError) {
+        // If schema doesn't support all fields, update only basic fields
+        console.log('⚠️ Schema limited, updating basic fields only');
+        await sql`
+          UPDATE users SET
+            first_name = ${firstName || null},
+            last_name = ${lastName || null},
+            full_name = ${fullName || null},
+            role = ${role || "health_worker"},
+            village = ${village || null},
+            district = ${district || null},
+            training_certificate = ${trainingCertificate || null},
+            recommendation_letter = ${recommendationLetter || null},
+            shop_front_image = ${shopFrontImage || null},
+            owner_id_image = ${ownerIdImage || null},
+            otp_code = NULL,
+            otp_expires_at = NULL,
+            last_login = ${currentTime}
+          WHERE phone_number = ${userPhoneNumber}
+        `;
+      }
 
       // Fetch the updated user
       const updatedUser = await sql`
