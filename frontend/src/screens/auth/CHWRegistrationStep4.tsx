@@ -196,8 +196,7 @@ export default function CHWRegistrationStep4() {
         role: "health_worker",
         trainingCertificate: selectedFiles.certificate?.uploadedUrl || null,
         recommendationLetter: selectedFiles.recommendation?.uploadedUrl || null,
-        // Map villageCellStreet to village for backend compatibility
-        village: registrationData?.villageCellStreet || registrationData?.village,
+        village: registrationData?.village,
       };
 
       const normalizedPhone = normalizePhoneForApi(phone);

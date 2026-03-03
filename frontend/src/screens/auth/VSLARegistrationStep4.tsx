@@ -300,8 +300,7 @@ const VSLARegistrationStep4 = () => {
         groupName: registrationData?.groupName,
         chairperson: registrationData?.chairperson,
         registrationDocuments,
-        // Map villageCellStreet to village for backend compatibility
-        village: registrationData?.villageCellStreet || registrationData?.village,
+        village: registrationData?.village,
       };
 
       const normalizedPhone = normalizePhoneForApi(phone);

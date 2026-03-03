@@ -43,7 +43,7 @@ interface FormData {
   countyMunicipality: string;
   subcountyDivision: string;
   parishWard: string;
-  villageCellStreet: string;
+  village: string;
   physicalAddress: string;
   nearestLandmark: string;
 }
@@ -61,7 +61,7 @@ const OutletRegistrationStep2 = () => {
     countyMunicipality: "",
     subcountyDivision: "",
     parishWard: "",
-    villageCellStreet: "",
+    village: "",
     physicalAddress: "",
     nearestLandmark: "",
   });
@@ -311,8 +311,8 @@ const OutletRegistrationStep2 = () => {
           <TextInput
             style={styles.input}
             placeholder="e.g., Acacia Avenue"
-            value={formData.villageCellStreet}
-            onChangeText={(text) => handleChange("villageCellStreet", text)}
+            value={formData.village}
+            onChangeText={(text) => handleChange("village", text)}
             placeholderTextColor="#999"
           />
 

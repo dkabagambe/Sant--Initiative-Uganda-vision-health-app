@@ -100,7 +100,7 @@ const OutletRegistrationStep4 = () => {
       }
 
       // Shop front: wide crop so more of the building is visible; ID: portrait for document
-      const aspect = type === "shopFront" ? [3, 2] : [3, 4];
+      const aspect: [number, number] = type === "shopFront" ? [3, 2] : [3, 4];
 
       const launchOptions = {
         mediaTypes: ['images'],
@@ -258,8 +258,7 @@ const OutletRegistrationStep4 = () => {
         shopFrontImage: shopFrontUrl,
         ownerIdImage: ownerIdUrl,
         ownerFullName: registrationData?.ownerFullName,
-        // Map villageCellStreet to village for backend compatibility
-        village: registrationData?.villageCellStreet || registrationData?.village,
+        village: registrationData?.village,
       };
 
       const normalizedPhone = normalizePhoneForApi(phone);
