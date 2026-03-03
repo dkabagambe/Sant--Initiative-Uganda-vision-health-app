@@ -74,12 +74,18 @@ export default function CHWDashboard() {
 
   const loadDashboardStats = async () => {
     try {
+      console.log("CHWDashboard: Loading dashboard stats...");
       const response = await apiService.getDashboardStats();
+      console.log("CHWDashboard: Dashboard stats response:", response);
       if (response.success) {
+        console.log("CHWDashboard: Setting stats data:", response.data);
         setStats(response.data);
+      } else {
+        console.log("CHWDashboard: Dashboard stats response not successful");
       }
     } catch (error) {
-      console.error("Failed to load stats:", error);
+      console.error("CHWDashboard: Failed to load stats:", error);
+      console.error("CHWDashboard: Stats error details:", JSON.stringify(error, null, 2));
     }
   };
 
