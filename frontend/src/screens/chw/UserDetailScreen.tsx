@@ -41,9 +41,25 @@ const UserDetailScreen: React.FC = () => {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editForm, setEditForm] = useState({
     fullName: '',
+    firstName: '',
+    lastName: '',
     phoneNumber: '',
+    email: '',
+    gender: '',
+    nationalId: '',
+    dateOfBirth: '',
+    role: '',
+    village: '',
+    parish: '',
+    subCounty: '',
     district: '',
-    village: ''
+    region: '',
+    organizationName: '',
+    registrationNumber: '',
+    yearsOfExperience: '',
+    businessName: '',
+    businessType: '',
+    tinNumber: ''
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -60,9 +76,25 @@ const UserDetailScreen: React.FC = () => {
         setUserDetails(response.data);
         setEditForm({
           fullName: response.data.fullName || '',
+          firstName: response.data.firstName || '',
+          lastName: response.data.lastName || '',
           phoneNumber: response.data.phoneNumber || '',
+          email: response.data.email || '',
+          gender: response.data.gender || '',
+          nationalId: response.data.nationalId || '',
+          dateOfBirth: response.data.dateOfBirth || '',
+          role: response.data.role || '',
+          village: response.data.village || '',
+          parish: response.data.parish || '',
+          subCounty: response.data.subCounty || '',
           district: response.data.district || '',
-          village: response.data.village || ''
+          region: response.data.region || '',
+          organizationName: response.data.organizationName || '',
+          registrationNumber: response.data.registrationNumber || '',
+          yearsOfExperience: response.data.yearsOfExperience || '',
+          businessName: response.data.businessName || '',
+          businessType: response.data.businessType || '',
+          tinNumber: response.data.tinNumber || ''
         });
       } else {
         setError("Failed to load user details");
@@ -112,6 +144,14 @@ const UserDetailScreen: React.FC = () => {
           <Text style={styles.infoValue}>{userDetails.fullName || "N/A"}</Text>
         </View>
         <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>First Name</Text>
+          <Text style={styles.infoValue}>{userDetails.firstName || "N/A"}</Text>
+        </View>
+        <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>Last Name</Text>
+          <Text style={styles.infoValue}>{userDetails.lastName || "N/A"}</Text>
+        </View>
+        <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>Phone Number</Text>
           <View style={styles.phoneContainer}>
             <Text style={styles.infoValue}>{userDetails.phoneNumber}</Text>
@@ -124,8 +164,26 @@ const UserDetailScreen: React.FC = () => {
           </View>
         </View>
         <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>Email</Text>
+          <Text style={styles.infoValue}>{userDetails.email || "N/A"}</Text>
+        </View>
+        <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>Gender</Text>
           <Text style={styles.infoValue}>{userDetails.gender || "N/A"}</Text>
+        </View>
+        <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>National ID</Text>
+          <Text style={styles.infoValue}>{userDetails.nationalId || "N/A"}</Text>
+        </View>
+        <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>Date of Birth</Text>
+          <Text style={styles.infoValue}>
+            {userDetails.dateOfBirth ? new Date(userDetails.dateOfBirth).toLocaleDateString() : "N/A"}
+          </Text>
+        </View>
+        <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>Role</Text>
+          <Text style={styles.infoValue}>{userDetails.role || "N/A"}</Text>
         </View>
         <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>Status</Text>
@@ -142,20 +200,20 @@ const UserDetailScreen: React.FC = () => {
       <Text style={styles.sectionTitle}>Location Information</Text>
       <View style={styles.infoGrid}>
         <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>District</Text>
-          <Text style={styles.infoValue}>{userDetails.district || "N/A"}</Text>
-        </View>
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Sub County</Text>
-          <Text style={styles.infoValue}>{userDetails.subCounty || "N/A"}</Text>
-        </View>
-        <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>Village</Text>
           <Text style={styles.infoValue}>{userDetails.village || "N/A"}</Text>
         </View>
         <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>Parish</Text>
           <Text style={styles.infoValue}>{userDetails.parish || "N/A"}</Text>
+        </View>
+        <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>Sub County</Text>
+          <Text style={styles.infoValue}>{userDetails.subCounty || "N/A"}</Text>
+        </View>
+        <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>District</Text>
+          <Text style={styles.infoValue}>{userDetails.district || "N/A"}</Text>
         </View>
         <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>Region</Text>
@@ -179,22 +237,6 @@ const UserDetailScreen: React.FC = () => {
               <Text style={styles.infoLabel}>Training Certificate</Text>
               <Text style={styles.infoValue}>{userDetails.trainingCertificate ? "Yes" : "No"}</Text>
             </View>
-            {userDetails.totalScreenings !== undefined && (
-              <>
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoLabel}>Total Screenings</Text>
-                  <Text style={styles.infoValue}>{userDetails.totalScreenings || 0}</Text>
-                </View>
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoLabel}>Glasses Prescribed</Text>
-                  <Text style={styles.infoValue}>{userDetails.glassesPrescribed || 0}</Text>
-                </View>
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoLabel}>Referrals Made</Text>
-                  <Text style={styles.infoValue}>{userDetails.referralsMade || 0}</Text>
-                </View>
-              </>
-            )}
           </View>
         </View>
       );
@@ -212,18 +254,6 @@ const UserDetailScreen: React.FC = () => {
             <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>Registration Number</Text>
               <Text style={styles.infoValue}>{userDetails.registrationNumber || "N/A"}</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Chairperson</Text>
-              <Text style={styles.infoValue}>{userDetails.chairperson || "N/A"}</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Group Size</Text>
-              <Text style={styles.infoValue}>{userDetails.groupSize || "N/A"}</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Meeting Frequency</Text>
-              <Text style={styles.infoValue}>{userDetails.meetingFrequency || "N/A"}</Text>
             </View>
           </View>
         </View>
@@ -247,26 +277,6 @@ const UserDetailScreen: React.FC = () => {
               <Text style={styles.infoLabel}>TIN Number</Text>
               <Text style={styles.infoValue}>{userDetails.tinNumber || "N/A"}</Text>
             </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Business License</Text>
-              <Text style={styles.infoValue}>{userDetails.businessLicense ? "Yes" : "No"}</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Business Address</Text>
-              <Text style={styles.infoValue}>{userDetails.businessAddress || "N/A"}</Text>
-            </View>
-            {userDetails.totalSales !== undefined && (
-              <>
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoLabel}>Total Sales (30 days)</Text>
-                  <Text style={styles.infoValue}>{userDetails.totalSales || 0}</Text>
-                </View>
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoLabel}>Total Revenue (30 days)</Text>
-                  <Text style={styles.infoValue}>UGX {userDetails.totalRevenue?.toLocaleString() || 0}</Text>
-                </View>
-              </>
-            )}
           </View>
         </View>
       );
@@ -284,10 +294,6 @@ const UserDetailScreen: React.FC = () => {
           <Text style={styles.infoValue}>{userDetails.id}</Text>
         </View>
         <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Role</Text>
-          <Text style={styles.infoValue}>{userDetails.role}</Text>
-        </View>
-        <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>Registration Date</Text>
           <Text style={styles.infoValue}>
             {new Date(userDetails.createdAt).toLocaleDateString()}
@@ -296,7 +302,7 @@ const UserDetailScreen: React.FC = () => {
         <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>Last Updated</Text>
           <Text style={styles.infoValue}>
-            {new Date(userDetails.updatedAt).toLocaleDateString()}
+            {userDetails.updatedAt ? new Date(userDetails.updatedAt).toLocaleDateString() : "Never"}
           </Text>
         </View>
         <View style={styles.infoItem}>
@@ -385,6 +391,26 @@ const UserDetailScreen: React.FC = () => {
               </View>
               
               <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>First Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.firstName}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, firstName: text }))}
+                  placeholder="Enter first name"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Last Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.lastName}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, lastName: text }))}
+                  placeholder="Enter last name"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Phone Number</Text>
                 <TextInput
                   style={styles.input}
@@ -392,6 +418,77 @@ const UserDetailScreen: React.FC = () => {
                   onChangeText={(text) => setEditForm(prev => ({ ...prev, phoneNumber: text }))}
                   placeholder="Enter phone number"
                   keyboardType="phone-pad"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.email}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, email: text }))}
+                  placeholder="Enter email"
+                  keyboardType="email-address"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Gender</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.gender}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, gender: text }))}
+                  placeholder="Enter gender"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>National ID</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.nationalId}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, nationalId: text }))}
+                  placeholder="Enter national ID"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Date of Birth</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.dateOfBirth}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, dateOfBirth: text }))}
+                  placeholder="YYYY-MM-DD"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Village</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.village}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, village: text }))}
+                  placeholder="Enter village"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Parish</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.parish}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, parish: text }))}
+                  placeholder="Enter parish"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Sub County</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.subCounty}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, subCounty: text }))}
+                  placeholder="Enter sub county"
                 />
               </View>
               
@@ -406,12 +503,12 @@ const UserDetailScreen: React.FC = () => {
               </View>
               
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Village</Text>
+                <Text style={styles.inputLabel}>Region</Text>
                 <TextInput
                   style={styles.input}
-                  value={editForm.village}
-                  onChangeText={(text) => setEditForm(prev => ({ ...prev, village: text }))}
-                  placeholder="Enter village"
+                  value={editForm.region}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, region: text }))}
+                  placeholder="Enter region"
                 />
               </View>
             </ScrollView>
