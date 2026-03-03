@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   StatusBar,
+  Image,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -133,9 +134,11 @@ const VSLARegistrationStep4 = () => {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
-        quality: 1,
+        quality: 0.8,
+        aspect: [4, 3],
+        base64: false,
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
@@ -378,6 +381,21 @@ const VSLARegistrationStep4 = () => {
 
               {doc.file ? (
                 <View style={styles.filePreviewContainer}>
+                  {doc.id === 1 && (
+                    <View style={styles.imagePreviewContainer}>
+                      <Image 
+                        source={{ uri: doc.file.uri }} 
+                        style={styles.imagePreview}
+                        resizeMode="cover"
+                      />
+                      <TouchableOpacity
+                        style={styles.imageRemoveButton}
+                        onPress={() => removeFile(doc.id)}
+                      >
+                        <Text style={styles.removeButtonText}>✕</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                   <View style={styles.fileInfo}>
                     <Text style={styles.fileIcon}>
                       {doc.id === 1 ? "🖼️" : "📄"}
@@ -385,12 +403,14 @@ const VSLARegistrationStep4 = () => {
                     <Text style={styles.fileName} numberOfLines={1}>
                       {getFileName(doc.file.uri, doc.file.name)}
                     </Text>
-                    <TouchableOpacity
-                      style={styles.removeButton}
-                      onPress={() => removeFile(doc.id)}
-                    >
-                      <Text style={styles.removeButtonText}>✕</Text>
-                    </TouchableOpacity>
+                    {doc.id !== 1 && (
+                      <TouchableOpacity
+                        style={styles.removeButton}
+                        onPress={() => removeFile(doc.id)}
+                      >
+                        <Text style={styles.removeButtonText}>✕</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                   <TouchableOpacity
                     style={[styles.fileButton, styles.changeButton]}
@@ -696,6 +716,35 @@ const styles = StyleSheet.create({
   },
   filePreviewContainer: {
     marginTop: 4,
+  },
+  imagePreviewContainer: {
+    width: '100%',
+    height: 200,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+  },
+  imageRemoveButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#FF3B30',
   },
   fileInfo: {
     flexDirection: "row",
