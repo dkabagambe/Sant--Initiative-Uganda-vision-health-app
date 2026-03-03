@@ -17,9 +17,26 @@ exports.login = async (req, res) => {
     }
 
     // Only send OTP to users who have already registered (CHW / Outlet / VSLA)
-    const existingUser = await sql`
-      SELECT id, phone_number, full_name, role FROM users WHERE phone_number = ${phoneNumber}
-    `;
+    // Add retry logic for database connection issues
+    let existingUser;
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        existingUser = await sql`
+          SELECT id, phone_number, full_name, role FROM users WHERE phone_number = ${phoneNumber}
+        `;
+        break; // Success, exit retry loop
+      } catch (dbError) {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          throw dbError; // Re-throw after max retries
+        }
+        // Wait a bit before retrying
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
 
     if (existingUser.length === 0) {
       return res.status(400).json({
@@ -48,7 +65,21 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ success: false, error: "Failed to send OTP" });
+    
+    // Handle specific database connection errors
+    if (error.message && error.message.includes('ETIMEDOUT')) {
+      res.status(503).json({ 
+        success: false, 
+        error: "Database connection timeout. Please try again." 
+      });
+    } else if (error.message && error.message.includes('fetch failed')) {
+      res.status(503).json({ 
+        success: false, 
+        error: "Database connection failed. Please try again." 
+      });
+    } else {
+      res.status(500).json({ success: false, error: "Failed to send OTP" });
+    }
   }
 };
 
