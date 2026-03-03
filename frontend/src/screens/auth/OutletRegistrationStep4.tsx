@@ -103,7 +103,7 @@ const OutletRegistrationStep4 = () => {
       const aspect = type === "shopFront" ? [3, 2] as const : [3, 4] as const;
 
       const launchOptions = {
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect,
         quality: 1,

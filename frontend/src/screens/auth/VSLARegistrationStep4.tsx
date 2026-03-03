@@ -139,6 +139,7 @@ const VSLARegistrationStep4 = () => {
         quality: 0.8,
         aspect: [4, 3],
         base64: false,
+        presentationStyle: 'fullScreen',
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
@@ -718,19 +719,25 @@ const styles = StyleSheet.create({
   },
   imagePreviewContainer: {
     width: '100%',
-    height: 200,
+    height: 250,
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    marginBottom: 12,
-    borderWidth: 1,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 2,
     borderColor: '#E0E0E0',
     position: 'relative',
     overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   imagePreview: {
     width: '100%',
     height: '100%',
     backgroundColor: '#FFFFFF',
+    borderRadius: 10,
   },
   imageRemoveButton: {
     position: 'absolute',
