@@ -149,7 +149,7 @@ export default function CHWDashboard() {
       console.log("CHWDashboard: Loading user data...");
       const user = await apiService.getCurrentUser();
       console.log("CHWDashboard: Loaded user data:", user);
-      console.log("CHWDashboard: User name:", user?.first_name || user?.full_name);
+      console.log("CHWDashboard: User name:", user?.first_name || user?.full_name || user?.fullName);
       console.log("CHWDashboard: User district:", user?.district);
       console.log("CHWDashboard: User role:", user?.role);
       setUserData(user);
@@ -282,7 +282,7 @@ export default function CHWDashboard() {
 
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>
-            {userData?.full_name || "Santé Initiative Uganda"}
+            {userData?.full_name || userData?.fullName || "Santé Initiative Uganda"}
           </Text>
           <Text style={styles.headerSubtitle}>
             {userData?.district ? `VHT - ${userData.district} District` : ""}
@@ -304,7 +304,7 @@ export default function CHWDashboard() {
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeTitle}>
-            {t('welcome')}, {userData?.first_name || userData?.full_name || "User"}
+            {t('welcome')}, {userData?.first_name || userData?.full_name || userData?.fullName || "User"}
           </Text>
           <Text style={styles.userRole}>
             {userData?.district ? `${userData.district} District` : ""}

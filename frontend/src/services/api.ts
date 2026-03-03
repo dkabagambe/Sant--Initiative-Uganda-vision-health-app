@@ -10,12 +10,19 @@ const envApiUrl = typeof process !== "undefined"
 // Define types
 export interface User {
   id: string;
-  phoneNumber: string;
-  fullName: string;
+  phone_number: string;
+  full_name: string;
+  first_name?: string;
+  last_name?: string;
   role: string;
   village?: string;
   district?: string;
   profile_image?: string;
+  created_at?: string;
+  updated_at?: string;
+  // Legacy properties for backward compatibility
+  phoneNumber?: string;
+  fullName?: string;
 }
 
 export interface Product {
