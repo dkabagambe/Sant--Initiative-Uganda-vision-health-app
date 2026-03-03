@@ -34,12 +34,12 @@ app.use(
     verify: (req, _res, buf) => {
       req.rawBody = buf.toString("utf8");
     },
-    limit: '15mb', // Increase limit for large uploads
+    limit: '3mb', // Reduced to work within Vercel limits
   }),
 );
 app.use(express.urlencoded({ 
   extended: true, 
-  limit: '15mb', // Increase limit for large uploads
+  limit: '3mb', // Reduced to work within Vercel limits
 }));
 
 // --- Health check ---

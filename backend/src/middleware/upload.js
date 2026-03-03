@@ -52,9 +52,9 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-    fieldSize: 10 * 1024 * 1024, // 10MB for form fields
-    files: 2 // Max 2 files (certificate + recommendation letter)
+    fileSize: 2 * 1024 * 1024, // 2MB limit (under Vercel 4.5MB limit)
+    fieldSize: 500 * 1024, // 500KB for form fields
+    files: 1 // Only 1 file at a time to reduce payload
   }
 });
 
