@@ -216,7 +216,7 @@ const UserDirectoryScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1E40AF" />
-      <CHWHeader title="User Directory" showBack={true} />
+      <CHWHeader showMenu={false} />
       
       <View style={styles.content}>
         {/* Tabs */}

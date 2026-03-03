@@ -433,18 +433,6 @@ export default function CHWDashboard() {
           </View>
         </View>
 
-        {/* View Reports Button */}
-        <TouchableOpacity
-          style={styles.reportsButton}
-          onPress={() => navigation.navigate("Reports")}
-        >
-          <MaterialCommunityIcons name="file-chart" size={24} color="#1A4D8F" />
-          <Text style={styles.reportsButtonText}>View Reports</Text>
-          <Text style={styles.reportsSubtitle}>
-            Sales, Payments, Stock & Referrals
-          </Text>
-        </TouchableOpacity>
-
         {/* User Directory Button */}
         <TouchableOpacity
           style={styles.directoryButton}
@@ -454,6 +442,18 @@ export default function CHWDashboard() {
           <Text style={styles.directoryButtonText}>User Directory</Text>
           <Text style={styles.directorySubtitle}>
             View all VHTs, VSLAs & Retail Sellers
+          </Text>
+        </TouchableOpacity>
+
+        {/* View Reports Button */}
+        <TouchableOpacity
+          style={styles.reportsButton}
+          onPress={() => navigation.navigate("Reports")}
+        >
+          <MaterialCommunityIcons name="file-chart" size={24} color="#1A4D8F" />
+          <Text style={styles.reportsButtonText}>View Reports</Text>
+          <Text style={styles.reportsSubtitle}>
+            Sales, Payments, Stock & Referrals
           </Text>
         </TouchableOpacity>
 

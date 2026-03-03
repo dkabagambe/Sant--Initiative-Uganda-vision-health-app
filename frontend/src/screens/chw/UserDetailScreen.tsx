@@ -276,7 +276,7 @@ const UserDetailScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#1E40AF" />
-        <CHWHeader title="User Details" showBack={true} />
+        <CHWHeader showMenu={false} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3B82F6" />
           <Text style={styles.loadingText}>Loading user details...</Text>
@@ -289,7 +289,7 @@ const UserDetailScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#1E40AF" />
-        <CHWHeader title="User Details" showBack={true} />
+        <CHWHeader showMenu={false} />
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={48} color="#EF4444" />
           <Text style={styles.errorText}>{error || "User not found"}</Text>
@@ -304,7 +304,7 @@ const UserDetailScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1E40AF" />
-      <CHWHeader title="User Details" showBack={true} />
+      <CHWHeader showMenu={false} />
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {renderBasicInfo()}
