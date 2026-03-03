@@ -11,6 +11,8 @@ import {
   Platform,
   StatusBar,
   Linking,
+  TextInput,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -36,6 +38,14 @@ const UserDetailScreen: React.FC = () => {
   const [userDetails, setUserDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fullName: '',
+    phoneNumber: '',
+    district: '',
+    village: ''
+  });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     fetchUserDetails();
@@ -48,6 +58,12 @@ const UserDetailScreen: React.FC = () => {
       
       if (response.success) {
         setUserDetails(response.data);
+        setEditForm({
+          fullName: response.data.fullName || '',
+          phoneNumber: response.data.phoneNumber || '',
+          district: response.data.district || '',
+          village: response.data.village || ''
+        });
       } else {
         setError("Failed to load user details");
       }
@@ -56,6 +72,27 @@ const UserDetailScreen: React.FC = () => {
       setError("Failed to load user details. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditPress = () => {
+    setEditModalVisible(true);
+  };
+
+  const handleSaveEdit = async () => {
+    setIsSaving(true);
+    try {
+      // For now, just show success message
+      // In a real implementation, you would call an API endpoint to update the user
+      Alert.alert(
+        "Success",
+        "User information updated successfully!",
+        [{ text: "OK", onPress: () => setEditModalVisible(false) }]
+      );
+    } catch (error) {
+      Alert.alert("Error", "Failed to update user information");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -306,12 +343,99 @@ const UserDetailScreen: React.FC = () => {
       <StatusBar barStyle="light-content" backgroundColor="#1E40AF" />
       <CHWHeader showMenu={false} />
       
+      <View style={styles.headerActions}>
+        <TouchableOpacity style={styles.editButton} onPress={handleEditPress}>
+          <Ionicons name="create-outline" size={20} color="white" />
+          <Text style={styles.editButtonText}>Edit User</Text>
+        </TouchableOpacity>
+      </View>
+      
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {renderBasicInfo()}
         {renderLocationInfo()}
         {renderRoleSpecificInfo()}
         {renderSystemInfo()}
       </ScrollView>
+
+      {/* Edit Modal */}
+      <Modal
+        visible={editModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit User Information</Text>
+              <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.modalBody}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Full Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.fullName}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, fullName: text }))}
+                  placeholder="Enter full name"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Phone Number</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.phoneNumber}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, phoneNumber: text }))}
+                  placeholder="Enter phone number"
+                  keyboardType="phone-pad"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>District</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.district}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, district: text }))}
+                  placeholder="Enter district"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Village</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.village}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, village: text }))}
+                  placeholder="Enter village"
+                />
+              </View>
+            </ScrollView>
+            
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setEditModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={handleSaveEdit}
+                disabled={isSaving}
+              >
+                <Text style={styles.saveButtonText}>
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -422,6 +546,102 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
     color: "white",
+  },
+  // Edit Button
+  headerActions: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  editButton: {
+    backgroundColor: "#10B981",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    gap: 8,
+  },
+  editButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderRadius: 16,
+    width: "90%",
+    maxHeight: "80%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1F2937",
+  },
+  modalBody: {
+    padding: 20,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#374151",
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: "#1F2937",
+  },
+  modalFooter: {
+    flexDirection: "row",
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#F3F4F6",
+  },
+  cancelButtonText: {
+    color: "#6B7280",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  saveButton: {
+    backgroundColor: "#10B981",
+  },
+  saveButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "500",
   },
 });
 

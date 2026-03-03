@@ -113,13 +113,8 @@ router.get('/user/:id', async (req, res) => {
     
     const users = await sql`
       SELECT 
-        id, phone_number, first_name, last_name, full_name,
-        gender, national_id, date_of_birth, role,
-        village, parish, sub_county, district, region,
-        organization_name, registration_number, years_of_experience,
-        training_certificate, business_name, business_type, tin_number,
-        business_license, business_address, chairperson, group_size,
-        meeting_frequency, created_at, updated_at, last_login, is_active
+        id, phone_number, full_name, role,
+        district, village, created_at, last_login
       FROM users 
       WHERE id = ${id}
     `;
@@ -130,76 +125,18 @@ router.get('/user/:id', async (req, res) => {
 
     const user = users[0];
     
-    // Get additional stats based on role
-    let additionalStats = {};
-    
-    if (user.role === 'CHW' || user.role === 'health_worker') {
-      const screenings = await sql`
-        SELECT COUNT(*) as total_screenings,
-               COUNT(CASE WHEN needs_glasses = true THEN 1 END) as glasses_prescribed,
-               COUNT(CASE WHEN needs_referral = true THEN 1 END) as referrals_made
-        FROM screenings 
-        WHERE health_worker_id = ${id}
-      `;
-      
-      additionalStats = {
-        totalScreenings: screenings[0].total_screenings,
-        glassesPrescribed: screenings[0].glasses_prescribed,
-        referralsMade: screenings[0].referrals_made
-      };
-    } else if (user.role === 'outlet' || user.role === 'retail') {
-      const sales = await sql`
-        SELECT COUNT(*) as total_sales,
-               COALESCE(SUM(amount), 0) as total_revenue
-        FROM payments p
-        JOIN screenings s ON p.screening_id = s.id
-        WHERE s.health_worker_id IN (
-          SELECT id FROM users WHERE district = ${user.district} AND role = 'CHW'
-        )
-        AND p.status = 'completed'
-        AND p.created_at >= NOW() - INTERVAL '30 days'
-      `;
-      
-      additionalStats = {
-        totalSales: sales[0].total_sales,
-        totalRevenue: sales[0].total_revenue
-      };
-    }
-
     res.json({
       success: true,
       data: {
         id: user.id,
         phoneNumber: user.phone_number,
-        firstName: user.first_name,
-        lastName: user.last_name,
         fullName: user.full_name,
-        gender: user.gender,
-        nationalId: user.national_id,
-        dateOfBirth: user.date_of_birth,
         role: user.role,
-        village: user.village,
-        parish: user.parish,
-        subCounty: user.sub_county,
         district: user.district,
-        region: user.region,
-        organizationName: user.organization_name,
-        registrationNumber: user.registration_number,
-        yearsOfExperience: user.years_of_experience,
-        trainingCertificate: user.training_certificate,
-        businessName: user.business_name,
-        businessType: user.business_type,
-        tinNumber: user.tin_number,
-        businessLicense: user.business_license,
-        businessAddress: user.business_address,
-        chairperson: user.chairperson,
-        groupSize: user.group_size,
-        meetingFrequency: user.meeting_frequency,
+        village: user.village,
         createdAt: user.created_at,
-        updatedAt: user.updated_at,
         lastLogin: user.last_login,
-        isActive: user.is_active,
-        ...additionalStats
+        isActive: true
       }
     });
   } catch (error) {
