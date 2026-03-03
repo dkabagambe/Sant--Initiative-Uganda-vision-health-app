@@ -100,7 +100,7 @@ const OutletRegistrationStep4 = () => {
       }
 
       // Shop front: wide crop so more of the building is visible; ID: portrait for document
-      const aspect = type === "shopFront" ? [3, 2] as const : [3, 4] as const;
+      const aspect = type === "shopFront" ? [3, 2] : [3, 4];
 
       const launchOptions = {
         mediaTypes: ['images'],
@@ -108,6 +108,7 @@ const OutletRegistrationStep4 = () => {
         aspect,
         quality: 1,
         base64: false,
+        presentationStyle: 'fullScreen',
       };
 
       const result = useCamera
@@ -117,10 +118,10 @@ const OutletRegistrationStep4 = () => {
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
 
-        if (asset.fileSize && asset.fileSize > 5 * 1024 * 1024) {
+        if (asset.fileSize && asset.fileSize > 15 * 1024 * 1024) {
           Alert.alert(
             "File Too Large",
-            "Please select an image smaller than 5MB",
+            "Please select an image smaller than 15MB for clear business photos",
             [{ text: "OK" }],
           );
           return;
@@ -224,7 +225,7 @@ const OutletRegistrationStep4 = () => {
       let ownerIdUrl: string | null = null;
 
       if (selectedFiles.shopFront) {
-        const uploadResult = await apiService.uploadFile({
+        const uploadResult = await apiService.uploadOutletFile({
           uri: selectedFiles.shopFront.uri,
           name: selectedFiles.shopFront.name,
           type: selectedFiles.shopFront.type,
@@ -237,7 +238,7 @@ const OutletRegistrationStep4 = () => {
       }
 
       if (selectedFiles.ownerId) {
-        const uploadResult = await apiService.uploadFile({
+        const uploadResult = await apiService.uploadOutletFile({
           uri: selectedFiles.ownerId.uri,
           name: selectedFiles.ownerId.name,
           type: selectedFiles.ownerId.type,

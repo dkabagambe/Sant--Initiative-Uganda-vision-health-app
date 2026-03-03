@@ -141,6 +141,7 @@ const simpleReportsRoutes = require("./routes/simpleReports");
 const checkScreeningsRoutes = require("./routes/checkScreenings");
 const simpleUploadRoutes = require("./routes/simpleUpload");
 const vslaUploadRoutes = require("./routes/vslaUpload");
+const outletUploadRoutes = require("./routes/outletUpload");
 // const seedProductionRoutes = require("./routes/seedProduction"); // Module doesn't exist
 const { startPaymentReminderScheduler } = require("./services/paymentReminderScheduler");
 const os = require("os");
@@ -150,6 +151,12 @@ const uploadsPath = process.env.VERCEL
   ? path.join(os.tmpdir(), "sante-uploads")
   : path.join(__dirname, "../uploads");
 app.use("/uploads", express.static(uploadsPath));
+
+// --- Serve outlet uploaded files ---
+const outletUploadsPath = process.env.VERCEL
+  ? path.join(os.tmpdir(), "sante-outlet-uploads")
+  : path.join(__dirname, "../uploads/outlets");
+app.use("/uploads/outlets", express.static(outletUploadsPath));
 
 // --- Root and favicon (avoid 404 when opening backend URL in browser) ---
 app.get("/", (req, res) => {
@@ -195,6 +202,7 @@ app.use("/api/simple-reports", simpleReportsRoutes);
 app.use("/api/check-screenings", checkScreeningsRoutes);
 app.use("/api/simple-upload", simpleUploadRoutes);
 app.use("/api/vsla-upload", vslaUploadRoutes);
+app.use("/api/outlet-upload", outletUploadRoutes);
 // app.use("/api/seed-production", seedProductionRoutes); // Module doesn't exist
 
 // --- 404 Handler ---
