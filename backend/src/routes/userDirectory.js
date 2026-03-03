@@ -1,18 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/auth');
+// const { authenticate } = require('../middleware/auth');
 
 // Get all users by role type
-router.get('/vhts', authenticate, async (req, res) => {
+router.get('/vhts', async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     
     const vhts = await sql`
       SELECT 
-        id, phone_number, first_name, last_name, full_name,
-        gender, district, village, sub_county, region,
-        years_of_experience, training_certificate,
-        created_at, last_login, is_active
+        id, phone_number, full_name, role, district, village,
+        created_at, last_login
       FROM users 
       WHERE role = 'CHW' OR role = 'health_worker'
       ORDER BY created_at DESC
@@ -23,19 +21,13 @@ router.get('/vhts', authenticate, async (req, res) => {
       data: vhts.map(vht => ({
         id: vht.id,
         phoneNumber: vht.phone_number,
-        firstName: vht.first_name,
-        lastName: vht.last_name,
         fullName: vht.full_name,
-        gender: vht.gender,
+        role: vht.role,
         district: vht.district,
         village: vht.village,
-        subCounty: vht.sub_county,
-        region: vht.region,
-        yearsOfExperience: vht.years_of_experience,
-        trainingCertificate: vht.training_certificate,
         createdAt: vht.created_at,
         lastLogin: vht.last_login,
-        isActive: vht.is_active
+        isActive: true
       })),
       count: vhts.length
     });
@@ -45,17 +37,14 @@ router.get('/vhts', authenticate, async (req, res) => {
   }
 });
 
-router.get('/vslas', authenticate, async (req, res) => {
+router.get('/vslas', async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     
     const vslas = await sql`
       SELECT 
-        id, phone_number, first_name, last_name, full_name,
-        gender, district, village, sub_county, region,
-        organization_name, registration_number,
-        chairperson, group_size, meeting_frequency,
-        created_at, last_login, is_active
+        id, phone_number, full_name, role, district, village,
+        created_at, last_login
       FROM users 
       WHERE role = 'VSLA'
       ORDER BY created_at DESC
@@ -66,22 +55,13 @@ router.get('/vslas', authenticate, async (req, res) => {
       data: vslas.map(vsla => ({
         id: vsla.id,
         phoneNumber: vsla.phone_number,
-        firstName: vsla.first_name,
-        lastName: vsla.last_name,
         fullName: vsla.full_name,
-        gender: vsla.gender,
+        role: vsla.role,
         district: vsla.district,
         village: vsla.village,
-        subCounty: vsla.sub_county,
-        region: vsla.region,
-        organizationName: vsla.organization_name,
-        registrationNumber: vsla.registration_number,
-        chairperson: vsla.chairperson,
-        groupSize: vsla.group_size,
-        meetingFrequency: vsla.meeting_frequency,
         createdAt: vsla.created_at,
         lastLogin: vsla.last_login,
-        isActive: vsla.is_active
+        isActive: true
       })),
       count: vslas.length
     });
@@ -91,17 +71,14 @@ router.get('/vslas', authenticate, async (req, res) => {
   }
 });
 
-router.get('/retail-sellers', authenticate, async (req, res) => {
+router.get('/retail-sellers', async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     
     const retailers = await sql`
       SELECT 
-        id, phone_number, first_name, last_name, full_name,
-        gender, district, village, sub_county, region,
-        business_name, business_type, tin_number,
-        business_license, business_address,
-        created_at, last_login, is_active
+        id, phone_number, full_name, role, district, village,
+        created_at, last_login
       FROM users 
       WHERE role = 'outlet' OR role = 'retail'
       ORDER BY created_at DESC
@@ -112,22 +89,13 @@ router.get('/retail-sellers', authenticate, async (req, res) => {
       data: retailers.map(retailer => ({
         id: retailer.id,
         phoneNumber: retailer.phone_number,
-        firstName: retailer.first_name,
-        lastName: retailer.last_name,
         fullName: retailer.full_name,
-        gender: retailer.gender,
+        role: retailer.role,
         district: retailer.district,
         village: retailer.village,
-        subCounty: retailer.sub_county,
-        region: retailer.region,
-        businessName: retailer.business_name,
-        businessType: retailer.business_type,
-        tinNumber: retailer.tin_number,
-        businessLicense: retailer.business_license,
-        businessAddress: retailer.business_address,
         createdAt: retailer.created_at,
         lastLogin: retailer.last_login,
-        isActive: retailer.is_active
+        isActive: true
       })),
       count: retailers.length
     });
@@ -138,7 +106,7 @@ router.get('/retail-sellers', authenticate, async (req, res) => {
 });
 
 // Get user details by ID
-router.get('/user/:id', authenticate, async (req, res) => {
+router.get('/user/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const sql = req.app.locals.sql;
