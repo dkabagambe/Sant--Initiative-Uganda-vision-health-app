@@ -139,6 +139,7 @@ const testRoutes = require("./routes/test");
 const simpleClientsRoutes = require("./routes/simpleClients");
 const simpleReportsRoutes = require("./routes/simpleReports");
 const checkScreeningsRoutes = require("./routes/checkScreenings");
+const simpleUploadRoutes = require("./routes/simpleUpload");
 // const seedProductionRoutes = require("./routes/seedProduction"); // Module doesn't exist
 const { startPaymentReminderScheduler } = require("./services/paymentReminderScheduler");
 const os = require("os");
@@ -191,6 +192,7 @@ app.use("/api/test", testRoutes);
 app.use("/api/simple-clients", simpleClientsRoutes);
 app.use("/api/simple-reports", simpleReportsRoutes);
 app.use("/api/check-screenings", checkScreeningsRoutes);
+app.use("/api/simple-upload", simpleUploadRoutes);
 // app.use("/api/seed-production", seedProductionRoutes); // Module doesn't exist
 
 // --- 404 Handler ---
