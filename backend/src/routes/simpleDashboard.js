@@ -35,17 +35,25 @@ router.get('/stats', async (req, res) => {
       SELECT COALESCE(SUM(stock_quantity), 0) as total_stock FROM products
     `;
 
+    // Calculate glasses given (count of screenings where glasses were provided)
+    const glassesGiven = await sql`
+      SELECT COUNT(*) as total FROM screenings 
+      WHERE needs_glasses = true
+    `;
+
     res.json({
       success: true,
       data: {
-        // Match frontend expected field names
+        // Match frontend expected field names exactly
+        weekScreenings: parseInt(weekScreenings[0]?.total || 0),
+        glassesGiven: parseInt(glassesGiven[0]?.total || 0),
         clients: parseInt(clients[0]?.total || 0),
-        clientsDueRepayment: 0, // Can be calculated later
+        clientsDueRepayment: parseInt(pendingPayments[0]?.total || 0),
         inventory: parseInt(inventoryData[0]?.total_stock || 0),
         referrals: parseInt(pendingReferrals[0]?.total || 0),
         referralsOutstanding: 0, // Can be calculated later
-        paymentsDue: 0, // Can be calculated later
-        expectedAmount: 0, // Can be calculated later
+        paymentsDue: parseInt(pendingPayments[0]?.total || 0),
+        expectedAmount: parseInt(revenue[0]?.total || 0),
         
         // Also include the original data for other uses
         total_screenings: parseInt(screenings[0]?.total || 0),
@@ -65,7 +73,7 @@ router.get('/stats', async (req, res) => {
         pending_amount: 0,
         completed_referrals: 0,
         outstanding_referrals: 0,
-        total_stock: 0,
+        total_stock: parseInt(inventoryData[0]?.total_stock || 0),
         total_products: 0,
       }
     });

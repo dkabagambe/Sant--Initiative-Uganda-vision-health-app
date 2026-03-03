@@ -203,11 +203,28 @@ export const apiService = {
 
   async getCurrentUser(): Promise<User | null> {
     try {
+      // First try to get from backend (for fresh data)
+      const token = await AsyncStorage.getItem("authToken");
+      if (token) {
+        try {
+          const response = await api.get("/current-user/me");
+          if (response.data.success) {
+            const userData = response.data.data;
+            // Update AsyncStorage with fresh data
+            await AsyncStorage.setItem("user", JSON.stringify(userData));
+            return userData;
+          }
+        } catch (backendError) {
+          // If backend fails, fall back to AsyncStorage
+          console.warn("Backend user fetch failed, using cache:", backendError);
+        }
+      }
+      
+      // Fallback to AsyncStorage
       const userStr = await AsyncStorage.getItem("user");
       return userStr ? JSON.parse(userStr) : null;
     } catch (error) {
-      const err = error as Error;
-      console.error("Get current user error:", err);
+      console.error("Failed to get current user:", error);
       return null;
     }
   },

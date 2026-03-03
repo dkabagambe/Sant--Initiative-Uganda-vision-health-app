@@ -25,9 +25,10 @@ app.locals.db = db;
 
 // --- Middleware ---
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "*",
+  origin: "*", // Allow all origins for physical device testing
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  credentials: false, // Important for physical devices
 }));
 app.use(
   express.json({
@@ -133,6 +134,8 @@ const debugDashboardRoutes = require("./routes/debugDashboard");
 const simpleDashboardRoutes = require("./routes/simpleDashboard");
 const checkSchemaRoutes = require("./routes/checkSchema");
 const simpleRegistrationRoutes = require("./routes/simpleRegistration");
+const currentUserRoutes = require("./routes/currentUser");
+const testRoutes = require("./routes/test");
 // const seedProductionRoutes = require("./routes/seedProduction"); // Module doesn't exist
 const { startPaymentReminderScheduler } = require("./services/paymentReminderScheduler");
 const os = require("os");
@@ -180,6 +183,8 @@ app.use("/api/debug-dashboard", debugDashboardRoutes);
 app.use("/api/simple-dashboard", simpleDashboardRoutes);
 app.use("/api/check-schema", checkSchemaRoutes);
 app.use("/api/simple-registration", simpleRegistrationRoutes);
+app.use("/api/current-user", currentUserRoutes);
+app.use("/api/test", testRoutes);
 // app.use("/api/seed-production", seedProductionRoutes); // Module doesn't exist
 
 // --- 404 Handler ---
