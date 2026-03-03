@@ -29,7 +29,10 @@ const buildReminderMessage = (payment, type) => {
 };
 
 exports.startPaymentReminderScheduler = (sql) => {
-  console.log("⏰ Starting payment reminder scheduler (hourly checks)...");
+  // Reduced logging - only log errors in production
+  if (process.env.NODE_ENV === 'development') {
+    console.log("⏰ Starting payment reminder scheduler (hourly checks)...");
+  }
 
   const runCheck = async () => {
     try {
@@ -61,11 +64,10 @@ exports.startPaymentReminderScheduler = (sql) => {
         if (!payment.client_phone) continue;
         const msg = buildReminderMessage(payment, "upcoming");
         sendSMS(payment.client_phone, msg).then((r) => {
-          console.log("📩 Upcoming installment reminder sent:", {
-            id: payment.id,
-            phone: payment.client_phone,
-            result: r,
-          });
+          // Only log errors, not successful sends
+          if (!r.success) {
+            console.error("Failed to send upcoming reminder:", r.error);
+          }
         }).catch((err) => {
           console.error("Failed to send upcoming reminder:", err.message);
         });
@@ -75,11 +77,10 @@ exports.startPaymentReminderScheduler = (sql) => {
         if (!payment.client_phone) continue;
         const msg = buildReminderMessage(payment, "overdue");
         sendSMS(payment.client_phone, msg).then((r) => {
-          console.log("📩 Overdue installment reminder sent:", {
-            id: payment.id,
-            phone: payment.client_phone,
-            result: r,
-          });
+          // Only log errors, not successful sends
+          if (!r.success) {
+            console.error("Failed to send overdue reminder:", r.error);
+          }
         }).catch((err) => {
           console.error("Failed to send overdue reminder:", err.message);
         });

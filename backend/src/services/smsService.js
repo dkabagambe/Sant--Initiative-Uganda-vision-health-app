@@ -132,9 +132,8 @@ exports.verifyOTP = async (phoneNumber, code) => {
  * @param {string} message
  */
 exports.sendSMS = async (phoneNumber, message) => {
-  // If SMS not configured, just log and pretend success (dev mode)
+  // If SMS not configured, just pretend success (dev mode) - no logging spam
   if (!twilioService || (!TWILIO_MESSAGING_SERVICE_SID && !TWILIO_SMS_FROM)) {
-    console.log(`📱 [DEV MODE] SMS to ${phoneNumber}: ${message}`);
     return { success: true, devMode: true };
   }
 
