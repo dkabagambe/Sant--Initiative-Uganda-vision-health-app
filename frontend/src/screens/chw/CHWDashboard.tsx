@@ -155,6 +155,7 @@ export default function CHWDashboard() {
       setUserData(user);
     } catch (error) {
       console.error("CHWDashboard: Failed to load user data:", error);
+      console.error("CHWDashboard: Error details:", JSON.stringify(error, null, 2));
     }
   };
 
