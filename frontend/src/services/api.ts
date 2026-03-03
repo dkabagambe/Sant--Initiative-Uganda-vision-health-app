@@ -541,6 +541,55 @@ export const apiService = {
     }
   },
 
+  async uploadCHWDocuments(files: Array<{ uri: string; name: string; type: string }>) {
+    try {
+      const formData = new FormData();
+      
+      files.forEach((file, index) => {
+        formData.append("files", {
+          uri: file.uri,
+          name: file.name,
+          type: file.type,
+        } as any);
+      });
+
+      const response = await api.post("/chw-upload/documents", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        timeout: 120000, // 120 second timeout for large CHW documents
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("CHW documents upload error:", error);
+      throw error;
+    }
+  },
+
+  async uploadCHWFile(file: { uri: string; name: string; type: string }) {
+    try {
+      const formData = new FormData();
+      formData.append("file", {
+        uri: file.uri,
+        name: file.name,
+        type: file.type,
+      } as any);
+
+      const response = await api.post("/chw-upload/single", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        timeout: 90000, // 90 second timeout for large CHW documents
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("CHW file upload error:", error);
+      throw error;
+    }
+  },
+
   async uploadMultipleFiles(
     files: Array<{ uri: string; name: string; type: string }>,
   ) {

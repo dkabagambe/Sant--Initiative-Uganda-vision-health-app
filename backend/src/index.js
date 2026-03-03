@@ -142,6 +142,7 @@ const checkScreeningsRoutes = require("./routes/checkScreenings");
 const simpleUploadRoutes = require("./routes/simpleUpload");
 const vslaUploadRoutes = require("./routes/vslaUpload");
 const outletUploadRoutes = require("./routes/outletUpload");
+const chwUploadRoutes = require("./routes/chwUpload");
 // const seedProductionRoutes = require("./routes/seedProduction"); // Module doesn't exist
 const { startPaymentReminderScheduler } = require("./services/paymentReminderScheduler");
 const os = require("os");
@@ -157,6 +158,12 @@ const outletUploadsPath = process.env.VERCEL
   ? path.join(os.tmpdir(), "sante-outlet-uploads")
   : path.join(__dirname, "../uploads/outlets");
 app.use("/uploads/outlets", express.static(outletUploadsPath));
+
+// --- Serve CHW uploaded files ---
+const chwUploadsPath = process.env.VERCEL
+  ? path.join(os.tmpdir(), "sante-chw-uploads")
+  : path.join(__dirname, "../uploads/chw");
+app.use("/uploads/chw", express.static(chwUploadsPath));
 
 // --- Root and favicon (avoid 404 when opening backend URL in browser) ---
 app.get("/", (req, res) => {
@@ -203,6 +210,7 @@ app.use("/api/check-screenings", checkScreeningsRoutes);
 app.use("/api/simple-upload", simpleUploadRoutes);
 app.use("/api/vsla-upload", vslaUploadRoutes);
 app.use("/api/outlet-upload", outletUploadRoutes);
+app.use("/api/chw-upload", chwUploadRoutes);
 // app.use("/api/seed-production", seedProductionRoutes); // Module doesn't exist
 
 // --- 404 Handler ---

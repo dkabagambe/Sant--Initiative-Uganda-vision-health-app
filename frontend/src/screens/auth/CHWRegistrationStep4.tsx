@@ -94,10 +94,10 @@ export default function CHWRegistrationStep4() {
 
       const file = result.assets[0];
 
-      // Check file size (5MB limit)
-      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      // Check file size (15MB limit)
+      const maxSize = 15 * 1024 * 1024; // 15MB in bytes
       if (file.size && file.size > maxSize) {
-        Alert.alert("File Too Large", "Please select a file smaller than 5MB", [
+        Alert.alert("File Too Large", "Please select a file smaller than 15MB for CHW documents", [
           { text: "OK" },
         ]);
         setIsUploading(null);
@@ -106,7 +106,7 @@ export default function CHWRegistrationStep4() {
 
       // Upload file to server
       try {
-        const uploadResult = await apiService.uploadFile({
+        const uploadResult = await apiService.uploadCHWFile({
           uri: file.uri,
           name: file.name,
           type: file.mimeType || "application/pdf",
