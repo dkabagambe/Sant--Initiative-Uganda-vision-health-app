@@ -46,7 +46,7 @@ router.get('/vslas', async (req, res) => {
         id, phone_number, full_name, role, district, village,
         created_at, last_login
       FROM users 
-      WHERE role = 'VSLA'
+      WHERE role ILIKE '%vsla%' OR role ILIKE '%group%' OR role ILIKE '%savings%'
       ORDER BY created_at DESC
     `;
 

@@ -258,6 +258,8 @@ const OutletRegistrationStep4 = () => {
         shopFrontImage: shopFrontUrl,
         ownerIdImage: ownerIdUrl,
         ownerFullName: registrationData?.ownerFullName,
+        // Map villageCellStreet to village for backend compatibility
+        village: registrationData?.villageCellStreet || registrationData?.village,
       };
 
       const normalizedPhone = normalizePhoneForApi(phone);
