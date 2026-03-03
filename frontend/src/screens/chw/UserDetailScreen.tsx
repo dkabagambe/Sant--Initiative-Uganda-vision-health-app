@@ -45,6 +45,7 @@ const UserDetailScreen: React.FC = () => {
     lastName: '',
     phoneNumber: '',
     email: '',
+    gender: '',
     nationalId: '',
     dateOfBirth: '',
     role: '',
@@ -78,6 +79,7 @@ const UserDetailScreen: React.FC = () => {
           lastName: response.data.lastName || '',
           phoneNumber: response.data.phoneNumber || '',
           email: response.data.email || '',
+          gender: response.data.gender || '',
           nationalId: response.data.nationalId || '',
           dateOfBirth: response.data.dateOfBirth || '',
           role: response.data.role || '',
@@ -162,6 +164,10 @@ const UserDetailScreen: React.FC = () => {
         <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>Email</Text>
           <Text style={styles.infoValue}>{userDetails.email || "N/A"}</Text>
+        </View>
+        <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>Gender</Text>
+          <Text style={styles.infoValue}>{userDetails.gender || "N/A"}</Text>
         </View>
         <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>National ID</Text>
@@ -417,6 +423,16 @@ const UserDetailScreen: React.FC = () => {
                   onChangeText={(text) => setEditForm(prev => ({ ...prev, email: text }))}
                   placeholder="Enter email"
                   keyboardType="email-address"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Gender</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editForm.gender}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, gender: text }))}
+                  placeholder="Enter gender"
                 />
               </View>
               
