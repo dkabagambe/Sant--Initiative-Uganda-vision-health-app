@@ -417,7 +417,7 @@ export const apiService = {
   },
 
   async getReports(reportType?: string, startDate?: string, endDate?: string) {
-    const response = await api.get("/dashboard/reports", {
+    const response = await api.get("/simple-reports/list", {
       params: { reportType, startDate, endDate },
     });
     return response.data;
