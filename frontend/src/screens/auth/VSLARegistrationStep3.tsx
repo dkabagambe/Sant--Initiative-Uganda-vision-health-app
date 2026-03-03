@@ -269,7 +269,7 @@ const VSLARegistrationStep3 = () => {
               <View
                 style={[
                   styles.checkbox,
-                  !benefit.checked && styles.uncheckedBox,
+                  benefit.checked ? styles.checkedBox : styles.uncheckedBox,
                 ]}
               >
                 {benefit.checked && <Text style={styles.checkmark}>✓</Text>}
@@ -329,6 +329,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 40,
+    paddingHorizontal: 20,
   },
   // Exact header style as requested
   headerTop: {
@@ -358,7 +359,6 @@ const styles = StyleSheet.create({
   },
   // Progress Bar Styles
   progressWrapper: {
-    marginHorizontal: 20,
     marginBottom: 32,
   },
   progressBarContainer: {
@@ -403,7 +403,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
-    marginHorizontal: 20,
   },
   benefitsSection: {
     marginBottom: 24,
@@ -472,22 +471,27 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 1,
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
     borderColor: "#DDD",
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#FFF",
     marginRight: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   uncheckedBox: {
     backgroundColor: "#FFF",
+    borderColor: "#DDD",
+  },
+  checkedBox: {
+    backgroundColor: "#4CAF50",
+    borderColor: "#4CAF50",
   },
   checkmark: {
     color: "#FFF",
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "bold",
   },
   benefitText: {
@@ -499,7 +503,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 12,
-    marginHorizontal: 20,
     marginTop: 10,
   },
   button: {
