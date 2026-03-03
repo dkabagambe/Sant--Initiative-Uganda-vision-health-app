@@ -113,7 +113,7 @@ router.get('/user/:id', async (req, res) => {
     
     const users = await sql`
       SELECT 
-        id, phone_number, full_name, role,
+        id, phone_number, full_name, gender, role,
         district, village, created_at, last_login
       FROM users 
       WHERE id = ${id}
@@ -131,6 +131,7 @@ router.get('/user/:id', async (req, res) => {
         id: user.id,
         phoneNumber: user.phone_number,
         fullName: user.full_name,
+        gender: user.gender,
         role: user.role,
         district: user.district,
         village: user.village,

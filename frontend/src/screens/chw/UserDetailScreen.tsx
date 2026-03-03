@@ -53,7 +53,6 @@ const UserDetailScreen: React.FC = () => {
     parish: '',
     subCounty: '',
     district: '',
-    region: '',
     organizationName: '',
     registrationNumber: '',
     yearsOfExperience: '',
@@ -88,7 +87,6 @@ const UserDetailScreen: React.FC = () => {
           parish: response.data.parish || '',
           subCounty: response.data.subCounty || '',
           district: response.data.district || '',
-          region: response.data.region || '',
           organizationName: response.data.organizationName || '',
           registrationNumber: response.data.registrationNumber || '',
           yearsOfExperience: response.data.yearsOfExperience || '',
@@ -214,10 +212,6 @@ const UserDetailScreen: React.FC = () => {
         <View style={styles.infoItem}>
           <Text style={styles.infoLabel}>District</Text>
           <Text style={styles.infoValue}>{userDetails.district || "N/A"}</Text>
-        </View>
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Region</Text>
-          <Text style={styles.infoValue}>{userDetails.region || "N/A"}</Text>
         </View>
       </View>
     </View>
@@ -499,16 +493,6 @@ const UserDetailScreen: React.FC = () => {
                   value={editForm.district}
                   onChangeText={(text) => setEditForm(prev => ({ ...prev, district: text }))}
                   placeholder="Enter district"
-                />
-              </View>
-              
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Region</Text>
-                <TextInput
-                  style={styles.input}
-                  value={editForm.region}
-                  onChangeText={(text) => setEditForm(prev => ({ ...prev, region: text }))}
-                  placeholder="Enter region"
                 />
               </View>
             </ScrollView>
