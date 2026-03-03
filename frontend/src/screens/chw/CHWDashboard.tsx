@@ -146,11 +146,15 @@ export default function CHWDashboard() {
 
   const loadUserData = async () => {
     try {
+      console.log("CHWDashboard: Loading user data...");
       const user = await apiService.getCurrentUser();
-      console.log("Loaded user data:", user);
+      console.log("CHWDashboard: Loaded user data:", user);
+      console.log("CHWDashboard: User name:", user?.first_name || user?.full_name);
+      console.log("CHWDashboard: User district:", user?.district);
+      console.log("CHWDashboard: User role:", user?.role);
       setUserData(user);
     } catch (error) {
-      console.error("Failed to load user data:", error);
+      console.error("CHWDashboard: Failed to load user data:", error);
     }
   };
 
