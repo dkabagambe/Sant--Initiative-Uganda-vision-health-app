@@ -210,11 +210,19 @@ export const apiService = {
 
   async getCurrentUser(): Promise<User | null> {
     try {
+      // First try to get stored user data to get phone number
+      const userStr = await AsyncStorage.getItem("user");
+      const storedUser = userStr ? JSON.parse(userStr) : null;
+      
       // First try to get from backend (for fresh data)
       const token = await AsyncStorage.getItem("authToken");
       if (token) {
         try {
-          const response = await api.get("/current-user/me");
+          // Pass phone number if we have it
+          const phoneNumber = storedUser?.phone_number || storedUser?.phoneNumber;
+          const params = phoneNumber ? { phoneNumber } : {};
+          
+          const response = await api.get("/current-user/me", { params });
           if (response.data.success) {
             const userData = response.data.data;
             // Update AsyncStorage with fresh data
@@ -228,8 +236,7 @@ export const apiService = {
       }
       
       // Fallback to AsyncStorage
-      const userStr = await AsyncStorage.getItem("user");
-      return userStr ? JSON.parse(userStr) : null;
+      return storedUser;
     } catch (error) {
       console.error("Failed to get current user:", error);
       return null;
