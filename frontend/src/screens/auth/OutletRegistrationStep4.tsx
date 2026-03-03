@@ -103,12 +103,12 @@ const OutletRegistrationStep4 = () => {
       const aspect: [number, number] = type === "shopFront" ? [3, 2] : [3, 4];
 
       const launchOptions = {
-        mediaTypes: ['images'],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect,
         quality: 1,
         base64: false,
-        presentationStyle: 'fullScreen',
+        presentationStyle: ImagePicker.UIImagePickerPresentationStyle.FULL_SCREEN,
       };
 
       const result = useCamera
