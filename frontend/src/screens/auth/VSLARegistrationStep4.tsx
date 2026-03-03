@@ -98,9 +98,26 @@ const VSLARegistrationStep4 = () => {
 
   const [errors, setErrors] = useState<{ [key: number]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Agreement checkboxes state
+  const [agreements, setAgreements] = useState({
+    infoAccurate: false,
+    partnershipTerms: false,
+    memberRecords: false,
+    financialManagement: false,
+    approvalTime: false,
+    leadershipTraining: false,
+  });
 
   const handlePrevious = () => {
     navigation.goBack();
+  };
+
+  const toggleAgreement = (key: keyof typeof agreements) => {
+    setAgreements(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
   };
 
   const pickImage = async (id: number) => {
@@ -204,6 +221,13 @@ const VSLARegistrationStep4 = () => {
   const handleSubmit = async () => {
     if (!validateForm()) {
       Alert.alert("Missing Documents", "Please upload all required documents");
+      return;
+    }
+
+    // Check if all agreements are checked
+    const allAgreementsChecked = Object.values(agreements).every(checked => checked);
+    if (!allAgreementsChecked) {
+      Alert.alert("Agreements Required", "Please check all agreement boxes to submit the registration");
       return;
     }
 
@@ -399,42 +423,131 @@ const VSLARegistrationStep4 = () => {
             By submitting this registration:
           </Text>
 
-          <View style={styles.agreementItem}>
-            <Text style={styles.bullet}>•</Text>
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => toggleAgreement("infoAccurate")}
+          >
+            <View style={styles.checkboxContainer}>
+              <View
+                style={[
+                  styles.checkbox,
+                  agreements.infoAccurate && styles.checkboxChecked,
+                ]}
+              >
+                {agreements.infoAccurate && (
+                  <Text style={styles.checkmark}>✓</Text>
+                )}
+              </View>
+            </View>
             <Text style={styles.agreementText}>
               We confirm all information provided is accurate
             </Text>
-          </View>
-          <View style={styles.agreementItem}>
-            <Text style={styles.bullet}>•</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => toggleAgreement("partnershipTerms")}
+          >
+            <View style={styles.checkboxContainer}>
+              <View
+                style={[
+                  styles.checkbox,
+                  agreements.partnershipTerms && styles.checkboxChecked,
+                ]}
+              >
+                {agreements.partnershipTerms && (
+                  <Text style={styles.checkmark}>✓</Text>
+                )}
+              </View>
+            </View>
             <Text style={styles.agreementText}>
               We agree to Santé's partnership terms & conditions
             </Text>
-          </View>
-          <View style={styles.agreementItem}>
-            <Text style={styles.bullet}>•</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => toggleAgreement("memberRecords")}
+          >
+            <View style={styles.checkboxContainer}>
+              <View
+                style={[
+                  styles.checkbox,
+                  agreements.memberRecords && styles.checkboxChecked,
+                ]}
+              >
+                {agreements.memberRecords && (
+                  <Text style={styles.checkmark}>✓</Text>
+                )}
+              </View>
+            </View>
             <Text style={styles.agreementText}>
               We will maintain accurate member records
             </Text>
-          </View>
-          <View style={styles.agreementItem}>
-            <Text style={styles.bullet}>•</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => toggleAgreement("financialManagement")}
+          >
+            <View style={styles.checkboxContainer}>
+              <View
+                style={[
+                  styles.checkbox,
+                  agreements.financialManagement && styles.checkboxChecked,
+                ]}
+              >
+                {agreements.financialManagement && (
+                  <Text style={styles.checkmark}>✓</Text>
+                )}
+              </View>
+            </View>
             <Text style={styles.agreementText}>
               We commit to transparent financial management
             </Text>
-          </View>
-          <View style={styles.agreementItem}>
-            <Text style={styles.bullet}>•</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => toggleAgreement("approvalTime")}
+          >
+            <View style={styles.checkboxContainer}>
+              <View
+                style={[
+                  styles.checkbox,
+                  agreements.approvalTime && styles.checkboxChecked,
+                ]}
+              >
+                {agreements.approvalTime && (
+                  <Text style={styles.checkmark}>✓</Text>
+                )}
+              </View>
+            </View>
             <Text style={styles.agreementText}>
               We understand approval may take 24-48 hours
             </Text>
-          </View>
-          <View style={styles.agreementItem}>
-            <Text style={styles.bullet}>•</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => toggleAgreement("leadershipTraining")}
+          >
+            <View style={styles.checkboxContainer}>
+              <View
+                style={[
+                  styles.checkbox,
+                  agreements.leadershipTraining && styles.checkboxChecked,
+                ]}
+              >
+                {agreements.leadershipTraining && (
+                  <Text style={styles.checkmark}>✓</Text>
+                )}
+              </View>
+            </View>
             <Text style={styles.agreementText}>
               Leadership will complete required training
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.buttonRow}>
@@ -656,6 +769,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#333",
     flex: 1,
+  },
+  agreementRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 16,
+  },
+  checkboxContainer: {
+    marginRight: 12,
+    marginTop: 2,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: "#DDD",
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxChecked: {
+    backgroundColor: "#4CAF50",
+    borderColor: "#4CAF50",
+  },
+  checkmark: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "bold",
   },
   buttonRow: {
     flexDirection: "row",
