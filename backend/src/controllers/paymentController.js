@@ -102,25 +102,47 @@ exports.createPayment = async (req, res) => {
     // Generate transaction ID
     const transactionId = `TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-    // Create payment
-    const payment = await sql`
-      INSERT INTO payments (
-        screening_id, product_id, client_name, client_phone,
-        amount, mobile_money_number, transaction_id,
-        status, payment_method, payment_type,
-        installment_number, total_installments, due_date,
-        offline_id, is_synced,
-        provider, provider_reference, provider_status
-      ) VALUES (
-        ${screeningId || null}, ${productId || null}, ${clientName}, ${clientPhone},
-        ${amount}, ${mobileMoneyNumber || clientPhone}, ${transactionId},
-        'pending', ${paymentMethod || 'mobile_money'}, ${paymentType || 'full'},
-        ${installmentNumber || null}, ${totalInstallments || null}, ${dueDate || null},
-        ${offlineId || null}, true,
-        ${provider || null}, ${providerReference || null}, ${providerStatus || null}
-      )
-      RETURNING *
-    `;
+    // Try full payment creation first, fall back to basic fields if schema doesn't support
+    let payment;
+    try {
+      payment = await sql`
+        INSERT INTO payments (
+          screening_id, product_id, client_name, client_phone,
+          amount, mobile_money_number, transaction_id,
+          status, payment_method, payment_type,
+          installment_number, total_installments, due_date,
+          offline_id, is_synced,
+          provider, provider_reference, provider_status
+        ) VALUES (
+          ${screeningId || null}, ${productId || null}, ${clientName}, ${clientPhone},
+          ${amount}, ${mobileMoneyNumber || clientPhone}, ${transactionId},
+          'pending', ${paymentMethod || 'mobile_money'}, ${paymentType || 'full'},
+          ${installmentNumber || null}, ${totalInstallments || null}, ${dueDate || null},
+          ${offlineId || null}, true,
+          ${provider || null}, ${providerReference || null}, ${providerStatus || null}
+        )
+        RETURNING *
+      `;
+    } catch (schemaError) {
+      // If schema doesn't support all fields, use basic fields only
+      console.log('⚠️ Payment schema limited, using basic fields only');
+      payment = await sql`
+        INSERT INTO payments (
+          screening_id, product_id, client_name, client_phone,
+          amount, mobile_money_number, transaction_id,
+          status, payment_method, payment_type,
+          installment_number, total_installments, due_date,
+          is_synced
+        ) VALUES (
+          ${screeningId || null}, ${productId || null}, ${clientName}, ${clientPhone},
+          ${amount}, ${mobileMoneyNumber || clientPhone}, ${transactionId},
+          'pending', ${paymentMethod || 'mobile_money'}, ${paymentType || 'full'},
+          ${installmentNumber || null}, ${totalInstallments || null}, ${dueDate || null},
+          true
+        )
+        RETURNING *
+      `;
+    }
 
     // TODO: Integrate with mobile money API (MTN MoMo, Airtel Money)
     // For now, simulate payment processing
