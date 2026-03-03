@@ -34,9 +34,13 @@ app.use(
     verify: (req, _res, buf) => {
       req.rawBody = buf.toString("utf8");
     },
+    limit: '15mb', // Increase limit for large uploads
   }),
 );
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: '15mb', // Increase limit for large uploads
+}));
 
 // --- Health check ---
 app.get("/api/health", async (req, res) => {
