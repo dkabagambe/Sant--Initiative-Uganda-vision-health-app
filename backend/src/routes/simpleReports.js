@@ -189,7 +189,6 @@ router.get('/list', async (req, res) => {
           r.client_phone,
           r.client_age,
           r.client_gender,
-          r.client_village,
           r.client_district,
           r.referral_reason,
           r.facility_name,

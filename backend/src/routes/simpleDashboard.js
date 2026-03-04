@@ -18,16 +18,16 @@ router.get('/stats', async (req, res) => {
     const referralCount = await sql`SELECT COUNT(*) as total FROM referrals`;
     const pendingReferrals = await sql`SELECT COUNT(*) as total FROM referrals WHERE status = 'pending'`;
     
-    // This week screenings
+    // This week screenings (SQLite compatible)
     const weekScreenings = await sql`
       SELECT COUNT(*) as total FROM screenings 
-      WHERE screening_date >= CURRENT_DATE - INTERVAL '7 days'
+      WHERE screening_date >= date('now', '-7 days')
     `;
     
-    // Today screenings
+    // Today screenings (SQLite compatible)
     const todayScreenings = await sql`
       SELECT COUNT(*) as total FROM screenings 
-      WHERE screening_date = CURRENT_DATE
+      WHERE date(screening_date) = date('now')
     `;
     
     // Get inventory data
