@@ -112,14 +112,35 @@ const UserDetailScreen: React.FC = () => {
   const handleSaveEdit = async () => {
     setIsSaving(true);
     try {
-      // For now, just show success message
-      // In a real implementation, you would call an API endpoint to update the user
-      Alert.alert(
-        "Success",
-        "User information updated successfully!",
-        [{ text: "OK", onPress: () => setEditModalVisible(false) }]
-      );
+      // Prepare update data
+      const updateData = {
+        fullName: editForm.fullName,
+        phoneNumber: editForm.phoneNumber,
+        email: editForm.email,
+        gender: editForm.gender,
+        district: editForm.district,
+        village: editForm.village,
+        parish: editForm.parish,
+        subCounty: editForm.subCounty,
+      };
+
+      // Call API to update user
+      const response = await apiService.updateUserProfile(updateData);
+      
+      if (response.success) {
+        // Update local state
+        setUserDetails(prev => ({ ...prev, ...updateData }));
+        
+        Alert.alert(
+          "Success",
+          "User information updated successfully!",
+          [{ text: "OK", onPress: () => setEditModalVisible(false) }]
+        );
+      } else {
+        Alert.alert("Error", response.error || "Failed to update user information");
+      }
     } catch (error) {
+      console.error("Update user error:", error);
       Alert.alert("Error", "Failed to update user information");
     } finally {
       setIsSaving(false);
