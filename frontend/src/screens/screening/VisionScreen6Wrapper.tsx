@@ -21,6 +21,16 @@ export default function VisionScreen6Wrapper() {
     console.log("Client Age:", screeningData.clientAge);
   }, [screeningData]);
 
+  // Clear completed data when screening context is reset
+  React.useEffect(() => {
+    if (Object.keys(screeningData).length === 0) {
+      setCompletedData(null);
+      setScreeningId(null);
+      setShowComplete(false);
+      setSubmitting(false);
+    }
+  }, [screeningData]);
+
   // Torch test and distance vision referrals are now handled directly
   // in VisionScreen4 and VisionScreen5 by navigating to CreateReferralScreen.
 

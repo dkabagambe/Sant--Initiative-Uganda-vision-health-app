@@ -23,13 +23,29 @@ import { apiService } from "../../services/api";
 
 export default function VisionScreen1() {
   const navigation = useNavigation<any>();
-  const { updateScreeningData } = useScreening();
+  const { screeningData, updateScreeningData } = useScreening();
   const { t } = useLanguage();
   const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
     loadUserData();
   }, []);
+
+  // Clear form data when screening context is reset
+  useEffect(() => {
+    if (Object.keys(screeningData).length === 0) {
+      setFormData({
+        fullName: "",
+        age: "",
+        phoneNumber: "",
+        sex: "",
+        district: "",
+        county: "",
+        subCounty: "",
+        parish: "",
+      });
+    }
+  }, [screeningData]);
 
   const loadUserData = async () => {
     try {
