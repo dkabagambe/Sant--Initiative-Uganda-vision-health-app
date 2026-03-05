@@ -14,7 +14,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
-import NetInfo from "@react-native-community/netinfo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function ScreeningComplete() {
@@ -26,14 +25,16 @@ export default function ScreeningComplete() {
   const glassesDispensed = route.params?.glassesDispensed || false;
   const glassesPower = route.params?.glassesPower || "";
 
-  // Check network connectivity
+  // Simple offline detection - check if API is reachable
   const checkNetworkConnectivity = async (): Promise<boolean> => {
     try {
-      const netInfo = await NetInfo.fetch();
-      return !netInfo.isConnected || !netInfo.isInternetReachable;
+      // Try a simple API call to check connectivity
+      await apiService.getCurrentUser();
+      return false; // If API works, we're online
     } catch (error) {
-      console.error("Failed to check network connectivity:", error);
-      return false; // Assume online if check fails
+      // If API fails, assume we're offline
+      console.log("API connectivity check failed, assuming offline");
+      return true;
     }
   };
 
