@@ -204,7 +204,8 @@ router.get('/list', async (req, res) => {
           r.updated_at,
           s.needs_glasses,
           s.needs_referral,
-          s.torch_test_result,
+          s.torch_test_passed,
+          s.torch_test_abnormal_signs,
           s.distance_vision_left,
           s.distance_vision_right
         FROM referrals r
@@ -238,7 +239,8 @@ router.get('/list', async (req, res) => {
             r.updated_at,
             s.needs_glasses,
             s.needs_referral,
-            s.torch_test_result,
+            s.torch_test_passed,
+          s.torch_test_abnormal_signs,
             s.distance_vision_left,
             s.distance_vision_right
           FROM referrals r
