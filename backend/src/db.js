@@ -63,7 +63,6 @@ if (hasPostgresUrl && !useSqliteEnv) {
     testConnection().then(success => {
       if (success) {
         console.log('🔗 Using Neon database (same as Vercel production)');
-        module.exports = { sql, db };
       } else {
         throw new Error('Failed to connect to Neon database');
       }
@@ -71,6 +70,9 @@ if (hasPostgresUrl && !useSqliteEnv) {
       console.error('Database initialization failed:', err.message);
       throw err;
     });
+    
+    // Export immediately for synchronous access
+    module.exports = { sql, db };
     
   } catch (err) {
     console.error("Failed to load Neon client:", err.message);
