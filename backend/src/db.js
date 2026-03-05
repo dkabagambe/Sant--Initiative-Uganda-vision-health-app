@@ -59,16 +59,31 @@ if (hasPostgresUrl && !useSqliteEnv) {
       }
     };
     
-    // Test connection on startup
+    // Test connection on startup with fallback
     testConnection().then(success => {
       if (success) {
         console.log('🔗 Using Neon database (same as Vercel production)');
       } else {
-        throw new Error('Failed to connect to Neon database');
+        console.warn('⚠️ Neon failed, falling back to SQLite for development');
+        // Fallback to SQLite
+        const dbLocal = require("./db-local");
+        const syncSql = dbLocal.sql;
+        sql = function (strings, ...values) {
+          return Promise.resolve(syncSql.apply(null, [strings, ...values]));
+        };
+        db = dbLocal.db;
+        console.log('📦 Using SQLite (fallback for corporate network)');
       }
     }).catch(err => {
-      console.error('Database initialization failed:', err.message);
-      throw err;
+      console.warn('⚠️ Neon connection failed, falling back to SQLite:', err.message);
+      // Fallback to SQLite
+      const dbLocal = require("./db-local");
+      const syncSql = dbLocal.sql;
+      sql = function (strings, ...values) {
+        return Promise.resolve(syncSql.apply(null, [strings, ...values]));
+      };
+      db = dbLocal.db;
+      console.log('📦 Using SQLite (fallback for corporate network)');
     });
     
     // Export immediately for synchronous access
