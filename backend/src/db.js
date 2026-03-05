@@ -15,12 +15,63 @@ const rawUrl = process.env.DATABASE_URL && process.env.DATABASE_URL.trim();
 const hasPostgresUrl = rawUrl && (rawUrl.startsWith("postgresql://") || rawUrl.startsWith("postgres://"));
 
 if (hasPostgresUrl && !useSqliteEnv) {
-  // Production/Development: Neon/Postgres (async). Same database as Vercel.
+  // Production: Neon/Postgres (async). Same database as Vercel.
   try {
     const { neon } = require("@neondatabase/serverless");
-    sql = neon(rawUrl);
-    console.log('🔗 Using Neon database (same as Vercel production)');
-    module.exports = { sql, db };
+    
+    // Create Neon client with custom configuration for corporate networks
+    const neonSql = neon(rawUrl, {
+      connectionTimeoutMillis: 10000,
+      queryTimeoutMillis: 30000,
+    });
+    
+    // Test connection immediately
+    const testConnection = async () => {
+      try {
+        const result = await neonSql`SELECT NOW() as test`;
+        console.log('✅ Neon database connection successful');
+        return true;
+      } catch (error) {
+        console.error('❌ Neon connection test failed:', error.message);
+        return false;
+      }
+    };
+    
+    // Wrap with retry mechanism
+    sql = async function(strings, ...values) {
+      const maxRetries = 3;
+      const baseDelay = 1000;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          return await neonSql(strings, ...values);
+        } catch (error) {
+          console.warn(`Neon query attempt ${attempt} failed:`, error.message);
+          
+          if (attempt === maxRetries) {
+            throw new Error(`Database connection failed after ${maxRetries} attempts: ${error.message}`);
+          }
+          
+          // Exponential backoff
+          const delay = baseDelay * Math.pow(2, attempt - 1);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    };
+    
+    // Test connection on startup
+    testConnection().then(success => {
+      if (success) {
+        console.log('🔗 Using Neon database (same as Vercel production)');
+        module.exports = { sql, db };
+      } else {
+        throw new Error('Failed to connect to Neon database');
+      }
+    }).catch(err => {
+      console.error('Database initialization failed:', err.message);
+      throw err;
+    });
+    
   } catch (err) {
     console.error("Failed to load Neon client:", err.message);
     throw err;
