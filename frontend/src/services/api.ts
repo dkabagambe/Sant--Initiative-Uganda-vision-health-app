@@ -402,7 +402,7 @@ export const apiService = {
   },
 
   async getInventorySummary() {
-    const response = await api.get("/dashboard/inventory");
+    const response = await api.get("/simple-inventory/summary");
     return response.data;
   },
 
