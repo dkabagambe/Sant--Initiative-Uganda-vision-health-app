@@ -300,17 +300,17 @@ export const apiService = {
 
   // ============ PAYMENTS ============
   async createPayment(paymentData: any) {
-    const response = await api.post("/payments", paymentData);
+    const response = await api.post("/simple-payments/create", paymentData);
     return response.data;
   },
 
   async initiateMobileMoneyPayment(paymentData: any) {
-    const response = await api.post("/payments/initiate", paymentData);
+    const response = await api.post("/simple-payments/create", paymentData);
     return response.data;
   },
 
   async getPaymentStatus(paymentId: string) {
-    const response = await api.get(`/payments/${paymentId}/status`);
+    const response = await api.get(`/simple-payments/${paymentId}/status`);
     return response.data;
   },
 
@@ -319,17 +319,17 @@ export const apiService = {
     data: Payment[];
     count: number;
   }> {
-    const response = await api.get("/payments");
+    const response = await api.get("/simple-payments/list");
     return response.data;
   },
 
   async getPaymentStats() {
-    const response = await api.get("/payments/stats");
+    const response = await api.get("/simple-payments/stats");
     return response.data;
   },
 
   async updatePaymentStatus(paymentId: string, status: string) {
-    const response = await api.patch(`/payments/${paymentId}/status`, {
+    const response = await api.patch(`/simple-payments/${paymentId}/status`, {
       status,
     });
     return response.data;
@@ -352,34 +352,27 @@ export const apiService = {
 
   // ============ REFERRALS ============
   async createReferral(referralData: any) {
-    const response = await api.post("/referrals", referralData);
+    const response = await api.post("/simple-referrals/create", referralData);
     return response.data;
   },
 
   async getReferrals(status?: string) {
-    const response = await api.get("/referrals", { params: { status } });
+    const response = await api.get("/simple-referrals/list", { params: { status } });
     return response.data;
   },
 
   async getReferralById(id: string) {
-    const response = await api.get(`/referrals/${id}`);
+    const response = await api.get(`/simple-referrals/${id}`);
     return response.data;
   },
 
   async updateReferral(referralId: string, data: any) {
-    const response = await api.patch(`/referrals/${referralId}`, data);
+    const response = await api.patch(`/simple-referrals/${referralId}`, data);
     return response.data;
   },
 
   async getReferralStats() {
-    const response = await api.get("/referrals/stats");
-    return response.data;
-  },
-
-  async getHealthFacilities(district?: string) {
-    const response = await api.get("/health-facilities", {
-      params: { district },
-    });
+    const response = await api.get("/simple-referrals/stats");
     return response.data;
   },
 
@@ -388,7 +381,7 @@ export const apiService = {
     status: string,
     notes?: string,
   ) {
-    const response = await api.patch(`/referrals/${referralId}/status`, {
+    const response = await api.patch(`/simple-referrals/${referralId}/status`, {
       status,
       notes,
     });
@@ -412,8 +405,8 @@ export const apiService = {
   },
 
   async updateInventory(productId: string, data: { quantity: number }) {
-    const response = await api.patch(`/products/${productId}/stock`, {
-      quantityChange: data.quantity,
+    const response = await api.patch(`/simple-stock/${productId}/stock`, {
+      stock_quantity: data.quantity,
     });
     return response.data;
   },
