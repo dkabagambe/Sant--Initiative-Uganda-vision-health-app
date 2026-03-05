@@ -584,6 +584,11 @@ export const apiService = {
   },
 
   // ============ USER DIRECTORY ============
+  async getUserDirectory() {
+    const response = await api.get("/user-directory/list");
+    return response.data;
+  },
+
   async getVHTs() {
     const response = await api.get("/user-directory/vhts");
     return response.data;
@@ -601,6 +606,17 @@ export const apiService = {
 
   async getUserDetails(userId: string) {
     const response = await api.get(`/user-directory/user/${userId}`);
+    return response.data;
+  },
+
+  // ============ REMOTE CONFIG ============
+  async getRemoteConfig() {
+    const response = await api.get("/remote-config");
+    return response.data;
+  },
+
+  async updateRemoteConfig(config: any) {
+    const response = await api.patch("/remote-config", config);
     return response.data;
   },
 
