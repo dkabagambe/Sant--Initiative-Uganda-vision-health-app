@@ -2,7 +2,21 @@
 exports.createScreening = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user?.userId || 'B7B5C0E1921DF64ED91C21AB6B592E5A';
+    let healthWorkerId = req.user?.userId;
+    
+    // If no health worker ID (e.g., testing), get a valid one
+    if (!healthWorkerId) {
+      const workers = await sql`SELECT id FROM users WHERE role = 'health_worker' LIMIT 1`;
+      if (workers.length > 0) {
+        healthWorkerId = workers[0].id;
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: "No health worker available",
+          details: "Please ensure there is at least one health worker in the system"
+        });
+      }
+    }
     
     // Extract and normalize field names (frontend uses camelCase, DB uses snake_case)
     const {
@@ -56,20 +70,22 @@ exports.createScreening = async (req, res) => {
     const screening = await sql`
       INSERT INTO screenings (
         health_worker_id, client_name, client_phone, client_age, client_gender, client_village,
-        client_district, client_county, client_sub_county, client_parish,
+        client_district, client_county, client_sub_county, parish,
         distance_vision_left, distance_vision_right, distance_vision_both,
         near_vision_result, pinhole_test_left, pinhole_test_right,
+        torch_test_passed, torch_test_abnormal_signs,
         needs_glasses, needs_referral, referral_reason,
         recommended_product_id, recommended_power, selected_frame_type,
-        notes, offline_id, is_synced
+        notes, offline_id, is_synced, screening_date
       ) VALUES (
         ${healthWorkerId}, ${clientName || null}, ${clientPhone || null}, ${clientAge || null}, ${clientGender || null}, ${clientVillage || null},
         ${district || null}, ${county || null}, ${subCounty || null}, ${parish || null},
         ${distanceVisionLeft || null}, ${distanceVisionRight || null}, ${distanceVisionBoth || null},
         ${nearVisionResult || null}, ${pinholeTestLeft || null}, ${pinholeTestRight || null},
+        ${torchTestPassed ? 1 : 0}, ${torchTestAbnormalSigns || null},
         ${needsGlasses ? 1 : 0}, ${needsReferral ? 1 : 0}, ${referralReason || null},
         ${recommendedProductId || null}, ${recommendedPower || null}, ${selectedFrameType || null},
-        ${fullNotes.trim() || null}, ${offlineId || null}, ${1}
+        ${fullNotes.trim() || null}, ${offlineId || null}, ${1}, ${new Date().toISOString().split('T')[0]}
       )
       RETURNING *
     `;

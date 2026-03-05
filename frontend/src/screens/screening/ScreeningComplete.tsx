@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
+import NetInfo from "@react-native-community/netinfo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function ScreeningComplete() {
@@ -24,6 +25,17 @@ export default function ScreeningComplete() {
   
   const glassesDispensed = route.params?.glassesDispensed || false;
   const glassesPower = route.params?.glassesPower || "";
+
+  // Check network connectivity
+  const checkNetworkConnectivity = async (): Promise<boolean> => {
+    try {
+      const netInfo = await NetInfo.fetch();
+      return !netInfo.isConnected || !netInfo.isInternetReachable;
+    } catch (error) {
+      console.error("Failed to check network connectivity:", error);
+      return false; // Assume online if check fails
+    }
+  };
 
   const handleRegisterAndSave = async () => {
     // If glasses were dispensed, go to ClientRegistration for payment/sale flow
@@ -64,23 +76,28 @@ export default function ScreeningComplete() {
           savedSuccessfully = true;
         }
       } catch (apiError) {
-        console.error("API save failed, saving offline:", apiError);
-      }
-
-      // Fallback: save offline if API failed
-      if (!savedSuccessfully) {
-        try {
-          const offlineQueue = await AsyncStorage.getItem("offlineScreenings");
-          const queue = offlineQueue ? JSON.parse(offlineQueue) : [];
-          queue.push({
-            ...completeData,
-            offlineId: Date.now().toString(),
-            timestamp: new Date().toISOString(),
-          });
-          await AsyncStorage.setItem("offlineScreenings", JSON.stringify(queue));
-          savedSuccessfully = true;
-        } catch (offlineError) {
-          console.error("Offline save also failed:", offlineError);
+        console.error("API save failed:", apiError);
+        
+        // Check if we're actually offline before saving offline
+        const isOffline = await checkNetworkConnectivity();
+        
+        if (isOffline) {
+          console.log("Device is offline, saving to offline queue");
+          try {
+            const offlineQueue = await AsyncStorage.getItem("offlineScreenings");
+            const queue = offlineQueue ? JSON.parse(offlineQueue) : [];
+            queue.push({
+              ...completeData,
+              offlineId: Date.now().toString(),
+              timestamp: new Date().toISOString(),
+            });
+            await AsyncStorage.setItem("offlineScreenings", JSON.stringify(queue));
+            savedSuccessfully = true;
+          } catch (offlineError) {
+            console.error("Offline save failed:", offlineError);
+          }
+        } else {
+          console.log("Device is online but API failed - not saving offline");
         }
       }
 
