@@ -547,8 +547,21 @@ export default function ReportsScreen() {
         }
       >
         <View style={styles.titleWrap}>
-          <Text style={styles.title}>Reports & Analytics</Text>
-          <Text style={styles.subtitle}>Generate comprehensive reports</Text>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Reports & Analytics</Text>
+            <Text style={styles.subtitle}>Generate comprehensive reports</Text>
+          </View>
+          <TouchableOpacity 
+            style={[styles.exportIconBtn, actionLoading && styles.exportIconBtnDisabled]}
+            onPress={handleExport}
+            disabled={actionLoading}
+          >
+            {actionLoading ? (
+              <ActivityIndicator size="small" color="#2E7D32" />
+            ) : (
+              <Ionicons name="download-outline" size={16} color="#2E7D32" />
+            )}
+          </TouchableOpacity>
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.periodRow}>
@@ -992,9 +1005,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#2E7D32",
   },
+  exportIconBtnDisabled: {
+    backgroundColor: "#9CA3AF",
+  },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 100 },
-  titleWrap: { marginBottom: 10 },
+  titleWrap: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "flex-start",
+    marginBottom: 10 
+  },
+  titleContainer: { flex: 1 },
   title: { fontSize: 18, fontWeight: "700", color: "#1F2937" },
   subtitle: { fontSize: 12, color: "#6B7280", marginTop: 2 },
   periodRow: { marginBottom: 10 },
