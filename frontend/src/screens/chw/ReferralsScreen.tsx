@@ -65,6 +65,7 @@ export default function ReferralsScreen() {
   const [detailVisible, setDetailVisible] = useState(false);
   const [editFacilityName, setEditFacilityName] = useState("");
   const [editFacilityLocation, setEditFacilityLocation] = useState("");
+  const [editReason, setEditReason] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const [editUrgency, setEditUrgency] = useState<string>("normal");
 
@@ -162,6 +163,7 @@ export default function ReferralsScreen() {
     setSelectedReferral(referral);
     setEditFacilityName(referral.facility_name || "");
     setEditFacilityLocation(referral.facility_location || "");
+    setEditReason(referral.reason || "");
     setEditNotes(referral.notes || "");
     setEditUrgency(referral.urgency || "normal");
     setDetailVisible(true);
@@ -171,8 +173,9 @@ export default function ReferralsScreen() {
     if (!selectedReferral) return;
     try {
       const result = await apiService.updateReferral(selectedReferral.id, {
-        facilityName: editFacilityName,
-        facilityLocation: editFacilityLocation,
+        facility_name: editFacilityName,
+        facility_location: editFacilityLocation,
+        reason: editReason,
         notes: editNotes,
         urgency: editUrgency,
       });
@@ -453,8 +456,14 @@ export default function ReferralsScreen() {
 
                   <Text style={styles.detailSectionTitle}>Reason</Text>
                   <Text style={styles.detailModalText}>
-                    {selectedReferral.reason}
+                    Current: {selectedReferral.reason}
                   </Text>
+                  <TextInput
+                    style={styles.detailInput}
+                    placeholder="Update referral reason"
+                    value={editReason}
+                    onChangeText={setEditReason}
+                  />
 
                   <Text style={styles.detailSectionTitle}>Facility</Text>
                   <TextInput

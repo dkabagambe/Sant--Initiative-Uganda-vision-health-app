@@ -155,7 +155,8 @@ router.patch('/:id', async (req, res) => {
       facility_location,
       notes,
       status,
-      urgency
+      urgency,
+      reason
     } = req.body;
 
     const referral = await sql`
@@ -165,7 +166,8 @@ router.patch('/:id', async (req, res) => {
         facility_location = COALESCE(${facility_location}, facility_location),
         notes = COALESCE(${notes}, notes),
         status = COALESCE(${status}, status),
-        urgency = COALESCE(${urgency}, urgency)
+        urgency = COALESCE(${urgency}, urgency),
+        reason = COALESCE(${reason}, reason)
       WHERE id = ${id}
       RETURNING *
     `;
