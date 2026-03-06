@@ -138,12 +138,7 @@ exports.sendSMS = async (phoneNumber, message) => {
   }
 
   try {
-    let formattedPhone = phoneNumber;
-    if (phoneNumber.startsWith('0')) {
-      formattedPhone = `+256${phoneNumber.substring(1)}`;
-    } else if (!phoneNumber.startsWith('+')) {
-      formattedPhone = `+256${phoneNumber}`;
-    }
+    const formattedPhone = toE164(phoneNumber);
 
     const smsConfig = {
       to: formattedPhone,

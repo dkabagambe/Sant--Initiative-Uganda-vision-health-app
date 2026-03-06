@@ -34,12 +34,10 @@ router.get('/list', async (req, res) => {
           s.client_age,
           s.client_gender,
           s.client_village,
-          s.client_district,
-          u.full_name as health_worker_name
+          s.client_district
         FROM payments p
         LEFT JOIN products prod ON p.product_id = prod.id
         LEFT JOIN screenings s ON p.screening_id = s.id
-        LEFT JOIN users u ON p.health_worker_id = u.id
         WHERE p.status = ${status}
         ORDER BY p.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
@@ -70,12 +68,10 @@ router.get('/list', async (req, res) => {
           s.client_age,
           s.client_gender,
           s.client_village,
-          s.client_district,
-          u.full_name as health_worker_name
+          s.client_district
         FROM payments p
         LEFT JOIN products prod ON p.product_id = prod.id
         LEFT JOIN screenings s ON p.screening_id = s.id
-        LEFT JOIN users u ON p.health_worker_id = u.id
         ORDER BY p.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `;
@@ -131,11 +127,11 @@ router.post('/create', async (req, res) => {
       INSERT INTO payments (
         client_name, client_phone, amount, payment_method, payment_type,
         product_id, screening_id, due_date, total_installments,
-        health_worker_id, payment_date, created_at, status
+        payment_date, created_at, status
       ) VALUES (
         ${client_name || null}, ${client_phone || null}, ${amount || null}, ${payment_method || null}, ${payment_type || null},
         ${product_id || null}, ${screening_id || null}, ${due_date || null}, ${total_installments || null},
-        ${workerId || null}, ${new Date().toISOString().split('T')[0]}, NOW(), 'pending'
+        ${new Date().toISOString().split('T')[0]}, NOW(), 'pending'
       )
       RETURNING *
     `;
