@@ -381,12 +381,34 @@ export default function PaymentsScreen() {
                   {payment.total_installments}
                 </Text>
               )}
+              {payment.product_name && (
+                <Text style={styles.productInfo}>
+                  Product: {payment.product_name}
+                  {payment.product_power ? ` (${payment.product_power})` : ''}
+                </Text>
+              )}
+              {payment.mobile_money_number && payment.payment_method === 'mobile_money' && (
+                <Text style={styles.productInfo}>
+                  MM: {payment.mobile_money_number}
+                </Text>
+              )}
+              {payment.transaction_id && (
+                <Text style={styles.productInfo}>
+                  TxID: {payment.transaction_id}
+                </Text>
+              )}
             </View>
           </View>
           <View style={styles.amountContainer}>
             <Text style={styles.amount}>
               UGX {payment.amount?.toLocaleString()}
             </Text>
+            {payment.payment_method && (
+              <Text style={styles.paymentMethod}>
+                {payment.payment_method === 'mobile_money' ? 'Mobile Money' : 'Cash'}
+                {payment.payment_type === 'installment' ? ' (Installment)' : ''}
+              </Text>
+            )}
             {isOverdue && <Text style={styles.overdueBadge}>OVERDUE</Text>}
           </View>
         </View>
@@ -405,8 +427,8 @@ export default function PaymentsScreen() {
               payment.status === 'overdue' && styles.overdueText,
             ]}>
               {isPending
-                ? `Due: ${payment.due_date || nextDueDate || "N/A"}`
-                : `Paid: ${new Date(payment.payment_date).toLocaleDateString()}`}
+                ? `Due: ${payment.due_date ? new Date(payment.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : (nextDueDate || "N/A")}`
+                : `Paid: ${payment.payment_date ? new Date(payment.payment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A"}`}
             </Text>
           </View>
 
@@ -1549,6 +1571,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
+  },
+  paymentMethod: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 2,
+    textAlign: "right",
+  },
+  productInfo: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 2,
+    fontStyle: "italic",
   },
   emptyState: {
     alignItems: "center",
