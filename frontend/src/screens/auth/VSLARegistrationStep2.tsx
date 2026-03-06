@@ -219,7 +219,9 @@ const VSLARegistrationStep2 = () => {
     person: any,
     setPerson: any,
     showNationalId = false,
-  ) => (
+  ) => {
+    console.log(`renderPersonSection: ${title}, showNationalId: ${showNationalId}, person:`, person);
+    return (
     <View style={styles.personSection}>
       <Text style={styles.personTitle}>{title}</Text>
       <TextInput
@@ -236,13 +238,14 @@ const VSLARegistrationStep2 = () => {
       {showNationalId && (
         <TextInput
           style={styles.input}
-          placeholder="National ID (Optional)"
+          placeholder="National ID"
           value={person.nationalId}
           onChangeText={(text) => setPerson({ ...person, nationalId: text })}
         />
       )}
     </View>
   );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
