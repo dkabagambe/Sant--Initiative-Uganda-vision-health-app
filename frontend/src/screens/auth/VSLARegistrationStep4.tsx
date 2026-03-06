@@ -123,8 +123,12 @@ const VSLARegistrationStep4 = () => {
 
   const pickImage = async (id: number) => {
     try {
+      console.log(`pickImage called for document id: ${id}`);
+      
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
+      console.log(`Permission status: ${status}`);
+      
       if (status !== "granted") {
         Alert.alert(
           "Permission needed",
@@ -133,6 +137,7 @@ const VSLARegistrationStep4 = () => {
         return;
       }
 
+      console.log("Launching image library...");
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -142,16 +147,31 @@ const VSLARegistrationStep4 = () => {
         presentationStyle: ImagePicker.UIImagePickerPresentationStyle.FULL_SCREEN,
       });
 
+      console.log("Image picker result:", {
+        canceled: result.canceled,
+        assets: result.assets?.length || 0,
+      });
+
       if (!result.canceled && result.assets && result.assets[0]) {
         const asset = result.assets[0];
+        console.log("Selected asset:", {
+          uri: asset.uri,
+          fileName: asset.fileName,
+          type: asset.type,
+          fileSize: asset.fileSize
+        });
+        
         const fileData: DocumentFile = {
           name: asset.fileName || `photo_${Date.now()}.jpg`,
           uri: asset.uri,
-          type: asset.type || "image",
+          type: asset.type || "image/jpeg",
         };
 
+        console.log("Updating document file:", fileData);
         updateDocumentFile(id, fileData);
         clearError(id);
+      } else {
+        console.log("Image selection canceled or failed");
       }
     } catch (error) {
       console.error("Error picking image:", error);
@@ -244,16 +264,16 @@ const VSLARegistrationStep4 = () => {
       const filesToUpload = documents
         .filter(doc => doc.file)
         .map(doc => {
-          let mimeType = doc.file.type || (doc.id === 1 ? "image/jpeg" : "application/pdf");
+          let mimeType = doc.file?.type || (doc.id === 1 ? "image/jpeg" : "application/pdf");
           if (!mimeType.includes("/")) mimeType = "image/jpeg";
           if (!["image/jpeg", "image/jpg", "image/png", "application/pdf"].includes(mimeType)) {
-            mimeType = doc.file.name?.toLowerCase().endsWith(".pdf") ? "application/pdf" : "image/jpeg";
+            mimeType = doc.file?.name?.toLowerCase().endsWith(".pdf") ? "application/pdf" : "image/jpeg";
           }
           
           return {
             id: doc.id,
-            uri: doc.file.uri,
-            name: doc.file.name,
+            uri: doc.file?.uri || '',
+            name: doc.file?.name || `document-${doc.id}`,
             type: mimeType,
             label: doc.label
           };
@@ -375,9 +395,12 @@ const VSLARegistrationStep4 = () => {
   };
 
   const handleFilePick = (id: number) => {
+    console.log(`handleFilePick called for document id: ${id}`);
     if (id === 1) {
+      console.log("Using pickImage for Group Photo (id: 1)");
       pickImage(id);
     } else {
+      console.log(`Using pickDocument for document id: ${id}`);
       pickDocument(id);
     }
   };
