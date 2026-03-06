@@ -14,8 +14,10 @@ import {
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import { apiService } from "../../services/api";
 import { normalizePhoneForApi } from "../../utils/phoneUtils";
+import { Ionicons } from "@expo/vector-icons";
 
 // Define navigation types
 type RootStackParamList = {
@@ -120,6 +122,76 @@ const VSLARegistrationStep4 = () => {
   };
 
   
+  const pickImage = async (id: number, useCamera: boolean) => {
+    try {
+      const libStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const camStatus = useCamera
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : { status: "granted" as const };
+
+      if (!useCamera && libStatus.status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "We need gallery access to choose photos.",
+          [{ text: "OK" }],
+        );
+        return;
+      }
+      if (useCamera && camStatus.status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "We need camera access to take a clear photo.",
+          [{ text: "OK" }],
+        );
+        return;
+      }
+
+      const launchOptions = {
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [3, 2], // Wide aspect for group photo
+        quality: 1,
+        base64: false,
+        presentationStyle: ImagePicker.UIImagePickerPresentationStyle.FULL_SCREEN,
+      };
+
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync(launchOptions)
+        : await ImagePicker.launchImageLibraryAsync(launchOptions);
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+
+        if (asset.fileSize && asset.fileSize > 15 * 1024 * 1024) {
+          Alert.alert(
+            "File Too Large",
+            "Please select an image smaller than 15MB for group photos",
+            [{ text: "OK" }],
+          );
+          return;
+        }
+
+        const mimeType = asset.mimeType || "image/jpeg";
+        const fileName = asset.fileName || `group-photo-${Date.now()}.jpg`;
+
+        updateDocumentFile(id, {
+          name: fileName,
+          uri: asset.uri,
+          type: mimeType,
+        });
+
+        Alert.alert("Photo Selected", `${fileName} selected. It will be uploaded when you submit.`, [
+          { text: "OK" },
+        ]);
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to capture image. Please try again.", [
+        { text: "OK" },
+      ]);
+    }
+  };
+
   const pickDocument = async (id: number) => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -391,13 +463,31 @@ const VSLARegistrationStep4 = () => {
                 </View>
               ) : (
                 <View style={styles.fileRow}>
-                  <TouchableOpacity
-                    style={styles.fileButton}
-                    onPress={() => handleFilePick(doc.id)}
-                  >
-                    <Text style={styles.fileButtonText}>Choose File</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.noFileText}>No file chosen</Text>
+                  {doc.id === 1 ? (
+                    <View style={styles.imageButtonRow}>
+                      <TouchableOpacity
+                        style={styles.fileButton}
+                        onPress={() => pickImage(doc.id, true)}
+                      >
+                        <Ionicons name="camera" size={22} color="#2E7D32" />
+                        <Text style={styles.fileButtonText}>Take photo</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.fileButton, styles.fileButtonSecondary]}
+                        onPress={() => pickImage(doc.id, false)}
+                      >
+                        <Ionicons name="images-outline" size={22} color="#2E7D32" />
+                        <Text style={[styles.fileButtonText, { color: "#2E7D32" }]}>Gallery</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.fileButton}
+                      onPress={() => pickDocument(doc.id)}
+                    >
+                      <Text style={styles.fileButtonText}>Choose File</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
 
@@ -771,6 +861,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#FF3B30",
     marginTop: 4,
+  },
+  imageButtonRow: {
+    flexDirection: "row",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  fileButtonSecondary: {
+    backgroundColor: "#F0F4FF",
+    borderColor: "#2E7D32",
   },
   agreementTitle: {
     fontSize: 16,
