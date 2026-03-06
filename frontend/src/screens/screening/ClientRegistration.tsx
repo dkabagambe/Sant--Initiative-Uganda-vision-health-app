@@ -127,19 +127,19 @@ export default function ClientRegistration() {
 
       // Create payment record
       const paymentData = {
-        screeningId,
-        productId: selectedProduct.id,
-        clientName: clientData.clientName,
-        clientPhone: mobileNumber,
+        screening_id: screeningId,
+        product_id: selectedProduct.id,
+        client_name: clientData.clientName,
+        client_phone: mobileNumber,
         amount: selectedProduct.price,
-        mobileMoneyNumber: mobileNumber,
-        paymentMethod:
+        mobile_money_number: mobileNumber,
+        payment_method:
           paymentMethod === "hire-purchase" ? "mobile_money" : "cash",
-        paymentType: paymentMethod === "hire-purchase" ? "installment" : "full",
-        totalInstallments: paymentMethod === "hire-purchase" ? 3 : 1,
-        installmentNumber: 1,
+        payment_type: paymentMethod === "hire-purchase" ? "installment" : "full",
+        total_installments: paymentMethod === "hire-purchase" ? 3 : 1,
+        installment_number: 1,
         // Used by backend for reminders / SMS text
-        dueDate: nextPaymentDate,
+        due_date: nextPaymentDate,
       };
 
       let result: any;

@@ -111,18 +111,10 @@ router.post('/create', async (req, res) => {
       screening_id,
       due_date,
       total_installments = 1,
-      health_worker_id
+      provider
     } = req.body;
 
-    // Get a valid health worker ID if not provided
-    let workerId = health_worker_id;
-    if (!workerId) {
-      const workers = await sql`SELECT id FROM users WHERE role = 'health_worker' LIMIT 1`;
-      if (workers.length > 0) {
-        workerId = workers[0].id;
-      }
-    }
-
+    
     const payment = await sql`
       INSERT INTO payments (
         client_name, client_phone, amount, payment_method, payment_type,
