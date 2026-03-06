@@ -462,13 +462,9 @@ const VSLARegistrationStep4 = () => {
 
   const handleFilePick = (id: number) => {
     console.log(`handleFilePick called for document id: ${id}`);
-    if (id === 1) {
-      console.log("Using pickImage for Group Photo (id: 1)");
-      pickImage(id);
-    } else {
-      console.log(`Using pickDocument for document id: ${id}`);
-      pickDocument(id);
-    }
+    // Use the same document picker for all files including Group Photo
+    console.log(`Using pickDocument for document id: ${id}`);
+    pickDocument(id);
   };
 
   const getFileName = (uri: string, fallback: string) => {
