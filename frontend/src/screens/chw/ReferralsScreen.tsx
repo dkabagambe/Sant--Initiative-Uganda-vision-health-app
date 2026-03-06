@@ -92,7 +92,9 @@ export default function ReferralsScreen() {
     try {
       setLoading(true);
       const response = await apiService.getReferrals();
+      console.log("Referrals response:", response);
       if (response.success) {
+        console.log("Referrals data:", response.data);
         setReferrals(response.data);
       }
     } catch (error) {
@@ -192,6 +194,8 @@ export default function ReferralsScreen() {
   };
 
   const ReferralCard = ({ referral }: { referral: ReferralItem }) => {
+    console.log("ReferralCard data:", referral);
+    
     const urgencyColors: Record<string, { bg: string; text: string }> = {
       urgent: { bg: "#FEE2E2", text: "#DC2626" },
       high: { bg: "#FEE2E2", text: "#DC2626" },
