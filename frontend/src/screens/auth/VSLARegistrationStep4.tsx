@@ -151,7 +151,7 @@ const VSLARegistrationStep4 = () => {
         assets: result.assets?.length || 0,
       });
 
-      if (!result.canceled && result.assets && result.assets[0]) {
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
         console.log("Selected asset:", {
           uri: asset.uri,
@@ -160,8 +160,16 @@ const VSLARegistrationStep4 = () => {
           fileSize: asset.fileSize
         });
         
+        // Validate the asset has required properties
+        if (!asset.uri) {
+          console.error("Asset URI is missing");
+          Alert.alert("Error", "Selected image has no valid path");
+          return;
+        }
+        
+        // Create file data with better fallbacks
         const fileData: DocumentFile = {
-          name: asset.fileName || `photo_${Date.now()}.jpg`,
+          name: asset.fileName || `group-photo-${Date.now()}.jpg`,
           uri: asset.uri,
           type: asset.type || "image/jpeg",
         };
@@ -169,6 +177,7 @@ const VSLARegistrationStep4 = () => {
         console.log("Updating document file:", fileData);
         updateDocumentFile(id, fileData);
         clearError(id);
+        console.log("Group photo successfully selected and stored");
       } else {
         console.log("Image selection canceled or failed - trying camera as fallback");
         
@@ -186,7 +195,7 @@ const VSLARegistrationStep4 = () => {
             assets: cameraResult.assets?.length || 0,
           });
           
-          if (!cameraResult.canceled && cameraResult.assets && cameraResult.assets[0]) {
+          if (!cameraResult.canceled && cameraResult.assets && cameraResult.assets.length > 0) {
             const asset = cameraResult.assets[0];
             console.log("Camera asset selected:", {
               uri: asset.uri,
@@ -195,8 +204,15 @@ const VSLARegistrationStep4 = () => {
               fileSize: asset.fileSize
             });
             
+            // Validate the camera asset has required properties
+            if (!asset.uri) {
+              console.error("Camera asset URI is missing");
+              Alert.alert("Error", "Camera photo has no valid path");
+              return;
+            }
+            
             const fileData: DocumentFile = {
-              name: asset.fileName || `photo_${Date.now()}.jpg`,
+              name: asset.fileName || `group-photo-camera-${Date.now()}.jpg`,
               uri: asset.uri,
               type: asset.type || "image/jpeg",
             };
@@ -204,6 +220,7 @@ const VSLARegistrationStep4 = () => {
             console.log("Updating document file with camera photo:", fileData);
             updateDocumentFile(id, fileData);
             clearError(id);
+            console.log("Group photo successfully taken with camera and stored");
           } else {
             console.log("Camera selection also canceled or failed");
           }
@@ -213,7 +230,18 @@ const VSLARegistrationStep4 = () => {
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to select image");
+      const errorMessage = (error as Error)?.message || "Unknown error occurred";
+      console.error("Detailed error:", errorMessage);
+      
+      // Show more specific error message
+      if (errorMessage.includes("permission")) {
+        Alert.alert("Permission Denied", "Please allow access to your photo library in device settings.");
+      } else if (errorMessage.includes("cancelled") || errorMessage.includes("canceled")) {
+        // Don't show alert for user cancellation
+        console.log("User cancelled image selection");
+      } else {
+        Alert.alert("Selection Error", `Failed to select image: ${errorMessage}`);
+      }
     }
   };
 
