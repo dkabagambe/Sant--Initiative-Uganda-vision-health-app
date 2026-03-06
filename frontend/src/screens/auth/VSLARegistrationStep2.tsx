@@ -340,7 +340,7 @@ const VSLARegistrationStep2 = () => {
               }}
             >
               <Text style={county ? styles.dropdownText : styles.dropdownPlaceholder}>
-                {county || (district ? "Select County" : "Select district first")}
+                {county || "e.g., Luweero County"}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#666" />
             </TouchableOpacity>
@@ -357,7 +357,7 @@ const VSLARegistrationStep2 = () => {
               }}
             >
               <Text style={subcounty ? styles.dropdownText : styles.dropdownPlaceholder}>
-                {subcounty || (county ? "Select Sub-county" : "Select county first")}
+                {subcounty || "e.g., Wobulenzi Sub-County"}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#666" />
             </TouchableOpacity>
@@ -368,7 +368,7 @@ const VSLARegistrationStep2 = () => {
             {subcounty && parishesForSubCounty.length === 0 ? (
               <TextInput
                 style={styles.input}
-                placeholder="Type parish name"
+                placeholder="e.g., Bombo Parish"
                 value={parish}
                 onChangeText={setParish}
               />
@@ -382,7 +382,7 @@ const VSLARegistrationStep2 = () => {
                 }}
               >
                 <Text style={parish ? styles.dropdownText : styles.dropdownPlaceholder}>
-                  {parish || (subcounty ? "Select Parish" : "Select sub-county first")}
+                  {parish || "e.g., Bombo Parish"}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#666" />
               </TouchableOpacity>

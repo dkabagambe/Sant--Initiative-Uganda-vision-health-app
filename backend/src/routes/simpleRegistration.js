@@ -43,6 +43,22 @@ router.post('/submit', async (req, res) => {
     if (registrationData.role) updateFields.role = registrationData.role;
     if (registrationData.village) updateFields.village = registrationData.village;
     if (registrationData.district) updateFields.district = registrationData.district;
+    if (registrationData.county) updateFields.county = registrationData.county;
+    if (registrationData.subcounty) updateFields.subcounty = registrationData.subcounty;
+    if (registrationData.parish) updateFields.parish = registrationData.parish;
+    if (registrationData.meeting_location) updateFields.meeting_location = registrationData.meeting_location;
+    
+    // VSLA-specific fields - store as JSON in notes field
+    if (registrationData.chairperson || registrationData.treasurer || registrationData.secretary) {
+      const vslaLeadership = {
+        chairperson: registrationData.chairperson || {},
+        treasurer: registrationData.treasurer || {},
+        secretary: registrationData.secretary || {}
+      };
+      updateFields.notes = JSON.stringify(vslaLeadership);
+    }
+    
+    // General fields
     if (registrationData.trainingCertificate) updateFields.training_certificate = registrationData.trainingCertificate;
     if (registrationData.recommendationLetter) updateFields.recommendation_letter = registrationData.recommendationLetter;
     if (registrationData.shopFrontImage) updateFields.shop_front_image = registrationData.shopFrontImage;
