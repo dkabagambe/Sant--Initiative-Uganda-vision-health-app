@@ -438,50 +438,90 @@ export const apiService = {
   // ============ FILE UPLOAD ============
   async uploadFile(file: { uri: string; name: string; type: string }) {
     try {
-      const formData = new FormData();
-      formData.append("file", {
+      console.log("Starting single file upload...");
+      console.log("File to upload:", file);
+      
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", {
         uri: file.uri,
         name: file.name,
         type: file.type,
       } as any);
 
-      const response = await api.post("/upload/single", formData, {
+      console.log("FormData created for single file upload...");
+      
+      const uploadResponse = await api.post("/simple-upload/single", uploadFormData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-        timeout: 30000, // 30 second timeout for larger files
+        timeout: 30000, // 30 second timeout
       });
 
-      return response.data;
-    } catch (error) {
-      console.error("File upload error:", error);
-      throw error;
+      console.log("Single file upload response:", uploadResponse.data);
+      return uploadResponse.data;
+    } catch (error: any) {
+      console.error("Single file upload error:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+      console.error("Error message:", error.message);
+      
+      // Better error message for user
+      if (error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      } else if (error.code === 'ECONNABORTED') {
+        throw new Error('Upload timed out. Please check your connection and try again.');
+      } else {
+        throw new Error(error.message || 'Failed to upload file');
+      }
     }
   },
 
   async uploadVSLADocuments(files: Array<{ uri: string; name: string; type: string }>) {
     try {
-      const formData = new FormData();
+      console.log("Starting VSLA documents upload...");
+      console.log("Files to upload:", files);
       
-      files.forEach((file, index) => {
-        formData.append("files", {
+      const vslFormData = new FormData();
+      
+      files.forEach((file: any, index: number) => {
+        console.log(`Appending file ${index + 1}:`, {
+          uri: file.uri,
+          name: file.name,
+          type: file.type,
+        });
+        
+        vslFormData.append("files", {
           uri: file.uri,
           name: file.name,
           type: file.type,
         } as any);
       });
 
-      const response = await api.post("/vsla-upload/documents", formData, {
+      console.log("FormData created, sending to backend...");
+      
+      const vslResponse = await api.post("/vsla-upload/documents", vslFormData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
         timeout: 60000, // 60 second timeout for multiple files
       });
 
-      return response.data;
-    } catch (error) {
+      console.log("VSLA upload response:", vslResponse.data);
+      return vslResponse.data;
+    } catch (error: any) {
       console.error("VSLA documents upload error:", error);
-      throw error;
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+      console.error("Error message:", error.message);
+      
+      // Better error message for user
+      if (error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      } else if (error.code === 'ECONNABORTED') {
+        throw new Error('Upload timed out. Please check your connection and try again.');
+      } else {
+        throw new Error(error.message || 'Failed to upload documents');
+      }
     }
   },
 
@@ -606,6 +646,14 @@ export const apiService = {
 
   async getUserDetails(userId: string) {
     const response = await api.get(`/user-directory/user/${userId}`);
+    return response.data;
+  },
+
+  // ============ HEALTH FACILITIES ============
+  async getHealthFacilities(district?: string) {
+    const response = await api.get("/health-facilities", { 
+      params: district ? { district } : {} 
+    });
     return response.data;
   },
 
