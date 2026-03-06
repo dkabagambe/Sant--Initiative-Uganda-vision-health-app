@@ -165,8 +165,7 @@ router.patch('/:id', async (req, res) => {
         facility_location = COALESCE(${facility_location}, facility_location),
         notes = COALESCE(${notes}, notes),
         status = COALESCE(${status}, status),
-        urgency = COALESCE(${urgency}, urgency),
-        updated_at = NOW()
+        urgency = COALESCE(${urgency}, urgency)
       WHERE id = ${id}
       RETURNING *
     `;
@@ -204,9 +203,8 @@ router.patch('/:id/status', async (req, res) => {
       UPDATE referrals 
       SET 
         status = ${status},
-        completed_date = ${status === 'completed' ? new Date().toISOString().split('T')[0] : 'completed_date'},
-        notes = COALESCE(${notes}, notes),
-        updated_at = NOW()
+        completed_date = ${status === 'completed' ? new Date().toISOString().split('T')[0] : completed_date},
+        notes = COALESCE(${notes}, notes)
       WHERE id = ${id}
       RETURNING *
     `;
