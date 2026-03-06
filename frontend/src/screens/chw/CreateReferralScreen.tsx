@@ -87,16 +87,16 @@ export default function CreateReferralScreen() {
     try {
       setLoading(true);
       const result = await apiService.createReferral({
-        screeningId: screeningId || undefined,
-        clientName: formData.clientName,
-        clientPhone: formData.clientPhone || null,
-        clientAge: parseInt(formData.clientAge) || null,
-        clientGender: formData.clientSex || null,
-        clientDistrict: formData.clientDistrict || null,
+        screening_id: screeningId || undefined,
+        client_name: formData.clientName,
+        client_phone: formData.clientPhone || null,
+        client_age: parseInt(formData.clientAge) || null,
+        client_gender: formData.clientSex || null,
+        client_district: formData.clientDistrict || null,
         reason: formData.reason,
         urgency: formData.urgency,
-        facilityName: formData.facilityName || null,
-        facilityLocation: formData.facilityDistrict || null,
+        facility_name: formData.facilityName || null,
+        facility_location: formData.facilityDistrict || null,
         notes: formData.notes || null,
       });
 
