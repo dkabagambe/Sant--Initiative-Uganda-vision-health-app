@@ -116,6 +116,9 @@ router.post('/create', async (req, res) => {
     } = req.body;
 
     
+    // Ensure mobile_money_number is never NULL
+    const finalMobileMoneyNumber = mobile_money_number || client_phone || '0000000000';
+    
     const payment = await sql`
       INSERT INTO payments (
         client_name, client_phone, amount, payment_method, payment_type,
@@ -124,7 +127,7 @@ router.post('/create', async (req, res) => {
       ) VALUES (
         ${client_name || null}, ${client_phone || null}, ${amount || null}, ${payment_method || null}, ${payment_type || null},
         ${product_id || null}, ${screening_id || null}, ${due_date || null}, ${total_installments || null},
-        ${mobile_money_number || client_phone || null}, ${new Date().toISOString().split('T')[0]}, NOW(), 'pending'
+        ${finalMobileMoneyNumber}, ${new Date().toISOString().split('T')[0]}, NOW(), 'pending'
       )
       RETURNING *
     `;
