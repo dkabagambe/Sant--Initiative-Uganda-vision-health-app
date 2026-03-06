@@ -34,10 +34,9 @@ interface ProgressBarProps {
   totalSteps: number;
 }
 
-interface DocumentFile {
+interface SelectedFile {
   name: string;
   uri: string;
-  size?: number;
   type: string;
 }
 
@@ -46,7 +45,7 @@ interface Document {
   label: string;
   description: string;
   required: boolean;
-  file: DocumentFile | null;
+  file: SelectedFile | null;
 }
 
 type DocumentPickerResult =
@@ -126,29 +125,38 @@ const VSLARegistrationStep4 = () => {
       const result = await DocumentPicker.getDocumentAsync({
         type: ["image/*", "application/pdf"],
         copyToCacheDirectory: true,
+        multiple: false,
       });
 
-      console.log("Document picker result:", result);
+      if (result.canceled) return;
 
-      // Check if document was selected (not cancelled)
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0];
-        const fileData: DocumentFile = {
-          name: asset.name || `document_${Date.now()}`,
-          uri: asset.uri || "",
-          type: asset.mimeType || "document",
-        };
-
-        updateDocumentFile(id, fileData);
-        clearError(id);
+      const file = result.assets[0];
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size && file.size > maxSize) {
+        Alert.alert("File Too Large", "Please select a file smaller than 5MB", [
+          { text: "OK" },
+        ]);
+        return;
       }
+
+      updateDocumentFile(id, {
+        name: file.name,
+        uri: file.uri,
+        type: file.mimeType || "application/pdf",
+      });
+
+      Alert.alert("File Selected", `${file.name} selected. It will be uploaded when you submit.`, [
+        { text: "OK" },
+      ]);
     } catch (error) {
       console.error("Error picking document:", error);
-      Alert.alert("Error", "Failed to select document");
+      Alert.alert("Error", "Failed to pick file. Please try again.", [
+        { text: "OK" },
+      ]);
     }
   };
 
-  const updateDocumentFile = (id: number, fileData: DocumentFile) => {
+  const updateDocumentFile = (id: number, fileData: SelectedFile) => {
     setDocuments((prev) =>
       prev.map((doc) => (doc.id === id ? { ...doc, file: fileData } : doc)),
     );
@@ -202,59 +210,24 @@ const VSLARegistrationStep4 = () => {
     try {
       const registrationDocuments: Record<string, string> = {};
 
-      // Collect all files that need to be uploaded
-      const filesToUpload = documents
-        .filter(doc => doc.file)
-        .map(doc => {
-          let mimeType = doc.file?.type || (doc.id === 1 ? "image/jpeg" : "application/pdf");
-          if (!mimeType.includes("/")) mimeType = "image/jpeg";
-          if (!["image/jpeg", "image/jpg", "image/png", "application/pdf"].includes(mimeType)) {
-            mimeType = doc.file?.name?.toLowerCase().endsWith(".pdf") ? "application/pdf" : "image/jpeg";
-          }
-          
-          return {
-            id: doc.id,
-            uri: doc.file?.uri || '',
-            name: doc.file?.name || `document-${doc.id}`,
-            type: mimeType,
-            label: doc.label
-          };
-        });
-
-      // Upload files in batch if there are multiple
-      if (filesToUpload.length > 0) {
-        console.log(`Uploading ${filesToUpload.length} VSLA documents...`);
-        
-        if (filesToUpload.length === 1) {
-          // Single file upload
-          const file = filesToUpload[0];
+      // Upload files one by one like Outlet
+      for (const doc of documents) {
+        if (doc.file) {
           const uploadResult = await apiService.uploadFile({
-            uri: file.uri,
-            name: file.name,
-            type: file.type,
+            uri: doc.file.uri,
+            name: doc.file.name,
+            type: doc.file.type,
           });
           
           if (uploadResult.success && uploadResult.data?.url) {
-            registrationDocuments[`document_${file.id}`] = uploadResult.data.url;
+            registrationDocuments[`document_${doc.id}`] = uploadResult.data.url;
           } else {
-            throw new Error(`Failed to upload ${file.label}`);
-          }
-        } else {
-          // Multiple files upload
-          const uploadResult = await apiService.uploadVSLADocuments(filesToUpload);
-          
-          if (uploadResult.success && uploadResult.data) {
-            uploadResult.data.forEach((uploadedFile: any, index: number) => {
-              const originalFile = filesToUpload[index];
-              registrationDocuments[`document_${originalFile.id}`] = uploadedFile.url;
-            });
-          } else {
-            throw new Error("Failed to upload documents");
+            throw new Error(`Failed to upload ${doc.label}`);
           }
         }
-        
-        console.log("Successfully uploaded all VSLA documents");
       }
+      
+      console.log("Successfully uploaded all VSLA documents");
 
       const completeRegistrationData = {
         ...registrationData,
