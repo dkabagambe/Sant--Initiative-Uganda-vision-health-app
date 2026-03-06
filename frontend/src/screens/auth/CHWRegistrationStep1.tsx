@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Platform,
   StatusBar,
+  SafeAreaView,
 } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -66,7 +67,8 @@ export default function CHWRegistrationStep1() {
   };
 
   return (
-    <View style={styles.screenContainer}>
+    <SafeAreaView style={styles.screenContainer}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       {/* Header with Back Button */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
@@ -215,7 +217,7 @@ export default function CHWRegistrationStep1() {
         {/* Footer Note */}
         <Text style={styles.footerNote}>Fields marked with * are required</Text>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -229,22 +231,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 12 : 60,
-    paddingBottom: 14,
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 8 : 50,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",
+    minHeight: 70,
   },
   backButton: {
     marginRight: 16,
+    padding: 4,
+    borderRadius: 20,
+    backgroundColor: "#F5F5F5",
+    zIndex: 1,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: "#000000",
+    flex: 1,
   },
   container: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 100,
   },
   stepIndicator: {
     marginBottom: 24,
