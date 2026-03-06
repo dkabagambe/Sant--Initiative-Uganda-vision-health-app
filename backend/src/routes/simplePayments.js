@@ -111,6 +111,7 @@ router.post('/create', async (req, res) => {
       screening_id,
       due_date,
       total_installments = 1,
+      mobile_money_number,
       provider
     } = req.body;
 
@@ -119,11 +120,11 @@ router.post('/create', async (req, res) => {
       INSERT INTO payments (
         client_name, client_phone, amount, payment_method, payment_type,
         product_id, screening_id, due_date, total_installments,
-        payment_date, created_at, status
+        mobile_money_number, payment_date, created_at, status
       ) VALUES (
         ${client_name || null}, ${client_phone || null}, ${amount || null}, ${payment_method || null}, ${payment_type || null},
         ${product_id || null}, ${screening_id || null}, ${due_date || null}, ${total_installments || null},
-        ${new Date().toISOString().split('T')[0]}, NOW(), 'pending'
+        ${mobile_money_number || client_phone || null}, ${new Date().toISOString().split('T')[0]}, NOW(), 'pending'
       )
       RETURNING *
     `;
