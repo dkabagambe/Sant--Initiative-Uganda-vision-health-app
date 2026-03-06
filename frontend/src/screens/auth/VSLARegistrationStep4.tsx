@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { apiService } from "../../services/api";
 import { normalizePhoneForApi } from "../../utils/phoneUtils";
@@ -121,130 +120,7 @@ const VSLARegistrationStep4 = () => {
     }));
   };
 
-  const pickImage = async (id: number) => {
-    try {
-      console.log(`pickImage called for document id: ${id}`);
-      
-      // Request media library permissions
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      console.log(`Permission status: ${status}`);
-      
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission needed",
-          "Please allow access to your photo library.",
-        );
-        return;
-      }
-
-      console.log("Launching image library...");
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,  // Disable editing to avoid issues
-        quality: 0.8,
-        base64: false,
-      });
-
-      console.log("Image picker result:", {
-        canceled: result.canceled,
-        assets: result.assets?.length || 0,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const asset = result.assets[0];
-        console.log("Selected asset:", {
-          uri: asset.uri,
-          fileName: asset.fileName,
-          type: asset.type,
-          fileSize: asset.fileSize
-        });
-        
-        // Validate the asset has required properties
-        if (!asset.uri) {
-          console.error("Asset URI is missing");
-          Alert.alert("Error", "Selected image has no valid path");
-          return;
-        }
-        
-        // Create file data with better fallbacks
-        const fileData: DocumentFile = {
-          name: asset.fileName || `group-photo-${Date.now()}.jpg`,
-          uri: asset.uri,
-          type: asset.type || "image/jpeg",
-        };
-
-        console.log("Updating document file:", fileData);
-        updateDocumentFile(id, fileData);
-        clearError(id);
-        console.log("Group photo successfully selected and stored");
-      } else {
-        console.log("Image selection canceled or failed - trying camera as fallback");
-        
-        // Try camera as fallback
-        try {
-          const cameraResult = await ImagePicker.launchCameraAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: false,
-            quality: 0.8,
-            base64: false,
-          });
-          
-          console.log("Camera result:", {
-            canceled: cameraResult.canceled,
-            assets: cameraResult.assets?.length || 0,
-          });
-          
-          if (!cameraResult.canceled && cameraResult.assets && cameraResult.assets.length > 0) {
-            const asset = cameraResult.assets[0];
-            console.log("Camera asset selected:", {
-              uri: asset.uri,
-              fileName: asset.fileName,
-              type: asset.type,
-              fileSize: asset.fileSize
-            });
-            
-            // Validate the camera asset has required properties
-            if (!asset.uri) {
-              console.error("Camera asset URI is missing");
-              Alert.alert("Error", "Camera photo has no valid path");
-              return;
-            }
-            
-            const fileData: DocumentFile = {
-              name: asset.fileName || `group-photo-camera-${Date.now()}.jpg`,
-              uri: asset.uri,
-              type: asset.type || "image/jpeg",
-            };
-
-            console.log("Updating document file with camera photo:", fileData);
-            updateDocumentFile(id, fileData);
-            clearError(id);
-            console.log("Group photo successfully taken with camera and stored");
-          } else {
-            console.log("Camera selection also canceled or failed");
-          }
-        } catch (cameraError) {
-          console.error("Camera fallback error:", cameraError);
-        }
-      }
-    } catch (error) {
-      console.error("Error picking image:", error);
-      const errorMessage = (error as Error)?.message || "Unknown error occurred";
-      console.error("Detailed error:", errorMessage);
-      
-      // Show more specific error message
-      if (errorMessage.includes("permission")) {
-        Alert.alert("Permission Denied", "Please allow access to your photo library in device settings.");
-      } else if (errorMessage.includes("cancelled") || errorMessage.includes("canceled")) {
-        // Don't show alert for user cancellation
-        console.log("User cancelled image selection");
-      } else {
-        Alert.alert("Selection Error", `Failed to select image: ${errorMessage}`);
-      }
-    }
-  };
-
+  
   const pickDocument = async (id: number) => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
