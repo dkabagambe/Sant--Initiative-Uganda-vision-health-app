@@ -92,9 +92,7 @@ export default function ReferralsScreen() {
     try {
       setLoading(true);
       const response = await apiService.getReferrals();
-      console.log("Referrals response:", response);
       if (response.success) {
-        console.log("Referrals data:", response.data);
         setReferrals(response.data);
       }
     } catch (error) {
@@ -194,22 +192,6 @@ export default function ReferralsScreen() {
   };
 
   const ReferralCard = ({ referral }: { referral: ReferralItem }) => {
-    console.log("ReferralCard data:", referral);
-    console.log("client_name:", referral.client_name);
-    console.log("All fields:", {
-      id: referral.id,
-      client_name: referral.client_name,
-      client_phone: referral.client_phone,
-      client_age: referral.client_age,
-      client_gender: referral.client_gender,
-      client_district: referral.client_district,
-      reason: referral.reason,
-      facility_name: referral.facility_name,
-      facility_location: referral.facility_location,
-      urgency: referral.urgency,
-      status: referral.status
-    });
-    
     const urgencyColors: Record<string, { bg: string; text: string }> = {
       urgent: { bg: "#FEE2E2", text: "#DC2626" },
       high: { bg: "#FEE2E2", text: "#DC2626" },
@@ -227,7 +209,7 @@ export default function ReferralsScreen() {
         {/* Patient Header */}
         <View style={styles.patientHeader}>
           <Text style={styles.patientName}>
-            {referral.client_name || 'CLIENT'}
+            {referral.client_name || 'Unknown Client'}
           </Text>
           <View style={[styles.statusBadge, { backgroundColor: colors.bg }]}>
             <Text style={[styles.statusText, { color: colors.text }]}>
