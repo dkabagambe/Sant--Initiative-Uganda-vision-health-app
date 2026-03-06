@@ -125,6 +125,7 @@ const VSLARegistrationStep4 = () => {
     try {
       console.log(`pickImage called for document id: ${id}`);
       
+      // Request media library permissions
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       console.log(`Permission status: ${status}`);
@@ -140,11 +141,9 @@ const VSLARegistrationStep4 = () => {
       console.log("Launching image library...");
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
+        allowsEditing: false,  // Disable editing to avoid issues
         quality: 0.8,
-        aspect: [4, 3],
         base64: false,
-        presentationStyle: ImagePicker.UIImagePickerPresentationStyle.FULL_SCREEN,
       });
 
       console.log("Image picker result:", {
@@ -171,7 +170,46 @@ const VSLARegistrationStep4 = () => {
         updateDocumentFile(id, fileData);
         clearError(id);
       } else {
-        console.log("Image selection canceled or failed");
+        console.log("Image selection canceled or failed - trying camera as fallback");
+        
+        // Try camera as fallback
+        try {
+          const cameraResult = await ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: false,
+            quality: 0.8,
+            base64: false,
+          });
+          
+          console.log("Camera result:", {
+            canceled: cameraResult.canceled,
+            assets: cameraResult.assets?.length || 0,
+          });
+          
+          if (!cameraResult.canceled && cameraResult.assets && cameraResult.assets[0]) {
+            const asset = cameraResult.assets[0];
+            console.log("Camera asset selected:", {
+              uri: asset.uri,
+              fileName: asset.fileName,
+              type: asset.type,
+              fileSize: asset.fileSize
+            });
+            
+            const fileData: DocumentFile = {
+              name: asset.fileName || `photo_${Date.now()}.jpg`,
+              uri: asset.uri,
+              type: asset.type || "image/jpeg",
+            };
+
+            console.log("Updating document file with camera photo:", fileData);
+            updateDocumentFile(id, fileData);
+            clearError(id);
+          } else {
+            console.log("Camera selection also canceled or failed");
+          }
+        } catch (cameraError) {
+          console.error("Camera fallback error:", cameraError);
+        }
       }
     } catch (error) {
       console.error("Error picking image:", error);
