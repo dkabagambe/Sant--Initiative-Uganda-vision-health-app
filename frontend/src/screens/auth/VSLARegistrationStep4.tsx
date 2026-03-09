@@ -148,19 +148,20 @@ const VSLARegistrationStep4 = () => {
 
       const launchOptions = {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [3, 2], // Wide aspect for group photo
-        quality: 1,
+        allowsEditing: false, // Disable editing to prevent issues
+        quality: 0.8,
         base64: false,
-        presentationStyle: ImagePicker.UIImagePickerPresentationStyle.FULL_SCREEN,
       };
 
       const result = useCamera
         ? await ImagePicker.launchCameraAsync(launchOptions)
         : await ImagePicker.launchImageLibraryAsync(launchOptions);
 
-      if (!result.canceled && result.assets[0]) {
+      console.log("ImagePicker result:", result);
+      
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
+        console.log("Selected asset:", asset);
 
         if (asset.fileSize && asset.fileSize > 15 * 1024 * 1024) {
           Alert.alert(
@@ -183,12 +184,23 @@ const VSLARegistrationStep4 = () => {
         Alert.alert("Photo Selected", `${fileName} selected. It will be uploaded when you submit.`, [
           { text: "OK" },
         ]);
+      } else {
+        console.log("Image selection cancelled or failed");
+        // Don't show error for user cancellation
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to capture image. Please try again.", [
-        { text: "OK" },
-      ]);
+      const errorMessage = (error as Error)?.message || "Unknown error";
+      console.error("Detailed error:", errorMessage);
+      
+      // Show specific error message
+      if (errorMessage.includes("permission")) {
+        Alert.alert("Permission Denied", "Please allow access to your camera/gallery in device settings.");
+      } else if (errorMessage.includes("cancelled") || errorMessage.includes("canceled")) {
+        console.log("User cancelled image selection");
+      } else {
+        Alert.alert("Selection Error", `Failed to select image: ${errorMessage}`);
+      }
     }
   };
 
@@ -478,6 +490,13 @@ const VSLARegistrationStep4 = () => {
                       >
                         <Ionicons name="images-outline" size={22} color="#2E7D32" />
                         <Text style={[styles.fileButtonText, { color: "#2E7D32" }]}>Gallery</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.fileButton, styles.fileButtonSecondary]}
+                        onPress={() => pickDocument(doc.id)}
+                      >
+                        <Ionicons name="document-outline" size={22} color="#2E7D32" />
+                        <Text style={[styles.fileButtonText, { color: "#2E7D32" }]}>Browse Files</Text>
                       </TouchableOpacity>
                     </View>
                   ) : (
