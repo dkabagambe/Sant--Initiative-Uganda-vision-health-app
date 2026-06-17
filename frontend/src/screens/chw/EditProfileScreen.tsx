@@ -161,8 +161,8 @@ export default function EditProfileScreen() {
         
         const updatedUser: User = {
           id: user.id,
-          fullName: formData.fullName,
-          phoneNumber: user.phoneNumber || user.phone_number,
+          full_name: formData.fullName,
+          phone_number: user.phoneNumber || user.phone_number,
           district: formData.district,
           village: formData.parish,
           role: user.role,

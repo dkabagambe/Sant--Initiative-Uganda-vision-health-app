@@ -1,7 +1,0 @@
-Update this line in frontend/src/services/configService.ts:
-
-FROM:
-export const VERCEL_API_URL = 'https://your-vercel-app-url.vercel.app/api';
-
-TO:
-export const VERCEL_API_URL = 'https://backend-tau-sepia-43.vercel.app/api';

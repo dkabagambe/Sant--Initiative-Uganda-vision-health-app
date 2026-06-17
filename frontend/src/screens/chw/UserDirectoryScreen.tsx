@@ -105,9 +105,9 @@ const UserDirectoryScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const tabs = [
-    { id: "vhts" as const, label: "VHTs", icon: "medical" },
-    { id: "vslas" as const, label: "VSLAs", icon: "people" },
-    { id: "retail" as const, label: "Retail Sellers", icon: "storefront" },
+    { id: "vhts" as const, label: "VHTs", icon: "medical" as const },
+    { id: "vslas" as const, label: "VSLAs", icon: "people" as const },
+    { id: "retail" as const, label: "Retail Sellers", icon: "storefront-outline" as const },
   ];
 
   const fetchUsers = async (tabType: string) => {

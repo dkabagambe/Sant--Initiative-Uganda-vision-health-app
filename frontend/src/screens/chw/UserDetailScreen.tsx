@@ -129,7 +129,7 @@ const UserDetailScreen: React.FC = () => {
       
       if (response.success) {
         // Update local state
-        setUserDetails(prev => ({ ...prev, ...updateData }));
+        setUserDetails((prev: any) => ({ ...prev, ...updateData }));
         
         Alert.alert(
           "Success",

@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { api } from '../../services/api';
+import api from '../../services/api';
 import { ConfigService } from '../../services/configService';
 
 const ApiConfigScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
