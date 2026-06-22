@@ -119,7 +119,7 @@ export default function CHWDashboardScreen() {
           {/* Start New Screening - Blue Primary Card */}
           <TouchableOpacity
             style={styles.primaryCard}
-            onPress={() => navigation.navigate("VisionScreen1")}
+            onPress={() => navigation.navigate("VHTScreeningStep1" as any)}
           >
             <View style={styles.cardHeader}>
               <Text style={[styles.cardTitle, styles.primaryCardText]}>

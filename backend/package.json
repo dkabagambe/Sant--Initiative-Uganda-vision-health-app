@@ -10,8 +10,10 @@
   "scripts": {
     "start": "node src/index.js",
     "start:local": "USE_SQLITE=1 node src/index.js",
-    "dev": "node scripts/kill-port.js 5000 2>/dev/null; nodemon src/index.js",
-    "dev:local": "node scripts/kill-port.js 5000 2>/dev/null; USE_SQLITE=1 nodemon src/index.js",
+    "dev": "node scripts/kill-port.js 5000 2>/dev/null; HOST=127.0.0.1 nodemon --legacy-watch src/index.js",
+    "dev:poll": "npm run dev",
+    "dev:local": "node scripts/kill-port.js 5000 2>/dev/null; HOST=127.0.0.1 USE_SQLITE=1 nodemon --legacy-watch src/index.js",
+    "dev:local:poll": "npm run dev:local",
     "init-db": "node scripts/init-db.js",
     "seed:production": "FORCE_POSTGRES=1 node scripts/init-db.js",
     "test": "echo \"Error: no test specified\" && exit 1",

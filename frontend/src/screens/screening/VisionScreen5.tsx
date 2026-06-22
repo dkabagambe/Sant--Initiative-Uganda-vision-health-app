@@ -299,7 +299,7 @@ export default function DistanceVisionTestScreen() {
             <View style={styles.prerequisiteItem}>
               <Ionicons name="checkmark-circle" size={18} color="#10B981" />
               <Text style={styles.prerequisiteText}>
-                Client Age - 88 years (≥6)
+                Client Age - {screeningData.clientAge || "Not recorded"} years (≥6)
               </Text>
             </View>
             <View style={styles.prerequisiteItem}>
@@ -944,7 +944,7 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     flex: 1,
-    backgroundColor: "#1565C0", // Updated to match Figma blue
+    backgroundColor: "#2E7D32",
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: "center",

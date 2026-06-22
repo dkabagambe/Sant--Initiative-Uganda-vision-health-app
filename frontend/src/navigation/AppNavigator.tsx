@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -62,11 +63,31 @@ import ReadingGlassesSelection from "../screens/screening/ReadingGlassesSelectio
 import ScreeningComplete from "../screens/screening/ScreeningComplete";
 import ClientRegistration from "../screens/screening/ClientRegistration";
 
+// VHT Screening Workflow (with embedded instructions)
+import VHTScreeningStep1 from "../screens/screening/VHTScreeningStep1";
+import VHTScreeningStep2 from "../screens/screening/VHTScreeningStep2";
+import VHTScreeningStep3 from "../screens/screening/VHTScreeningStep3";
+import VHTScreeningStep4 from "../screens/screening/VHTScreeningStep4";
+import VHTScreeningStep5 from "../screens/screening/VHTScreeningStep5";
+import VHTScreeningStep6 from "../screens/screening/VHTScreeningStep6";
+import VHTReferralScreen from "../screens/screening/VHTReferralScreen";
+import VHTNormalFindingsScreen from "../screens/screening/VHTNormalFindingsScreen";
+import VHTReadingGlassesScreen from "../screens/screening/VHTReadingGlassesScreen";
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 // Define types for Screening Stack
 export type ScreeningStackParamList = {
+  VHTScreeningStep1: undefined;
+  VHTScreeningStep2: undefined;
+  VHTScreeningStep3: undefined;
+  VHTScreeningStep4: undefined;
+  VHTScreeningStep5: undefined;
+  VHTScreeningStep6: undefined;
+  VHTReferral: undefined;
+  VHTNormalFindings: undefined;
+  VHTReadingGlasses: undefined;
   VisionScreen1: undefined;
   VisionScreen2: undefined;
   VisionScreen3: undefined;
@@ -82,12 +103,24 @@ export type ScreeningStackParamList = {
 function ScreeningStack() {
   return (
     <Stack.Navigator
-      initialRouteName="VisionScreen1"
+      initialRouteName="VHTScreeningStep1"
       screenOptions={{
         headerShown: false,
         animation: "slide_from_right",
       }}
     >
+      {/* VHT Workflow - Steps 1-6 with embedded instructions */}
+      <Stack.Screen name="VHTScreeningStep1" component={VHTScreeningStep1} />
+      <Stack.Screen name="VHTScreeningStep2" component={VHTScreeningStep2} />
+      <Stack.Screen name="VHTScreeningStep3" component={VHTScreeningStep3} />
+      <Stack.Screen name="VHTScreeningStep4" component={VHTScreeningStep4} />
+      <Stack.Screen name="VHTScreeningStep5" component={VHTScreeningStep5} />
+      <Stack.Screen name="VHTScreeningStep6" component={VHTScreeningStep6} />
+      <Stack.Screen name="VHTReferral" component={VHTReferralScreen} />
+      <Stack.Screen name="VHTNormalFindings" component={VHTNormalFindingsScreen} />
+      <Stack.Screen name="VHTReadingGlasses" component={VHTReadingGlassesScreen} />
+
+      {/* Vision Tests */}
       <Stack.Screen name="VisionScreen1" component={VisionScreen1} />
       <Stack.Screen name="VisionScreen2" component={VisionScreen2} />
       <Stack.Screen name="VisionScreen3" component={VisionScreen3} />
@@ -153,15 +186,20 @@ function CHWTabs() {
       <Tab.Screen
         name="Screen"
         component={ScreeningStack}
-        options={{
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "eye" : "eye-outline"}
-              size={size}
-              color={color}
-            />
-          ),
-          tabBarLabel: "Screen",
+        options={({ route }) => {
+          const focusedRoute = getFocusedRouteNameFromRoute(route) ?? "VHTScreeningStep1";
+
+          return {
+            tabBarStyle: focusedRoute ? styles.hiddenTabBar : styles.chwTabBar,
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? "eye" : "eye-outline"}
+                size={size}
+                color={color}
+              />
+            ),
+            tabBarLabel: "Screen",
+          };
         }}
       />
       <Tab.Screen
@@ -481,6 +519,15 @@ export default function AppNavigator() {
       <Stack.Screen name="InventoryDetailsScreen" component={InventoryDetailsScreen} />
       <Stack.Screen name="SalesDetailsScreen" component={SalesDetailsScreen} />
       <Stack.Screen name="PaymentsScreen" component={PaymentsScreen} />
+      <Stack.Screen name="VHTScreeningStep1" component={VHTScreeningStep1} />
+      <Stack.Screen name="VHTScreeningStep2" component={VHTScreeningStep2} />
+      <Stack.Screen name="VHTScreeningStep3" component={VHTScreeningStep3} />
+      <Stack.Screen name="VHTScreeningStep4" component={VHTScreeningStep4} />
+      <Stack.Screen name="VHTScreeningStep5" component={VHTScreeningStep5} />
+      <Stack.Screen name="VHTScreeningStep6" component={VHTScreeningStep6} />
+      <Stack.Screen name="VHTReferral" component={VHTReferralScreen} />
+      <Stack.Screen name="VHTNormalFindings" component={VHTNormalFindingsScreen} />
+      <Stack.Screen name="VHTReadingGlasses" component={VHTReadingGlassesScreen} />
       <Stack.Screen name="VisionScreen1" component={VisionScreen1} />
       <Stack.Screen name="VisionScreen2" component={VisionScreen2} />
       <Stack.Screen name="VisionScreen3" component={VisionScreen3} />
@@ -524,6 +571,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+  },
+  hiddenTabBar: {
+    display: "none",
   },
   // Outlet Tab Bar (Blue theme)
   outletTabBar: {

@@ -29,6 +29,25 @@ exports.createScreening = async (req, res) => {
       county,
       subCounty,
       parish,
+
+      // VHT Workflow Steps
+      equipmentChecked,
+      consentObtained,
+      educationProvided,
+
+      // VHT Key Questions
+      hasEyeConcerns,
+      followsMovement,
+      hasSevereEyePain,
+      hasSuddenVisionLoss,
+      hasDiabetesHypertension,
+      familyHistoryBlindness,
+      referralReasonsFromQuestions,
+
+      // VHT Screening Preparation
+      screeningAreaPrepared,
+      testsExplainedToClient,
+
       // Vision test results - handle both old and new field names
       distanceVisionLeft,
       distanceVisionRight,
@@ -39,10 +58,18 @@ exports.createScreening = async (req, res) => {
       pinholeTestRight,
       torchTestPassed,
       torchTestAbnormalSigns,
+
+      // VHT Reading Glasses
+      glassesDispensed,
+      glassesPower,
+      glassesFrameType,
+      glassesEducationProvided,
+
       // Results
       needsGlasses,
       needsReferral,
       referralReason,
+      referralFacility,
       referralStep,
       recommendedProductId,
       recommendedPower,
@@ -53,8 +80,28 @@ exports.createScreening = async (req, res) => {
 
     // Build notes with all test information
     let fullNotes = notes || '';
+
+    // VHT Workflow Information
+    if (equipmentChecked) fullNotes += '\n✓ VHT Equipment Check: Completed';
+    if (consentObtained) fullNotes += '\n✓ Consent: Obtained';
+    if (educationProvided) fullNotes += '\n✓ Eye Health Education: Provided';
+    if (screeningAreaPrepared) fullNotes += '\n✓ Screening Area: Prepared';
+    if (testsExplainedToClient) fullNotes += '\n✓ Tests Explained: Confirmed';
+
+    // Key Questions Summary
+    if (hasEyeConcerns !== undefined || followsMovement !== undefined || hasSevereEyePain !== undefined) {
+      fullNotes += '\n--- Key Questions Asked ---';
+      if (hasEyeConcerns !== undefined) fullNotes += `\nEye Concerns: ${hasEyeConcerns ? 'YES' : 'NO'}`;
+      if (followsMovement !== undefined) fullNotes += `\nFollows Movement: ${followsMovement ? 'YES' : 'NO'}`;
+      if (hasSevereEyePain !== undefined) fullNotes += `\nSevere Eye Pain: ${hasSevereEyePain ? 'YES' : 'NO'}`;
+      if (hasSuddenVisionLoss !== undefined) fullNotes += `\nSudden Vision Loss: ${hasSuddenVisionLoss ? 'YES' : 'NO'}`;
+      if (hasDiabetesHypertension !== undefined) fullNotes += `\nDiabetes/Hypertension: ${hasDiabetesHypertension ? 'YES' : 'NO'}`;
+      if (familyHistoryBlindness !== undefined) fullNotes += `\nFamily History Blindness: ${familyHistoryBlindness ? 'YES' : 'NO'}`;
+    }
+
+    // Vision Test Results
     if (torchTestPassed !== undefined) {
-      fullNotes += `\nTorch Test: ${torchTestPassed ? 'Passed' : 'Failed'}`;
+      fullNotes += `\n--- Vision Tests ---\nTorch Test: ${torchTestPassed ? 'Passed' : 'Failed'}`;
       if (torchTestAbnormalSigns) {
         fullNotes += ` - ${torchTestAbnormalSigns}`;
       }
@@ -62,30 +109,53 @@ exports.createScreening = async (req, res) => {
     if (distanceVisionResult) {
       fullNotes += `\nDistance Vision: ${distanceVisionResult}`;
     }
-    if (referralStep) {
-      fullNotes += `\nReferral from: ${referralStep}`;
+
+    // Reading Glasses Dispensing
+    if (glassesDispensed) {
+      fullNotes += `\n--- Reading Glasses Dispensed ---\nPower: ${glassesPower || 'Not specified'}`;
+      fullNotes += `\nFrame Type: ${glassesFrameType || 'Not specified'}`;
+      if (glassesEducationProvided) fullNotes += '\nClient Education: Provided';
     }
+
+    // Referral Information
+    if (needsReferral) {
+      fullNotes += `\n--- Referral ---\nReason: ${referralReason || 'Not specified'}`;
+      if (referralFacility) fullNotes += `\nFacility: ${referralFacility}`;
+      if (referralStep) fullNotes += `\nReferral from: ${referralStep}`;
+    }
+
+    const nullableBool = (value) => value === undefined ? null : Boolean(value);
 
     // Create screening
     const screening = await sql`
       INSERT INTO screenings (
         health_worker_id, client_name, client_phone, client_age, client_gender, client_village,
-        client_district, client_county, client_sub_county, parish,
+        client_district, client_county, client_sub_county, client_parish,
+        equipment_checked, consent_obtained, education_provided,
+        has_eye_concerns, follows_movement, has_severe_eye_pain, has_sudden_vision_loss,
+        has_diabetes_hypertension, family_history_blindness, referral_reasons_from_questions,
+        screening_area_prepared, tests_explained_to_client,
         distance_vision_left, distance_vision_right, distance_vision_both,
         near_vision_result, pinhole_test_left, pinhole_test_right,
         torch_test_passed, torch_test_abnormal_signs,
-        needs_glasses, needs_referral, referral_reason,
+        glasses_dispensed, glasses_power, glasses_frame_type, glasses_education_provided,
+        needs_glasses, needs_referral, referral_reason, referral_facility,
         recommended_product_id, recommended_power, selected_frame_type,
         notes, offline_id, is_synced, screening_date
       ) VALUES (
         ${healthWorkerId}, ${clientName || null}, ${clientPhone || null}, ${clientAge || null}, ${clientGender || null}, ${clientVillage || null},
         ${district || null}, ${county || null}, ${subCounty || null}, ${parish || null},
+        ${Boolean(equipmentChecked)}, ${Boolean(consentObtained)}, ${Boolean(educationProvided)},
+        ${nullableBool(hasEyeConcerns)}, ${nullableBool(followsMovement)}, ${nullableBool(hasSevereEyePain)}, ${nullableBool(hasSuddenVisionLoss)},
+        ${nullableBool(hasDiabetesHypertension)}, ${nullableBool(familyHistoryBlindness)}, ${referralReasonsFromQuestions ? JSON.stringify(referralReasonsFromQuestions) : null},
+        ${Boolean(screeningAreaPrepared)}, ${Boolean(testsExplainedToClient)},
         ${distanceVisionLeft || null}, ${distanceVisionRight || null}, ${distanceVisionBoth || null},
         ${nearVisionResult || null}, ${pinholeTestLeft || null}, ${pinholeTestRight || null},
-        ${torchTestPassed ? 1 : 0}, ${torchTestAbnormalSigns || null},
-        ${needsGlasses ? 1 : 0}, ${needsReferral ? 1 : 0}, ${referralReason || null},
+        ${nullableBool(torchTestPassed)}, ${torchTestAbnormalSigns || null},
+        ${Boolean(glassesDispensed)}, ${glassesPower || null}, ${glassesFrameType || null}, ${Boolean(glassesEducationProvided)},
+        ${Boolean(needsGlasses)}, ${Boolean(needsReferral)}, ${referralReason || null}, ${referralFacility || null},
         ${recommendedProductId || null}, ${recommendedPower || null}, ${selectedFrameType || null},
-        ${fullNotes.trim() || null}, ${offlineId || null}, ${1}, ${new Date().toISOString().split('T')[0]}
+        ${fullNotes.trim() || null}, ${offlineId || null}, ${true}, ${new Date().toISOString().split('T')[0]}
       )
       RETURNING *
     `;
@@ -94,39 +164,35 @@ exports.createScreening = async (req, res) => {
     if (needsReferral && referralReason) {
       await sql`
         INSERT INTO referrals (
-          screening_id, health_worker_id, client_name, client_phone, 
-          client_age, client_gender, client_district, reason, urgency
+          screening_id, health_worker_id, client_name, client_phone,
+          client_age, client_gender, client_district, reason, facility_name, urgency
         ) VALUES (
           ${screening[0].id}, ${healthWorkerId}, ${clientName || null}, ${clientPhone || null},
-          ${clientAge || null}, ${clientGender || null}, ${district || null}, ${referralReason}, 'normal'
+          ${clientAge || null}, ${clientGender || null}, ${district || null}, ${referralReason}, ${referralFacility || null}, 'normal'
         )
       `;
     }
 
     // Deduct from this VHT's stock when glasses are dispensed
-    if (needsGlasses && recommendedProductId && selectedFrameType) {
-      if (selectedFrameType === 'standard') {
-        await sql`
-          UPDATE vht_stock
-          SET stock_quantity = stock_quantity - 1,
-              stock_standard = stock_standard - 1
-          WHERE health_worker_id = ${healthWorkerId} AND product_id = ${recommendedProductId}
-        `;
-      } else if (selectedFrameType === 'metal') {
-        await sql`
-          UPDATE vht_stock
-          SET stock_quantity = stock_quantity - 1,
-              stock_metal = stock_metal - 1
-          WHERE health_worker_id = ${healthWorkerId} AND product_id = ${recommendedProductId}
-        `;
-      } else if (selectedFrameType === 'fashion') {
-        await sql`
-          UPDATE vht_stock
-          SET stock_quantity = stock_quantity - 1,
-              stock_fashion = stock_fashion - 1
-          WHERE health_worker_id = ${healthWorkerId} AND product_id = ${recommendedProductId}
-        `;
+    if ((glassesDispensed || needsGlasses) && recommendedProductId && (glassesFrameType || selectedFrameType)) {
+      const frameType = glassesFrameType || selectedFrameType;
+
+      // Normalize frame type names
+      let stockColumn = 'stock_standard';
+      if (frameType === 'metal' || frameType === 'Metal Frame (Durable)') {
+        stockColumn = 'stock_metal';
+      } else if (frameType === 'plastic' || frameType === 'Plastic Frame (Comfortable)' || frameType === 'halfrim' || frameType === 'Half-Rim Frame (Lightweight)') {
+        stockColumn = 'stock_metal'; // Use metal for half-rim too, or adjust as needed
+      } else if (frameType === 'fashion') {
+        stockColumn = 'stock_fashion';
       }
+
+      await sql`
+        UPDATE vht_stock
+        SET stock_quantity = stock_quantity - 1,
+            ${sql(stockColumn)} = ${sql(stockColumn)} - 1
+        WHERE health_worker_id = ${healthWorkerId} AND product_id = ${recommendedProductId}
+      `;
     }
 
     res.json({

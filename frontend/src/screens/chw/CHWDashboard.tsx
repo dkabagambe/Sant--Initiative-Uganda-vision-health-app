@@ -246,12 +246,13 @@ export default function CHWDashboard() {
       subtitle: "Uganda Job Aid Protocol",
       icon: "👁️",
       onPress: () => {
-        // Navigate to root stack VisionScreen1 (2 levels up: CHWHomeStack -> CHWTabs -> Root)
-        const rootNav = navigation.getParent()?.getParent();
-        if (rootNav) {
-          rootNav.navigate("VisionScreen1");
+        const tabNavigation = navigation.getParent<any>();
+        if (tabNavigation) {
+          tabNavigation.navigate("Screen", {
+            screen: "VHTScreeningStep1",
+          });
         } else {
-          navigation.navigate("VisionScreen1" as any);
+          navigation.navigate("VHTScreeningStep1" as any);
         }
       },
     },

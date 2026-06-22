@@ -230,7 +230,7 @@ export default function ClientRegistration() {
           index: 0,
           routes: [{ name: "AppTabs" }],
         })}
-        onScreenNext={() => navigation.navigate("VisionScreen1")}
+        onScreenNext={() => navigation.navigate("VHTScreeningStep1" as any)}
       />
     );
   }

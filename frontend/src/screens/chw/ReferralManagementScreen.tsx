@@ -641,7 +641,7 @@ export default function ReferralManagementScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.tabItem}
-          onPress={() => navigation.navigate("VisionScreen1")}
+          onPress={() => navigation.navigate("VHTScreeningStep1" as any)}
         >
           <Ionicons name="eye-outline" size={24} color="#666666" />
           <Text style={styles.tabLabel}>Screen</Text>

@@ -11,11 +11,25 @@ interface ScreeningData {
   county: string;
   subCounty: string;
   parish: string;
-  
+
+  // VHT Workflow - Preparation & Greetings
+  equipmentChecked: boolean;
+  consentObtained: boolean;
+  educationProvided: boolean;
+
+  // VHT Workflow - Key Questions
+  hasEyeConcerns: boolean;
+  followsMovement: boolean;
+  hasSevereEyePain: boolean;
+  hasSuddenVisionLoss: boolean;
+  hasDiabetesHypertension: boolean;
+  familyHistoryBlindness: boolean;
+  referralReasonsFromQuestions: string[];
+
   // Step 4: Torch Test
   torchTestPassed: boolean;
   torchTestAbnormalSigns: string;
-  
+
   // Step 2-5: Vision Tests
   distanceVisionLeft: string;
   distanceVisionRight: string;
@@ -23,16 +37,28 @@ interface ScreeningData {
   nearVisionResult: string;
   pinholeTestLeft: string;
   pinholeTestRight: string;
-  
+
+  // VHT Workflow - Screening Preparation
+  screeningAreaPrepared: boolean;
+  testsExplainedToClient: boolean;
+
+  // VHT Workflow - Reading Glasses
+  glassesDispensed: boolean;
+  glassesPower: string;
+  glassesFrameType: string;
+  selectedGlassesPower: string;
+  selectedFrameType: string;
+  glassesEducationProvided: boolean;
+
   // Step 6: Results
   needsGlasses: boolean;
   needsReferral: boolean;
   referralReason: string;
+  referralFacility: string;
   referralUrgency: string;
   referralStep: string;
   recommendedProductId: string;
   recommendedPower: string;
-  selectedFrameType: string;
   notes: string;
   screeningId: string;
 }

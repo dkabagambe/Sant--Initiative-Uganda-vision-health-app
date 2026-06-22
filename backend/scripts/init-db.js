@@ -127,18 +127,53 @@ async function initDB() {
         client_county VARCHAR(100),
         client_sub_county VARCHAR(100),
         client_parish VARCHAR(100),
+
+        -- VHT Workflow Steps
+        equipment_checked BOOLEAN DEFAULT false,
+        consent_obtained BOOLEAN DEFAULT false,
+        education_provided BOOLEAN DEFAULT false,
+
+        -- VHT Key Questions
+        has_eye_concerns BOOLEAN,
+        follows_movement BOOLEAN,
+        has_severe_eye_pain BOOLEAN,
+        has_sudden_vision_loss BOOLEAN,
+        has_diabetes_hypertension BOOLEAN,
+        family_history_blindness BOOLEAN,
+        referral_reasons_from_questions TEXT,
+
+        -- VHT Screening Area Preparation
+        screening_area_prepared BOOLEAN DEFAULT false,
+
+        -- VHT Test Explanation
+        tests_explained_to_client BOOLEAN DEFAULT false,
+
+        -- Vision Test Results
         distance_vision_left VARCHAR(20),
         distance_vision_right VARCHAR(20),
         distance_vision_both VARCHAR(20),
         near_vision_result VARCHAR(20),
         pinhole_test_left VARCHAR(20),
         pinhole_test_right VARCHAR(20),
+        torch_test_passed BOOLEAN,
+        torch_test_abnormal_signs TEXT,
+
+        -- VHT Reading Glasses Dispensing
+        glasses_dispensed BOOLEAN DEFAULT false,
+        glasses_power VARCHAR(20),
+        glasses_frame_type VARCHAR(50),
+        glasses_education_provided BOOLEAN DEFAULT false,
+
+        -- Outcomes
         needs_glasses BOOLEAN DEFAULT false,
         needs_referral BOOLEAN DEFAULT false,
         referral_reason TEXT,
+        referral_facility VARCHAR(200),
         recommended_product_id UUID REFERENCES products(id),
         recommended_power VARCHAR(20),
         selected_frame_type VARCHAR(50),
+
+        -- Documentation
         notes TEXT,
         screening_date DATE DEFAULT CURRENT_DATE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -147,6 +182,32 @@ async function initDB() {
       )
     `;
     console.log('✓ Screenings table created');
+
+    // Add VHT workflow columns to existing screenings table (migration)
+    try {
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS equipment_checked BOOLEAN DEFAULT false`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS consent_obtained BOOLEAN DEFAULT false`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS education_provided BOOLEAN DEFAULT false`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS has_eye_concerns BOOLEAN`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS follows_movement BOOLEAN`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS has_severe_eye_pain BOOLEAN`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS has_sudden_vision_loss BOOLEAN`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS has_diabetes_hypertension BOOLEAN`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS family_history_blindness BOOLEAN`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS referral_reasons_from_questions TEXT`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS screening_area_prepared BOOLEAN DEFAULT false`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS tests_explained_to_client BOOLEAN DEFAULT false`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS torch_test_passed BOOLEAN`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS torch_test_abnormal_signs TEXT`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS glasses_dispensed BOOLEAN DEFAULT false`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS glasses_power VARCHAR(20)`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS glasses_frame_type VARCHAR(50)`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS glasses_education_provided BOOLEAN DEFAULT false`;
+      await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS referral_facility VARCHAR(200)`;
+      console.log('✓ VHT workflow columns added to screenings table');
+    } catch (migErr) {
+      console.warn('Migration note:', migErr.message);
+    }
 
     // Create referrals table
     await sql`
@@ -230,6 +291,35 @@ async function initDB() {
       )
     `;
     console.log('✓ vht_stock table created');
+
+    // Create health_facilities table
+    await sql`
+      CREATE TABLE IF NOT EXISTS health_facilities (
+        id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+        name VARCHAR(200) NOT NULL,
+        type VARCHAR(50) DEFAULT 'Health Centre',
+        district VARCHAR(100),
+        sub_county VARCHAR(100),
+        location VARCHAR(200),
+        phone VARCHAR(20),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    console.log('✓ Health facilities table created');
+
+    // Seed sample health facilities if empty
+    const existingFacilities = await sql`SELECT COUNT(*) as count FROM health_facilities`;
+    if (parseInt(existingFacilities[0].count) === 0) {
+      await sql`
+        INSERT INTO health_facilities (name, type, district, location) VALUES
+        ('District Hospital', 'Hospital', 'Central', 'District HQ'),
+        ('Regional Referral Hospital', 'Regional Referral', 'Central', 'Regional HQ'),
+        ('Health Centre IV', 'Health Centre IV', 'Central', 'Sub-county HQ'),
+        ('Health Centre III', 'Health Centre III', 'Central', 'Parish'),
+        ('Eye Clinic/Specialist', 'Eye Clinic', 'Central', 'District HQ')
+      `;
+      console.log('✓ Sample health facilities inserted');
+    }
 
     // Create clients table
     await sql`

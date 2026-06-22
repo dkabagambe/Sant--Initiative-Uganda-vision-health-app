@@ -15,6 +15,7 @@ import CHWHeader from "../../components/CHWHeader";
 type RootStackParamList = {
   StartScreening: undefined;
   VisionScreen1: undefined;
+  VHTScreeningStep1: undefined;
 };
 
 type StartScreeningScreenNavigationProp = NativeStackNavigationProp<
@@ -24,6 +25,19 @@ type StartScreeningScreenNavigationProp = NativeStackNavigationProp<
 
 export default function StartScreeningScreen() {
   const navigation = useNavigation<StartScreeningScreenNavigationProp>();
+
+  const startScreening = () => {
+    const tabNavigation = navigation.getParent<any>();
+
+    if (tabNavigation) {
+      tabNavigation.navigate("Screen", {
+        screen: "VHTScreeningStep1",
+      });
+      return;
+    }
+
+    navigation.navigate("VHTScreeningStep1" as any);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -100,7 +114,7 @@ export default function StartScreeningScreen() {
 
         <TouchableOpacity
           style={styles.startButton}
-          onPress={() => navigation.navigate("VisionScreen1")}
+          onPress={startScreening}
         >
           <Ionicons name="play-circle" size={24} color="#FFFFFF" />
           <Text style={styles.startButtonText}>Start Screening</Text>

@@ -15,7 +15,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { getDistrictNames, getCountiesForDistrict, getSubCountiesForCounty, getParishesForSubCounty } from "../../data/ugandaLocations";
@@ -23,6 +23,7 @@ import { apiService } from "../../services/api";
 
 export default function VisionScreen1() {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const { screeningData, updateScreeningData } = useScreening();
   const { t } = useLanguage();
   const [userData, setUserData] = useState<any>(null);
@@ -156,7 +157,7 @@ export default function VisionScreen1() {
       parish: formData.parish,
     });
 
-    navigation.navigate("VisionScreen2");
+    navigation.navigate(route.params?.nextScreen || "VisionScreen2");
   };
 
   return (

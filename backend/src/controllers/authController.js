@@ -9,12 +9,26 @@ const generateOTP = () => {
 // Login / Request OTP
 exports.login = async (req, res) => {
   try {
-    const { phoneNumber } = req.body;
+    let { phoneNumber } = req.body;
     const sql = req.app.locals.sql;
 
     if (!phoneNumber) {
       return res.status(400).json({ success: false, error: "Phone number required" });
     }
+
+    // Normalize phone to a single canonical format (0XXXXXXXXX) for DB lookup
+    const normalize = (p) => {
+      const d = String(p).replace(/\D/g, '');
+      if (d.startsWith('256')) return '0' + d.slice(3);
+      if (d.startsWith('0')) return d;
+      return '0' + d;
+    };
+    const normalizedPhone = normalize(phoneNumber);
+
+    // Also build all possible variants to search against
+    const digits9 = normalizedPhone.slice(1); // 9-digit local number
+    const withCountry = '256' + digits9;       // 256XXXXXXXXX
+    const withPlus   = '+256' + digits9;       // +256XXXXXXXXX
 
     // Only send OTP to users who have already registered (CHW / Outlet / VSLA)
     // Add retry logic for database connection issues
@@ -25,15 +39,13 @@ exports.login = async (req, res) => {
     while (retryCount < maxRetries) {
       try {
         existingUser = await sql`
-          SELECT id, phone_number, full_name, role FROM users WHERE phone_number = ${phoneNumber}
+          SELECT id, phone_number, full_name, role FROM users
+          WHERE phone_number IN (${normalizedPhone}, ${withCountry}, ${withPlus})
         `;
-        break; // Success, exit retry loop
+        break;
       } catch (dbError) {
         retryCount++;
-        if (retryCount >= maxRetries) {
-          throw dbError; // Re-throw after max retries
-        }
-        // Wait a bit before retrying
+        if (retryCount >= maxRetries) throw dbError;
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
@@ -46,8 +58,9 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Send OTP via Twilio Verify (Twilio generates the OTP)
-    const smsResult = await smsService.sendOTP(phoneNumber, null);
+    // Use the stored phone number for OTP (matches what Twilio expects)
+    const storedPhone = existingUser[0].phone_number;
+    const smsResult = await smsService.sendOTP(storedPhone, null);
     
     if (!smsResult.success) {
       console.error("SMS failed:", smsResult.error);
@@ -88,18 +101,31 @@ exports.verifyOTP = async (req, res) => {
   try {
     const { phoneNumber, otp, registrationData } = req.body;
     const sql = req.app.locals.sql;
-    
-    // Save phoneNumber for use in SQL queries
-    const userPhoneNumber = phoneNumber;
 
     if (!phoneNumber || !otp) {
       return res.status(400).json({ success: false, error: "Phone number and OTP required" });
     }
 
+    // Normalize phone — same logic as login
+    const normalize = (p) => {
+      const d = String(p).replace(/\D/g, '');
+      if (d.startsWith('256')) return '0' + d.slice(3);
+      if (d.startsWith('0')) return d;
+      return '0' + d;
+    };
+    const normalizedPhone = normalize(phoneNumber);
+    const digits9 = normalizedPhone.slice(1);
+    const withCountry = '256' + digits9;
+    const withPlus   = '+256' + digits9;
+
+    // Save phoneNumber for use in SQL queries — use the canonical form
+    const userPhoneNumber = normalizedPhone;
+
     // Only verify OTP via Twilio for login (not registration)
     // Registration flow passes registrationData — skip OTP check to save Twilio credits
     if (!registrationData) {
-      const verifyResult = await smsService.verifyOTP(phoneNumber, otp);
+      // Use the same phone format that was used to send the OTP (the stored phone)
+      const verifyResult = await smsService.verifyOTP(userPhoneNumber, otp);
       
       if (!verifyResult.success) {
         return res.status(401).json({ 
@@ -115,7 +141,7 @@ exports.verifyOTP = async (req, res) => {
     // Get user from database (or create if registering)
     let user = await sql`
       SELECT * FROM users 
-      WHERE phone_number = ${userPhoneNumber}
+      WHERE phone_number IN (${userPhoneNumber}, ${withCountry}, ${withPlus})
     `;
 
     // When registering, create user if they don't exist yet

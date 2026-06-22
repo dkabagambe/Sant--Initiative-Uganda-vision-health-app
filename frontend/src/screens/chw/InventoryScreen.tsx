@@ -599,7 +599,11 @@ export default function InventoryScreen() {
 
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate("VisionScreeningStep1")}
+          onPress={() =>
+            navigation.navigate("Screen" as any, {
+              screen: "VHTScreeningStep1",
+            } as any)
+          }
         >
           <Ionicons name="eye-outline" size={24} color="#6B7280" />
           <Text style={styles.navText}>Screen</Text>
