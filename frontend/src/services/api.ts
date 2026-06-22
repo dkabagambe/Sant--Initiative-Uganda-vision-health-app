@@ -3,9 +3,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ConfigService, LOCAL_API_URL, VERCEL_API_URL } from "./configService";
 
 // Env override for physical device (must match configService)
-const envApiUrl = typeof process !== "undefined"
-  ? (process.env.EXPO_PUBLIC_API_URL ?? "")
-  : "";
+const envApiUrl =
+  typeof process !== "undefined" ? (process.env.EXPO_PUBLIC_API_URL ?? "") : "";
 
 // Define types
 export interface User {
@@ -58,9 +57,8 @@ export interface Screening {
 
 // API base URL: env override > ConfigService (localhost in dev, Vercel in prod)
 const getDefaultBaseUrl = () =>
-  envApiUrl || (typeof __DEV__ !== "undefined" && __DEV__
-    ? LOCAL_API_URL
-    : VERCEL_API_URL);
+  envApiUrl ||
+  (typeof __DEV__ !== "undefined" && __DEV__ ? LOCAL_API_URL : VERCEL_API_URL);
 
 let API_BASE_URL = getDefaultBaseUrl();
 
@@ -109,11 +107,14 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     const status = error.response?.status;
-    const isNotRegistered = status === 400
-      && error.config?.url?.includes("/auth/login")
-      && (error.response?.data as { code?: string })?.code === "NOT_REGISTERED";
+    const isNotRegistered =
+      status === 400 &&
+      error.config?.url?.includes("/auth/login") &&
+      (error.response?.data as { code?: string })?.code === "NOT_REGISTERED";
     // Don't log 401 for dashboard (fallback), or 400 NOT_REGISTERED (expected "register first" flow)
-    const skipLog = (status === 401 && error.config?.url?.includes("/dashboard/")) || isNotRegistered;
+    const skipLog =
+      (status === 401 && error.config?.url?.includes("/dashboard/")) ||
+      isNotRegistered;
     if (!skipLog) {
       console.error("API Error:", {
         url: error.config?.url,
@@ -213,15 +214,16 @@ export const apiService = {
       // First try to get stored user data to get phone number
       const userStr = await AsyncStorage.getItem("user");
       const storedUser = userStr ? JSON.parse(userStr) : null;
-      
+
       // First try to get from backend (for fresh data)
       const token = await AsyncStorage.getItem("authToken");
       if (token) {
         try {
           // Pass phone number if we have it
-          const phoneNumber = storedUser?.phone_number || storedUser?.phoneNumber;
+          const phoneNumber =
+            storedUser?.phone_number || storedUser?.phoneNumber;
           const params = phoneNumber ? { phoneNumber } : {};
-          
+
           const response = await api.get("/current-user/me", { params });
           if (response.data.success) {
             const userData = response.data.data;
@@ -234,7 +236,7 @@ export const apiService = {
           console.warn("Backend user fetch failed, using cache:", backendError);
         }
       }
-      
+
       // Fallback to AsyncStorage
       return storedUser;
     } catch (error) {
@@ -357,7 +359,9 @@ export const apiService = {
   },
 
   async getReferrals(status?: string) {
-    const response = await api.get("/simple-referrals/list", { params: { status } });
+    const response = await api.get("/simple-referrals/list", {
+      params: { status },
+    });
     return response.data;
   },
 
@@ -440,7 +444,7 @@ export const apiService = {
     try {
       console.log("Starting single file upload...");
       console.log("File to upload:", file);
-      
+
       const uploadFormData = new FormData();
       uploadFormData.append("file", {
         uri: file.uri,
@@ -449,13 +453,17 @@ export const apiService = {
       } as any);
 
       console.log("FormData created for single file upload...");
-      
-      const uploadResponse = await api.post("/simple-upload/single", uploadFormData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
+
+      const uploadResponse = await api.post(
+        "/simple-upload/single",
+        uploadFormData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 30000, // 30 second timeout
         },
-        timeout: 30000, // 30 second timeout
-      });
+      );
 
       console.log("Single file upload response:", uploadResponse.data);
       return uploadResponse.data;
@@ -464,32 +472,36 @@ export const apiService = {
       console.error("Error response:", error.response?.data);
       console.error("Error status:", error.response?.status);
       console.error("Error message:", error.message);
-      
+
       // Better error message for user
       if (error.response?.data?.error) {
         throw new Error(error.response.data.error);
-      } else if (error.code === 'ECONNABORTED') {
-        throw new Error('Upload timed out. Please check your connection and try again.');
+      } else if (error.code === "ECONNABORTED") {
+        throw new Error(
+          "Upload timed out. Please check your connection and try again.",
+        );
       } else {
-        throw new Error(error.message || 'Failed to upload file');
+        throw new Error(error.message || "Failed to upload file");
       }
     }
   },
 
-  async uploadVSLADocuments(files: Array<{ uri: string; name: string; type: string }>) {
+  async uploadVSLADocuments(
+    files: Array<{ uri: string; name: string; type: string }>,
+  ) {
     try {
       console.log("Starting VSLA documents upload...");
       console.log("Files to upload:", files);
-      
+
       const vslFormData = new FormData();
-      
+
       files.forEach((file: any, index: number) => {
         console.log(`Appending file ${index + 1}:`, {
           uri: file.uri,
           name: file.name,
           type: file.type,
         });
-        
+
         vslFormData.append("files", {
           uri: file.uri,
           name: file.name,
@@ -498,13 +510,17 @@ export const apiService = {
       });
 
       console.log("FormData created, sending to backend...");
-      
-      const vslResponse = await api.post("/vsla-upload/documents", vslFormData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
+
+      const vslResponse = await api.post(
+        "/vsla-upload/documents",
+        vslFormData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 60000, // 60 second timeout for multiple files
         },
-        timeout: 60000, // 60 second timeout for multiple files
-      });
+      );
 
       console.log("VSLA upload response:", vslResponse.data);
       return vslResponse.data;
@@ -513,22 +529,26 @@ export const apiService = {
       console.error("Error response:", error.response?.data);
       console.error("Error status:", error.response?.status);
       console.error("Error message:", error.message);
-      
+
       // Better error message for user
       if (error.response?.data?.error) {
         throw new Error(error.response.data.error);
-      } else if (error.code === 'ECONNABORTED') {
-        throw new Error('Upload timed out. Please check your connection and try again.');
+      } else if (error.code === "ECONNABORTED") {
+        throw new Error(
+          "Upload timed out. Please check your connection and try again.",
+        );
       } else {
-        throw new Error(error.message || 'Failed to upload documents');
+        throw new Error(error.message || "Failed to upload documents");
       }
     }
   },
 
-  async uploadOutletDocuments(files: Array<{ uri: string; name: string; type: string }>) {
+  async uploadOutletDocuments(
+    files: Array<{ uri: string; name: string; type: string }>,
+  ) {
     try {
       const formData = new FormData();
-      
+
       files.forEach((file, index) => {
         formData.append("files", {
           uri: file.uri,
@@ -574,10 +594,12 @@ export const apiService = {
     }
   },
 
-  async uploadCHWDocuments(files: Array<{ uri: string; name: string; type: string }>) {
+  async uploadCHWDocuments(
+    files: Array<{ uri: string; name: string; type: string }>,
+  ) {
     try {
       const formData = new FormData();
-      
+
       files.forEach((file, index) => {
         formData.append("files", {
           uri: file.uri,
@@ -651,8 +673,8 @@ export const apiService = {
 
   // ============ HEALTH FACILITIES ============
   async getHealthFacilities(district?: string) {
-    const response = await api.get("/health-facilities", { 
-      params: district ? { district } : {} 
+    const response = await api.get("/health-facilities", {
+      params: district ? { district } : {},
     });
     return response.data;
   },

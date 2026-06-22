@@ -55,7 +55,7 @@ export default function RoleLoginScreen() {
   const handleSendOTP = async () => {
     setPhoneError(null);
     
-    const cleaned = phone.replace(/\D/g, "");
+    const cleaned = normalizeLoginDigits(phone);
     if (cleaned.length !== 9) {
       setPhoneError("Phone number must be 9 digits");
       return;
@@ -114,7 +114,7 @@ export default function RoleLoginScreen() {
   };
 
   const formatPhoneInput = (text: string) => {
-    let digits = text.replace(/\D/g, "");
+    let digits = normalizeLoginDigits(text);
     if (digits.length > 9) {
       digits = digits.substring(0, 9);
     }
@@ -128,6 +128,17 @@ export default function RoleLoginScreen() {
     if (phoneError && text.length > 0) {
       setPhoneError(null);
     }
+  };
+
+  const normalizeLoginDigits = (value: string) => {
+    let digits = value.replace(/\D/g, "");
+    if (digits.startsWith("256")) {
+      digits = digits.slice(3);
+    }
+    if (digits.startsWith("0")) {
+      digits = digits.slice(1);
+    }
+    return digits;
   };
 
   const handlePhoneSubmit = () => {

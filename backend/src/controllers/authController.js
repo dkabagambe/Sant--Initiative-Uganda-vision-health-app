@@ -6,6 +6,26 @@ const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+const normalizeUgandaPhone = (phoneNumber) => {
+  const digits = String(phoneNumber || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("256")) return `0${digits.slice(3)}`;
+  if (digits.startsWith("0")) return digits;
+  return `0${digits}`;
+};
+
+const phoneVariants = (phoneNumber) => {
+  const normalizedPhone = normalizeUgandaPhone(phoneNumber);
+  if (!normalizedPhone) return [];
+
+  const digits9 = normalizedPhone.slice(1);
+  return [
+    normalizedPhone,
+    `256${digits9}`,
+    `+256${digits9}`,
+  ];
+};
+
 // Login / Request OTP
 exports.login = async (req, res) => {
   try {
@@ -16,19 +36,8 @@ exports.login = async (req, res) => {
       return res.status(400).json({ success: false, error: "Phone number required" });
     }
 
-    // Normalize phone to a single canonical format (0XXXXXXXXX) for DB lookup
-    const normalize = (p) => {
-      const d = String(p).replace(/\D/g, '');
-      if (d.startsWith('256')) return '0' + d.slice(3);
-      if (d.startsWith('0')) return d;
-      return '0' + d;
-    };
-    const normalizedPhone = normalize(phoneNumber);
-
-    // Also build all possible variants to search against
-    const digits9 = normalizedPhone.slice(1); // 9-digit local number
-    const withCountry = '256' + digits9;       // 256XXXXXXXXX
-    const withPlus   = '+256' + digits9;       // +256XXXXXXXXX
+    const variants = phoneVariants(phoneNumber);
+    const [normalizedPhone, withCountry, withPlus] = variants;
 
     // Only send OTP to users who have already registered (CHW / Outlet / VSLA)
     // Add retry logic for database connection issues
@@ -60,7 +69,7 @@ exports.login = async (req, res) => {
 
     // Use the stored phone number for OTP (matches what Twilio expects)
     const storedPhone = existingUser[0].phone_number;
-    const smsResult = await smsService.sendOTP(storedPhone, null);
+    const smsResult = await smsService.sendOTP(storedPhone || normalizedPhone, null);
     
     if (!smsResult.success) {
       console.error("SMS failed:", smsResult.error);
@@ -106,19 +115,8 @@ exports.verifyOTP = async (req, res) => {
       return res.status(400).json({ success: false, error: "Phone number and OTP required" });
     }
 
-    // Normalize phone — same logic as login
-    const normalize = (p) => {
-      const d = String(p).replace(/\D/g, '');
-      if (d.startsWith('256')) return '0' + d.slice(3);
-      if (d.startsWith('0')) return d;
-      return '0' + d;
-    };
-    const normalizedPhone = normalize(phoneNumber);
-    const digits9 = normalizedPhone.slice(1);
-    const withCountry = '256' + digits9;
-    const withPlus   = '+256' + digits9;
-
-    // Save phoneNumber for use in SQL queries — use the canonical form
+    const variants = phoneVariants(phoneNumber);
+    const [normalizedPhone, withCountry, withPlus] = variants;
     const userPhoneNumber = normalizedPhone;
 
     // Only verify OTP via Twilio for login (not registration)
@@ -142,6 +140,8 @@ exports.verifyOTP = async (req, res) => {
     let user = await sql`
       SELECT * FROM users 
       WHERE phone_number IN (${userPhoneNumber}, ${withCountry}, ${withPlus})
+      ORDER BY created_at DESC
+      LIMIT 1
     `;
 
     // When registering, create user if they don't exist yet
@@ -160,6 +160,7 @@ exports.verifyOTP = async (req, res) => {
     }
 
     let userData = user[0];
+    const userId = userData.id;
 
     // If registration data provided, update user
     if (registrationData) {
@@ -232,7 +233,7 @@ exports.verifyOTP = async (req, res) => {
             otp_code = NULL,
             otp_expires_at = NULL,
             last_login = ${currentTime}
-          WHERE phone_number = ${userPhoneNumber}
+          WHERE id = ${userId}
         `;
       } catch (schemaError) {
         // If schema doesn't support all fields, update only basic fields
@@ -252,13 +253,13 @@ exports.verifyOTP = async (req, res) => {
             otp_code = NULL,
             otp_expires_at = NULL,
             last_login = ${currentTime}
-          WHERE phone_number = ${userPhoneNumber}
+          WHERE id = ${userId}
         `;
       }
 
       // Fetch the updated user
       const updatedUser = await sql`
-        SELECT * FROM users WHERE phone_number = ${userPhoneNumber}
+        SELECT * FROM users WHERE id = ${userId}
       `;
       userData = updatedUser[0];
     } else {
@@ -270,12 +271,12 @@ exports.verifyOTP = async (req, res) => {
           otp_code = NULL,
           otp_expires_at = NULL,
           last_login = ${currentTime}
-        WHERE phone_number = ${userPhoneNumber}
+        WHERE id = ${userId}
       `;
       
       // Fetch the updated user
       const updatedUser = await sql`
-        SELECT * FROM users WHERE phone_number = ${userPhoneNumber}
+        SELECT * FROM users WHERE id = ${userId}
       `;
       userData = updatedUser[0];
     }
