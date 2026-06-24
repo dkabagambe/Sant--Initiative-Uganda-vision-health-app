@@ -153,6 +153,20 @@ export default function ReferralsScreen() {
     }
   };
 
+  const handleCommunityFollowUp = () => {
+    const root = navigation.getParent()?.getParent();
+    if (root) {
+      root.navigate("CommunityFollowUp" as any);
+    } else {
+      const parent = navigation.getParent();
+      if (parent) {
+        parent.navigate("CommunityFollowUp" as any);
+      } else {
+        (navigation as any).navigate("CommunityFollowUp");
+      }
+    }
+  };
+
   const pendingReferrals = referrals.filter((r) => r.status === "pending");
   const completedReferrals = referrals.filter((r) => r.status === "completed");
 
@@ -351,6 +365,15 @@ export default function ReferralsScreen() {
         >
           <Ionicons name="add-circle" size={20} color="#FFFFFF" />
           <Text style={styles.createReferralText}>Create New Referral</Text>
+        </TouchableOpacity>
+
+        {/* Community Follow-up Button */}
+        <TouchableOpacity
+          style={styles.followUpButton}
+          onPress={handleCommunityFollowUp}
+        >
+          <Ionicons name="people" size={20} color="#0891B2" />
+          <Text style={styles.followUpButtonText}>Community Follow-up</Text>
         </TouchableOpacity>
 
         {/* Tabs */}
@@ -648,6 +671,24 @@ const styles = StyleSheet.create({
   },
   createReferralText: {
     color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+  followUpButton: {
+    backgroundColor: "#ECFEFF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#0891B2",
+  },
+  followUpButtonText: {
+    color: "#0891B2",
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 8,

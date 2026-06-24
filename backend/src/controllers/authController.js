@@ -1,65 +1,98 @@
 const jwt = require("jsonwebtoken");
 const smsService = require("../services/smsService");
+const {
+  toCanonicalPhone,
+  phoneLookupVariants,
+  phonesMatch,
+} = require("../utils/phoneUtils");
 
-// Generate OTP
-const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
+/** Find a registered user regardless of how their phone was stored */
+async function findUserByPhone(sql, phoneNumber) {
+  const variants = phoneLookupVariants(phoneNumber);
+  if (variants.length === 0) return null;
 
-const normalizeUgandaPhone = (phoneNumber) => {
-  const digits = String(phoneNumber || "").replace(/\D/g, "");
-  if (!digits) return "";
-  if (digits.startsWith("256")) return `0${digits.slice(3)}`;
-  if (digits.startsWith("0")) return digits;
-  return `0${digits}`;
-};
+  const [v0, v1, v2, v3, v4, v5] = variants;
 
-const phoneVariants = (phoneNumber) => {
-  const normalizedPhone = normalizeUgandaPhone(phoneNumber);
-  if (!normalizedPhone) return [];
+  let users = await sql`
+    SELECT * FROM users
+    WHERE phone_number IN (${v0}, ${v1}, ${v2}, ${v3}, ${v4}, ${v5})
+    ORDER BY created_at DESC
+  `;
 
-  const digits9 = normalizedPhone.slice(1);
-  return [
-    normalizedPhone,
-    `256${digits9}`,
-    `+256${digits9}`,
-  ];
-};
+  if (users.length > 0) return users[0];
+
+  const canonical = toCanonicalPhone(phoneNumber);
+  if (!canonical) return null;
+
+  const suffix = canonical.slice(1);
+  const candidates = await sql`
+    SELECT * FROM users
+    WHERE phone_number LIKE ${"%" + suffix + "%"}
+    ORDER BY created_at DESC
+    LIMIT 20
+  `;
+
+  for (const candidate of candidates) {
+    if (phonesMatch(candidate.phone_number, phoneNumber)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+/** Best-effort normalize stored phone to 0XXXXXXXXX (fixes legacy rows) */
+async function normalizeStoredPhone(sql, userId, currentPhone, targetPhone) {
+  if (!targetPhone || phonesMatch(currentPhone, targetPhone)) return currentPhone;
+
+  try {
+    const updated = await sql`
+      UPDATE users SET phone_number = ${targetPhone}
+      WHERE id = ${userId}
+      RETURNING phone_number
+    `;
+    return updated[0]?.phone_number || targetPhone;
+  } catch (err) {
+    // Unique constraint — another row already owns this canonical number
+    console.warn("Could not normalize phone for user", userId, err.message);
+    return currentPhone;
+  }
+}
 
 // Login / Request OTP
 exports.login = async (req, res) => {
   try {
-    let { phoneNumber } = req.body;
+    const { phoneNumber } = req.body;
     const sql = req.app.locals.sql;
 
     if (!phoneNumber) {
       return res.status(400).json({ success: false, error: "Phone number required" });
     }
 
-    const variants = phoneVariants(phoneNumber);
-    const [normalizedPhone, withCountry, withPlus] = variants;
+    const canonicalPhone = toCanonicalPhone(phoneNumber);
+    if (!canonicalPhone) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid phone number. Enter 9 digits after +256.",
+      });
+    }
 
-    // Only send OTP to users who have already registered (CHW / Outlet / VSLA)
-    // Add retry logic for database connection issues
-    let existingUser;
+    let existingUser = null;
     let retryCount = 0;
     const maxRetries = 3;
-    
+
     while (retryCount < maxRetries) {
       try {
-        existingUser = await sql`
-          SELECT id, phone_number, full_name, role FROM users
-          WHERE phone_number IN (${normalizedPhone}, ${withCountry}, ${withPlus})
-        `;
+        existingUser = await findUserByPhone(sql, phoneNumber);
         break;
       } catch (dbError) {
         retryCount++;
         if (retryCount >= maxRetries) throw dbError;
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     }
 
-    if (existingUser.length === 0) {
+    if (!existingUser) {
       return res.status(400).json({
         success: false,
         error: "Phone number not registered. Please register first.",
@@ -67,37 +100,42 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Use the stored phone number for OTP (matches what Twilio expects)
-    const storedPhone = existingUser[0].phone_number;
-    const smsResult = await smsService.sendOTP(storedPhone || normalizedPhone, null);
-    
+    const storedPhone = await normalizeStoredPhone(
+      sql,
+      existingUser.id,
+      existingUser.phone_number,
+      canonicalPhone
+    );
+
+    const smsResult = await smsService.sendOTP(storedPhone || canonicalPhone, null);
+
     if (!smsResult.success) {
       console.error("SMS failed:", smsResult.error);
-      return res.status(500).json({ 
-        success: false, 
-        error: "Failed to send OTP",
-        details: smsResult.error 
+      return res.status(500).json({
+        success: false,
+        error: "Failed to send OTP. Please try again in a moment.",
+        details: smsResult.error,
       });
     }
 
     res.json({
       success: true,
       message: "OTP sent successfully",
-      phoneNumber,
+      phoneNumber: canonicalPhone,
+      devMode: smsResult.devMode || false,
     });
   } catch (error) {
     console.error("Login error:", error);
-    
-    // Handle specific database connection errors
-    if (error.message && error.message.includes('ETIMEDOUT')) {
-      res.status(503).json({ 
-        success: false, 
-        error: "Database connection timeout. Please try again." 
+
+    if (error.message && error.message.includes("ETIMEDOUT")) {
+      res.status(503).json({
+        success: false,
+        error: "Database connection timeout. Please try again.",
       });
-    } else if (error.message && error.message.includes('fetch failed')) {
-      res.status(503).json({ 
-        success: false, 
-        error: "Database connection failed. Please try again." 
+    } else if (error.message && error.message.includes("fetch failed")) {
+      res.status(503).json({
+        success: false,
+        error: "Database connection failed. Please try again.",
       });
     } else {
       res.status(500).json({ success: false, error: "Failed to send OTP" });
@@ -115,51 +153,51 @@ exports.verifyOTP = async (req, res) => {
       return res.status(400).json({ success: false, error: "Phone number and OTP required" });
     }
 
-    const variants = phoneVariants(phoneNumber);
-    const [normalizedPhone, withCountry, withPlus] = variants;
-    const userPhoneNumber = normalizedPhone;
+    const canonicalPhone = toCanonicalPhone(phoneNumber);
+    if (!canonicalPhone) {
+      return res.status(400).json({ success: false, error: "Invalid phone number" });
+    }
 
-    // Only verify OTP via Twilio for login (not registration)
-    // Registration flow passes registrationData — skip OTP check to save Twilio credits
+    let user = await findUserByPhone(sql, phoneNumber);
+
+    // Login flow: user must exist and OTP must match the stored phone format
     if (!registrationData) {
-      // Use the same phone format that was used to send the OTP (the stored phone)
-      const verifyResult = await smsService.verifyOTP(userPhoneNumber, otp);
-      
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          error: "Phone number not registered. Please register first.",
+          code: "NOT_REGISTERED",
+        });
+      }
+
+      const verifyPhone = user.phone_number || canonicalPhone;
+      const verifyResult = await smsService.verifyOTP(verifyPhone, otp);
+
       if (!verifyResult.success) {
-        return res.status(401).json({ 
-          success: false, 
+        return res.status(401).json({
+          success: false,
           error: "Invalid or expired OTP",
-          details: verifyResult.error 
+          details: verifyResult.error,
         });
       }
     } else {
-      console.log(`📝 [REGISTRATION] Skipping OTP verification for ${phoneNumber}`);
+      console.log(`📝 [REGISTRATION] Skipping OTP verification for ${canonicalPhone}`);
     }
-
-    // Get user from database (or create if registering)
-    let user = await sql`
-      SELECT * FROM users 
-      WHERE phone_number IN (${userPhoneNumber}, ${withCountry}, ${withPlus})
-      ORDER BY created_at DESC
-      LIMIT 1
-    `;
 
     // When registering, create user if they don't exist yet
-    if (user.length === 0 && registrationData) {
+    if (!user && registrationData) {
       await sql`
         INSERT INTO users (phone_number)
-        VALUES (${userPhoneNumber})
+        VALUES (${canonicalPhone})
       `;
-      user = await sql`
-        SELECT * FROM users WHERE phone_number = ${userPhoneNumber}
-      `;
+      user = await findUserByPhone(sql, canonicalPhone);
     }
 
-    if (user.length === 0) {
+    if (!user) {
       return res.status(401).json({ success: false, error: "User not found" });
     }
 
-    let userData = user[0];
+    let userData = user;
     const userId = userData.id;
 
     // If registration data provided, update user
@@ -189,23 +227,21 @@ exports.verifyOTP = async (req, res) => {
         shopFrontImage,
         ownerIdImage,
         registrationDocuments,
-        // Outlet: ownerFullName; VSLA: chairperson, groupName
         ownerFullName,
         chairperson,
         groupName,
       } = registrationData;
 
-      // Derive fullName for outlet/VSLA when firstName/lastName not provided
       let fullName = `${firstName || ""} ${lastName || ""}`.trim();
       if (!fullName && providedFullName) fullName = providedFullName;
       if (!fullName && ownerFullName) fullName = ownerFullName;
       if (!fullName && chairperson?.name) fullName = chairperson.name;
       const currentTime = new Date().toISOString();
 
-      // Try full update first, fall back to basic fields if schema doesn't support
       try {
         await sql`
           UPDATE users SET
+            phone_number = ${canonicalPhone},
             first_name = ${firstName || null},
             last_name = ${lastName || null},
             full_name = ${fullName || null},
@@ -236,10 +272,10 @@ exports.verifyOTP = async (req, res) => {
           WHERE id = ${userId}
         `;
       } catch (schemaError) {
-        // If schema doesn't support all fields, update only basic fields
-        console.log('⚠️ Schema limited, updating basic fields only');
+        console.log("⚠️ Schema limited, updating basic fields only");
         await sql`
           UPDATE users SET
+            phone_number = ${canonicalPhone},
             first_name = ${firstName || null},
             last_name = ${lastName || null},
             full_name = ${fullName || null},
@@ -257,15 +293,15 @@ exports.verifyOTP = async (req, res) => {
         `;
       }
 
-      // Fetch the updated user
       const updatedUser = await sql`
         SELECT * FROM users WHERE id = ${userId}
       `;
       userData = updatedUser[0];
     } else {
-      // Just clear OTP and update last login
       const currentTime = new Date().toISOString();
-      
+
+      await normalizeStoredPhone(sql, userId, userData.phone_number, canonicalPhone);
+
       await sql`
         UPDATE users SET
           otp_code = NULL,
@@ -273,24 +309,21 @@ exports.verifyOTP = async (req, res) => {
           last_login = ${currentTime}
         WHERE id = ${userId}
       `;
-      
-      // Fetch the updated user
+
       const updatedUser = await sql`
         SELECT * FROM users WHERE id = ${userId}
       `;
       userData = updatedUser[0];
     }
 
-    // Verify userData exists
     if (!userData || !userData.id) {
       console.error("userData is undefined or missing id:", userData);
-      return res.status(500).json({ 
-        success: false, 
-        error: "Failed to retrieve user data after update" 
+      return res.status(500).json({
+        success: false,
+        error: "Failed to retrieve user data after update",
       });
     }
 
-    // Generate JWT
     const token = jwt.sign(
       { userId: userData.id, phoneNumber: userData.phone_number, role: userData.role },
       process.env.JWT_SECRET || "your_jwt_secret",
@@ -299,7 +332,7 @@ exports.verifyOTP = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Login successful",
+      message: registrationData ? "Registration successful" : "Login successful",
       token,
       user: {
         id: userData.id,
@@ -317,12 +350,12 @@ exports.verifyOTP = async (req, res) => {
     console.error("Error details:", {
       message: error.message,
       stack: error.stack,
-      requestBody: req.body
+      requestBody: req.body,
     });
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: "Failed to verify OTP",
-      details: error.message 
+      details: error.message,
     });
   }
 };

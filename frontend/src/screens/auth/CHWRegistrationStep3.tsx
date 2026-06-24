@@ -18,6 +18,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
 import { apiService } from "../../services/api";
+import { normalizePhoneForApi } from "../../utils/phoneUtils";
 
 type RootStackParamList = {
   Login: undefined;
@@ -74,7 +75,11 @@ export default function CHWRegistrationStep3() {
     };
 
     // Navigate directly to Step 4 — no OTP sent (OTP only on login)
-    const phone = step2Data.phoneNumber || "";
+    const phone = normalizePhoneForApi(step2Data.phoneNumber || "");
+    if (!phone) {
+      Alert.alert("Invalid Phone", "Please go back and enter a valid 9-digit phone number.");
+      return;
+    }
     navigation.navigate("CHWRegistrationStep4", {
       formData: completeFormData,
       phone,

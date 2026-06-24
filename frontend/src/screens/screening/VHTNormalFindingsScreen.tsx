@@ -30,16 +30,19 @@ const counselingPoints = [
     instruction: "Remind the client about good eye health practices",
   },
   {
+    id: "register",
+    title: "Record Results in Register",
+    instruction: "Record results in the register",
+  },
+  {
     id: "dont-drops",
     title: "Do NOT Provide Eye Drops",
-    instruction:
-      "Do NOT provide eye drops - these require professional prescription",
+    instruction: "Do NOT provide eye drops",
   },
   {
     id: "dont-ointments",
     title: "Do NOT Provide Ointments",
-    instruction:
-      "Do NOT provide ointments - these require professional prescription",
+    instruction: "Do NOT provide ointments",
   },
   {
     id: "dont-traditional",
@@ -74,6 +77,9 @@ export default function VHTNormalFindingsScreen() {
       updateScreeningData({
         needsReferral: false,
         needsGlasses: false,
+        notes:
+          (screeningData.notes || "") +
+          "\nStep 7: Normal eye findings — counseling provided and results recorded in register.",
       });
       navigation.navigate("ScreeningComplete", { glassesDispensed: false });
     }
@@ -87,7 +93,7 @@ export default function VHTNormalFindingsScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={28} color="#10B981" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Normal Vision Findings</Text>
+        <Text style={styles.headerTitle}>Step 7: Manage Normal Eyes</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -103,9 +109,9 @@ export default function VHTNormalFindingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Counseling to Provide</Text>
+          <Text style={styles.sectionTitle}>VHT Actions — Manage Normal Eye Findings</Text>
           <Text style={styles.sectionSubtitle}>
-            Confirm you have provided all counseling:
+            After both near and far distance vision tests, confirm each action:
           </Text>
 
           {counselingPoints.map((point) => (

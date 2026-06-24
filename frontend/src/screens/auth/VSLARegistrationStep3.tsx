@@ -16,6 +16,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { apiService } from "../../services/api";
+import { normalizePhoneForApi } from "../../utils/phoneUtils";
 
 // Define navigation types
 type RootStackParamList = {
@@ -99,9 +100,11 @@ const VSLARegistrationStep3 = () => {
       ...step3Data,
     };
 
-    const phone = step2Data?.primaryPhoneNumber || step2Data?.phoneNumber || "";
+    const phone = normalizePhoneForApi(
+      step2Data?.primaryPhoneNumber || step2Data?.phoneNumber || ""
+    );
     if (!phone) {
-      Alert.alert("Error", "Phone number is required");
+      Alert.alert("Error", "Please go back and enter a valid 9-digit phone number.");
       return;
     }
 

@@ -392,6 +392,22 @@ export const apiService = {
     return response.data;
   },
 
+  // ============ COMMUNITY FOLLOW-UP ============
+  async getPendingFollowUps() {
+    const response = await api.get("/simple-followups/pending");
+    return response.data;
+  },
+
+  async createFollowUp(followUpData: any) {
+    const response = await api.post("/simple-followups/create", followUpData);
+    return response.data;
+  },
+
+  async getFollowUps() {
+    const response = await api.get("/simple-followups/list");
+    return response.data;
+  },
+
   // ============ DASHBOARD ============
   async getDashboardStats() {
     const response = await api.get("/simple-dashboard/stats");

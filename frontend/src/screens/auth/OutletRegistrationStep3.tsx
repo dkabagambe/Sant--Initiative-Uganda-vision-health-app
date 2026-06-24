@@ -18,6 +18,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
 import { apiService } from "../../services/api";
+import { normalizePhoneForApi } from "../../utils/phoneUtils";
 
 type RootStackParamList = {
   OutletRegistrationStep2: { step1Data: any };
@@ -77,9 +78,9 @@ const OutletRegistrationStep3 = () => {
       ...formData,
     };
 
-    const phone = step2Data?.primaryPhoneNumber || "";
+    const phone = normalizePhoneForApi(step2Data?.primaryPhoneNumber || "");
     if (!phone) {
-      Alert.alert("Error", "Phone number is required");
+      Alert.alert("Error", "Please go back and enter a valid 9-digit phone number.");
       return;
     }
 

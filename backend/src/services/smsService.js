@@ -39,11 +39,19 @@ const toE164 = (phone) => {
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 // Dev bypass — developer number only; use OTP "123456" to avoid wasting Twilio credits
-const DEV_BYPASS_NUMBERS = ['0705686573', '+256705686573'];
+const DEV_BYPASS_NUMBERS = ['0705686573', '+256705686573', '256705686573'];
+
+const isDevBypassNumber = (phoneNumber) => {
+  const normalized = toE164(phoneNumber);
+  return (
+    DEV_BYPASS_NUMBERS.includes(phoneNumber) ||
+    normalized === '+256705686573'
+  );
+};
 
 exports.sendOTP = async (phoneNumber, otp) => {
   const normalized = toE164(phoneNumber);
-  if (DEV_BYPASS_NUMBERS.includes(phoneNumber) || normalized === '+256705686573') {
+  if (isDevBypassNumber(phoneNumber)) {
     console.log(`📱 [DEV BYPASS] Skipping OTP send for ${phoneNumber} — use code 123456`);
     return { success: true, devMode: true };
   }
@@ -89,7 +97,7 @@ exports.sendOTP = async (phoneNumber, otp) => {
 exports.verifyOTP = async (phoneNumber, code) => {
   const normalized = toE164(phoneNumber);
   // Bypass OTP verification for dev number only — accept "123456"
-  if (DEV_BYPASS_NUMBERS.includes(phoneNumber) || normalized === '+256705686573') {
+  if (isDevBypassNumber(phoneNumber)) {
     const valid = code === '123456';
     console.log(`📱 [DEV BYPASS] Verifying OTP for ${phoneNumber}: ${code} → ${valid ? 'approved' : 'rejected'}`);
     return { success: valid, devMode: true };

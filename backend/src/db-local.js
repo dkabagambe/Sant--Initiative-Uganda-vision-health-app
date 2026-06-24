@@ -134,6 +134,30 @@ db.exec(`
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS follow_ups (
+    id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
+    follow_up_type TEXT NOT NULL,
+    screening_id TEXT,
+    referral_id TEXT,
+    client_name TEXT,
+    client_phone TEXT,
+    client_age INTEGER,
+    client_district TEXT,
+    attended_facility INTEGER,
+    treatment_received TEXT,
+    barriers TEXT,
+    glasses_in_use INTEGER,
+    glasses_help INTEGER,
+    has_headaches INTEGER,
+    glasses_condition TEXT,
+    education_reinforced INTEGER DEFAULT 0,
+    needs_referral INTEGER DEFAULT 0,
+    notes TEXT,
+    health_worker_id TEXT,
+    visit_date TEXT DEFAULT (date('now')),
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS clients (
     id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
     health_worker_id TEXT,
@@ -286,6 +310,36 @@ const sql = (strings, ...values) => {
 // Migration function to add missing columns
 function runMigrations() {
   console.log('🔄 Running database migrations...');
+
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS follow_ups (
+        id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
+        follow_up_type TEXT NOT NULL,
+        screening_id TEXT,
+        referral_id TEXT,
+        client_name TEXT,
+        client_phone TEXT,
+        client_age INTEGER,
+        client_district TEXT,
+        attended_facility INTEGER,
+        treatment_received TEXT,
+        barriers TEXT,
+        glasses_in_use INTEGER,
+        glasses_help INTEGER,
+        has_headaches INTEGER,
+        glasses_condition TEXT,
+        education_reinforced INTEGER DEFAULT 0,
+        needs_referral INTEGER DEFAULT 0,
+        notes TEXT,
+        health_worker_id TEXT,
+        visit_date TEXT DEFAULT (date('now')),
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+  } catch (error) {
+    console.log('⚠️ follow_ups table migration:', error.message);
+  }
   
   // List of columns to add if they don't exist
   const migrations = [

@@ -256,6 +256,12 @@ export default function CHWDashboard() {
         }
       },
     },
+    {
+      title: "Community Follow-up",
+      subtitle: "Visit referred clients & glasses recipients",
+      icon: "🔄",
+      onPress: () => navigation.navigate("CommunityFollowUp" as any),
+    },
   ];
 
   return (

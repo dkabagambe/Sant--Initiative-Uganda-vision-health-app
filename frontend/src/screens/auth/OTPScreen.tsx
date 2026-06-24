@@ -46,6 +46,7 @@ export default function OTPScreen() {
   const inputRefs = useRef<(TextInput | null)[]>(Array(6).fill(null));
 
   const formattedPhone = `+256 ${phone.substring(1, 4)} ${phone.substring(4, 7)} ${phone.substring(7)}`;
+  const isDevNumber = phone === "0705686573";
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -139,7 +140,7 @@ export default function OTPScreen() {
     try {
       const result = await apiService.login(phone);
       if (result.success) {
-        Alert.alert("OTP Resent", `New OTP: ${result.otp}`);
+        Alert.alert("OTP Resent", "Please check your phone for the verification code.");
         setCountdown(60);
         setCanResend(false);
         setOtp(["", "", "", "", "", ""]);
@@ -189,6 +190,12 @@ export default function OTPScreen() {
               <Text style={styles.phoneNumber}>{formattedPhone}</Text>
             </Text>
           </View>
+
+          {isDevNumber && (
+            <View style={styles.devHintBox}>
+              <Text style={styles.devHintText}>Developer login: enter code 123456</Text>
+            </View>
+          )}
 
           {/* OTP Input Boxes */}
           <View style={styles.otpContainer}>
@@ -321,6 +328,18 @@ const styles = StyleSheet.create({
   phoneNumber: {
     fontWeight: "600",
     color: "#1E40AF",
+  },
+  devHintBox: {
+    backgroundColor: "#FEF3C7",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  devHintText: {
+    fontSize: 13,
+    color: "#92400E",
+    fontWeight: "500",
   },
   otpContainer: {
     flexDirection: "row",

@@ -234,6 +234,34 @@ async function initDB() {
     `;
     console.log('✓ Referrals table created');
 
+    // Create follow_ups table for community follow-up visits
+    await sql`
+      CREATE TABLE IF NOT EXISTS follow_ups (
+        id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+        follow_up_type VARCHAR(20) NOT NULL,
+        screening_id UUID REFERENCES screenings(id),
+        referral_id UUID REFERENCES referrals(id),
+        client_name VARCHAR(200),
+        client_phone VARCHAR(20),
+        client_age INTEGER,
+        client_district VARCHAR(100),
+        attended_facility BOOLEAN,
+        treatment_received TEXT,
+        barriers TEXT,
+        glasses_in_use BOOLEAN,
+        glasses_help BOOLEAN,
+        has_headaches BOOLEAN,
+        glasses_condition VARCHAR(20),
+        education_reinforced BOOLEAN DEFAULT false,
+        needs_referral BOOLEAN DEFAULT false,
+        notes TEXT,
+        health_worker_id UUID REFERENCES users(id),
+        visit_date DATE DEFAULT CURRENT_DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    console.log('✓ Follow-ups table created');
+
     // Create payments table
     await sql`
       CREATE TABLE IF NOT EXISTS payments (

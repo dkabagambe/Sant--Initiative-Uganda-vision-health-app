@@ -88,7 +88,7 @@ export default function VisionScreen6Wrapper() {
         return;
       }
 
-      // If passed, navigate directly to completion screen
+      // If passed, proceed to Step 7: Manage Normal Eye Findings
       if (passed) {
         setSubmitting(false);
         updateScreeningData({
@@ -96,10 +96,7 @@ export default function VisionScreen6Wrapper() {
           needsGlasses: false,
           needsReferral: false,
         });
-        navigation.navigate("ScreeningComplete", {
-          glassesDispensed: false,
-          glassesPower: "",
-        });
+        navigation.navigate("VHTNormalFindings");
         return;
       }
 

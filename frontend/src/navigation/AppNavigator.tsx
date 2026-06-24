@@ -73,6 +73,7 @@ import VHTScreeningStep6 from "../screens/screening/VHTScreeningStep6";
 import VHTReferralScreen from "../screens/screening/VHTReferralScreen";
 import VHTNormalFindingsScreen from "../screens/screening/VHTNormalFindingsScreen";
 import VHTReadingGlassesScreen from "../screens/screening/VHTReadingGlassesScreen";
+import VHTCommunityFollowUpScreen from "../screens/chw/VHTCommunityFollowUpScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -153,6 +154,7 @@ function CHWHomeStack() {
       <Stack.Screen name="UserDetailScreen" component={UserDetailScreen} />
       <Stack.Screen name="Reports" component={ReportsScreen} />
       <Stack.Screen name="StartScreening" component={StartScreeningScreen} />
+      <Stack.Screen name="CommunityFollowUp" component={VHTCommunityFollowUpScreen} />
     </Stack.Navigator>
   );
 }
@@ -528,6 +530,7 @@ export default function AppNavigator() {
       <Stack.Screen name="VHTReferral" component={VHTReferralScreen} />
       <Stack.Screen name="VHTNormalFindings" component={VHTNormalFindingsScreen} />
       <Stack.Screen name="VHTReadingGlasses" component={VHTReadingGlassesScreen} />
+      <Stack.Screen name="CommunityFollowUp" component={VHTCommunityFollowUpScreen} />
       <Stack.Screen name="VisionScreen1" component={VisionScreen1} />
       <Stack.Screen name="VisionScreen2" component={VisionScreen2} />
       <Stack.Screen name="VisionScreen3" component={VisionScreen3} />

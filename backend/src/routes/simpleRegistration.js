@@ -1,5 +1,31 @@
 const express = require('express');
 const router = express.Router();
+const { toCanonicalPhone, phoneLookupVariants, phonesMatch } = require('../utils/phoneUtils');
+
+async function findUserByPhone(sql, phoneNumber) {
+  const variants = phoneLookupVariants(phoneNumber);
+  if (variants.length === 0) return null;
+
+  const [v0, v1, v2, v3, v4, v5] = variants;
+  let users = await sql`
+    SELECT * FROM users
+    WHERE phone_number IN (${v0}, ${v1}, ${v2}, ${v3}, ${v4}, ${v5})
+    ORDER BY created_at DESC
+  `;
+  if (users.length > 0) return users[0];
+
+  const canonical = toCanonicalPhone(phoneNumber);
+  if (!canonical) return null;
+  const suffix = canonical.slice(1);
+  const candidates = await sql`
+    SELECT * FROM users WHERE phone_number LIKE ${'%' + suffix + '%'}
+    ORDER BY created_at DESC LIMIT 20
+  `;
+  for (const candidate of candidates) {
+    if (phonesMatch(candidate.phone_number, phoneNumber)) return candidate;
+  }
+  return null;
+}
 
 // Simple registration endpoint that works with existing schema
 router.post('/submit', async (req, res) => {
@@ -14,26 +40,24 @@ router.post('/submit', async (req, res) => {
       });
     }
 
-    // Check if user exists
-    let user = await sql`
-      SELECT * FROM users 
-      WHERE phone_number = ${phoneNumber}
-    `;
-
-    // Create user if doesn't exist
-    if (user.length === 0) {
-      await sql`
-        INSERT INTO users (phone_number, role, full_name)
-        VALUES (${phoneNumber}, ${registrationData.role || 'health_worker'}, ${registrationData.firstName && registrationData.lastName ? `${registrationData.firstName} ${registrationData.lastName}` : null})
-      `;
-      
-      user = await sql`
-        SELECT * FROM users WHERE phone_number = ${phoneNumber}
-      `;
+    const canonicalPhone = toCanonicalPhone(phoneNumber);
+    if (!canonicalPhone) {
+      return res.status(400).json({ success: false, error: 'Invalid phone number' });
     }
 
-    // Update user with available fields only
-    const userData = user[0];
+    let user = await findUserByPhone(sql, canonicalPhone);
+
+    // Create user if doesn't exist
+    if (!user) {
+      await sql`
+        INSERT INTO users (phone_number, role, full_name)
+        VALUES (${canonicalPhone}, ${registrationData.role || 'health_worker'}, ${registrationData.firstName && registrationData.lastName ? `${registrationData.firstName} ${registrationData.lastName}` : null})
+      `;
+
+      user = await findUserByPhone(sql, canonicalPhone);
+    }
+
+    const userData = user;
     const updateFields = {};
     
     // Only update fields that exist in the database
@@ -71,13 +95,12 @@ router.post('/submit', async (req, res) => {
         UPDATE users SET 
           ${setClause},
           updated_at = CURRENT_TIMESTAMP
-        WHERE phone_number = ${phoneNumber}
+        WHERE phone_number = ${userData.phone_number}
       `;
     }
 
-    // Get updated user
     const updatedUser = await sql`
-      SELECT * FROM users WHERE phone_number = ${phoneNumber}
+      SELECT * FROM users WHERE id = ${userData.id}
     `;
 
     res.json({

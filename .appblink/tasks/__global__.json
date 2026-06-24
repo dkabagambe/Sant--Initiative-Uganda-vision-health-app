@@ -1,0 +1,45 @@
+{
+  "uid": null,
+  "tasks": [
+    {
+      "id": "task-1782216458860-heoij",
+      "space": {
+        "id": "__global__"
+      },
+      "owner": {
+        "uid": "hpRaULuQqDZ5VynJyZpNRdZkSej1",
+        "name": "DANIEL KABAGAMBE"
+      },
+      "workspaceId": "dkabagambe/sant--initiative-uganda-vision-health-app",
+      "createdAt": "2026-06-23T12:09:02.317Z",
+      "updatedAt": "2026-06-23T12:09:02.317Z",
+      "branch": {
+        "name": "global-task-1"
+      },
+      "status": "created",
+      "description": "can u study my code",
+      "contextFiles": [],
+      "contextFilesExplicitlySet": true,
+      "vibeCheckStatus": "not-checked-yet",
+      "createdBy": {
+        "user": {
+          "uid": "hpRaULuQqDZ5VynJyZpNRdZkSej1",
+          "email": "danielkabagambe@gmail.com",
+          "displayName": "DANIEL KABAGAMBE"
+        },
+        "machine": {
+          "id": "cyber-smart",
+          "name": "cyber-smart"
+        },
+        "source": "VS Code"
+      },
+      "branchChoice": "new-serial",
+      "creationBranch": "master",
+      "assignedTo": {
+        "uid": "hpRaULuQqDZ5VynJyZpNRdZkSej1",
+        "email": "danielkabagambe@gmail.com",
+        "displayName": "DANIEL KABAGAMBE"
+      }
+    }
+  ]
+}

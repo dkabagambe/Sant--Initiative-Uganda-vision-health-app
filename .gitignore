@@ -44,3 +44,4 @@ backend/sante.db
 /ios
 /android
 .vercel
+.aider*
