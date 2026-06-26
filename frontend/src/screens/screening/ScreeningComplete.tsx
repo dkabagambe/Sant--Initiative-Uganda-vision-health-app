@@ -189,6 +189,24 @@ export default function ScreeningComplete() {
             </Text>
           </TouchableOpacity>
 
+          {/* Community Follow-up Button */}
+          <TouchableOpacity
+            style={styles.followUpButton}
+            onPress={() => {
+              resetScreeningData();
+              const parent = navigation.getParent();
+              if (parent) {
+                parent.navigate("CommunityFollowUp");
+              } else {
+                navigation.navigate("CommunityFollowUp" as any);
+              }
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="people" size={24} color="#0891B2" />
+            <Text style={styles.followUpButtonText}>Community Follow-up</Text>
+          </TouchableOpacity>
+
           {/* Return Home Button */}
           <TouchableOpacity
             style={styles.secondaryButton}
@@ -274,6 +292,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#FFFFFF",
+  },
+  followUpButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ECFEFF",
+    borderWidth: 2,
+    borderColor: "#0891B2",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 12,
+  },
+  followUpButtonText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#0891B2",
   },
   secondaryButton: {
     flexDirection: "row",

@@ -82,9 +82,10 @@ export default function VisionScreen6Wrapper() {
       
       // Check if presbyopia (age 40+ with failed near vision)
       if (!passed && clientAge >= 40) {
-        // Navigate to reading glasses selection
+        // Navigate to VHT Reading Glasses screen (full VHT protocol)
         setSubmitting(false);
-        navigation.navigate("ReadingGlassesSelection");
+        updateScreeningData({ nearVisionResult: "failed", needsGlasses: true });
+        navigation.navigate("VHTReadingGlasses");
         return;
       }
 

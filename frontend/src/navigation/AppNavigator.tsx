@@ -120,6 +120,7 @@ function ScreeningStack() {
       <Stack.Screen name="VHTReferral" component={VHTReferralScreen} />
       <Stack.Screen name="VHTNormalFindings" component={VHTNormalFindingsScreen} />
       <Stack.Screen name="VHTReadingGlasses" component={VHTReadingGlassesScreen} />
+      <Stack.Screen name="CommunityFollowUp" component={VHTCommunityFollowUpScreen} />
 
       {/* Vision Tests */}
       <Stack.Screen name="VisionScreen1" component={VisionScreen1} />
