@@ -6,10 +6,11 @@ ALTER TABLE payments ADD COLUMN IF NOT EXISTS provider VARCHAR(50);
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS provider_reference VARCHAR(100);
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS provider_status VARCHAR(50);
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS offline_id VARCHAR(100);
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
 -- Verify the columns were added
 SELECT column_name, data_type 
 FROM information_schema.columns 
 WHERE table_name = 'payments' 
-AND column_name IN ('provider', 'provider_reference', 'provider_status', 'offline_id')
+AND column_name IN ('provider', 'provider_reference', 'provider_status', 'offline_id', 'updated_at')
 ORDER BY column_name;

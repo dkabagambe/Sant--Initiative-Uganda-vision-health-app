@@ -1,8 +1,8 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
 // Simple payments endpoint without authentication
-router.get('/list', async (req, res) => {
+router.get("/list", async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     const { status, limit = 50, offset = 0 } = req.query;
@@ -88,37 +88,37 @@ router.get('/list', async (req, res) => {
       total: parseInt(total[0].count),
     });
   } catch (error) {
-    console.error('Get payments error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch payments',
-      details: error.message 
+    console.error("Get payments error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch payments",
+      details: error.message,
     });
   }
 });
 
 // Create new payment
-router.post('/create', async (req, res) => {
+router.post("/create", async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     const {
       client_name,
       client_phone,
       amount,
-      payment_method = 'cash',
-      payment_type = 'full',
+      payment_method = "cash",
+      payment_type = "full",
       product_id,
       screening_id,
       due_date,
       total_installments = 1,
       mobile_money_number,
-      provider
+      provider,
     } = req.body;
 
-    
     // Ensure mobile_money_number is never NULL
-    const finalMobileMoneyNumber = mobile_money_number || client_phone || '0000000000';
-    
+    const finalMobileMoneyNumber =
+      mobile_money_number || client_phone || "0000000000";
+
     const payment = await sql`
       INSERT INTO payments (
         client_name, client_phone, amount, payment_method, payment_type,
@@ -127,39 +127,41 @@ router.post('/create', async (req, res) => {
       ) VALUES (
         ${client_name || null}, ${client_phone || null}, ${amount || null}, ${payment_method || null}, ${payment_type || null},
         ${product_id || null}, ${screening_id || null}, ${due_date || null}, ${total_installments || null},
-        ${finalMobileMoneyNumber}, ${new Date().toISOString().split('T')[0]}, NOW(), 'pending'
+        ${finalMobileMoneyNumber}, ${new Date().toISOString().split("T")[0]}, NOW(), 'pending'
       )
       RETURNING *
     `;
 
     res.json({
       success: true,
-      message: 'Payment created successfully',
-      data: payment[0]
+      message: "Payment created successfully",
+      data: payment[0],
     });
   } catch (error) {
-    console.error('Create payment error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to create payment',
-      details: error.message 
+    console.error("Create payment error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to create payment",
+      details: error.message,
     });
   }
 });
 
 // Update payment status
-router.patch('/:id/status', async (req, res) => {
+router.patch("/:id/status", async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     const { id } = req.params;
     const { status } = req.body;
+    const today = new Date().toISOString().split("T")[0];
+    const nowIso = new Date().toISOString();
 
     const payment = await sql`
       UPDATE payments 
       SET 
         status = ${status},
-        payment_date = ${status === 'completed' ? new Date().toISOString().split('T')[0] : 'payment_date'},
-        verified_at = ${status === 'completed' ? NOW() : 'verified_at'},
+        payment_date = CASE WHEN ${status} = 'completed' THEN ${today} ELSE payment_date END,
+        verified_at = CASE WHEN ${status} = 'completed' THEN ${nowIso} ELSE verified_at END,
         updated_at = NOW()
       WHERE id = ${id}
       RETURNING *
@@ -168,27 +170,27 @@ router.patch('/:id/status', async (req, res) => {
     if (payment.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Payment not found'
+        error: "Payment not found",
       });
     }
 
     res.json({
       success: true,
-      message: 'Payment status updated successfully',
-      data: payment[0]
+      message: "Payment status updated successfully",
+      data: payment[0],
     });
   } catch (error) {
-    console.error('Update payment status error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to update payment status',
-      details: error.message 
+    console.error("Update payment status error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to update payment status",
+      details: error.message,
     });
   }
 });
 
 // Get payment status
-router.get('/:id/status', async (req, res) => {
+router.get("/:id/status", async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     const { id } = req.params;
@@ -202,26 +204,26 @@ router.get('/:id/status', async (req, res) => {
     if (payment.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Payment not found'
+        error: "Payment not found",
       });
     }
 
     res.json({
       success: true,
-      data: payment[0]
+      data: payment[0],
     });
   } catch (error) {
-    console.error('Get payment status error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to get payment status',
-      details: error.message 
+    console.error("Get payment status error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to get payment status",
+      details: error.message,
     });
   }
 });
 
 // Get payment stats
-router.get('/stats', async (req, res) => {
+router.get("/stats", async (req, res) => {
   try {
     const sql = req.app.locals.sql;
 
@@ -238,14 +240,14 @@ router.get('/stats', async (req, res) => {
 
     res.json({
       success: true,
-      data: stats[0]
+      data: stats[0],
     });
   } catch (error) {
-    console.error('Get payment stats error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch payment stats',
-      details: error.message 
+    console.error("Get payment stats error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch payment stats",
+      details: error.message,
     });
   }
 });

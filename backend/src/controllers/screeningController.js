@@ -3,21 +3,23 @@ exports.createScreening = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     let healthWorkerId = req.user?.userId;
-    
+
     // If no health worker ID (e.g., testing), get a valid one
     if (!healthWorkerId) {
-      const workers = await sql`SELECT id FROM users WHERE role = 'health_worker' LIMIT 1`;
+      const workers =
+        await sql`SELECT id FROM users WHERE role IN ('CHW', 'health_worker') ORDER BY CASE WHEN role = 'CHW' THEN 0 ELSE 1 END, created_at DESC LIMIT 1`;
       if (workers.length > 0) {
         healthWorkerId = workers[0].id;
       } else {
         return res.status(400).json({
           success: false,
           error: "No health worker available",
-          details: "Please ensure there is at least one health worker in the system"
+          details:
+            "Please ensure there is at least one CHW or health worker in the system",
         });
       }
     }
-    
+
     // Extract and normalize field names (frontend uses camelCase, DB uses snake_case)
     const {
       clientName,
@@ -79,29 +81,39 @@ exports.createScreening = async (req, res) => {
     } = req.body;
 
     // Build notes with all test information
-    let fullNotes = notes || '';
+    let fullNotes = notes || "";
 
     // VHT Workflow Information
-    if (equipmentChecked) fullNotes += '\n✓ VHT Equipment Check: Completed';
-    if (consentObtained) fullNotes += '\n✓ Consent: Obtained';
-    if (educationProvided) fullNotes += '\n✓ Eye Health Education: Provided';
-    if (screeningAreaPrepared) fullNotes += '\n✓ Screening Area: Prepared';
-    if (testsExplainedToClient) fullNotes += '\n✓ Tests Explained: Confirmed';
+    if (equipmentChecked) fullNotes += "\n✓ VHT Equipment Check: Completed";
+    if (consentObtained) fullNotes += "\n✓ Consent: Obtained";
+    if (educationProvided) fullNotes += "\n✓ Eye Health Education: Provided";
+    if (screeningAreaPrepared) fullNotes += "\n✓ Screening Area: Prepared";
+    if (testsExplainedToClient) fullNotes += "\n✓ Tests Explained: Confirmed";
 
     // Key Questions Summary
-    if (hasEyeConcerns !== undefined || followsMovement !== undefined || hasSevereEyePain !== undefined) {
-      fullNotes += '\n--- Key Questions Asked ---';
-      if (hasEyeConcerns !== undefined) fullNotes += `\nEye Concerns: ${hasEyeConcerns ? 'YES' : 'NO'}`;
-      if (followsMovement !== undefined) fullNotes += `\nFollows Movement: ${followsMovement ? 'YES' : 'NO'}`;
-      if (hasSevereEyePain !== undefined) fullNotes += `\nSevere Eye Pain: ${hasSevereEyePain ? 'YES' : 'NO'}`;
-      if (hasSuddenVisionLoss !== undefined) fullNotes += `\nSudden Vision Loss: ${hasSuddenVisionLoss ? 'YES' : 'NO'}`;
-      if (hasDiabetesHypertension !== undefined) fullNotes += `\nDiabetes/Hypertension: ${hasDiabetesHypertension ? 'YES' : 'NO'}`;
-      if (familyHistoryBlindness !== undefined) fullNotes += `\nFamily History Blindness: ${familyHistoryBlindness ? 'YES' : 'NO'}`;
+    if (
+      hasEyeConcerns !== undefined ||
+      followsMovement !== undefined ||
+      hasSevereEyePain !== undefined
+    ) {
+      fullNotes += "\n--- Key Questions Asked ---";
+      if (hasEyeConcerns !== undefined)
+        fullNotes += `\nEye Concerns: ${hasEyeConcerns ? "YES" : "NO"}`;
+      if (followsMovement !== undefined)
+        fullNotes += `\nFollows Movement: ${followsMovement ? "YES" : "NO"}`;
+      if (hasSevereEyePain !== undefined)
+        fullNotes += `\nSevere Eye Pain: ${hasSevereEyePain ? "YES" : "NO"}`;
+      if (hasSuddenVisionLoss !== undefined)
+        fullNotes += `\nSudden Vision Loss: ${hasSuddenVisionLoss ? "YES" : "NO"}`;
+      if (hasDiabetesHypertension !== undefined)
+        fullNotes += `\nDiabetes/Hypertension: ${hasDiabetesHypertension ? "YES" : "NO"}`;
+      if (familyHistoryBlindness !== undefined)
+        fullNotes += `\nFamily History Blindness: ${familyHistoryBlindness ? "YES" : "NO"}`;
     }
 
     // Vision Test Results
     if (torchTestPassed !== undefined) {
-      fullNotes += `\n--- Vision Tests ---\nTorch Test: ${torchTestPassed ? 'Passed' : 'Failed'}`;
+      fullNotes += `\n--- Vision Tests ---\nTorch Test: ${torchTestPassed ? "Passed" : "Failed"}`;
       if (torchTestAbnormalSigns) {
         fullNotes += ` - ${torchTestAbnormalSigns}`;
       }
@@ -112,19 +124,20 @@ exports.createScreening = async (req, res) => {
 
     // Reading Glasses Dispensing
     if (glassesDispensed) {
-      fullNotes += `\n--- Reading Glasses Dispensed ---\nPower: ${glassesPower || 'Not specified'}`;
-      fullNotes += `\nFrame Type: ${glassesFrameType || 'Not specified'}`;
-      if (glassesEducationProvided) fullNotes += '\nClient Education: Provided';
+      fullNotes += `\n--- Reading Glasses Dispensed ---\nPower: ${glassesPower || "Not specified"}`;
+      fullNotes += `\nFrame Type: ${glassesFrameType || "Not specified"}`;
+      if (glassesEducationProvided) fullNotes += "\nClient Education: Provided";
     }
 
     // Referral Information
     if (needsReferral) {
-      fullNotes += `\n--- Referral ---\nReason: ${referralReason || 'Not specified'}`;
+      fullNotes += `\n--- Referral ---\nReason: ${referralReason || "Not specified"}`;
       if (referralFacility) fullNotes += `\nFacility: ${referralFacility}`;
       if (referralStep) fullNotes += `\nReferral from: ${referralStep}`;
     }
 
-    const nullableBool = (value) => value === undefined ? null : Boolean(value);
+    const nullableBool = (value) =>
+      value === undefined ? null : Boolean(value);
 
     // Create screening
     const screening = await sql`
@@ -155,7 +168,7 @@ exports.createScreening = async (req, res) => {
         ${Boolean(glassesDispensed)}, ${glassesPower || null}, ${glassesFrameType || null}, ${Boolean(glassesEducationProvided)},
         ${Boolean(needsGlasses)}, ${Boolean(needsReferral)}, ${referralReason || null}, ${referralFacility || null},
         ${recommendedProductId || null}, ${recommendedPower || null}, ${selectedFrameType || null},
-        ${fullNotes.trim() || null}, ${offlineId || null}, ${true}, ${new Date().toISOString().split('T')[0]}
+        ${fullNotes.trim() || null}, ${offlineId || null}, ${true}, ${new Date().toISOString().split("T")[0]}
       )
       RETURNING *
     `;
@@ -174,17 +187,26 @@ exports.createScreening = async (req, res) => {
     }
 
     // Deduct from this VHT's stock when glasses are dispensed
-    if ((glassesDispensed || needsGlasses) && recommendedProductId && (glassesFrameType || selectedFrameType)) {
+    if (
+      (glassesDispensed || needsGlasses) &&
+      recommendedProductId &&
+      (glassesFrameType || selectedFrameType)
+    ) {
       const frameType = glassesFrameType || selectedFrameType;
 
       // Normalize frame type names
-      let stockColumn = 'stock_standard';
-      if (frameType === 'metal' || frameType === 'Metal Frame (Durable)') {
-        stockColumn = 'stock_metal';
-      } else if (frameType === 'plastic' || frameType === 'Plastic Frame (Comfortable)' || frameType === 'halfrim' || frameType === 'Half-Rim Frame (Lightweight)') {
-        stockColumn = 'stock_metal'; // Use metal for half-rim too, or adjust as needed
-      } else if (frameType === 'fashion') {
-        stockColumn = 'stock_fashion';
+      let stockColumn = "stock_standard";
+      if (frameType === "metal" || frameType === "Metal Frame (Durable)") {
+        stockColumn = "stock_metal";
+      } else if (
+        frameType === "plastic" ||
+        frameType === "Plastic Frame (Comfortable)" ||
+        frameType === "halfrim" ||
+        frameType === "Half-Rim Frame (Lightweight)"
+      ) {
+        stockColumn = "stock_metal"; // Use metal for half-rim too, or adjust as needed
+      } else if (frameType === "fashion") {
+        stockColumn = "stock_fashion";
       }
 
       await sql`
@@ -205,10 +227,11 @@ exports.createScreening = async (req, res) => {
     console.error("Create screening error:", error);
     console.error("Request body:", req.body);
     console.error("Error details:", error.message, error.stack);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: "Failed to create screening",
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details:
+        process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -218,10 +241,11 @@ exports.getScreenings = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     let healthWorkerId = req.user?.userId;
-    
+
     // Get a valid CHW ID for testing if no authenticated user
     if (!healthWorkerId) {
-      const chwUsers = await sql`SELECT id FROM users WHERE role = 'CHW' LIMIT 1`;
+      const chwUsers =
+        await sql`SELECT id FROM users WHERE role = 'CHW' LIMIT 1`;
       healthWorkerId = chwUsers.length > 0 ? chwUsers[0].id : null;
     }
     const { limit = 50, offset = 0 } = req.query;
@@ -251,7 +275,9 @@ exports.getScreenings = async (req, res) => {
     });
   } catch (error) {
     console.error("Get screenings error:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch screenings" });
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch screenings" });
   }
 };
 
@@ -275,7 +301,9 @@ exports.getScreeningById = async (req, res) => {
     `;
 
     if (screening.length === 0) {
-      return res.status(404).json({ success: false, error: "Screening not found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Screening not found" });
     }
 
     res.json({
@@ -284,7 +312,9 @@ exports.getScreeningById = async (req, res) => {
     });
   } catch (error) {
     console.error("Get screening error:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch screening" });
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch screening" });
   }
 };
 
@@ -293,10 +323,11 @@ exports.getScreeningStats = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     let healthWorkerId = req.user?.userId;
-    
+
     // Get a valid CHW ID for testing if no authenticated user
     if (!healthWorkerId) {
-      const chwUsers = await sql`SELECT id FROM users WHERE role = 'CHW' LIMIT 1`;
+      const chwUsers =
+        await sql`SELECT id FROM users WHERE role = 'CHW' LIMIT 1`;
       healthWorkerId = chwUsers.length > 0 ? chwUsers[0].id : null;
     }
 
@@ -317,6 +348,8 @@ exports.getScreeningStats = async (req, res) => {
     });
   } catch (error) {
     console.error("Get screening stats error:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch statistics" });
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch statistics" });
   }
 };

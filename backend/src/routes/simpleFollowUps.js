@@ -1,8 +1,8 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
 // List clients needing follow-up (pending referrals + glasses dispensed)
-router.get('/pending', async (req, res) => {
+router.get("/pending", async (req, res) => {
   try {
     const sql = req.app.locals.sql;
 
@@ -55,17 +55,17 @@ router.get('/pending', async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get pending follow-ups error:', error);
+    console.error("Get pending follow-ups error:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch pending follow-ups',
+      error: "Failed to fetch pending follow-ups",
       details: error.message,
     });
   }
 });
 
 // Record a community follow-up visit
-router.post('/create', async (req, res) => {
+router.post("/create", async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     const {
@@ -91,7 +91,8 @@ router.post('/create', async (req, res) => {
 
     let workerId = health_worker_id;
     if (!workerId) {
-      const workers = await sql`SELECT id FROM users WHERE role = 'health_worker' LIMIT 1`;
+      const workers =
+        await sql`SELECT id FROM users WHERE role IN ('CHW', 'health_worker') ORDER BY CASE WHEN role = 'CHW' THEN 0 ELSE 1 END, created_at DESC LIMIT 1`;
       if (workers.length > 0) workerId = workers[0].id;
     }
 
@@ -109,16 +110,29 @@ router.post('/create', async (req, res) => {
         ${attended_facility ?? null}, ${treatment_received || null}, ${barriers || null},
         ${glasses_in_use ?? null}, ${glasses_help ?? null}, ${has_headaches ?? null}, ${glasses_condition || null},
         ${education_reinforced ?? false}, ${needs_referral ?? false}, ${notes || null},
-        ${workerId || null}, ${new Date().toISOString().split('T')[0]}, NOW()
+        ${workerId || null}, ${new Date().toISOString().split("T")[0]}, NOW()
       )
       RETURNING *
     `;
 
     if (referral_id && attended_facility === true) {
+      const referralRows = await sql`
+        SELECT screening_id FROM referrals WHERE id = ${referral_id}
+      `;
+
+      if (referralRows.length > 0 && referralRows[0]?.screening_id) {
+        await sql`
+          UPDATE screenings
+          SET needs_referral = false,
+              notes = COALESCE(${notes}, notes)
+          WHERE id = ${referralRows[0].screening_id}
+        `;
+      }
+
       await sql`
         UPDATE referrals
         SET status = 'completed',
-            completed_date = ${new Date().toISOString().split('T')[0]},
+            completed_date = ${new Date().toISOString().split("T")[0]},
             notes = COALESCE(${notes}, notes)
         WHERE id = ${referral_id}
       `;
@@ -126,21 +140,21 @@ router.post('/create', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Follow-up recorded successfully',
+      message: "Follow-up recorded successfully",
       data: followUp[0],
     });
   } catch (error) {
-    console.error('Create follow-up error:', error);
+    console.error("Create follow-up error:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to record follow-up',
+      error: "Failed to record follow-up",
       details: error.message,
     });
   }
 });
 
 // List recorded follow-ups
-router.get('/list', async (req, res) => {
+router.get("/list", async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     const { limit = 50, offset = 0 } = req.query;
@@ -158,10 +172,10 @@ router.get('/list', async (req, res) => {
       count: followUps.length,
     });
   } catch (error) {
-    console.error('List follow-ups error:', error);
+    console.error("List follow-ups error:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch follow-ups',
+      error: "Failed to fetch follow-ups",
       details: error.message,
     });
   }

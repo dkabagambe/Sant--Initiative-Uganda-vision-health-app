@@ -1,29 +1,46 @@
-require('dotenv').config();
+require("dotenv").config();
 
 // Allow forcing Postgres for production seed: FORCE_POSTGRES=1 node scripts/init-db.js
-if (process.env.FORCE_POSTGRES) process.env.USE_SQLITE = '';
+if (process.env.FORCE_POSTGRES) process.env.USE_SQLITE = "";
 
-const useSqlite = process.env.USE_SQLITE && ['true', '1', 'yes'].includes(String(process.env.USE_SQLITE).toLowerCase());
+const allowSqliteLocal =
+  process.env.ALLOW_SQLITE_LOCAL &&
+  ["true", "1", "yes"].includes(
+    String(process.env.ALLOW_SQLITE_LOCAL).toLowerCase(),
+  );
+const useSqlite =
+  process.env.USE_SQLITE &&
+  ["true", "1", "yes"].includes(String(process.env.USE_SQLITE).toLowerCase());
 
-if (useSqlite) {
+if (useSqlite && !allowSqliteLocal) {
+  console.error(
+    "❌ SQLite startup is disabled by default. Remove USE_SQLITE or set ALLOW_SQLITE_LOCAL=true for a one-off testing session. Local development must use the shared Postgres DATABASE_URL.",
+  );
+  process.exit(1);
+}
+
+if (useSqlite && allowSqliteLocal) {
   // SQLite: db-local creates tables and seeds on load; add any missing columns
-  console.log('📦 Initializing SQLite (local development)\n');
-  const dbLocal = require('../src/db-local');
+  console.log("📦 Initializing SQLite for an intentional one-off local test\n");
+  const dbLocal = require("../src/db-local");
   const db = dbLocal.db;
   try {
     const addCol = (table, col, type) => {
       try {
         const info = db.prepare(`PRAGMA table_info(${table})`).all();
-        if (!info.some(c => c.name === col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}`);
-      } catch (e) { /* ignore */ }
+        if (!info.some((c) => c.name === col))
+          db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}`);
+      } catch (e) {
+        /* ignore */
+      }
     };
-    addCol('users', 'recommendation_letter', 'TEXT');
-    addCol('users', 'shop_front_image', 'TEXT');
-    addCol('users', 'owner_id_image', 'TEXT');
-    addCol('users', 'registration_documents', 'TEXT');
-    console.log('✅ SQLite initialized (tables and products ready)\n');
+    addCol("users", "recommendation_letter", "TEXT");
+    addCol("users", "shop_front_image", "TEXT");
+    addCol("users", "owner_id_image", "TEXT");
+    addCol("users", "registration_documents", "TEXT");
+    console.log("✅ SQLite initialized (tables and products ready)\n");
   } catch (err) {
-    console.error('❌ SQLite init failed:', err.message);
+    console.error("❌ SQLite init failed:", err.message);
     process.exit(1);
   }
   process.exit(0);
@@ -31,21 +48,28 @@ if (useSqlite) {
 
 // Postgres/Neon path
 const dbUrl = process.env.DATABASE_URL && process.env.DATABASE_URL.trim();
-if (!dbUrl || (!dbUrl.startsWith('postgresql://') && !dbUrl.startsWith('postgres://'))) {
-  console.error('❌ DATABASE_URL must be set for Postgres, or set USE_SQLITE=true for local SQLite.');
+if (
+  !dbUrl ||
+  (!dbUrl.startsWith("postgresql://") && !dbUrl.startsWith("postgres://"))
+) {
+  console.error(
+    "❌ DATABASE_URL must be set for Postgres, or set USE_SQLITE=true for local SQLite.",
+  );
   process.exit(1);
 }
-const { neon } = require('@neondatabase/serverless');
+const { neon } = require("@neondatabase/serverless");
 const sql = neon(dbUrl);
 
 async function initDB() {
   try {
-    console.log('📦 Initializing database...\n');
-    console.log('   Safe: only creates missing tables and seeds products when empty. Existing data is never deleted.\n');
+    console.log("📦 Initializing database...\n");
+    console.log(
+      "   Safe: only creates missing tables and seeds products when empty. Existing data is never deleted.\n",
+    );
 
     // Enable UUID extension
     await sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
-    console.log('✓ UUID extension enabled');
+    console.log("✓ UUID extension enabled");
 
     // Create users table
     await sql`
@@ -79,7 +103,7 @@ async function initDB() {
         otp_expires_at TIMESTAMP
       )
     `;
-    console.log('✓ Users table created');
+    console.log("✓ Users table created");
 
     // Add registration document columns if they don't exist (migration for existing DBs)
     try {
@@ -87,9 +111,9 @@ async function initDB() {
       await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_front_image VARCHAR(500)`;
       await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS owner_id_image VARCHAR(500)`;
       await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS registration_documents JSONB`;
-      console.log('✓ Registration document columns ensured');
+      console.log("✓ Registration document columns ensured");
     } catch (migErr) {
-      console.warn('Migration note:', migErr.message);
+      console.warn("Migration note:", migErr.message);
     }
 
     // Create products table
@@ -110,7 +134,7 @@ async function initDB() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
-    console.log('✓ Products table created');
+    console.log("✓ Products table created");
 
     // Create screenings table
     await sql`
@@ -181,7 +205,7 @@ async function initDB() {
         offline_id VARCHAR(100)
       )
     `;
-    console.log('✓ Screenings table created');
+    console.log("✓ Screenings table created");
 
     // Add VHT workflow columns to existing screenings table (migration)
     try {
@@ -204,9 +228,9 @@ async function initDB() {
       await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS glasses_frame_type VARCHAR(50)`;
       await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS glasses_education_provided BOOLEAN DEFAULT false`;
       await sql`ALTER TABLE screenings ADD COLUMN IF NOT EXISTS referral_facility VARCHAR(200)`;
-      console.log('✓ VHT workflow columns added to screenings table');
+      console.log("✓ VHT workflow columns added to screenings table");
     } catch (migErr) {
-      console.warn('Migration note:', migErr.message);
+      console.warn("Migration note:", migErr.message);
     }
 
     // Create referrals table
@@ -232,7 +256,7 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
-    console.log('✓ Referrals table created');
+    console.log("✓ Referrals table created");
 
     // Create follow_ups table for community follow-up visits
     await sql`
@@ -260,7 +284,7 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
-    console.log('✓ Follow-ups table created');
+    console.log("✓ Follow-ups table created");
 
     // Create payments table
     await sql`
@@ -282,12 +306,13 @@ async function initDB() {
         due_date DATE,
         payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         verified_at TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         is_synced BOOLEAN DEFAULT true,
         offline_id VARCHAR(100)
       )
     `;
-    console.log('✓ Payments table created');
+    console.log("✓ Payments table created");
 
     // Create sync_queue table
     await sql`
@@ -304,7 +329,7 @@ async function initDB() {
         processed_at TIMESTAMP
       )
     `;
-    console.log('✓ Sync queue table created');
+    console.log("✓ Sync queue table created");
 
     // Create vht_stock table (per-VHT inventory)
     await sql`
@@ -318,7 +343,7 @@ async function initDB() {
         PRIMARY KEY (health_worker_id, product_id)
       )
     `;
-    console.log('✓ vht_stock table created');
+    console.log("✓ vht_stock table created");
 
     // Create health_facilities table
     await sql`
@@ -333,10 +358,11 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
-    console.log('✓ Health facilities table created');
+    console.log("✓ Health facilities table created");
 
     // Seed sample health facilities if empty
-    const existingFacilities = await sql`SELECT COUNT(*) as count FROM health_facilities`;
+    const existingFacilities =
+      await sql`SELECT COUNT(*) as count FROM health_facilities`;
     if (parseInt(existingFacilities[0].count) === 0) {
       await sql`
         INSERT INTO health_facilities (name, type, district, location) VALUES
@@ -346,7 +372,7 @@ async function initDB() {
         ('Health Centre III', 'Health Centre III', 'Central', 'Parish'),
         ('Eye Clinic/Specialist', 'Eye Clinic', 'Central', 'District HQ')
       `;
-      console.log('✓ Sample health facilities inserted');
+      console.log("✓ Sample health facilities inserted");
     }
 
     // Create clients table
@@ -366,7 +392,7 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
-    console.log('✓ Clients table created');
+    console.log("✓ Clients table created");
 
     // Insert sample products
     const existingProducts = await sql`SELECT COUNT(*) as count FROM products`;
@@ -380,9 +406,9 @@ async function initDB() {
         ('Reading Glasses +3.00', 'High power for advanced presbyopia', '+3.00', 15000.00, 64, 25, 24, 15),
         ('Reading Glasses +3.50', 'Very high power for severe presbyopia', '+3.50', 18000.00, 42, 18, 14, 10)
       `;
-      console.log('✓ Sample products inserted');
+      console.log("✓ Sample products inserted");
     } else {
-      console.log('✓ Products already exist, skipping insert');
+      console.log("✓ Products already exist, skipping insert");
     }
 
     // Create indexes
@@ -392,11 +418,11 @@ async function initDB() {
     await sql`CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone_number)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_referrals_status ON referrals(status)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_payments_due_date ON payments(due_date)`;
-    console.log('✓ Indexes created');
+    console.log("✓ Indexes created");
 
-    console.log('\n✅ Database initialized successfully!');
+    console.log("\n✅ Database initialized successfully!");
   } catch (error) {
-    console.error('\n❌ Database initialization failed:', error.message);
+    console.error("\n❌ Database initialization failed:", error.message);
     process.exit(1);
   }
 }

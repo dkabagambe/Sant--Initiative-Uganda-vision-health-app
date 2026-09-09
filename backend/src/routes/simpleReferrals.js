@@ -1,8 +1,8 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
 // Simple referrals endpoint without authentication
-router.get('/list', async (req, res) => {
+router.get("/list", async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     const { status, limit = 50, offset = 0 } = req.query;
@@ -80,17 +80,17 @@ router.get('/list', async (req, res) => {
       total: parseInt(total[0].count),
     });
   } catch (error) {
-    console.error('Get referrals error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch referrals',
-      details: error.message 
+    console.error("Get referrals error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch referrals",
+      details: error.message,
     });
   }
 });
 
 // Create new referral
-router.post('/create', async (req, res) => {
+router.post("/create", async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     const {
@@ -102,16 +102,17 @@ router.post('/create', async (req, res) => {
       reason,
       facility_name,
       facility_location,
-      urgency = 'normal',
+      urgency = "normal",
       notes,
       health_worker_id,
-      screening_id
+      screening_id,
     } = req.body;
 
     // Get a valid health worker ID if not provided
     let workerId = health_worker_id;
     if (!workerId) {
-      const workers = await sql`SELECT id FROM users WHERE role = 'health_worker' LIMIT 1`;
+      const workers =
+        await sql`SELECT id FROM users WHERE role IN ('CHW', 'health_worker') ORDER BY CASE WHEN role = 'CHW' THEN 0 ELSE 1 END, created_at DESC LIMIT 1`;
       if (workers.length > 0) {
         workerId = workers[0].id;
       }
@@ -125,39 +126,33 @@ router.post('/create', async (req, res) => {
       ) VALUES (
         ${client_name || null}, ${client_phone || null}, ${client_age || null}, ${client_gender || null}, ${client_district || null},
         ${reason || null}, ${facility_name || null}, ${facility_location || null}, ${urgency || null}, ${notes || null},
-        ${workerId || null}, ${screening_id || null}, ${new Date().toISOString().split('T')[0]}, NOW()
+        ${workerId || null}, ${screening_id || null}, ${new Date().toISOString().split("T")[0]}, NOW()
       )
       RETURNING *
     `;
 
     res.json({
       success: true,
-      message: 'Referral created successfully',
-      data: referral[0]
+      message: "Referral created successfully",
+      data: referral[0],
     });
   } catch (error) {
-    console.error('Create referral error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to create referral',
-      details: error.message 
+    console.error("Create referral error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to create referral",
+      details: error.message,
     });
   }
 });
 
 // Update referral
-router.patch('/:id', async (req, res) => {
+router.patch("/:id", async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     const { id } = req.params;
-    const {
-      facility_name,
-      facility_location,
-      notes,
-      status,
-      urgency,
-      reason
-    } = req.body;
+    const { facility_name, facility_location, notes, status, urgency, reason } =
+      req.body;
 
     const referral = await sql`
       UPDATE referrals 
@@ -175,27 +170,27 @@ router.patch('/:id', async (req, res) => {
     if (referral.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Referral not found'
+        error: "Referral not found",
       });
     }
 
     res.json({
       success: true,
-      message: 'Referral updated successfully',
-      data: referral[0]
+      message: "Referral updated successfully",
+      data: referral[0],
     });
   } catch (error) {
-    console.error('Update referral error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to update referral',
-      details: error.message 
+    console.error("Update referral error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to update referral",
+      details: error.message,
     });
   }
 });
 
 // Update referral status
-router.patch('/:id/status', async (req, res) => {
+router.patch("/:id/status", async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     const { id } = req.params;
@@ -205,36 +200,48 @@ router.patch('/:id/status', async (req, res) => {
       UPDATE referrals 
       SET 
         status = ${status},
-        completed_date = ${status === 'completed' ? new Date().toISOString().split('T')[0] : completed_date},
+        completed_date = ${status === "completed" ? new Date().toISOString().split("T")[0] : completed_date},
         notes = COALESCE(${notes}, notes)
       WHERE id = ${id}
       RETURNING *
     `;
 
+    if (
+      status === "completed" &&
+      referral.length > 0 &&
+      referral[0].screening_id
+    ) {
+      await sql`
+        UPDATE screenings
+        SET needs_referral = false
+        WHERE id = ${referral[0].screening_id}
+      `;
+    }
+
     if (referral.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Referral not found'
+        error: "Referral not found",
       });
     }
 
     res.json({
       success: true,
-      message: 'Referral status updated successfully',
-      data: referral[0]
+      message: "Referral status updated successfully",
+      data: referral[0],
     });
   } catch (error) {
-    console.error('Update referral status error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to update referral status',
-      details: error.message 
+    console.error("Update referral status error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to update referral status",
+      details: error.message,
     });
   }
 });
 
 // Get referral stats
-router.get('/stats', async (req, res) => {
+router.get("/stats", async (req, res) => {
   try {
     const sql = req.app.locals.sql;
 
@@ -250,14 +257,14 @@ router.get('/stats', async (req, res) => {
 
     res.json({
       success: true,
-      data: stats[0]
+      data: stats[0],
     });
   } catch (error) {
-    console.error('Get referral stats error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch referral stats',
-      details: error.message 
+    console.error("Get referral stats error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch referral stats",
+      details: error.message,
     });
   }
 });

@@ -1,7 +1,7 @@
-const Database = require('better-sqlite3');
-const path = require('path');
+const Database = require("better-sqlite3");
+const path = require("path");
 
-const db = new Database(path.join(__dirname, '../sante.db'));
+const db = new Database(path.join(__dirname, "../sante.db"));
 
 // Create tables
 db.exec(`
@@ -101,6 +101,7 @@ db.exec(`
     due_date TEXT,
     payment_date TEXT DEFAULT CURRENT_TIMESTAMP,
     verified_at TEXT,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     provider TEXT,
     provider_reference TEXT,
     provider_status TEXT,
@@ -187,20 +188,24 @@ db.exec(`
 
 // Migrations: add columns that may be missing on existing databases
 const migrations = [
-  'ALTER TABLE referrals ADD COLUMN client_phone TEXT',
-  'ALTER TABLE referrals ADD COLUMN client_age INTEGER',
-  'ALTER TABLE referrals ADD COLUMN client_gender TEXT',
-  'ALTER TABLE referrals ADD COLUMN client_district TEXT',
-  'ALTER TABLE payments ADD COLUMN provider TEXT',
-  'ALTER TABLE payments ADD COLUMN provider_reference TEXT',
-  'ALTER TABLE payments ADD COLUMN provider_status TEXT',
-  'ALTER TABLE payments ADD COLUMN provider_callback_payload TEXT',
-  'ALTER TABLE payments ADD COLUMN provider_failure_reason TEXT',
-  'ALTER TABLE payments ADD COLUMN provider_requested_at TEXT',
-  'ALTER TABLE payments ADD COLUMN provider_completed_at TEXT',
+  "ALTER TABLE referrals ADD COLUMN client_phone TEXT",
+  "ALTER TABLE referrals ADD COLUMN client_age INTEGER",
+  "ALTER TABLE referrals ADD COLUMN client_gender TEXT",
+  "ALTER TABLE referrals ADD COLUMN client_district TEXT",
+  "ALTER TABLE payments ADD COLUMN provider TEXT",
+  "ALTER TABLE payments ADD COLUMN provider_reference TEXT",
+  "ALTER TABLE payments ADD COLUMN provider_status TEXT",
+  "ALTER TABLE payments ADD COLUMN provider_callback_payload TEXT",
+  "ALTER TABLE payments ADD COLUMN provider_failure_reason TEXT",
+  "ALTER TABLE payments ADD COLUMN provider_requested_at TEXT",
+  "ALTER TABLE payments ADD COLUMN provider_completed_at TEXT",
 ];
-migrations.forEach(m => {
-  try { db.exec(m); } catch (e) { /* column already exists */ }
+migrations.forEach((m) => {
+  try {
+    db.exec(m);
+  } catch (e) {
+    /* column already exists */
+  }
 });
 
 // Seed vht_stock from products for each health worker (one-time so VHTs see current stock)
@@ -215,7 +220,9 @@ try {
       WHERE u.role = 'health_worker' OR u.role IS NULL
     `);
   }
-} catch (e) { /* ignore */ }
+} catch (e) {
+  /* ignore */
+}
 
 // Insert sample products
 const insertProduct = db.prepare(`
@@ -224,44 +231,54 @@ const insertProduct = db.prepare(`
 `);
 
 const products = [
-  ['1', 'Reading Glasses +1.00', 'Low power', '+1.00', 15000, 78, 30, 28, 20],
-  ['2', 'Reading Glasses +1.50', 'Mild difficulty', '+1.50', 15000, 95, 40, 35, 20],
-  ['3', 'Reading Glasses +2.00', 'Standard', '+2.00', 15000, 142, 60, 52, 30],
-  ['4', 'Reading Glasses +2.50', 'Moderate', '+2.50', 15000, 87, 35, 32, 20],
-  ['5', 'Reading Glasses +3.00', 'High power', '+3.00', 15000, 64, 25, 24, 15],
-  ['6', 'Reading Glasses +3.50', 'Very high', '+3.50', 18000, 42, 18, 14, 10],
+  ["1", "Reading Glasses +1.00", "Low power", "+1.00", 15000, 78, 30, 28, 20],
+  [
+    "2",
+    "Reading Glasses +1.50",
+    "Mild difficulty",
+    "+1.50",
+    15000,
+    95,
+    40,
+    35,
+    20,
+  ],
+  ["3", "Reading Glasses +2.00", "Standard", "+2.00", 15000, 142, 60, 52, 30],
+  ["4", "Reading Glasses +2.50", "Moderate", "+2.50", 15000, 87, 35, 32, 20],
+  ["5", "Reading Glasses +3.00", "High power", "+3.00", 15000, 64, 25, 24, 15],
+  ["6", "Reading Glasses +3.50", "Very high", "+3.50", 18000, 42, 18, 14, 10],
 ];
 
-products.forEach(p => insertProduct.run(...p));
+products.forEach((p) => insertProduct.run(...p));
 
 // SQL wrapper to mimic neon's tagged template syntax
 const sql = (strings, ...values) => {
   // Handle tagged template literals
-  let query = '';
+  let query = "";
   for (let i = 0; i < strings.length; i++) {
     query += strings[i];
     if (i < values.length) {
-      query += '?';
+      query += "?";
     }
   }
-  
+
   // SQLite compatibility fixes
   query = query.replace(/NOW\(\)/gi, "datetime('now')");
   query = query.replace(/CURRENT_TIMESTAMP/gi, "datetime('now')");
   query = query.replace(/CURRENT_DATE/gi, "date('now')");
   query = query.replace(/uuid_generate_v4\(\)/gi, "hex(randomblob(16))");
-  
+
   // Handle RETURNING clause for SQLite compatibility (UPDATE and INSERT)
   const hasReturningAny = /\s+RETURNING\s+/i.test(query);
-  const isInsert = query.trim().toUpperCase().startsWith('INSERT');
-  const isUpdate = query.trim().toUpperCase().startsWith('UPDATE');
+  const isInsert = query.trim().toUpperCase().startsWith("INSERT");
+  const isUpdate = query.trim().toUpperCase().startsWith("UPDATE");
   if (hasReturningAny && (isUpdate || isInsert)) {
-    query = query.replace(/\s+RETURNING\s+[\w\s,]+\s*$/i, '');
+    query = query.replace(/\s+RETURNING\s+[\w\s,]+\s*$/i, "");
   }
 
   try {
     const stmt = db.prepare(query);
-    const isSelect = query.trim().toUpperCase().startsWith('SELECT');
+    const isSelect = query.trim().toUpperCase().startsWith("SELECT");
 
     if (isSelect) {
       const rows = stmt.all(...values);
@@ -292,7 +309,9 @@ const sql = (strings, ...values) => {
       if (info.changes > 0 && info.lastInsertRowid) {
         const tableName = query.match(/INSERT\s+INTO\s+(\w+)/i)?.[1];
         if (tableName) {
-          const selectStmt = db.prepare(`SELECT * FROM ${tableName} WHERE rowid = ?`);
+          const selectStmt = db.prepare(
+            `SELECT * FROM ${tableName} WHERE rowid = ?`,
+          );
           return selectStmt.all(info.lastInsertRowid);
         }
       }
@@ -302,14 +321,14 @@ const sql = (strings, ...values) => {
       return [{ id: info.lastInsertRowid, changes: info.changes }];
     }
   } catch (err) {
-    console.error('SQL Error:', err.message, '\nQuery:', query);
+    console.error("SQL Error:", err.message, "\nQuery:", query);
     throw err;
   }
 };
 
 // Migration function to add missing columns
 function runMigrations() {
-  console.log('🔄 Running database migrations...');
+  console.log("🔄 Running database migrations...");
 
   try {
     db.exec(`
@@ -338,73 +357,79 @@ function runMigrations() {
       )
     `);
   } catch (error) {
-    console.log('⚠️ follow_ups table migration:', error.message);
+    console.log("⚠️ follow_ups table migration:", error.message);
   }
-  
+
   // List of columns to add if they don't exist
   const migrations = [
     // Users - registration documents (CHW, Outlet, VSLA)
-    { table: 'users', column: 'recommendation_letter', type: 'TEXT' },
-    { table: 'users', column: 'shop_front_image', type: 'TEXT' },
-    { table: 'users', column: 'owner_id_image', type: 'TEXT' },
-    { table: 'users', column: 'registration_documents', type: 'TEXT' },
+    { table: "users", column: "recommendation_letter", type: "TEXT" },
+    { table: "users", column: "shop_front_image", type: "TEXT" },
+    { table: "users", column: "owner_id_image", type: "TEXT" },
+    { table: "users", column: "registration_documents", type: "TEXT" },
     // Screenings
-    { table: 'screenings', column: 'client_district', type: 'TEXT' },
-    { table: 'screenings', column: 'client_county', type: 'TEXT' },
-    { table: 'screenings', column: 'client_sub_county', type: 'TEXT' },
-    { table: 'screenings', column: 'client_parish', type: 'TEXT' },
-    { table: 'screenings', column: 'offline_id', type: 'TEXT' },
-    { table: 'screenings', column: 'is_synced', type: 'INTEGER DEFAULT 1' },
-    { table: 'screenings', column: 'selected_frame_type', type: 'TEXT' },
-    { table: 'screenings', column: 'recommended_power', type: 'TEXT' },
-    { table: 'screenings', column: 'recommended_product_id', type: 'TEXT' },
-    { table: 'screenings', column: 'referral_reason', type: 'TEXT' },
-    { table: 'screenings', column: 'notes', type: 'TEXT' },
-    { table: 'screenings', column: 'pinhole_test_left', type: 'TEXT' },
-    { table: 'screenings', column: 'pinhole_test_right', type: 'TEXT' },
-    { table: 'screenings', column: 'near_vision_result', type: 'TEXT' },
-    { table: 'screenings', column: 'distance_vision_both', type: 'TEXT' },
-    { table: 'screenings', column: 'distance_vision_right', type: 'TEXT' },
-    { table: 'screenings', column: 'distance_vision_left', type: 'TEXT' },
-    { table: 'screenings', column: 'health_worker_id', type: 'TEXT' },
-    { table: 'screenings', column: 'client_village', type: 'TEXT' },
-    { table: 'screenings', column: 'client_gender', type: 'TEXT' },
-    { table: 'screenings', column: 'client_age', type: 'INTEGER' },
-    { table: 'screenings', column: 'client_phone', type: 'TEXT' },
-    { table: 'screenings', column: 'client_name', type: 'TEXT' },
-    { table: 'screenings', column: 'client_id', type: 'TEXT' },
-    
+    { table: "screenings", column: "client_district", type: "TEXT" },
+    { table: "screenings", column: "client_county", type: "TEXT" },
+    { table: "screenings", column: "client_sub_county", type: "TEXT" },
+    { table: "screenings", column: "client_parish", type: "TEXT" },
+    { table: "screenings", column: "offline_id", type: "TEXT" },
+    { table: "screenings", column: "is_synced", type: "INTEGER DEFAULT 1" },
+    { table: "screenings", column: "selected_frame_type", type: "TEXT" },
+    { table: "screenings", column: "recommended_power", type: "TEXT" },
+    { table: "screenings", column: "recommended_product_id", type: "TEXT" },
+    { table: "screenings", column: "referral_reason", type: "TEXT" },
+    { table: "screenings", column: "notes", type: "TEXT" },
+    { table: "screenings", column: "pinhole_test_left", type: "TEXT" },
+    { table: "screenings", column: "pinhole_test_right", type: "TEXT" },
+    { table: "screenings", column: "near_vision_result", type: "TEXT" },
+    { table: "screenings", column: "distance_vision_both", type: "TEXT" },
+    { table: "screenings", column: "distance_vision_right", type: "TEXT" },
+    { table: "screenings", column: "distance_vision_left", type: "TEXT" },
+    { table: "screenings", column: "health_worker_id", type: "TEXT" },
+    { table: "screenings", column: "client_village", type: "TEXT" },
+    { table: "screenings", column: "client_gender", type: "TEXT" },
+    { table: "screenings", column: "client_age", type: "INTEGER" },
+    { table: "screenings", column: "client_phone", type: "TEXT" },
+    { table: "screenings", column: "client_name", type: "TEXT" },
+    { table: "screenings", column: "client_id", type: "TEXT" },
+
     // Referrals table columns
-    { table: 'referrals', column: 'client_id', type: 'TEXT' },
-    { table: 'referrals', column: 'client_name', type: 'TEXT' },
-    { table: 'referrals', column: 'client_phone', type: 'TEXT' },
-    { table: 'referrals', column: 'client_age', type: 'INTEGER' },
-    { table: 'referrals', column: 'client_gender', type: 'TEXT' },
-    { table: 'referrals', column: 'client_district', type: 'TEXT' },
-    { table: 'referrals', column: 'facility_name', type: 'TEXT' },
-    { table: 'referrals', column: 'facility_location', type: 'TEXT' },
-    { table: 'referrals', column: 'status', type: 'TEXT DEFAULT "pending"' },
-    { table: 'referrals', column: 'referred_date', type: 'TEXT DEFAULT (date("now"))' },
-    { table: 'referrals', column: 'completed_date', type: 'TEXT' },
-    { table: 'referrals', column: 'notes', type: 'TEXT' },
+    { table: "referrals", column: "client_id", type: "TEXT" },
+    { table: "referrals", column: "client_name", type: "TEXT" },
+    { table: "referrals", column: "client_phone", type: "TEXT" },
+    { table: "referrals", column: "client_age", type: "INTEGER" },
+    { table: "referrals", column: "client_gender", type: "TEXT" },
+    { table: "referrals", column: "client_district", type: "TEXT" },
+    { table: "referrals", column: "facility_name", type: "TEXT" },
+    { table: "referrals", column: "facility_location", type: "TEXT" },
+    { table: "referrals", column: "status", type: 'TEXT DEFAULT "pending"' },
+    {
+      table: "referrals",
+      column: "referred_date",
+      type: 'TEXT DEFAULT (date("now"))',
+    },
+    { table: "referrals", column: "completed_date", type: "TEXT" },
+    { table: "referrals", column: "notes", type: "TEXT" },
   ];
 
   migrations.forEach(({ table, column, type }) => {
     try {
       // Check if column exists
       const tableInfo = db.prepare(`PRAGMA table_info(${table})`).all();
-      const columnExists = tableInfo.some(col => col.name === column);
-      
+      const columnExists = tableInfo.some((col) => col.name === column);
+
       if (!columnExists) {
         console.log(`➕ Adding column ${column} to ${table}`);
         db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
       }
     } catch (error) {
-      console.log(`⚠️ Could not add column ${column} to ${table}: ${error.message}`);
+      console.log(
+        `⚠️ Could not add column ${column} to ${table}: ${error.message}`,
+      );
     }
   });
-  
-  console.log('✅ Database migrations completed');
+
+  console.log("✅ Database migrations completed");
 }
 
 // Run migrations on startup
