@@ -4,9 +4,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const CONFIG_KEY = "app_config";
 
 // Production API (used when __DEV__ is false — release/store builds)
-export const VERCEL_API_URL = "https://backend-tau-sepia-43.vercel.app/api";
+export const RENDER_API_URL = "https://sante-backend.onrender.com/api";
 // Local backend should match the same app backend used in development.
-// Prefer the local machine's API when running the backend locally; otherwise the production API is used.
+// Use localhost only for local development; production builds should target Render.
 export const LOCAL_API_URL = "http://localhost:5000/api";
 
 export interface AppConfig {
@@ -20,7 +20,7 @@ const envApiUrl =
   typeof process !== "undefined" ? (process.env.EXPO_PUBLIC_API_URL ?? "") : "";
 
 const getDefaultConfig = (): AppConfig => ({
-  apiBaseUrl: envApiUrl || (__DEV__ ? LOCAL_API_URL : VERCEL_API_URL),
+  apiBaseUrl: envApiUrl || (__DEV__ ? LOCAL_API_URL : RENDER_API_URL),
   environment: __DEV__ ? "development" : "production",
 });
 
@@ -58,7 +58,7 @@ export class ConfigService {
     }
   }
 
-  // Reset to default configuration (uses env / localhost in dev, Vercel in prod)
+  // Reset to default configuration (uses env / localhost in dev, Render in prod)
   static async resetToDefault(): Promise<boolean> {
     try {
       const defaultCfg = getDefaultConfig();

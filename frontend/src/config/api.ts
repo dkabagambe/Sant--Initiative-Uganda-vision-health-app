@@ -1,9 +1,11 @@
-// Default backend URL for local development. Use the same backend host the app is running against.
-const API_BASE_URL = "http://localhost:5000/api";
+// Default backend URL for the deployed app. Keep localhost only for local development.
+const API_BASE_URL =
+  (typeof process !== "undefined" && process.env.EXPO_PUBLIC_API_URL) ||
+  "https://sante-backend.onrender.com/api";
 
 // Alternative options:
 // const API_BASE_URL = "http://10.0.2.2:5000/api"; // Android emulator
-// const API_BASE_URL = 'http://192.168.1.X:5000/api'; // Physical device on same WiFi
+// const API_BASE_URL = "http://192.168.1.X:5000/api"; // Physical device on same WiFi
 
 export const API_ENDPOINTS = {
   // Health check

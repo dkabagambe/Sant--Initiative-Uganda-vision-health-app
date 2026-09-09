@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ConfigService, LOCAL_API_URL, VERCEL_API_URL } from "./configService";
+import { ConfigService, LOCAL_API_URL, RENDER_API_URL } from "./configService";
 
 // Env override for physical device (must match configService)
 const envApiUrl =
@@ -55,10 +55,10 @@ export interface Screening {
   date: string;
 }
 
-// API base URL: env override > ConfigService (localhost in dev, Vercel in prod)
+// API base URL: env override > local dev check > Render production
 const getDefaultBaseUrl = () =>
   envApiUrl ||
-  (typeof __DEV__ !== "undefined" && __DEV__ ? LOCAL_API_URL : VERCEL_API_URL);
+  (typeof __DEV__ !== "undefined" && __DEV__ ? LOCAL_API_URL : RENDER_API_URL);
 
 let API_BASE_URL = getDefaultBaseUrl();
 
@@ -81,7 +81,7 @@ const api = axios.create({
   },
 });
 
-// Load saved API URL (or use default: localhost in dev, Vercel in prod)
+// Load saved API URL (or use default: localhost in dev, Render in prod)
 initializeApiUrl();
 
 // Request interceptor for adding token
