@@ -23,7 +23,7 @@ const preparationSteps = [
     id: "measure",
     title: "Measure Distance",
     instruction: "Measure exactly 3 metres using rope",
-    icon: "measure",
+    icon: "ruler",
   },
   {
     id: "chart",
@@ -70,7 +70,7 @@ export default function VHTScreeningStep5() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top","left","right"]}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
 
       <View style={styles.header}>
@@ -81,7 +81,11 @@ export default function VHTScreeningStep5() {
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.instructionCard}>
           <Ionicons name="settings" size={24} color="#0891B2" />
           <Text style={styles.instructionText}>
@@ -92,16 +96,21 @@ export default function VHTScreeningStep5() {
         <View style={styles.importantBox}>
           <Ionicons name="alert-circle" size={20} color="#D97706" />
           <View style={{ flex: 1 }}>
-            <Text style={styles.importantTitle}>Critical: 3-Metre Distance</Text>
+            <Text style={styles.importantTitle}>
+              Critical: 3-Metre Distance
+            </Text>
             <Text style={styles.importantText}>
-              The E-chart MUST be exactly 3 metres away from the client for accurate distance vision testing
+              The E-chart MUST be exactly 3 metres away from the client for
+              accurate distance vision testing
             </Text>
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Setup Checklist</Text>
-          <Text style={styles.sectionSubtitle}>Complete each preparation step:</Text>
+          <Text style={styles.sectionSubtitle}>
+            Complete each preparation step:
+          </Text>
 
           {preparationSteps.map((step) => (
             <TouchableOpacity
@@ -139,7 +148,8 @@ export default function VHTScreeningStep5() {
           <View style={styles.infoBox}>
             <Ionicons name="sunny" size={20} color="#FBBF24" />
             <Text style={styles.infoText}>
-              Good lighting is essential for accurate vision screening. Avoid shadowy or dimly lit areas.
+              Good lighting is essential for accurate vision screening. Avoid
+              shadowy or dimly lit areas.
             </Text>
           </View>
         </View>
@@ -149,7 +159,8 @@ export default function VHTScreeningStep5() {
           <View style={styles.infoBox}>
             <Ionicons name="checkmark-circle" size={20} color="#10B981" />
             <Text style={styles.infoText}>
-              Confirm torch batteries are working and all screening materials are clean and ready to use
+              Confirm torch batteries are working and all screening materials
+              are clean and ready to use
             </Text>
           </View>
         </View>
@@ -158,7 +169,8 @@ export default function VHTScreeningStep5() {
           <View style={styles.readyCard}>
             <Ionicons name="checkmark-circle" size={32} color="#10B981" />
             <Text style={styles.readyText}>
-              Screening area is ready! You may now proceed to explain and demonstrate the tests to the client.
+              Screening area is ready! You may now proceed to explain and
+              demonstrate the tests to the client.
             </Text>
           </View>
         )}
@@ -170,7 +182,9 @@ export default function VHTScreeningStep5() {
             activeOpacity={0.8}
           >
             <Ionicons name="arrow-forward-circle" size={22} color="#FFF" />
-            <Text style={styles.continueButtonText}>Continue to Explain Tests</Text>
+            <Text style={styles.continueButtonText}>
+              Continue to Explain Tests
+            </Text>
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -182,12 +196,19 @@ export default function VHTScreeningStep5() {
           disabled={!allStepsCompleted}
           activeOpacity={allStepsCompleted ? 0.7 : 1}
         >
-          <Text style={[styles.buttonText, !allStepsCompleted && styles.buttonTextDisabled]}>
+          <Text
+            style={[
+              styles.buttonText,
+              !allStepsCompleted && styles.buttonTextDisabled,
+            ]}
+          >
             {allStepsCompleted
               ? "Area Ready - Proceed to Explain Tests"
               : `${completedSteps.size}/${preparationSteps.length} steps completed`}
           </Text>
-          {allStepsCompleted && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
+          {allStepsCompleted && (
+            <Ionicons name="arrow-forward" size={20} color="#FFF" />
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>

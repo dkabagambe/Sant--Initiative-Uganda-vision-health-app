@@ -18,7 +18,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { useLanguage } from "../../context/LanguageContext";
-import { getDistrictNames, getCountiesForDistrict, getSubCountiesForCounty, getParishesForSubCounty } from "../../data/ugandaLocations";
+import {
+  getDistrictNames,
+  getCountiesForDistrict,
+  getSubCountiesForCounty,
+  getParishesForSubCounty,
+  normalizeLocationText,
+} from "../../data/ugandaLocations";
 import { apiService } from "../../services/api";
 
 export default function VisionScreen1() {
@@ -80,45 +86,50 @@ export default function VisionScreen1() {
   const allDistricts = useMemo(() => getDistrictNames(), []);
 
   const filteredDistricts = useMemo(() => {
-    if (!districtSearch.trim()) return allDistricts;
+    const normalizedQuery = normalizeLocationText(districtSearch);
+    if (!normalizedQuery) return allDistricts;
     return allDistricts.filter((d) =>
-      d.toLowerCase().includes(districtSearch.toLowerCase())
+      normalizeLocationText(d).includes(normalizedQuery),
     );
   }, [districtSearch, allDistricts]);
 
   const countiesForDistrict = useMemo(
     () => (formData.district ? getCountiesForDistrict(formData.district) : []),
-    [formData.district]
+    [formData.district],
   );
 
   const filteredCounties = useMemo(() => {
-    if (!countySearch.trim()) return countiesForDistrict;
+    const normalizedQuery = normalizeLocationText(countySearch);
+    if (!normalizedQuery) return countiesForDistrict;
     return countiesForDistrict.filter((c) =>
-      c.toLowerCase().includes(countySearch.toLowerCase())
+      normalizeLocationText(c).includes(normalizedQuery),
     );
   }, [countySearch, countiesForDistrict]);
 
   const subCountiesForCounty = useMemo(
     () => (formData.county ? getSubCountiesForCounty(formData.county) : []),
-    [formData.county]
+    [formData.county],
   );
 
   const filteredSubCounties = useMemo(() => {
-    if (!subCountySearch.trim()) return subCountiesForCounty;
+    const normalizedQuery = normalizeLocationText(subCountySearch);
+    if (!normalizedQuery) return subCountiesForCounty;
     return subCountiesForCounty.filter((sc) =>
-      sc.toLowerCase().includes(subCountySearch.toLowerCase())
+      normalizeLocationText(sc).includes(normalizedQuery),
     );
   }, [subCountySearch, subCountiesForCounty]);
 
   const parishesForSubCounty = useMemo(
-    () => (formData.subCounty ? getParishesForSubCounty(formData.subCounty) : []),
-    [formData.subCounty]
+    () =>
+      formData.subCounty ? getParishesForSubCounty(formData.subCounty) : [],
+    [formData.subCounty],
   );
 
   const filteredParishes = useMemo(() => {
-    if (!parishSearch.trim()) return parishesForSubCounty;
+    const normalizedQuery = normalizeLocationText(parishSearch);
+    if (!normalizedQuery) return parishesForSubCounty;
     return parishesForSubCounty.filter((p) =>
-      p.toLowerCase().includes(parishSearch.toLowerCase())
+      normalizeLocationText(p).includes(normalizedQuery),
     );
   }, [parishSearch, parishesForSubCounty]);
 
@@ -127,9 +138,15 @@ export default function VisionScreen1() {
       ...prev,
       [field]: value,
       // Cascade resets
-      ...(field === "district" && value !== prev.district ? { county: "", subCounty: "", parish: "" } : {}),
-      ...(field === "county" && value !== prev.county ? { subCounty: "", parish: "" } : {}),
-      ...(field === "subCounty" && value !== prev.subCounty ? { parish: "" } : {}),
+      ...(field === "district" && value !== prev.district
+        ? { county: "", subCounty: "", parish: "" }
+        : {}),
+      ...(field === "county" && value !== prev.county
+        ? { subCounty: "", parish: "" }
+        : {}),
+      ...(field === "subCounty" && value !== prev.subCounty
+        ? { parish: "" }
+        : {}),
     }));
   };
 
@@ -165,34 +182,36 @@ export default function VisionScreen1() {
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
       {/* Top Header with Logo and Menu - Fixed at top */}
-     
-           {/* Top Header with Logo and Menu - Fixed at top */}
-           <View style={styles.topHeader}>
-             <View style={styles.headerLeft}>
-               <View style={styles.logoBox}>
-                 <Image
-                   source={require("../../../assets/logo.png")}
-                   style={styles.logo}
-                   resizeMode="contain"
-                 />
-               </View>
-             </View>
-     
-             <View style={styles.headerCenter}>
-               <Text style={styles.headerTitle}>
-                 {userData?.fullName || userData?.full_name || "Santé Initiative Uganda"}
-               </Text>
-               <Text style={styles.headerSubtitle}>
-                 {userData?.district ? `VHT - ${userData.district} District` : ""}
-               </Text>
-             </View>
-     
-             <View style={styles.headerRight}>
-               <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
-                 <Ionicons name="menu" size={28} color="#1A4D8F" />
-               </TouchableOpacity>
-             </View>
-           </View>
+
+      {/* Top Header with Logo and Menu - Fixed at top */}
+      <View style={styles.topHeader}>
+        <View style={styles.headerLeft}>
+          <View style={styles.logoBox}>
+            <Image
+              source={require("../../../assets/logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+        </View>
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>
+            {userData?.fullName ||
+              userData?.full_name ||
+              "Santé Initiative Uganda"}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {userData?.district ? `VHT - ${userData.district} District` : ""}
+          </Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
+            <Ionicons name="menu" size={28} color="#1A4D8F" />
+          </TouchableOpacity>
+        </View>
+      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -202,7 +221,9 @@ export default function VisionScreen1() {
       >
         {/* Progress Indicator */}
         <View style={styles.progressSection}>
-          <Text style={styles.progressText}>{t("step")} 1 {t("of")} 6</Text>
+          <Text style={styles.progressText}>
+            {t("step")} 1 {t("of")} 6
+          </Text>
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: "16.67%" }]} />
           </View>
@@ -211,9 +232,7 @@ export default function VisionScreen1() {
         {/* Form Title */}
         <View style={styles.formHeader}>
           <Text style={styles.formTitle}>{t("clientInformation")}</Text>
-          <Text style={styles.formSubtitle}>
-            {t("enterBasicDetails")}
-          </Text>
+          <Text style={styles.formSubtitle}>{t("enterBasicDetails")}</Text>
         </View>
 
         {/* Form Fields */}
@@ -245,9 +264,7 @@ export default function VisionScreen1() {
               keyboardType="numeric"
               placeholderTextColor="#999"
             />
-            <Text style={styles.inputHint}>
-              {t("ageDeterminesTests")}
-            </Text>
+            <Text style={styles.inputHint}>{t("ageDeterminesTests")}</Text>
           </View>
 
           {/* Phone Number */}
@@ -337,7 +354,10 @@ export default function VisionScreen1() {
               ]}
               onPress={() => {
                 if (!formData.district) {
-                  Alert.alert("Select District", "Please select a district first");
+                  Alert.alert(
+                    "Select District",
+                    "Please select a district first",
+                  );
                   return;
                 }
                 setCountySearch("");
@@ -350,7 +370,10 @@ export default function VisionScreen1() {
                   !formData.county && styles.dropdownPlaceholder,
                 ]}
               >
-                {formData.county || (formData.district ? "Select county" : "Select district first")}
+                {formData.county ||
+                  (formData.district
+                    ? "Select county"
+                    : "Select district first")}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#666" />
             </TouchableOpacity>
@@ -379,7 +402,10 @@ export default function VisionScreen1() {
                   !formData.subCounty && styles.dropdownPlaceholder,
                 ]}
               >
-                {formData.subCounty || (formData.county ? "Select sub-county" : "Select county first")}
+                {formData.subCounty ||
+                  (formData.county
+                    ? "Select sub-county"
+                    : "Select county first")}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#666" />
             </TouchableOpacity>
@@ -404,7 +430,10 @@ export default function VisionScreen1() {
                 ]}
                 onPress={() => {
                   if (!formData.subCounty) {
-                    Alert.alert("Select Sub-County", "Please select a sub-county first");
+                    Alert.alert(
+                      "Select Sub-County",
+                      "Please select a sub-county first",
+                    );
                     return;
                   }
                   setParishSearch("");
@@ -417,7 +446,10 @@ export default function VisionScreen1() {
                     !formData.parish && styles.dropdownPlaceholder,
                   ]}
                 >
-                  {formData.parish || (formData.subCounty ? "Select parish" : "Select sub-county first")}
+                  {formData.parish ||
+                    (formData.subCounty
+                      ? "Select parish"
+                      : "Select sub-county first")}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#666" />
               </TouchableOpacity>
@@ -465,6 +497,7 @@ export default function VisionScreen1() {
                     formData.district === item && styles.modalItemActive,
                   ]}
                   onPress={() => {
+                    setDistrictSearch("");
                     handleInputChange("district", item);
                     setShowDistrictModal(false);
                   }}
@@ -669,7 +702,6 @@ export default function VisionScreen1() {
           </View>
         </View>
       </Modal>
-
     </SafeAreaView>
   );
 }

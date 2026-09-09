@@ -16,7 +16,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { apiService } from "../../services/api";
-import { getDistrictNames } from "../../data/ugandaLocations";
+import {
+  getDistrictNames,
+  normalizeLocationText,
+} from "../../data/ugandaLocations";
 import CHWHeader from "../../components/CHWHeader";
 
 export default function CreateReferralScreen() {
@@ -61,7 +64,8 @@ export default function CreateReferralScreen() {
   const [clientDistrictSearch, setClientDistrictSearch] = useState("");
 
   // Facility district dropdown
-  const [showFacilityDistrictModal, setShowFacilityDistrictModal] = useState(false);
+  const [showFacilityDistrictModal, setShowFacilityDistrictModal] =
+    useState(false);
   const [facilityDistrictSearch, setFacilityDistrictSearch] = useState("");
 
   // Sex picker
@@ -70,17 +74,26 @@ export default function CreateReferralScreen() {
 
   const allDistricts = useMemo(() => getDistrictNames(), []);
   const filteredClientDistricts = useMemo(() => {
-    if (!clientDistrictSearch.trim()) return allDistricts;
-    return allDistricts.filter((d) => d.toLowerCase().includes(clientDistrictSearch.toLowerCase()));
+    const normalizedQuery = normalizeLocationText(clientDistrictSearch);
+    if (!normalizedQuery) return allDistricts;
+    return allDistricts.filter((d) =>
+      normalizeLocationText(d).includes(normalizedQuery),
+    );
   }, [clientDistrictSearch, allDistricts]);
   const filteredFacilityDistricts = useMemo(() => {
-    if (!facilityDistrictSearch.trim()) return allDistricts;
-    return allDistricts.filter((d) => d.toLowerCase().includes(facilityDistrictSearch.toLowerCase()));
+    const normalizedQuery = normalizeLocationText(facilityDistrictSearch);
+    if (!normalizedQuery) return allDistricts;
+    return allDistricts.filter((d) =>
+      normalizeLocationText(d).includes(normalizedQuery),
+    );
   }, [facilityDistrictSearch, allDistricts]);
 
   const handleSubmit = async () => {
     if (!formData.clientName || !formData.reason) {
-      Alert.alert("Error", "Please fill in client name and reason for referral");
+      Alert.alert(
+        "Error",
+        "Please fill in client name and reason for referral",
+      );
       return;
     }
 
@@ -120,7 +133,7 @@ export default function CreateReferralScreen() {
                 }
               },
             },
-          ]
+          ],
         );
       } else {
         Alert.alert("Error", result.error || "Failed to create referral");
@@ -147,7 +160,7 @@ export default function CreateReferralScreen() {
               navigation.reset({ index: 0, routes: [{ name: "AppTabs" }] });
             },
           },
-        ]
+        ],
       );
     } else {
       navigation.goBack();
@@ -157,7 +170,7 @@ export default function CreateReferralScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
-      
+
       <CHWHeader />
 
       <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled">
@@ -169,9 +182,8 @@ export default function CreateReferralScreen() {
             {fromScreening ? "Referral from Screening" : "Create Referral"}
           </Text>
         </View>
-        
-        <View style={styles.form}>
 
+        <View style={styles.form}>
           {/* Pre-filled banner when from screening */}
           {fromScreening && (
             <View style={styles.warningBanner}>
@@ -179,7 +191,8 @@ export default function CreateReferralScreen() {
               <View style={{ flex: 1, marginLeft: 10 }}>
                 <Text style={styles.warningTitle}>Referral Required</Text>
                 <Text style={styles.warningText}>
-                  Client details are pre-filled from the screening. Add the referral facility details below.
+                  Client details are pre-filled from the screening. Add the
+                  referral facility details below.
                 </Text>
               </View>
             </View>
@@ -194,7 +207,9 @@ export default function CreateReferralScreen() {
             <TextInput
               style={[styles.input, fromScreening && styles.readOnlyInput]}
               value={formData.clientName}
-              onChangeText={(text) => setFormData({ ...formData, clientName: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, clientName: text })
+              }
               placeholder="Enter client name"
               placeholderTextColor="#9CA3AF"
               editable={!fromScreening}
@@ -207,7 +222,9 @@ export default function CreateReferralScreen() {
             <TextInput
               style={[styles.input, fromScreening && styles.readOnlyInput]}
               value={formData.clientAge}
-              onChangeText={(text) => setFormData({ ...formData, clientAge: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, clientAge: text })
+              }
               placeholder="Enter age"
               placeholderTextColor="#9CA3AF"
               keyboardType="numeric"
@@ -229,7 +246,13 @@ export default function CreateReferralScreen() {
                 style={styles.dropdownButton}
                 onPress={() => setShowSexModal(true)}
               >
-                <Text style={formData.clientSex ? styles.dropdownButtonText : styles.dropdownPlaceholderText}>
+                <Text
+                  style={
+                    formData.clientSex
+                      ? styles.dropdownButtonText
+                      : styles.dropdownPlaceholderText
+                  }
+                >
                   {formData.clientSex || "Select sex"}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#666" />
@@ -249,9 +272,18 @@ export default function CreateReferralScreen() {
             ) : (
               <TouchableOpacity
                 style={styles.dropdownButton}
-                onPress={() => { setClientDistrictSearch(""); setShowClientDistrictModal(true); }}
+                onPress={() => {
+                  setClientDistrictSearch("");
+                  setShowClientDistrictModal(true);
+                }}
               >
-                <Text style={formData.clientDistrict ? styles.dropdownButtonText : styles.dropdownPlaceholderText}>
+                <Text
+                  style={
+                    formData.clientDistrict
+                      ? styles.dropdownButtonText
+                      : styles.dropdownPlaceholderText
+                  }
+                >
                   {formData.clientDistrict || "Select district"}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#666" />
@@ -265,7 +297,9 @@ export default function CreateReferralScreen() {
             <TextInput
               style={[styles.input, fromScreening && styles.readOnlyInput]}
               value={formData.clientPhone}
-              onChangeText={(text) => setFormData({ ...formData, clientPhone: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, clientPhone: text })
+              }
               placeholder="0700000000"
               placeholderTextColor="#9CA3AF"
               keyboardType="phone-pad"
@@ -279,9 +313,15 @@ export default function CreateReferralScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Reason *</Text>
             <TextInput
-              style={[styles.input, styles.textArea, fromScreening && styles.readOnlyInput]}
+              style={[
+                styles.input,
+                styles.textArea,
+                fromScreening && styles.readOnlyInput,
+              ]}
               value={formData.reason}
-              onChangeText={(text) => setFormData({ ...formData, reason: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, reason: text })
+              }
               placeholder="Describe the reason for referral"
               placeholderTextColor="#9CA3AF"
               multiline
@@ -299,7 +339,9 @@ export default function CreateReferralScreen() {
             <TextInput
               style={styles.input}
               value={formData.facilityName}
-              onChangeText={(text) => setFormData({ ...formData, facilityName: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, facilityName: text })
+              }
               placeholder="e.g., Luweero Hospital Eye Clinic"
               placeholderTextColor="#9CA3AF"
             />
@@ -310,9 +352,18 @@ export default function CreateReferralScreen() {
             <Text style={styles.label}>Facility District</Text>
             <TouchableOpacity
               style={styles.dropdownButton}
-              onPress={() => { setFacilityDistrictSearch(""); setShowFacilityDistrictModal(true); }}
+              onPress={() => {
+                setFacilityDistrictSearch("");
+                setShowFacilityDistrictModal(true);
+              }}
             >
-              <Text style={formData.facilityDistrict ? styles.dropdownButtonText : styles.dropdownPlaceholderText}>
+              <Text
+                style={
+                  formData.facilityDistrict
+                    ? styles.dropdownButtonText
+                    : styles.dropdownPlaceholderText
+                }
+              >
                 {formData.facilityDistrict || "Select district"}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#666" />
@@ -325,22 +376,46 @@ export default function CreateReferralScreen() {
             <View style={styles.urgencyRow}>
               {[
                 { value: "low", label: "Low", color: "#6B7280", bg: "#F3F4F6" },
-                { value: "normal", label: "Medium", color: "#D97706", bg: "#FEF3C7" },
-                { value: "high", label: "High", color: "#DC2626", bg: "#FEE2E2" },
-                { value: "urgent", label: "Urgent", color: "#FFFFFF", bg: "#DC2626" },
+                {
+                  value: "normal",
+                  label: "Medium",
+                  color: "#D97706",
+                  bg: "#FEF3C7",
+                },
+                {
+                  value: "high",
+                  label: "High",
+                  color: "#DC2626",
+                  bg: "#FEE2E2",
+                },
+                {
+                  value: "urgent",
+                  label: "Urgent",
+                  color: "#FFFFFF",
+                  bg: "#DC2626",
+                },
               ].map((opt) => (
                 <TouchableOpacity
                   key={opt.value}
                   style={[
                     styles.urgencyButton,
-                    formData.urgency === opt.value && { backgroundColor: opt.bg, borderColor: opt.value === "urgent" ? "#DC2626" : opt.color },
+                    formData.urgency === opt.value && {
+                      backgroundColor: opt.bg,
+                      borderColor:
+                        opt.value === "urgent" ? "#DC2626" : opt.color,
+                    },
                   ]}
-                  onPress={() => setFormData({ ...formData, urgency: opt.value })}
+                  onPress={() =>
+                    setFormData({ ...formData, urgency: opt.value })
+                  }
                 >
                   <Text
                     style={[
                       styles.urgencyText,
-                      formData.urgency === opt.value && { color: opt.color, fontWeight: "700" },
+                      formData.urgency === opt.value && {
+                        color: opt.color,
+                        fontWeight: "700",
+                      },
                     ]}
                   >
                     {opt.label}
@@ -371,11 +446,19 @@ export default function CreateReferralScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+              style={[
+                styles.submitButton,
+                loading && styles.submitButtonDisabled,
+              ]}
               onPress={handleSubmit}
               disabled={loading}
             >
-              <Ionicons name="send" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <Ionicons
+                name="send"
+                size={18}
+                color="#FFFFFF"
+                style={{ marginRight: 6 }}
+              />
               <Text style={styles.submitButtonText}>
                 {loading ? "Creating..." : "Create Referral"}
               </Text>
@@ -386,17 +469,36 @@ export default function CreateReferralScreen() {
 
       {/* Sex Selection Modal */}
       <Modal visible={showSexModal} animationType="fade" transparent>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowSexModal(false)}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowSexModal(false)}
+        >
           <View style={styles.modalContentSmall}>
             <Text style={styles.modalTitle}>Select Sex</Text>
             {sexOptions.map((opt) => (
               <TouchableOpacity
                 key={opt}
-                style={[styles.modalItem, formData.clientSex === opt && styles.modalItemActive]}
-                onPress={() => { setFormData({ ...formData, clientSex: opt }); setShowSexModal(false); }}
+                style={[
+                  styles.modalItem,
+                  formData.clientSex === opt && styles.modalItemActive,
+                ]}
+                onPress={() => {
+                  setFormData({ ...formData, clientSex: opt });
+                  setShowSexModal(false);
+                }}
               >
-                <Text style={[styles.modalItemText, formData.clientSex === opt && styles.modalItemTextActive]}>{opt}</Text>
-                {formData.clientSex === opt && <Ionicons name="checkmark" size={20} color="#2E7D32" />}
+                <Text
+                  style={[
+                    styles.modalItemText,
+                    formData.clientSex === opt && styles.modalItemTextActive,
+                  ]}
+                >
+                  {opt}
+                </Text>
+                {formData.clientSex === opt && (
+                  <Ionicons name="checkmark" size={20} color="#2E7D32" />
+                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -404,64 +506,127 @@ export default function CreateReferralScreen() {
       </Modal>
 
       {/* Client District Modal */}
-      <Modal visible={showClientDistrictModal} animationType="slide" transparent>
+      <Modal
+        visible={showClientDistrictModal}
+        animationType="slide"
+        transparent
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Client District</Text>
-              <TouchableOpacity onPress={() => setShowClientDistrictModal(false)}>
+              <TouchableOpacity
+                onPress={() => setShowClientDistrictModal(false)}
+              >
                 <Ionicons name="close" size={24} color="#374151" />
               </TouchableOpacity>
             </View>
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={20} color="#999" />
-              <TextInput style={styles.searchInput} placeholder="Search district..." value={clientDistrictSearch} onChangeText={setClientDistrictSearch} placeholderTextColor="#999" autoFocus />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search district..."
+                value={clientDistrictSearch}
+                onChangeText={setClientDistrictSearch}
+                placeholderTextColor="#999"
+                autoFocus
+              />
             </View>
             <FlatList
               data={filteredClientDistricts}
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.modalItem, formData.clientDistrict === item && styles.modalItemActive]}
-                  onPress={() => { setFormData({ ...formData, clientDistrict: item }); setShowClientDistrictModal(false); }}
+                  style={[
+                    styles.modalItem,
+                    formData.clientDistrict === item && styles.modalItemActive,
+                  ]}
+                  onPress={() => {
+                    setFormData({ ...formData, clientDistrict: item });
+                    setShowClientDistrictModal(false);
+                  }}
                 >
-                  <Text style={[styles.modalItemText, formData.clientDistrict === item && styles.modalItemTextActive]}>{item}</Text>
-                  {formData.clientDistrict === item && <Ionicons name="checkmark" size={20} color="#2E7D32" />}
+                  <Text
+                    style={[
+                      styles.modalItemText,
+                      formData.clientDistrict === item &&
+                        styles.modalItemTextActive,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {formData.clientDistrict === item && (
+                    <Ionicons name="checkmark" size={20} color="#2E7D32" />
+                  )}
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={styles.emptyText}>No districts found</Text>}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No districts found</Text>
+              }
             />
           </View>
         </View>
       </Modal>
 
       {/* Facility District Modal */}
-      <Modal visible={showFacilityDistrictModal} animationType="slide" transparent>
+      <Modal
+        visible={showFacilityDistrictModal}
+        animationType="slide"
+        transparent
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Facility District</Text>
-              <TouchableOpacity onPress={() => setShowFacilityDistrictModal(false)}>
+              <TouchableOpacity
+                onPress={() => setShowFacilityDistrictModal(false)}
+              >
                 <Ionicons name="close" size={24} color="#374151" />
               </TouchableOpacity>
             </View>
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={20} color="#999" />
-              <TextInput style={styles.searchInput} placeholder="Search district..." value={facilityDistrictSearch} onChangeText={setFacilityDistrictSearch} placeholderTextColor="#999" autoFocus />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search district..."
+                value={facilityDistrictSearch}
+                onChangeText={setFacilityDistrictSearch}
+                placeholderTextColor="#999"
+                autoFocus
+              />
             </View>
             <FlatList
               data={filteredFacilityDistricts}
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.modalItem, formData.facilityDistrict === item && styles.modalItemActive]}
-                  onPress={() => { setFormData({ ...formData, facilityDistrict: item }); setShowFacilityDistrictModal(false); }}
+                  style={[
+                    styles.modalItem,
+                    formData.facilityDistrict === item &&
+                      styles.modalItemActive,
+                  ]}
+                  onPress={() => {
+                    setFormData({ ...formData, facilityDistrict: item });
+                    setShowFacilityDistrictModal(false);
+                  }}
                 >
-                  <Text style={[styles.modalItemText, formData.facilityDistrict === item && styles.modalItemTextActive]}>{item}</Text>
-                  {formData.facilityDistrict === item && <Ionicons name="checkmark" size={20} color="#2E7D32" />}
+                  <Text
+                    style={[
+                      styles.modalItemText,
+                      formData.facilityDistrict === item &&
+                        styles.modalItemTextActive,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {formData.facilityDistrict === item && (
+                    <Ionicons name="checkmark" size={20} color="#2E7D32" />
+                  )}
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={styles.emptyText}>No districts found</Text>}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No districts found</Text>
+              }
             />
           </View>
         </View>

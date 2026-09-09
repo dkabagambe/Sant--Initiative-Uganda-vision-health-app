@@ -16,7 +16,13 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { getDistrictNames, getCountiesForDistrict, getSubCountiesForCounty, getParishesForSubCounty } from "../../data/ugandaLocations";
+import {
+  getDistrictNames,
+  getCountiesForDistrict,
+  getSubCountiesForCounty,
+  getParishesForSubCounty,
+  normalizeLocationText,
+} from "../../data/ugandaLocations";
 
 // Define navigation types
 type RootStackParamList = {
@@ -26,7 +32,10 @@ type RootStackParamList = {
 };
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
-type VSLAStep2RouteProp = RouteProp<RootStackParamList, "VSLARegistrationStep2">;
+type VSLAStep2RouteProp = RouteProp<
+  RootStackParamList,
+  "VSLARegistrationStep2"
+>;
 
 // Progress Bar Component - Updated for Figma design
 const ProgressBar = ({
@@ -120,34 +129,46 @@ const VSLARegistrationStep2 = () => {
 
   const allDistricts = useMemo(() => getDistrictNames(), []);
   const filteredDistricts = useMemo(() => {
-    if (!districtSearch.trim()) return allDistricts;
-    return allDistricts.filter((d) => d.toLowerCase().includes(districtSearch.toLowerCase()));
+    const normalizedQuery = normalizeLocationText(districtSearch);
+    if (!normalizedQuery) return allDistricts;
+    return allDistricts.filter((d) =>
+      normalizeLocationText(d).includes(normalizedQuery),
+    );
   }, [districtSearch, allDistricts]);
   const countiesForDistrict = useMemo(
     () => (district ? getCountiesForDistrict(district) : []),
-    [district]
+    [district],
   );
   const filteredCounties = useMemo(() => {
-    if (!countySearch.trim()) return countiesForDistrict;
-    return countiesForDistrict.filter((c) => c.toLowerCase().includes(countySearch.toLowerCase()));
+    const normalizedQuery = normalizeLocationText(countySearch);
+    if (!normalizedQuery) return countiesForDistrict;
+    return countiesForDistrict.filter((c) =>
+      normalizeLocationText(c).includes(normalizedQuery),
+    );
   }, [countySearch, countiesForDistrict]);
 
   const subCountiesForCounty = useMemo(
     () => (county ? getSubCountiesForCounty(county) : []),
-    [county]
+    [county],
   );
   const filteredSubCounties = useMemo(() => {
-    if (!subCountySearch.trim()) return subCountiesForCounty;
-    return subCountiesForCounty.filter((sc) => sc.toLowerCase().includes(subCountySearch.toLowerCase()));
+    const normalizedQuery = normalizeLocationText(subCountySearch);
+    if (!normalizedQuery) return subCountiesForCounty;
+    return subCountiesForCounty.filter((sc) =>
+      normalizeLocationText(sc).includes(normalizedQuery),
+    );
   }, [subCountySearch, subCountiesForCounty]);
 
   const parishesForSubCounty = useMemo(
     () => (subcounty ? getParishesForSubCounty(subcounty) : []),
-    [subcounty]
+    [subcounty],
   );
   const filteredParishes = useMemo(() => {
-    if (!parishSearch.trim()) return parishesForSubCounty;
-    return parishesForSubCounty.filter((p) => p.toLowerCase().includes(parishSearch.toLowerCase()));
+    const normalizedQuery = normalizeLocationText(parishSearch);
+    if (!normalizedQuery) return parishesForSubCounty;
+    return parishesForSubCounty.filter((p) =>
+      normalizeLocationText(p).includes(normalizedQuery),
+    );
   }, [parishSearch, parishesForSubCounty]);
   const [parish, setParish] = useState("");
   const [village, setVillage] = useState("");
@@ -160,11 +181,17 @@ const VSLARegistrationStep2 = () => {
   const validateForm = () => {
     // Validate required fields
     if (!chairperson.name || !chairperson.phone || !chairperson.nationalId) {
-      Alert.alert("Missing Information", "Please fill in all Chairperson details");
+      Alert.alert(
+        "Missing Information",
+        "Please fill in all Chairperson details",
+      );
       return false;
     }
     if (!primaryContact) {
-      Alert.alert("Missing Information", "Primary contact phone number is required");
+      Alert.alert(
+        "Missing Information",
+        "Primary contact phone number is required",
+      );
       return false;
     }
     if (!district) {
@@ -220,31 +247,34 @@ const VSLARegistrationStep2 = () => {
     setPerson: any,
     showNationalId = false,
   ) => {
-    console.log(`renderPersonSection: ${title}, showNationalId: ${showNationalId}, person:`, person);
+    console.log(
+      `renderPersonSection: ${title}, showNationalId: ${showNationalId}, person:`,
+      person,
+    );
     return (
-    <View style={styles.personSection}>
-      <Text style={styles.personTitle}>{title}</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Full Name"
-        value={person.name}
-        onChangeText={(text) => setPerson({ ...person, name: text })}
-      />
-      {renderPhoneInput(
-        person.phone,
-        (text) => setPerson({ ...person, phone: text }),
-        "700 123 456",
-      )}
-      {showNationalId && (
+      <View style={styles.personSection}>
+        <Text style={styles.personTitle}>{title}</Text>
         <TextInput
           style={styles.input}
-          placeholder="National ID"
-          value={person.nationalId}
-          onChangeText={(text) => setPerson({ ...person, nationalId: text })}
+          placeholder="Full Name"
+          value={person.name}
+          onChangeText={(text) => setPerson({ ...person, name: text })}
         />
-      )}
-    </View>
-  );
+        {renderPhoneInput(
+          person.phone,
+          (text) => setPerson({ ...person, phone: text }),
+          "700 123 456",
+        )}
+        {showNationalId && (
+          <TextInput
+            style={styles.input}
+            placeholder="National ID"
+            value={person.nationalId}
+            onChangeText={(text) => setPerson({ ...person, nationalId: text })}
+          />
+        )}
+      </View>
+    );
   };
 
   return (
@@ -323,9 +353,16 @@ const VSLARegistrationStep2 = () => {
             <Text style={styles.label}>District *</Text>
             <TouchableOpacity
               style={styles.dropdownButton}
-              onPress={() => { setDistrictSearch(""); setShowDistrictModal(true); }}
+              onPress={() => {
+                setDistrictSearch("");
+                setShowDistrictModal(true);
+              }}
             >
-              <Text style={district ? styles.dropdownText : styles.dropdownPlaceholder}>
+              <Text
+                style={
+                  district ? styles.dropdownText : styles.dropdownPlaceholder
+                }
+              >
                 {district || "Select District"}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#666" />
@@ -335,14 +372,21 @@ const VSLARegistrationStep2 = () => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>County/Municipality</Text>
             <TouchableOpacity
-              style={[styles.dropdownButton, !district && { backgroundColor: "#F3F4F6" }]}
+              style={[
+                styles.dropdownButton,
+                !district && { backgroundColor: "#F3F4F6" },
+              ]}
               onPress={() => {
                 if (!district) return;
                 setCountySearch("");
                 setShowCountyModal(true);
               }}
             >
-              <Text style={county ? styles.dropdownText : styles.dropdownPlaceholder}>
+              <Text
+                style={
+                  county ? styles.dropdownText : styles.dropdownPlaceholder
+                }
+              >
                 {county || "e.g., Luweero County"}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#666" />
@@ -352,14 +396,21 @@ const VSLARegistrationStep2 = () => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Sub-county/Division</Text>
             <TouchableOpacity
-              style={[styles.dropdownButton, !county && { backgroundColor: "#F3F4F6" }]}
+              style={[
+                styles.dropdownButton,
+                !county && { backgroundColor: "#F3F4F6" },
+              ]}
               onPress={() => {
                 if (!county) return;
                 setSubCountySearch("");
                 setShowSubCountyModal(true);
               }}
             >
-              <Text style={subcounty ? styles.dropdownText : styles.dropdownPlaceholder}>
+              <Text
+                style={
+                  subcounty ? styles.dropdownText : styles.dropdownPlaceholder
+                }
+              >
                 {subcounty || "e.g., Wobulenzi Sub-County"}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#666" />
@@ -377,14 +428,21 @@ const VSLARegistrationStep2 = () => {
               />
             ) : (
               <TouchableOpacity
-                style={[styles.dropdownButton, !subcounty && { backgroundColor: "#F3F4F6" }]}
+                style={[
+                  styles.dropdownButton,
+                  !subcounty && { backgroundColor: "#F3F4F6" },
+                ]}
                 onPress={() => {
                   if (!subcounty) return;
                   setParishSearch("");
                   setShowParishModal(true);
                 }}
               >
-                <Text style={parish ? styles.dropdownText : styles.dropdownPlaceholder}>
+                <Text
+                  style={
+                    parish ? styles.dropdownText : styles.dropdownPlaceholder
+                  }
+                >
                   {parish || "e.g., Bombo Parish"}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#666" />
@@ -447,21 +505,48 @@ const VSLARegistrationStep2 = () => {
             </View>
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={20} color="#999" />
-              <TextInput style={styles.searchInput} placeholder="Search district..." value={districtSearch} onChangeText={setDistrictSearch} placeholderTextColor="#999" autoFocus />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search district..."
+                value={districtSearch}
+                onChangeText={setDistrictSearch}
+                placeholderTextColor="#999"
+                autoFocus
+              />
             </View>
             <FlatList
               data={filteredDistricts}
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.modalItem, district === item && styles.modalItemActive]}
-                  onPress={() => { setDistrict(item); setCounty(""); setSubcounty(""); setParish(""); setShowDistrictModal(false); }}
+                  style={[
+                    styles.modalItem,
+                    district === item && styles.modalItemActive,
+                  ]}
+                  onPress={() => {
+                    setDistrict(item);
+                    setCounty("");
+                    setSubcounty("");
+                    setParish("");
+                    setShowDistrictModal(false);
+                  }}
                 >
-                  <Text style={[styles.modalItemText, district === item && styles.modalItemTextActive]}>{item}</Text>
-                  {district === item && <Ionicons name="checkmark" size={20} color="#FF9800" />}
+                  <Text
+                    style={[
+                      styles.modalItemText,
+                      district === item && styles.modalItemTextActive,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {district === item && (
+                    <Ionicons name="checkmark" size={20} color="#FF9800" />
+                  )}
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={styles.emptyText}>No districts found</Text>}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No districts found</Text>
+              }
             />
           </View>
         </View>
@@ -480,7 +565,14 @@ const VSLARegistrationStep2 = () => {
             {countiesForDistrict.length > 5 && (
               <View style={styles.searchContainer}>
                 <Ionicons name="search" size={20} color="#999" />
-                <TextInput style={styles.searchInput} placeholder="Search county..." value={countySearch} onChangeText={setCountySearch} placeholderTextColor="#999" autoFocus />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search county..."
+                  value={countySearch}
+                  onChangeText={setCountySearch}
+                  placeholderTextColor="#999"
+                  autoFocus
+                />
               </View>
             )}
             <FlatList
@@ -488,14 +580,33 @@ const VSLARegistrationStep2 = () => {
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.modalItem, county === item && styles.modalItemActive]}
-                  onPress={() => { setCounty(item); setSubcounty(""); setParish(""); setShowCountyModal(false); }}
+                  style={[
+                    styles.modalItem,
+                    county === item && styles.modalItemActive,
+                  ]}
+                  onPress={() => {
+                    setCounty(item);
+                    setSubcounty("");
+                    setParish("");
+                    setShowCountyModal(false);
+                  }}
                 >
-                  <Text style={[styles.modalItemText, county === item && styles.modalItemTextActive]}>{item}</Text>
-                  {county === item && <Ionicons name="checkmark" size={20} color="#FF9800" />}
+                  <Text
+                    style={[
+                      styles.modalItemText,
+                      county === item && styles.modalItemTextActive,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {county === item && (
+                    <Ionicons name="checkmark" size={20} color="#FF9800" />
+                  )}
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={styles.emptyText}>No counties found</Text>}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No counties found</Text>
+              }
             />
           </View>
         </View>
@@ -514,7 +625,14 @@ const VSLARegistrationStep2 = () => {
             {subCountiesForCounty.length > 5 && (
               <View style={styles.searchContainer}>
                 <Ionicons name="search" size={20} color="#999" />
-                <TextInput style={styles.searchInput} placeholder="Search sub-county..." value={subCountySearch} onChangeText={setSubCountySearch} placeholderTextColor="#999" autoFocus />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search sub-county..."
+                  value={subCountySearch}
+                  onChangeText={setSubCountySearch}
+                  placeholderTextColor="#999"
+                  autoFocus
+                />
               </View>
             )}
             <FlatList
@@ -522,14 +640,32 @@ const VSLARegistrationStep2 = () => {
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.modalItem, subcounty === item && styles.modalItemActive]}
-                  onPress={() => { setSubcounty(item); setParish(""); setShowSubCountyModal(false); }}
+                  style={[
+                    styles.modalItem,
+                    subcounty === item && styles.modalItemActive,
+                  ]}
+                  onPress={() => {
+                    setSubcounty(item);
+                    setParish("");
+                    setShowSubCountyModal(false);
+                  }}
                 >
-                  <Text style={[styles.modalItemText, subcounty === item && styles.modalItemTextActive]}>{item}</Text>
-                  {subcounty === item && <Ionicons name="checkmark" size={20} color="#FF9800" />}
+                  <Text
+                    style={[
+                      styles.modalItemText,
+                      subcounty === item && styles.modalItemTextActive,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {subcounty === item && (
+                    <Ionicons name="checkmark" size={20} color="#FF9800" />
+                  )}
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={styles.emptyText}>No sub-counties found</Text>}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No sub-counties found</Text>
+              }
             />
           </View>
         </View>
@@ -548,7 +684,14 @@ const VSLARegistrationStep2 = () => {
             {parishesForSubCounty.length > 5 && (
               <View style={styles.searchContainer}>
                 <Ionicons name="search" size={20} color="#999" />
-                <TextInput style={styles.searchInput} placeholder="Search parish..." value={parishSearch} onChangeText={setParishSearch} placeholderTextColor="#999" autoFocus />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search parish..."
+                  value={parishSearch}
+                  onChangeText={setParishSearch}
+                  placeholderTextColor="#999"
+                  autoFocus
+                />
               </View>
             )}
             <FlatList
@@ -556,14 +699,31 @@ const VSLARegistrationStep2 = () => {
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.modalItem, parish === item && styles.modalItemActive]}
-                  onPress={() => { setParish(item); setShowParishModal(false); }}
+                  style={[
+                    styles.modalItem,
+                    parish === item && styles.modalItemActive,
+                  ]}
+                  onPress={() => {
+                    setParish(item);
+                    setShowParishModal(false);
+                  }}
                 >
-                  <Text style={[styles.modalItemText, parish === item && styles.modalItemTextActive]}>{item}</Text>
-                  {parish === item && <Ionicons name="checkmark" size={20} color="#FF9800" />}
+                  <Text
+                    style={[
+                      styles.modalItemText,
+                      parish === item && styles.modalItemTextActive,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {parish === item && (
+                    <Ionicons name="checkmark" size={20} color="#FF9800" />
+                  )}
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={styles.emptyText}>No parishes found</Text>}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No parishes found</Text>
+              }
             />
           </View>
         </View>
@@ -655,7 +815,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     marginBottom: 32,
-    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 16 : 70,
+    paddingTop:
+      Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 16 : 70,
   },
   backButton: {
     padding: 8,

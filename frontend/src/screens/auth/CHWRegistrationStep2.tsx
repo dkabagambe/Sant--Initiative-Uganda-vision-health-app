@@ -16,7 +16,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
-import { getDistrictNames, getCountiesForDistrict, getSubCountiesForCounty, getParishesForSubCounty } from "../../data/ugandaLocations";
+import {
+  getDistrictNames,
+  getCountiesForDistrict,
+  getSubCountiesForCounty,
+  getParishesForSubCounty,
+  normalizeLocationText,
+} from "../../data/ugandaLocations";
 
 type RootStackParamList = {
   Login: undefined;
@@ -66,35 +72,48 @@ export default function CHWRegistrationStep2() {
 
   const allDistricts = useMemo(() => getDistrictNames(), []);
   const filteredDistricts = useMemo(() => {
-    if (!districtSearch.trim()) return allDistricts;
-    return allDistricts.filter((d) => d.toLowerCase().includes(districtSearch.toLowerCase()));
+    const normalizedQuery = normalizeLocationText(districtSearch);
+    if (!normalizedQuery) return allDistricts;
+    return allDistricts.filter((d) =>
+      normalizeLocationText(d).includes(normalizedQuery),
+    );
   }, [districtSearch, allDistricts]);
 
   const countiesForDistrict = useMemo(
     () => (formData.district ? getCountiesForDistrict(formData.district) : []),
-    [formData.district]
+    [formData.district],
   );
   const filteredCounties = useMemo(() => {
-    if (!countySearch.trim()) return countiesForDistrict;
-    return countiesForDistrict.filter((c) => c.toLowerCase().includes(countySearch.toLowerCase()));
+    const normalizedQuery = normalizeLocationText(countySearch);
+    if (!normalizedQuery) return countiesForDistrict;
+    return countiesForDistrict.filter((c) =>
+      normalizeLocationText(c).includes(normalizedQuery),
+    );
   }, [countySearch, countiesForDistrict]);
 
   const subCountiesForCounty = useMemo(
     () => (formData.county ? getSubCountiesForCounty(formData.county) : []),
-    [formData.county]
+    [formData.county],
   );
   const filteredSubCounties = useMemo(() => {
-    if (!subCountySearch.trim()) return subCountiesForCounty;
-    return subCountiesForCounty.filter((sc) => sc.toLowerCase().includes(subCountySearch.toLowerCase()));
+    const normalizedQuery = normalizeLocationText(subCountySearch);
+    if (!normalizedQuery) return subCountiesForCounty;
+    return subCountiesForCounty.filter((sc) =>
+      normalizeLocationText(sc).includes(normalizedQuery),
+    );
   }, [subCountySearch, subCountiesForCounty]);
 
   const parishesForSubCounty = useMemo(
-    () => (formData.subCounty ? getParishesForSubCounty(formData.subCounty) : []),
-    [formData.subCounty]
+    () =>
+      formData.subCounty ? getParishesForSubCounty(formData.subCounty) : [],
+    [formData.subCounty],
   );
   const filteredParishes = useMemo(() => {
-    if (!parishSearch.trim()) return parishesForSubCounty;
-    return parishesForSubCounty.filter((p) => p.toLowerCase().includes(parishSearch.toLowerCase()));
+    const normalizedQuery = normalizeLocationText(parishSearch);
+    if (!normalizedQuery) return parishesForSubCounty;
+    return parishesForSubCounty.filter((p) =>
+      normalizeLocationText(p).includes(normalizedQuery),
+    );
   }, [parishSearch, parishesForSubCounty]);
 
   const handleBackPress = () => {
@@ -107,9 +126,9 @@ export default function CHWRegistrationStep2() {
 
   const handleNextPress = () => {
     if (isFormValid()) {
-      navigation.navigate("CHWRegistrationStep3", { 
-        step1Data, 
-        step2Data: formData 
+      navigation.navigate("CHWRegistrationStep3", {
+        step1Data,
+        step2Data: formData,
       });
     }
   };
@@ -118,9 +137,15 @@ export default function CHWRegistrationStep2() {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
-      ...(field === "district" && value !== prev.district ? { county: "", subCounty: "", parish: "" } : {}),
-      ...(field === "county" && value !== prev.county ? { subCounty: "", parish: "" } : {}),
-      ...(field === "subCounty" && value !== prev.subCounty ? { parish: "" } : {}),
+      ...(field === "district" && value !== prev.district
+        ? { county: "", subCounty: "", parish: "" }
+        : {}),
+      ...(field === "county" && value !== prev.county
+        ? { subCounty: "", parish: "" }
+        : {}),
+      ...(field === "subCounty" && value !== prev.subCounty
+        ? { parish: "" }
+        : {}),
     }));
   };
 
@@ -229,7 +254,10 @@ export default function CHWRegistrationStep2() {
         {/* County/Municipality Dropdown */}
         <Text style={styles.label}>County/Municipality</Text>
         <TouchableOpacity
-          style={[styles.dropdownContainer, !formData.district && { backgroundColor: "#F3F4F6" }]}
+          style={[
+            styles.dropdownContainer,
+            !formData.district && { backgroundColor: "#F3F4F6" },
+          ]}
           onPress={() => {
             if (!formData.district) return;
             setCountySearch("");
@@ -237,9 +265,12 @@ export default function CHWRegistrationStep2() {
           }}
         >
           <Text
-            style={formData.county ? styles.dropdownText : styles.dropdownPlaceholder}
+            style={
+              formData.county ? styles.dropdownText : styles.dropdownPlaceholder
+            }
           >
-            {formData.county || (formData.district ? "Select County" : "Select district first")}
+            {formData.county ||
+              (formData.district ? "Select County" : "Select district first")}
           </Text>
           <Ionicons name="chevron-down" size={20} color="#666" />
         </TouchableOpacity>
@@ -247,15 +278,25 @@ export default function CHWRegistrationStep2() {
         {/* Sub-county/Division */}
         <Text style={styles.label}>Sub-county/Division</Text>
         <TouchableOpacity
-          style={[styles.dropdownContainer, !formData.county && { backgroundColor: "#F3F4F6" }]}
+          style={[
+            styles.dropdownContainer,
+            !formData.county && { backgroundColor: "#F3F4F6" },
+          ]}
           onPress={() => {
             if (!formData.county) return;
             setSubCountySearch("");
             setSubCountyModalVisible(true);
           }}
         >
-          <Text style={formData.subCounty ? styles.dropdownText : styles.dropdownPlaceholder}>
-            {formData.subCounty || (formData.county ? "Select Sub-county" : "Select county first")}
+          <Text
+            style={
+              formData.subCounty
+                ? styles.dropdownText
+                : styles.dropdownPlaceholder
+            }
+          >
+            {formData.subCounty ||
+              (formData.county ? "Select Sub-county" : "Select county first")}
           </Text>
           <Ionicons name="chevron-down" size={20} color="#666" />
         </TouchableOpacity>
@@ -273,15 +314,27 @@ export default function CHWRegistrationStep2() {
           </View>
         ) : (
           <TouchableOpacity
-            style={[styles.dropdownContainer, !formData.subCounty && { backgroundColor: "#F3F4F6" }]}
+            style={[
+              styles.dropdownContainer,
+              !formData.subCounty && { backgroundColor: "#F3F4F6" },
+            ]}
             onPress={() => {
               if (!formData.subCounty) return;
               setParishSearch("");
               setParishModalVisible(true);
             }}
           >
-            <Text style={formData.parish ? styles.dropdownText : styles.dropdownPlaceholder}>
-              {formData.parish || (formData.subCounty ? "Select Parish" : "Select sub-county first")}
+            <Text
+              style={
+                formData.parish
+                  ? styles.dropdownText
+                  : styles.dropdownPlaceholder
+              }
+            >
+              {formData.parish ||
+                (formData.subCounty
+                  ? "Select Parish"
+                  : "Select sub-county first")}
             </Text>
             <Ionicons name="chevron-down" size={20} color="#666" />
           </TouchableOpacity>
@@ -330,12 +383,20 @@ export default function CHWRegistrationStep2() {
       </ScrollView>
 
       {/* District Selection Modal */}
-      <Modal animationType="slide" transparent visible={districtModalVisible} onRequestClose={() => setDistrictModalVisible(false)}>
+      <Modal
+        animationType="slide"
+        transparent
+        visible={districtModalVisible}
+        onRequestClose={() => setDistrictModalVisible(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select District</Text>
-              <TouchableOpacity onPress={() => setDistrictModalVisible(false)} style={styles.modalCloseButton}>
+              <TouchableOpacity
+                onPress={() => setDistrictModalVisible(false)}
+                style={styles.modalCloseButton}
+              >
                 <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
@@ -356,26 +417,59 @@ export default function CHWRegistrationStep2() {
               style={styles.districtList}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.districtItem, formData.district === item && styles.districtItemSelected]}
-                  onPress={() => { updateFormData("district", item); setDistrictModalVisible(false); }}
+                  style={[
+                    styles.districtItem,
+                    formData.district === item && styles.districtItemSelected,
+                  ]}
+                  onPress={() => {
+                    setDistrictSearch("");
+                    updateFormData("district", item);
+                    setDistrictModalVisible(false);
+                  }}
                 >
-                  <Text style={[styles.districtItemText, formData.district === item && styles.districtItemTextSelected]}>{item}</Text>
-                  {formData.district === item && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                  <Text
+                    style={[
+                      styles.districtItemText,
+                      formData.district === item &&
+                        styles.districtItemTextSelected,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {formData.district === item && (
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={colors.primary}
+                    />
+                  )}
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={styles.emptyText}>No districts found</Text>}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No districts found</Text>
+              }
             />
           </View>
         </View>
       </Modal>
 
       {/* County Selection Modal */}
-      <Modal animationType="slide" transparent visible={countyModalVisible} onRequestClose={() => setCountyModalVisible(false)}>
+      <Modal
+        animationType="slide"
+        transparent
+        visible={countyModalVisible}
+        onRequestClose={() => setCountyModalVisible(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Counties in {formData.district}</Text>
-              <TouchableOpacity onPress={() => setCountyModalVisible(false)} style={styles.modalCloseButton}>
+              <Text style={styles.modalTitle}>
+                Counties in {formData.district}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setCountyModalVisible(false)}
+                style={styles.modalCloseButton}
+              >
                 <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
@@ -398,33 +492,72 @@ export default function CHWRegistrationStep2() {
               style={styles.districtList}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.districtItem, formData.county === item && styles.districtItemSelected]}
-                  onPress={() => { updateFormData("county", item); setCountyModalVisible(false); }}
+                  style={[
+                    styles.districtItem,
+                    formData.county === item && styles.districtItemSelected,
+                  ]}
+                  onPress={() => {
+                    updateFormData("county", item);
+                    setCountyModalVisible(false);
+                  }}
                 >
-                  <Text style={[styles.districtItemText, formData.county === item && styles.districtItemTextSelected]}>{item}</Text>
-                  {formData.county === item && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                  <Text
+                    style={[
+                      styles.districtItemText,
+                      formData.county === item &&
+                        styles.districtItemTextSelected,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {formData.county === item && (
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={colors.primary}
+                    />
+                  )}
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={styles.emptyText}>No counties found</Text>}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No counties found</Text>
+              }
             />
           </View>
         </View>
       </Modal>
 
       {/* Sub-County Selection Modal */}
-      <Modal animationType="slide" transparent visible={subCountyModalVisible} onRequestClose={() => setSubCountyModalVisible(false)}>
+      <Modal
+        animationType="slide"
+        transparent
+        visible={subCountyModalVisible}
+        onRequestClose={() => setSubCountyModalVisible(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Sub-Counties in {formData.county}</Text>
-              <TouchableOpacity onPress={() => setSubCountyModalVisible(false)} style={styles.modalCloseButton}>
+              <Text style={styles.modalTitle}>
+                Sub-Counties in {formData.county}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setSubCountyModalVisible(false)}
+                style={styles.modalCloseButton}
+              >
                 <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
             {subCountiesForCounty.length > 5 && (
               <View style={styles.searchContainer}>
                 <Ionicons name="search" size={20} color="#999" />
-                <TextInput style={styles.searchInput} placeholder="Search sub-county..." value={subCountySearch} onChangeText={setSubCountySearch} placeholderTextColor="#999" autoFocus />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search sub-county..."
+                  value={subCountySearch}
+                  onChangeText={setSubCountySearch}
+                  placeholderTextColor="#999"
+                  autoFocus
+                />
               </View>
             )}
             <FlatList
@@ -433,33 +566,72 @@ export default function CHWRegistrationStep2() {
               style={styles.districtList}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.districtItem, formData.subCounty === item && styles.districtItemSelected]}
-                  onPress={() => { updateFormData("subCounty", item); setSubCountyModalVisible(false); }}
+                  style={[
+                    styles.districtItem,
+                    formData.subCounty === item && styles.districtItemSelected,
+                  ]}
+                  onPress={() => {
+                    updateFormData("subCounty", item);
+                    setSubCountyModalVisible(false);
+                  }}
                 >
-                  <Text style={[styles.districtItemText, formData.subCounty === item && styles.districtItemTextSelected]}>{item}</Text>
-                  {formData.subCounty === item && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                  <Text
+                    style={[
+                      styles.districtItemText,
+                      formData.subCounty === item &&
+                        styles.districtItemTextSelected,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {formData.subCounty === item && (
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={colors.primary}
+                    />
+                  )}
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={styles.emptyText}>No sub-counties found</Text>}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No sub-counties found</Text>
+              }
             />
           </View>
         </View>
       </Modal>
 
       {/* Parish Selection Modal */}
-      <Modal animationType="slide" transparent visible={parishModalVisible} onRequestClose={() => setParishModalVisible(false)}>
+      <Modal
+        animationType="slide"
+        transparent
+        visible={parishModalVisible}
+        onRequestClose={() => setParishModalVisible(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Parishes in {formData.subCounty}</Text>
-              <TouchableOpacity onPress={() => setParishModalVisible(false)} style={styles.modalCloseButton}>
+              <Text style={styles.modalTitle}>
+                Parishes in {formData.subCounty}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setParishModalVisible(false)}
+                style={styles.modalCloseButton}
+              >
                 <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
             {parishesForSubCounty.length > 5 && (
               <View style={styles.searchContainer}>
                 <Ionicons name="search" size={20} color="#999" />
-                <TextInput style={styles.searchInput} placeholder="Search parish..." value={parishSearch} onChangeText={setParishSearch} placeholderTextColor="#999" autoFocus />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search parish..."
+                  value={parishSearch}
+                  onChangeText={setParishSearch}
+                  placeholderTextColor="#999"
+                  autoFocus
+                />
               </View>
             )}
             <FlatList
@@ -468,14 +640,36 @@ export default function CHWRegistrationStep2() {
               style={styles.districtList}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.districtItem, formData.parish === item && styles.districtItemSelected]}
-                  onPress={() => { updateFormData("parish", item); setParishModalVisible(false); }}
+                  style={[
+                    styles.districtItem,
+                    formData.parish === item && styles.districtItemSelected,
+                  ]}
+                  onPress={() => {
+                    updateFormData("parish", item);
+                    setParishModalVisible(false);
+                  }}
                 >
-                  <Text style={[styles.districtItemText, formData.parish === item && styles.districtItemTextSelected]}>{item}</Text>
-                  {formData.parish === item && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+                  <Text
+                    style={[
+                      styles.districtItemText,
+                      formData.parish === item &&
+                        styles.districtItemTextSelected,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                  {formData.parish === item && (
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={colors.primary}
+                    />
+                  )}
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={styles.emptyText}>No parishes found</Text>}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No parishes found</Text>
+              }
             />
           </View>
         </View>
@@ -494,7 +688,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 8 : 50,
+    paddingTop:
+      Platform.OS === "android" ? (StatusBar.currentHeight || 24) + 8 : 50,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#F0F0F0",

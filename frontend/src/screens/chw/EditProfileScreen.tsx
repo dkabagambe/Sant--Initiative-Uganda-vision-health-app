@@ -16,7 +16,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiService, User } from "../../services/api";
-import { getDistrictNames, getCountiesForDistrict, getSubCountiesForCounty, getParishesForSubCounty } from "../../data/ugandaLocations";
+import {
+  getDistrictNames,
+  getCountiesForDistrict,
+  getSubCountiesForCounty,
+  getParishesForSubCounty,
+  normalizeLocationText,
+} from "../../data/ugandaLocations";
 import CHWHeader from "../../components/CHWHeader";
 
 export default function EditProfileScreen() {
@@ -46,45 +52,50 @@ export default function EditProfileScreen() {
   const allDistricts = useMemo(() => getDistrictNames(), []);
 
   const filteredDistricts = useMemo(() => {
-    if (!districtSearch.trim()) return allDistricts;
+    const normalizedQuery = normalizeLocationText(districtSearch);
+    if (!normalizedQuery) return allDistricts;
     return allDistricts.filter((d) =>
-      d.toLowerCase().includes(districtSearch.toLowerCase())
+      normalizeLocationText(d).includes(normalizedQuery),
     );
   }, [districtSearch, allDistricts]);
 
   const countiesForDistrict = useMemo(
     () => (formData.district ? getCountiesForDistrict(formData.district) : []),
-    [formData.district]
+    [formData.district],
   );
 
   const filteredCounties = useMemo(() => {
-    if (!countySearch.trim()) return countiesForDistrict;
+    const normalizedQuery = normalizeLocationText(countySearch);
+    if (!normalizedQuery) return countiesForDistrict;
     return countiesForDistrict.filter((c) =>
-      c.toLowerCase().includes(countySearch.toLowerCase())
+      normalizeLocationText(c).includes(normalizedQuery),
     );
   }, [countySearch, countiesForDistrict]);
 
   const subCountiesForCounty = useMemo(
     () => (formData.county ? getSubCountiesForCounty(formData.county) : []),
-    [formData.county]
+    [formData.county],
   );
 
   const filteredSubCounties = useMemo(() => {
-    if (!subCountySearch.trim()) return subCountiesForCounty;
+    const normalizedQuery = normalizeLocationText(subCountySearch);
+    if (!normalizedQuery) return subCountiesForCounty;
     return subCountiesForCounty.filter((sc) =>
-      sc.toLowerCase().includes(subCountySearch.toLowerCase())
+      normalizeLocationText(sc).includes(normalizedQuery),
     );
   }, [subCountySearch, subCountiesForCounty]);
 
   const parishesForSubCounty = useMemo(
-    () => (formData.subCounty ? getParishesForSubCounty(formData.subCounty) : []),
-    [formData.subCounty]
+    () =>
+      formData.subCounty ? getParishesForSubCounty(formData.subCounty) : [],
+    [formData.subCounty],
   );
 
   const filteredParishes = useMemo(() => {
-    if (!parishSearch.trim()) return parishesForSubCounty;
+    const normalizedQuery = normalizeLocationText(parishSearch);
+    if (!normalizedQuery) return parishesForSubCounty;
     return parishesForSubCounty.filter((p) =>
-      p.toLowerCase().includes(parishSearch.toLowerCase())
+      normalizeLocationText(p).includes(normalizedQuery),
     );
   }, [parishSearch, parishesForSubCounty]);
 
@@ -120,9 +131,15 @@ export default function EditProfileScreen() {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
-      ...(field === "district" && value !== prev.district ? { county: "", subCounty: "", parish: "" } : {}),
-      ...(field === "county" && value !== prev.county ? { subCounty: "", parish: "" } : {}),
-      ...(field === "subCounty" && value !== prev.subCounty ? { parish: "" } : {}),
+      ...(field === "district" && value !== prev.district
+        ? { county: "", subCounty: "", parish: "" }
+        : {}),
+      ...(field === "county" && value !== prev.county
+        ? { subCounty: "", parish: "" }
+        : {}),
+      ...(field === "subCounty" && value !== prev.subCounty
+        ? { parish: "" }
+        : {}),
     }));
   };
 
@@ -151,14 +168,14 @@ export default function EditProfileScreen() {
         sub_county: formData.subCounty,
         parish: formData.parish,
       });
-      
+
       if (result.success) {
         // Update local storage
         const user = await apiService.getCurrentUser();
         if (!user) {
           throw new Error("User not found");
         }
-        
+
         const updatedUser: User = {
           id: user.id,
           full_name: formData.fullName,
@@ -168,12 +185,12 @@ export default function EditProfileScreen() {
           role: user.role,
           profile_image: user.profile_image,
         };
-        
+
         const token = await AsyncStorage.getItem("authToken");
         if (token) await apiService.storeUserData(updatedUser, token);
-        
+
         Alert.alert("Success", "Profile updated successfully", [
-          { text: "OK", onPress: () => navigation.goBack() }
+          { text: "OK", onPress: () => navigation.goBack() },
         ]);
       }
     } catch (error) {
@@ -187,7 +204,11 @@ export default function EditProfileScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color="#1E40AF" style={{ marginTop: 100 }} />
+        <ActivityIndicator
+          size="large"
+          color="#1E40AF"
+          style={{ marginTop: 100 }}
+        />
       </SafeAreaView>
     );
   }
@@ -229,33 +250,63 @@ export default function EditProfileScreen() {
               editable={false}
               placeholderTextColor="#9CA3AF"
             />
-            <Text style={styles.helperText}>Phone number cannot be changed</Text>
+            <Text style={styles.helperText}>
+              Phone number cannot be changed
+            </Text>
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Sex *</Text>
             <View style={styles.sexRow}>
               <TouchableOpacity
-                style={[styles.sexButton, formData.sex === "Male" && styles.sexButtonActive]}
+                style={[
+                  styles.sexButton,
+                  formData.sex === "Male" && styles.sexButtonActive,
+                ]}
                 onPress={() => handleInputChange("sex", "Male")}
               >
                 <Ionicons
-                  name={formData.sex === "Male" ? "radio-button-on" : "radio-button-off"}
+                  name={
+                    formData.sex === "Male"
+                      ? "radio-button-on"
+                      : "radio-button-off"
+                  }
                   size={20}
                   color={formData.sex === "Male" ? "#1E40AF" : "#9CA3AF"}
                 />
-                <Text style={[styles.sexText, formData.sex === "Male" && styles.sexTextActive]}>Male</Text>
+                <Text
+                  style={[
+                    styles.sexText,
+                    formData.sex === "Male" && styles.sexTextActive,
+                  ]}
+                >
+                  Male
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.sexButton, formData.sex === "Female" && styles.sexButtonActive]}
+                style={[
+                  styles.sexButton,
+                  formData.sex === "Female" && styles.sexButtonActive,
+                ]}
                 onPress={() => handleInputChange("sex", "Female")}
               >
                 <Ionicons
-                  name={formData.sex === "Female" ? "radio-button-on" : "radio-button-off"}
+                  name={
+                    formData.sex === "Female"
+                      ? "radio-button-on"
+                      : "radio-button-off"
+                  }
                   size={20}
                   color={formData.sex === "Female" ? "#1E40AF" : "#9CA3AF"}
                 />
-                <Text style={[styles.sexText, formData.sex === "Female" && styles.sexTextActive]}>Female</Text>
+                <Text
+                  style={[
+                    styles.sexText,
+                    formData.sex === "Female" && styles.sexTextActive,
+                  ]}
+                >
+                  Female
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -266,7 +317,12 @@ export default function EditProfileScreen() {
               style={styles.dropdownButton}
               onPress={() => setShowDistrictModal(true)}
             >
-              <Text style={[styles.dropdownText, !formData.district && styles.placeholderText]}>
+              <Text
+                style={[
+                  styles.dropdownText,
+                  !formData.district && styles.placeholderText,
+                ]}
+              >
                 {formData.district || "Select district"}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#6B7280" />
@@ -276,11 +332,19 @@ export default function EditProfileScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>County</Text>
             <TouchableOpacity
-              style={[styles.dropdownButton, !formData.district && styles.disabledInput]}
+              style={[
+                styles.dropdownButton,
+                !formData.district && styles.disabledInput,
+              ]}
               onPress={() => formData.district && setShowCountyModal(true)}
               disabled={!formData.district}
             >
-              <Text style={[styles.dropdownText, !formData.county && styles.placeholderText]}>
+              <Text
+                style={[
+                  styles.dropdownText,
+                  !formData.county && styles.placeholderText,
+                ]}
+              >
                 {formData.county || "Select county"}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#6B7280" />
@@ -290,11 +354,19 @@ export default function EditProfileScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Sub-County</Text>
             <TouchableOpacity
-              style={[styles.dropdownButton, !formData.county && styles.disabledInput]}
+              style={[
+                styles.dropdownButton,
+                !formData.county && styles.disabledInput,
+              ]}
               onPress={() => formData.county && setShowSubCountyModal(true)}
               disabled={!formData.county}
             >
-              <Text style={[styles.dropdownText, !formData.subCounty && styles.placeholderText]}>
+              <Text
+                style={[
+                  styles.dropdownText,
+                  !formData.subCounty && styles.placeholderText,
+                ]}
+              >
                 {formData.subCounty || "Select sub-county"}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#6B7280" />
@@ -304,11 +376,19 @@ export default function EditProfileScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Parish/Village</Text>
             <TouchableOpacity
-              style={[styles.dropdownButton, !formData.subCounty && styles.disabledInput]}
+              style={[
+                styles.dropdownButton,
+                !formData.subCounty && styles.disabledInput,
+              ]}
               onPress={() => formData.subCounty && setShowParishModal(true)}
               disabled={!formData.subCounty}
             >
-              <Text style={[styles.dropdownText, !formData.parish && styles.placeholderText]}>
+              <Text
+                style={[
+                  styles.dropdownText,
+                  !formData.parish && styles.placeholderText,
+                ]}
+              >
                 {formData.parish || "Select parish/village"}
               </Text>
               <Ionicons name="chevron-down" size={20} color="#6B7280" />
