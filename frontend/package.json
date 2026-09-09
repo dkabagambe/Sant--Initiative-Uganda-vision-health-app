@@ -21,6 +21,7 @@
     "expo": "^57.0.21",
     "expo-document-picker": "~57.0.1",
     "expo-file-system": "~57.0.6",
+    "expo-font": "~57.0.3",
     "expo-image-picker": "~57.0.16",
     "expo-linear-gradient": "~57.0.1",
     "expo-print": "~57.0.1",
@@ -30,6 +31,7 @@
     "prop-types": "^15.8.1",
     "react": "19.2.3",
     "react-native": "0.86.3",
+    "react-native-gesture-handler": "~2.32.0",
     "react-native-paper": "^5.14.5",
     "react-native-picker-select": "^9.3.1",
     "react-native-safe-area-context": "~5.7.0",
@@ -39,7 +41,6 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.4",
-    "@types/react-native": "^0.72.8",
     "expo-module-scripts": "^55.0.2",
     "typescript": "~6.0.3"
   },

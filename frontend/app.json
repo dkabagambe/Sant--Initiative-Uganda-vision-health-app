@@ -6,12 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true
     },
@@ -20,8 +14,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
       "package": "com.sante.initiative",
       "versionCode": 4,
       "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"]
@@ -34,6 +26,6 @@
         "projectId": "e54a32b7-8b48-4cfd-8f85-0043c56373b9"
       }
     },
-    "plugins": ["expo-sharing", "expo-status-bar"]
+    "plugins": ["expo-sharing", "expo-status-bar", "expo-font"]
   }
 }
