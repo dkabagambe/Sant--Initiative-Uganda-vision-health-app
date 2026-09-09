@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -70,12 +71,31 @@ export default function MyClientsScreen() {
     setRefreshing(false);
   };
 
+  const handleViewClient = (client: Client) => {
+    Alert.alert(
+      client.full_name,
+      `${client.phone_number || "No phone on file"}\n${client.village ? `Village: ${client.village}` : "Village: Not recorded"}${client.last_screening_date ? `\nLast screened: ${new Date(client.last_screening_date).toLocaleDateString()}` : ""}`,
+      [{ text: "Close" }],
+    );
+  };
+
+  const handleAddNewClient = () => {
+    navigation.navigate("StartScreening" as never);
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <View
+          style={[
+            styles.container,
+            { justifyContent: "center", alignItems: "center" },
+          ]}
+        >
           <ActivityIndicator size="large" color="#2E7D32" />
-          <Text style={{ marginTop: 12, color: "#666" }}>Loading clients...</Text>
+          <Text style={{ marginTop: 12, color: "#666" }}>
+            Loading clients...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -84,14 +104,17 @@ export default function MyClientsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <CHWHeader />
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.scrollView}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#2E7D32"]} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#2E7D32"]}
+          />
         }
       >
-        
         <View style={styles.content}>
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
@@ -99,7 +122,9 @@ export default function MyClientsScreen() {
               <Text style={styles.statLabel}>Total Clients</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{clients.filter(c => (c.age || 0) >= 50).length}</Text>
+              <Text style={styles.statNumber}>
+                {clients.filter((c) => (c.age || 0) >= 50).length}
+              </Text>
               <Text style={styles.statLabel}>Age 50+</Text>
             </View>
           </View>
@@ -109,40 +134,63 @@ export default function MyClientsScreen() {
 
             <View style={styles.clientList}>
               {clients.map((client, index) => (
-                <View key={client.id || `client-${index}`} style={styles.clientItem}>
+                <View
+                  key={client.id || `client-${index}`}
+                  style={styles.clientItem}
+                >
                   <View style={styles.clientAvatar}>
                     <Ionicons name="person-circle" size={40} color="#6B7280" />
                   </View>
                   <View style={styles.clientInfo}>
                     <Text style={styles.clientName}>{client.full_name}</Text>
                     <Text style={styles.clientDetails}>
-                      {client.age ? `Age ${client.age}` : ""}{client.age && client.village ? " • " : ""}{client.village || ""}
+                      {client.age ? `Age ${client.age}` : ""}
+                      {client.age && client.village ? " • " : ""}
+                      {client.village || ""}
                     </Text>
                     <Text style={styles.clientDetails}>
                       {client.phone_number || "No phone"}
-                      {(client.total_screenings || 0) > 0 ? ` • ${client.total_screenings} screening(s)` : ""}
+                      {(client.total_screenings || 0) > 0
+                        ? ` • ${client.total_screenings} screening(s)`
+                        : ""}
                     </Text>
                     {client.last_screening_date && (
                       <Text style={styles.clientStatus}>
-                        Last screened: {new Date(client.last_screening_date).toLocaleDateString()}
+                        Last screened:{" "}
+                        {new Date(
+                          client.last_screening_date,
+                        ).toLocaleDateString()}
                       </Text>
                     )}
                   </View>
-                  <TouchableOpacity style={styles.viewButton}>
+                  <TouchableOpacity
+                    style={styles.viewButton}
+                    onPress={() => handleViewClient(client)}
+                  >
                     <Text style={styles.viewButtonText}>View</Text>
                   </TouchableOpacity>
                 </View>
               ))}
 
               {clients.length === 0 && (
-                <Text style={{ textAlign: "center", color: "#666", marginTop: 20, paddingVertical: 16 }}>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: "#666",
+                    marginTop: 20,
+                    paddingVertical: 16,
+                  }}
+                >
                   No clients screened yet. Start a screening to add clients.
                 </Text>
               )}
             </View>
           </View>
 
-          <TouchableOpacity style={styles.addButton}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handleAddNewClient}
+          >
             <Ionicons name="add-circle" size={24} color="#FFFFFF" />
             <Text style={styles.addButtonText}>Add New Client</Text>
           </TouchableOpacity>

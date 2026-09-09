@@ -13,7 +13,10 @@ import {
   Modal,
   TextInput,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -53,15 +56,16 @@ interface ReferralItem {
 export default function ReferralsScreen() {
   const navigation = useNavigation<ReferralsScreenNavigationProp>();
   const insets = useSafeAreaInsets();
-  const [activeTab, setActiveTab] = useState<"pending" | "completed">(
+  const [activeTab, setActiveTab] = useState<"all" | "pending" | "completed">(
     "pending",
   );
   const [referrals, setReferrals] = useState<ReferralItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userData, setUserData] = useState<any>(null);
-  const [selectedReferral, setSelectedReferral] =
-    useState<ReferralItem | null>(null);
+  const [selectedReferral, setSelectedReferral] = useState<ReferralItem | null>(
+    null,
+  );
   const [detailVisible, setDetailVisible] = useState(false);
   const [editFacilityName, setEditFacilityName] = useState("");
   const [editFacilityLocation, setEditFacilityLocation] = useState("");
@@ -76,7 +80,7 @@ export default function ReferralsScreen() {
   useFocusEffect(
     useCallback(() => {
       loadReferrals();
-    }, [])
+    }, []),
   );
 
   const loadUserData = async () => {
@@ -118,23 +122,36 @@ export default function ReferralsScreen() {
           text: "Mark Complete",
           onPress: async () => {
             try {
-              const result = await apiService.updateReferralStatus(referralId, "completed");
+              const result = await apiService.updateReferralStatus(
+                referralId,
+                "completed",
+              );
               if (result.success) {
                 // Remove from local state immediately
-                setReferrals(prev => prev.map(r => 
-                  r.id === referralId ? { ...r, status: "completed" as const } : r
-                ));
+                setReferrals((prev) =>
+                  prev.map((r) =>
+                    r.id === referralId
+                      ? { ...r, status: "completed" as const }
+                      : r,
+                  ),
+                );
                 Alert.alert("Success", "Referral marked as completed");
               } else {
-                Alert.alert("Error", result.error || "Failed to update referral");
+                Alert.alert(
+                  "Error",
+                  result.error || "Failed to update referral",
+                );
               }
             } catch (error) {
               console.error("Failed to update referral:", error);
-              Alert.alert("Error", "Failed to update referral. Please try again.");
+              Alert.alert(
+                "Error",
+                "Failed to update referral. Please try again.",
+              );
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -171,7 +188,11 @@ export default function ReferralsScreen() {
   const completedReferrals = referrals.filter((r) => r.status === "completed");
 
   const currentReferrals =
-    activeTab === "pending" ? pendingReferrals : completedReferrals;
+    activeTab === "pending"
+      ? pendingReferrals
+      : activeTab === "completed"
+        ? completedReferrals
+        : referrals;
 
   const openReferralDetail = (referral: ReferralItem) => {
     setSelectedReferral(referral);
@@ -223,7 +244,7 @@ export default function ReferralsScreen() {
         {/* Patient Header */}
         <View style={styles.patientHeader}>
           <Text style={styles.patientName}>
-            {referral.client_name || 'Unknown Client'}
+            {referral.client_name || "Unknown Client"}
           </Text>
           <View style={[styles.statusBadge, { backgroundColor: colors.bg }]}>
             <Text style={[styles.statusText, { color: colors.text }]}>
@@ -247,7 +268,8 @@ export default function ReferralsScreen() {
 
         {referral.client_phone ? (
           <Text style={styles.clientPhone}>
-            <Ionicons name="call-outline" size={13} color="#6B7280" /> {referral.client_phone}
+            <Ionicons name="call-outline" size={13} color="#6B7280" />{" "}
+            {referral.client_phone}
           </Text>
         ) : null}
 
@@ -264,7 +286,9 @@ export default function ReferralsScreen() {
           <Text style={styles.detailLabel}>Referred to</Text>
           <Text style={styles.detailValue}>
             {referral.facility_name || "Not specified"}
-            {referral.facility_location ? ` — ${referral.facility_location}` : ""}
+            {referral.facility_location
+              ? ` — ${referral.facility_location}`
+              : ""}
           </Text>
         </View>
 
@@ -285,7 +309,12 @@ export default function ReferralsScreen() {
         {referral.status === "completed" && referral.completed_date ? (
           <View style={styles.detailSection}>
             <Text style={styles.detailLabel}>Completed on</Text>
-            <Text style={[styles.detailValue, { color: "#2E7D32", fontWeight: "600" }]}>
+            <Text
+              style={[
+                styles.detailValue,
+                { color: "#2E7D32", fontWeight: "600" },
+              ]}
+            >
               {new Date(referral.completed_date).toLocaleDateString()}
             </Text>
           </View>
@@ -295,7 +324,9 @@ export default function ReferralsScreen() {
         {referral.status === "pending" && (
           <TouchableOpacity
             style={styles.markCompleteButton}
-            onPress={() => handleMarkComplete(referral.id, referral.client_name)}
+            onPress={() =>
+              handleMarkComplete(referral.id, referral.client_name)
+            }
           >
             <Text style={styles.markCompleteButtonText}>Mark Complete</Text>
           </TouchableOpacity>
@@ -331,7 +362,10 @@ export default function ReferralsScreen() {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 40 + insets.bottom }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: 40 + insets.bottom },
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -342,24 +376,45 @@ export default function ReferralsScreen() {
       >
         {/* Statistics Cards */}
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
+          <TouchableOpacity
+            style={[
+              styles.statCard,
+              activeTab === "pending" && styles.statCardActive,
+            ]}
+            onPress={() => setActiveTab("pending")}
+            activeOpacity={0.8}
+          >
             <Text style={styles.statNumber}>{pendingReferrals.length}</Text>
             <Text style={styles.statLabel}>Pending</Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.statCard}>
+          <TouchableOpacity
+            style={[
+              styles.statCard,
+              activeTab === "completed" && styles.statCardActive,
+            ]}
+            onPress={() => setActiveTab("completed")}
+            activeOpacity={0.8}
+          >
             <Text style={styles.statNumber}>{completedReferrals.length}</Text>
             <Text style={styles.statLabel}>Completed</Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.statCard}>
+          <TouchableOpacity
+            style={[
+              styles.statCard,
+              activeTab === "all" && styles.statCardActive,
+            ]}
+            onPress={() => setActiveTab("all")}
+            activeOpacity={0.8}
+          >
             <Text style={styles.statNumber}>{referrals.length}</Text>
             <Text style={styles.statLabel}>Total</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Create New Referral Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.createReferralButton}
           onPress={handleCreateReferral}
         >
@@ -423,7 +478,9 @@ export default function ReferralsScreen() {
               />
               <Text style={styles.emptyStateTitle}>No referrals found</Text>
               <Text style={styles.emptyStateText}>
-                No {activeTab} referrals
+                {activeTab === "all"
+                  ? "No referrals found"
+                  : `No ${activeTab} referrals`}
               </Text>
             </View>
           ) : (
@@ -434,7 +491,10 @@ export default function ReferralsScreen() {
         </View>
 
         {/* Create New Referral Button */}
-        <TouchableOpacity style={styles.createNewButton} onPress={handleCreateReferral}>
+        <TouchableOpacity
+          style={styles.createNewButton}
+          onPress={handleCreateReferral}
+        >
           <View style={styles.plusIconContainer}>
             <Ionicons name="add" size={24} color="#FFFFFF" />
           </View>
@@ -518,7 +578,8 @@ export default function ReferralsScreen() {
                         <Text
                           style={[
                             styles.urgencyChipText,
-                            editUrgency === level && styles.urgencyChipTextActive,
+                            editUrgency === level &&
+                              styles.urgencyChipTextActive,
                           ]}
                         >
                           {level}
@@ -702,6 +763,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 2,
     borderColor: "#E5E7EB",
+  },
+  statCardActive: {
+    borderColor: "#2563EB",
+    backgroundColor: "#EFF6FF",
   },
   statNumber: {
     fontSize: 32,

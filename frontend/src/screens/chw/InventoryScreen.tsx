@@ -13,7 +13,10 @@ import {
   RefreshControl,
   LayoutChangeEvent,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -78,7 +81,11 @@ const StockItem = ({
   };
 
   return (
-    <TouchableOpacity style={styles.stockItem} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.stockItem}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.stockItemHeader}>
         <Text style={styles.stockPower}>{power}D</Text>
         <View style={styles.stockQuantityContainer}>
@@ -153,11 +160,17 @@ const SaleItem = ({
   );
 };
 
+const formatUGX = (value: number) =>
+  `UGX ${Number(value || 0).toLocaleString()}`;
+
 export default function InventoryScreen() {
   const navigation = useNavigation<InventoryScreenNavigationProp>();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
-  const [sectionY, setSectionY] = useState<{ stockList: number; recentSales: number }>({ stockList: 0, recentSales: 0 });
+  const [sectionY, setSectionY] = useState<{
+    stockList: number;
+    recentSales: number;
+  }>({ stockList: 0, recentSales: 0 });
 
   const [showAddStockModal, setShowAddStockModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -169,7 +182,8 @@ export default function InventoryScreen() {
   const [userData, setUserData] = useState<any>(null);
   const [recentSales, setRecentSales] = useState<any[]>([]);
   const [addStockPower, setAddStockPower] = useState<string | null>(null);
-  const [addStockFrameType, setAddStockFrameType] = useState<string>("standard");
+  const [addStockFrameType, setAddStockFrameType] =
+    useState<string>("standard");
   const [addStockQuantity, setAddStockQuantity] = useState(0);
   const [addStockLoading, setAddStockLoading] = useState(false);
   const [stats, setStats] = useState({
@@ -180,14 +194,18 @@ export default function InventoryScreen() {
     hirePurchase: 0,
   });
 
-  const onLayoutSection = (key: "stockList" | "recentSales") => (e: LayoutChangeEvent) => {
-    const { y } = e.nativeEvent.layout;
-    setSectionY((prev) => ({ ...prev, [key]: y }));
-  };
+  const onLayoutSection =
+    (key: "stockList" | "recentSales") => (e: LayoutChangeEvent) => {
+      const { y } = e.nativeEvent.layout;
+      setSectionY((prev) => ({ ...prev, [key]: y }));
+    };
 
   const handleStatInStock = () => {
     if (sectionY.stockList > 0) {
-      scrollRef.current?.scrollTo({ y: sectionY.stockList - 24, animated: true });
+      scrollRef.current?.scrollTo({
+        y: sectionY.stockList - 24,
+        animated: true,
+      });
     }
   };
 
@@ -196,11 +214,21 @@ export default function InventoryScreen() {
   };
 
   const handleStatLowStock = () => {
-    const low = inventory.filter((p: any) => p.stock_quantity > 0 && p.stock_quantity < 20);
+    const low = inventory.filter(
+      (p: any) => p.stock_quantity > 0 && p.stock_quantity < 20,
+    );
     if (low.length > 0) {
-      scrollRef.current?.scrollTo({ y: sectionY.stockList - 24, animated: true });
+      scrollRef.current?.scrollTo({
+        y: sectionY.stockList - 24,
+        animated: true,
+      });
     } else {
-      Alert.alert("Low Stock", stats.lowStockCount === 0 ? "No low stock items." : "Scroll down to see current stock by power.");
+      Alert.alert(
+        "Low Stock",
+        stats.lowStockCount === 0
+          ? "No low stock items."
+          : "Scroll down to see current stock by power.",
+      );
     }
   };
 
@@ -222,10 +250,10 @@ export default function InventoryScreen() {
   const loadInventory = async () => {
     try {
       setLoading(true);
-      
+
       let products: any[] = [];
       let totalPairs = 0;
-      
+
       try {
         const response = await apiService.getInventorySummary();
         if (response.success && response.data?.products?.length > 0) {
@@ -235,25 +263,29 @@ export default function InventoryScreen() {
       } catch (e) {
         // Silently fall back to products endpoint
       }
-      
+
       if (products.length === 0) {
         try {
           const prodResponse = await apiService.getInventory();
           if (prodResponse.success && prodResponse.data?.length > 0) {
             products = prodResponse.data;
-            totalPairs = products.reduce((sum: number, p: any) => sum + (p.stock_quantity || 0), 0);
+            totalPairs = products.reduce(
+              (sum: number, p: any) => sum + (p.stock_quantity || 0),
+              0,
+            );
           }
         } catch (e) {
           console.error("Failed to load inventory:", e);
         }
       }
-      
+
       setInventory(products);
       setTotals({ total_pairs: totalPairs });
-      
-      const lowStock = products.filter((p: any) => p.stock_quantity < 20).length;
-      setStats(prev => ({ ...prev, lowStockCount: lowStock }));
-      
+
+      const lowStock = products.filter(
+        (p: any) => p.stock_quantity < 20,
+      ).length;
+      setStats((prev) => ({ ...prev, lowStockCount: lowStock }));
     } catch (error) {
       console.error("Failed to load inventory:", error);
       Alert.alert("Error", "Failed to load inventory");
@@ -269,31 +301,44 @@ export default function InventoryScreen() {
       if (screenings.success && screenings.data) {
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
-        
-        const weekSales = screenings.data.filter((s: any) => 
-          s.needs_glasses && new Date(s.created_at) >= weekAgo
+
+        const weekSales = screenings.data.filter(
+          (s: any) => s.needs_glasses && new Date(s.created_at) >= weekAgo,
         );
-        
+
         // Get recent sales (last 4)
         const recent = weekSales.slice(0, 4).map((s: any) => ({
-          clientName: s.client_name || 'Unknown',
-          power: s.recommended_power || 'N/A',
-          frameType: s.selected_frame_type || 'Standard',
+          clientName: s.client_name || "Unknown",
+          power: s.recommended_power || "N/A",
+          frameType: s.selected_frame_type || "Standard",
           amount: `UGX ${(s.glasses_price || 15000).toLocaleString()}`,
           time: getTimeAgo(s.created_at),
         }));
-        
+
         setRecentSales(recent);
-        
+
         // Get payment stats
         const payments = await apiService.getPayments();
         if (payments.success && payments.data) {
-          const completed = payments.data.filter((p: any) => p.status === 'completed');
-          const fullPayments = completed.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
-          const pending = payments.data.filter((p: any) => p.status === 'pending');
-          const hirePurchase = pending.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
-          
-          setStats(prev => ({
+          const completed = payments.data.filter(
+            (p: any) => p.status === "completed",
+          );
+          const fullPayments = completed
+            .filter(
+              (p: any) =>
+                p.payment_type === "full" || p.payment_type === "cash",
+            )
+            .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
+          const hirePurchase = completed
+            .filter(
+              (p: any) =>
+                p.payment_type === "installment" ||
+                p.payment_type === "hire-purchase" ||
+                p.payment_type === "hire_purchase",
+            )
+            .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
+
+          setStats((prev) => ({
             ...prev,
             weekSold: weekSales.length,
             totalRevenue: fullPayments + hirePurchase,
@@ -314,9 +359,11 @@ export default function InventoryScreen() {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffDays > 0) return diffDays === 1 ? 'Yesterday' : `${diffDays} days ago`;
-    if (diffHours > 0) return `Today, ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')} ${date.getHours() >= 12 ? 'PM' : 'AM'}`;
-    return 'Just now';
+    if (diffDays > 0)
+      return diffDays === 1 ? "Yesterday" : `${diffDays} days ago`;
+    if (diffHours > 0)
+      return `Today, ${date.getHours()}:${date.getMinutes().toString().padStart(2, "0")} ${date.getHours() >= 12 ? "PM" : "AM"}`;
+    return "Just now";
   };
 
   const onRefresh = async () => {
@@ -325,7 +372,9 @@ export default function InventoryScreen() {
     setRefreshing(false);
   };
 
-  const getStatus = (quantity: number): "normal" | "low" | "critical" | undefined => {
+  const getStatus = (
+    quantity: number,
+  ): "normal" | "low" | "critical" | undefined => {
     if (quantity === 0) return "critical";
     if (quantity < 5) return "critical";
     if (quantity < 10) return "low";
@@ -362,18 +411,27 @@ export default function InventoryScreen() {
 
     setAddStockLoading(true);
     try {
-      const product = editingProduct || inventory.find((item: any) => item.power === addStockPower);
+      const product =
+        editingProduct ||
+        inventory.find((item: any) => item.power === addStockPower);
       if (!product) {
-        Alert.alert("Error", `No product found for power ${addStockPower}. Please contact admin.`);
+        Alert.alert(
+          "Error",
+          `No product found for power ${addStockPower}. Please contact admin.`,
+        );
         setAddStockLoading(false);
         return;
       }
 
-      const result = await apiService.addStock(product.id, addStockQuantity, addStockFrameType);
+      const result = await apiService.addStock(
+        product.id,
+        addStockQuantity,
+        addStockFrameType,
+      );
       if (result.success) {
         Alert.alert(
           "✅ Stock Updated",
-          `Successfully ${editMode ? 'updated' : 'added'} ${addStockQuantity} pairs of ${addStockPower} (${addStockFrameType}) glasses.`
+          `Successfully ${editMode ? "updated" : "added"} ${addStockQuantity} pairs of ${addStockPower} (${addStockFrameType}) glasses.`,
         );
         setShowAddStockModal(false);
         await loadInventory();
@@ -391,16 +449,24 @@ export default function InventoryScreen() {
   const handleRequestReplenishment = async () => {
     try {
       // Get low stock items
-      const lowStockItems = inventory.filter(item => item.stock_quantity < 20);
-      
+      const lowStockItems = inventory.filter(
+        (item) => item.stock_quantity < 20,
+      );
+
       if (lowStockItems.length === 0) {
-        Alert.alert("No Low Stock", "All items are well stocked. No replenishment needed.");
+        Alert.alert(
+          "No Low Stock",
+          "All items are well stocked. No replenishment needed.",
+        );
         return;
       }
 
-      const itemsList = lowStockItems.map(item => 
-        `${item.power}: ${item.stock_quantity} pairs (need ${20 - item.stock_quantity} more)`
-      ).join('\n');
+      const itemsList = lowStockItems
+        .map(
+          (item) =>
+            `${item.power}: ${item.stock_quantity} pairs (need ${20 - item.stock_quantity} more)`,
+        )
+        .join("\n");
 
       Alert.alert(
         "Request Stock Replenishment",
@@ -414,11 +480,11 @@ export default function InventoryScreen() {
               // await apiService.requestStockReplenishment({ items: lowStockItems });
               Alert.alert(
                 "✅ Request Submitted",
-                "Your stock replenishment request has been submitted successfully. You will be notified when stock arrives."
+                "Your stock replenishment request has been submitted successfully. You will be notified when stock arrives.",
               );
-            }
-          }
-        ]
+            },
+          },
+        ],
       );
     } catch (error) {
       Alert.alert("Error", "Failed to submit request. Please try again.");
@@ -449,16 +515,23 @@ export default function InventoryScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: 100 + insets.bottom },
+        ]}
       >
         {/* Title Section */}
         <View style={styles.titleSection}>
           <Text style={styles.screenTitle}>Inventory & Sales</Text>
-          <Text style={styles.totalStock}>Total stock: {totals.total_pairs || 0} pairs</Text>
+          <Text style={styles.totalStock}>
+            Total stock: {totals.total_pairs || 0} pairs
+          </Text>
         </View>
 
         {/* Low Stock Alert - Dynamic */}
-        {inventory.filter((p: any) => p.stock_quantity > 0 && p.stock_quantity < 20).length > 0 && (
+        {inventory.filter(
+          (p: any) => p.stock_quantity > 0 && p.stock_quantity < 20,
+        ).length > 0 && (
           <View style={styles.alertCard}>
             <View style={styles.alertHeader}>
               <Ionicons name="alert-circle" size={24} color="#DC2626" />
@@ -466,8 +539,13 @@ export default function InventoryScreen() {
             </View>
             <Text style={styles.alertText}>
               {inventory
-                .filter((p: any) => p.stock_quantity > 0 && p.stock_quantity < 20)
-                .map((p: any) => `${p.power}D has only ${p.stock_quantity} pairs left`)
+                .filter(
+                  (p: any) => p.stock_quantity > 0 && p.stock_quantity < 20,
+                )
+                .map(
+                  (p: any) =>
+                    `${p.power}D has only ${p.stock_quantity} pairs left`,
+                )
                 .join(". ")}
               . Consider reordering.
             </Text>
@@ -476,32 +554,51 @@ export default function InventoryScreen() {
 
         {/* Out of Stock Alert */}
         {inventory.filter((p: any) => p.stock_quantity === 0).length > 0 && (
-          <View style={[styles.alertCard, { backgroundColor: "#FEF2F2", borderColor: "#FCA5A5" }]}>
+          <View
+            style={[
+              styles.alertCard,
+              { backgroundColor: "#FEF2F2", borderColor: "#FCA5A5" },
+            ]}
+          >
             <View style={styles.alertHeader}>
               <Ionicons name="warning" size={24} color="#B91C1C" />
-              <Text style={[styles.alertTitle, { color: "#B91C1C" }]}>Out of stock</Text>
+              <Text style={[styles.alertTitle, { color: "#B91C1C" }]}>
+                Out of stock
+              </Text>
             </View>
             <Text style={styles.alertText}>
               {inventory
                 .filter((p: any) => p.stock_quantity === 0)
                 .map((p: any) => `${p.power}D`)
-                .join(", ")}
-              {" "}— no stock available. Add stock immediately.
+                .join(", ")}{" "}
+              — no stock available. Add stock immediately.
             </Text>
           </View>
         )}
 
         {/* Stats Row - clickable, data from API */}
         <View style={styles.statsRow}>
-          <TouchableOpacity style={styles.statCard} onPress={handleStatInStock} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.statCard}
+            onPress={handleStatInStock}
+            activeOpacity={0.7}
+          >
             <Text style={styles.statNumber}>{totals.total_pairs ?? 0}</Text>
             <Text style={styles.statLabel}>In Stock</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.statCard} onPress={handleStatSoldWeek} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.statCard}
+            onPress={handleStatSoldWeek}
+            activeOpacity={0.7}
+          >
             <Text style={styles.statNumber}>{stats.weekSold ?? 0}</Text>
             <Text style={styles.statLabel}>Sold (Week)</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.statCard} onPress={handleStatLowStock} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.statCard}
+            onPress={handleStatLowStock}
+            activeOpacity={0.7}
+          >
             <Text style={styles.statNumber}>{stats.lowStockCount ?? 0}</Text>
             <Text style={styles.statLabel}>Low Stock</Text>
           </TouchableOpacity>
@@ -519,7 +616,7 @@ export default function InventoryScreen() {
 
           <View style={styles.stockList}>
             {inventory.map((item, index) => (
-              <StockItem 
+              <StockItem
                 key={item.id || index}
                 power={item.power}
                 totalPairs={item.stock_quantity}
@@ -539,7 +636,9 @@ export default function InventoryScreen() {
         <View style={styles.section} onLayout={onLayoutSection("recentSales")}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Sales</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("SalesDetailsScreen")}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("SalesDetailsScreen")}
+            >
               <Text style={styles.viewAllText}>View All</Text>
             </TouchableOpacity>
           </View>
@@ -552,7 +651,9 @@ export default function InventoryScreen() {
             ) : (
               <View style={{ padding: 20, alignItems: "center" }}>
                 <Ionicons name="receipt-outline" size={32} color="#D1D5DB" />
-                <Text style={{ color: "#9CA3AF", marginTop: 8, fontSize: 14 }}>No sales this week</Text>
+                <Text style={{ color: "#9CA3AF", marginTop: 8, fontSize: 14 }}>
+                  No sales this week
+                </Text>
               </View>
             )}
           </View>
@@ -562,16 +663,22 @@ export default function InventoryScreen() {
         <View style={styles.revenueCard}>
           <Text style={styles.revenueTitle}>Revenue Summary</Text>
           <Text style={styles.revenueSubtitle}>Total Sales (This Month)</Text>
-          <Text style={styles.revenueAmount}>UGX {stats.totalRevenue.toLocaleString()}</Text>
+          <Text style={styles.revenueAmount}>
+            {formatUGX(stats.totalRevenue)}
+          </Text>
 
           <View style={styles.revenueBreakdown}>
             <View style={styles.breakdownItem}>
               <Text style={styles.breakdownLabel}>Full Payments</Text>
-              <Text style={styles.breakdownValue}>UGX {stats.fullPayments.toLocaleString()}</Text>
+              <Text style={styles.breakdownValue}>
+                {formatUGX(stats.fullPayments)}
+              </Text>
             </View>
             <View style={styles.breakdownItem}>
               <Text style={styles.breakdownLabel}>Hire-Purchase</Text>
-              <Text style={styles.breakdownValue}>UGX {stats.hirePurchase.toLocaleString()}</Text>
+              <Text style={styles.breakdownValue}>
+                {formatUGX(stats.hirePurchase)}
+              </Text>
             </View>
           </View>
 
@@ -584,11 +691,15 @@ export default function InventoryScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-
       </ScrollView>
 
       {/* Bottom Navigation - safe area aware */}
-      <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <View
+        style={[
+          styles.bottomNav,
+          { paddingBottom: Math.max(insets.bottom, 12) },
+        ]}
+      >
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate("CHWDashboard")}
@@ -600,9 +711,12 @@ export default function InventoryScreen() {
         <TouchableOpacity
           style={styles.navItem}
           onPress={() =>
-            navigation.navigate("Screen" as any, {
-              screen: "VHTScreeningStep1",
-            } as any)
+            navigation.navigate(
+              "Screen" as any,
+              {
+                screen: "VHTScreeningStep1",
+              } as any,
+            )
           }
         >
           <Ionicons name="eye-outline" size={24} color="#6B7280" />
@@ -641,7 +755,9 @@ export default function InventoryScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{editMode ? 'Edit Stock' : 'Add Stock'}</Text>
+              <Text style={styles.modalTitle}>
+                {editMode ? "Edit Stock" : "Add Stock"}
+              </Text>
               <TouchableOpacity onPress={() => setShowAddStockModal(false)}>
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
@@ -649,13 +765,18 @@ export default function InventoryScreen() {
             <ScrollView style={styles.modalBody}>
               {editMode && (
                 <View style={styles.editInfoBox}>
-                  <Ionicons name="information-circle" size={20} color="#1E40AF" />
+                  <Ionicons
+                    name="information-circle"
+                    size={20}
+                    color="#1E40AF"
+                  />
                   <Text style={styles.editInfoText}>
-                    Editing {addStockPower}D glasses. Current stock: {editingProduct?.stock_quantity || 0} pairs
+                    Editing {addStockPower}D glasses. Current stock:{" "}
+                    {editingProduct?.stock_quantity || 0} pairs
                   </Text>
                 </View>
               )}
-              
+
               {/* Power Selection - from database */}
               <Text style={styles.modalLabel}>Select Power *</Text>
               <View style={styles.powerGrid}>
@@ -664,7 +785,8 @@ export default function InventoryScreen() {
                     key={product.id}
                     style={[
                       styles.powerOption,
-                      addStockPower === product.power && styles.powerOptionSelected,
+                      addStockPower === product.power &&
+                        styles.powerOptionSelected,
                     ]}
                     onPress={() => {
                       setAddStockPower(product.power);
@@ -675,13 +797,22 @@ export default function InventoryScreen() {
                     <Text
                       style={[
                         styles.powerOptionText,
-                        addStockPower === product.power && styles.powerOptionTextSelected,
-                        editMode && addStockPower !== product.power && { opacity: 0.4 },
+                        addStockPower === product.power &&
+                          styles.powerOptionTextSelected,
+                        editMode &&
+                          addStockPower !== product.power && { opacity: 0.4 },
                       ]}
                     >
                       {product.power}D
                     </Text>
-                    <Text style={{ fontSize: 11, color: product.stock_quantity === 0 ? "#DC2626" : "#6B7280", marginTop: 2 }}>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color:
+                          product.stock_quantity === 0 ? "#DC2626" : "#6B7280",
+                        marginTop: 2,
+                      }}
+                    >
                       {product.stock_quantity} in stock
                     </Text>
                   </TouchableOpacity>
@@ -696,14 +827,16 @@ export default function InventoryScreen() {
                     key={type}
                     style={[
                       styles.frameTypeOption,
-                      addStockFrameType === type && styles.frameTypeOptionSelected,
+                      addStockFrameType === type &&
+                        styles.frameTypeOptionSelected,
                     ]}
                     onPress={() => setAddStockFrameType(type)}
                   >
                     <Text
                       style={[
                         styles.frameTypeText,
-                        addStockFrameType === type && styles.frameTypeTextSelected,
+                        addStockFrameType === type &&
+                          styles.frameTypeTextSelected,
                       ]}
                     >
                       {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -717,7 +850,9 @@ export default function InventoryScreen() {
               <View style={styles.quantityRow}>
                 <TouchableOpacity
                   style={styles.quantityButton}
-                  onPress={() => setAddStockQuantity(Math.max(0, addStockQuantity - 1))}
+                  onPress={() =>
+                    setAddStockQuantity(Math.max(0, addStockQuantity - 1))
+                  }
                 >
                   <Ionicons name="remove" size={24} color="#1E40AF" />
                 </TouchableOpacity>
@@ -750,13 +885,17 @@ export default function InventoryScreen() {
                   (!addStockPower || addStockQuantity <= 0) && { opacity: 0.5 },
                 ]}
                 onPress={handleSubmitAddStock}
-                disabled={!addStockPower || addStockQuantity <= 0 || addStockLoading}
+                disabled={
+                  !addStockPower || addStockQuantity <= 0 || addStockLoading
+                }
               >
                 {addStockLoading ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
                   <Text style={styles.modalButtonText}>
-                    {editMode ? 'Update Stock' : `Add ${addStockQuantity > 0 ? `${addStockQuantity} Pairs` : 'Stock'}`}
+                    {editMode
+                      ? "Update Stock"
+                      : `Add ${addStockQuantity > 0 ? `${addStockQuantity} Pairs` : "Stock"}`}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -1072,7 +1211,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   revenueAmount: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "700",
     color: "#1E40AF",
     marginBottom: 20,

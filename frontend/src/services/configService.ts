@@ -1,27 +1,27 @@
 // Remote configuration service for dynamic API URL changes
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const CONFIG_KEY = 'app_config';
+const CONFIG_KEY = "app_config";
 
 // Production API (used when __DEV__ is false — release/store builds)
-export const VERCEL_API_URL = 'https://backend-tau-sepia-43.vercel.app/api';
-// Local backend — try multiple connection methods for physical device
-export const LOCAL_API_URL = 'http://192.168.137.123:5000/api';
+export const VERCEL_API_URL = "https://backend-tau-sepia-43.vercel.app/api";
+// Local backend should match the same app backend used in development.
+// Prefer the local machine's API when running the backend locally; otherwise the production API is used.
+export const LOCAL_API_URL = "http://localhost:5000/api";
 
 export interface AppConfig {
   apiBaseUrl: string;
-  environment: 'development' | 'production';
+  environment: "development" | "production";
 }
 
 // Env override: EXPO_PUBLIC_API_URL in .env — physical device: http://YOUR_IP:5000/api
 // Use static property access for Expo to inline the value
-const envApiUrl = typeof process !== 'undefined'
-  ? (process.env.EXPO_PUBLIC_API_URL ?? '')
-  : '';
+const envApiUrl =
+  typeof process !== "undefined" ? (process.env.EXPO_PUBLIC_API_URL ?? "") : "";
 
 const getDefaultConfig = (): AppConfig => ({
   apiBaseUrl: envApiUrl || (__DEV__ ? LOCAL_API_URL : VERCEL_API_URL),
-  environment: __DEV__ ? 'development' : 'production'
+  environment: __DEV__ ? "development" : "production",
 });
 
 export class ConfigService {
@@ -40,7 +40,7 @@ export class ConfigService {
       }
       return base;
     } catch (error) {
-      console.warn('Failed to load config, using default:', error);
+      console.warn("Failed to load config, using default:", error);
       return getDefaultConfig();
     }
   }
@@ -53,7 +53,7 @@ export class ConfigService {
       await AsyncStorage.setItem(CONFIG_KEY, JSON.stringify(config));
       return true;
     } catch (error) {
-      console.error('Failed to update API URL:', error);
+      console.error("Failed to update API URL:", error);
       return false;
     }
   }
@@ -68,7 +68,7 @@ export class ConfigService {
       await AsyncStorage.setItem(CONFIG_KEY, JSON.stringify(config));
       return true;
     } catch (error) {
-      console.error('Failed to reset config:', error);
+      console.error("Failed to reset config:", error);
       return false;
     }
   }

@@ -9,7 +9,12 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { moderateScale, scale, verticalScale, fontSize as responsiveFontSize } from "../../utils/responsive";
+import {
+  moderateScale,
+  scale,
+  verticalScale,
+  fontSize as responsiveFontSize,
+} from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
@@ -21,7 +26,7 @@ export default function ScreeningComplete() {
   const route = useRoute<any>();
   const { resetScreeningData, screeningData } = useScreening();
   const [saving, setSaving] = useState(false);
-  
+
   const glassesDispensed = route.params?.glassesDispensed || false;
   const glassesPower = route.params?.glassesPower || "";
 
@@ -39,15 +44,37 @@ export default function ScreeningComplete() {
   };
 
   const handleRegisterAndSave = async () => {
+    const clientName = screeningData.clientName || "";
+    const clientAge = screeningData.clientAge ?? 0;
+    const clientPhone = screeningData.clientPhone || "";
+    const clientGender = screeningData.clientGender || "";
+
+    const completeData = {
+      ...screeningData,
+      clientName,
+      clientAge,
+      clientPhone,
+      clientGender,
+      district: screeningData.district || "",
+      county: screeningData.county || "",
+      subCounty: screeningData.subCounty || "",
+      parish: screeningData.parish || "",
+      clientVillage: screeningData.clientVillage || "",
+      needsGlasses: Boolean(screeningData.needsGlasses || glassesDispensed),
+      needsReferral: Boolean(screeningData.needsReferral),
+      notes: screeningData.notes || "All vision tests completed.",
+    };
+
     // If glasses were dispensed, go to ClientRegistration for payment/sale flow
-    if (glassesDispensed) {
+    if (glassesDispensed || completeData.needsGlasses) {
       navigation.navigate("ClientRegistration", {
         clientData: {
-          clientName: screeningData.clientName || "",
-          clientAge: screeningData.clientAge || 0,
-          clientPhone: screeningData.clientPhone || "",
-          clientGender: screeningData.clientGender || "",
-          recommendedPower: glassesPower || screeningData.recommendedPower || "",
+          clientName,
+          clientAge,
+          clientPhone,
+          clientGender,
+          recommendedPower:
+            glassesPower || screeningData.recommendedPower || "",
           district: screeningData.district || "",
           county: screeningData.county || "",
           subCounty: screeningData.subCounty || "",
@@ -59,40 +86,35 @@ export default function ScreeningComplete() {
       return;
     }
 
-    // No glasses — save screening record and client directly
     setSaving(true);
     try {
-      const completeData = {
-        ...screeningData,
-        needsGlasses: false,
-        needsReferral: false,
-        notes: screeningData.notes || "All vision tests passed. No glasses needed.",
-      };
-
       let savedSuccessfully = false;
 
       try {
         const result = await apiService.createScreening(completeData);
-        if (result.success) {
+        if (result?.success) {
           savedSuccessfully = true;
         }
       } catch (apiError) {
         console.error("API save failed:", apiError);
-        
-        // Check if we're actually offline before saving offline
+
         const isOffline = await checkNetworkConnectivity();
-        
+
         if (isOffline) {
           console.log("Device is offline, saving to offline queue");
           try {
-            const offlineQueue = await AsyncStorage.getItem("offlineScreenings");
+            const offlineQueue =
+              await AsyncStorage.getItem("offlineScreenings");
             const queue = offlineQueue ? JSON.parse(offlineQueue) : [];
             queue.push({
               ...completeData,
               offlineId: Date.now().toString(),
               timestamp: new Date().toISOString(),
             });
-            await AsyncStorage.setItem("offlineScreenings", JSON.stringify(queue));
+            await AsyncStorage.setItem(
+              "offlineScreenings",
+              JSON.stringify(queue),
+            );
             savedSuccessfully = true;
           } catch (offlineError) {
             console.error("Offline save failed:", offlineError);
@@ -105,7 +127,7 @@ export default function ScreeningComplete() {
       if (savedSuccessfully) {
         Alert.alert(
           "✅ Record Saved",
-          `Screening for ${screeningData.clientName || "client"} has been saved successfully.`,
+          `Screening for ${clientName || "client"} has been saved successfully.`,
           [
             {
               text: "OK",
@@ -117,7 +139,7 @@ export default function ScreeningComplete() {
                 });
               },
             },
-          ]
+          ],
         );
       } else {
         Alert.alert("Error", "Failed to save record. Please try again.");
@@ -153,7 +175,7 @@ export default function ScreeningComplete() {
 
         {/* Subtitle */}
         <Text style={styles.subtitle}>
-          {glassesDispensed 
+          {glassesDispensed
             ? `Reading glasses ${glassesPower} dispensed successfully`
             : "All tests finished successfully"}
         </Text>
@@ -161,12 +183,8 @@ export default function ScreeningComplete() {
         {glassesDispensed && (
           <View style={styles.infoCard}>
             <Ionicons name="glasses" size={32} color="#2E7D32" />
-            <Text style={styles.infoText}>
-              Glasses power: {glassesPower}
-            </Text>
-            <Text style={styles.infoSubtext}>
-              Inventory has been updated
-            </Text>
+            <Text style={styles.infoText}>Glasses power: {glassesPower}</Text>
+            <Text style={styles.infoSubtext}>Inventory has been updated</Text>
           </View>
         )}
 

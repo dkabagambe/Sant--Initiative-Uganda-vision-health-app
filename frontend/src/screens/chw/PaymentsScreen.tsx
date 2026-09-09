@@ -13,7 +13,10 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -74,7 +77,9 @@ export default function PaymentsScreen() {
   const [recordProvider, setRecordProvider] = useState<"mtn" | "airtel">("mtn");
   const [submittingRecord, setSubmittingRecord] = useState(false);
   const [clientSummaryVisible, setClientSummaryVisible] = useState(false);
-  const [selectedClientPayments, setSelectedClientPayments] = useState<any[]>([]);
+  const [selectedClientPayments, setSelectedClientPayments] = useState<any[]>(
+    [],
+  );
   const [selectedClientName, setSelectedClientName] = useState("");
   const [selectedClientPhone, setSelectedClientPhone] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -184,7 +189,10 @@ export default function PaymentsScreen() {
       Alert.alert("Validation", "Client name is required.");
       return;
     }
-    if (!recordClientPhone.trim() || !isValidUgMobile(recordClientPhone.trim())) {
+    if (
+      !recordClientPhone.trim() ||
+      !isValidUgMobile(recordClientPhone.trim())
+    ) {
       Alert.alert(
         "Validation",
         "Enter a valid Uganda mobile number (e.g. 0773445535).",
@@ -278,10 +286,20 @@ export default function PaymentsScreen() {
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
     const matchesProvider =
-      providerFilter === "all" ? true : (p.provider || "").toLowerCase() === providerFilter;
+      providerFilter === "all"
+        ? true
+        : (p.provider || "").toLowerCase() === providerFilter;
     const matchesMethod =
-      methodFilter === "all" ? true : (p.payment_method || "").toLowerCase() === methodFilter;
-    return matchesTab && matchesOverdue && matchesSearch && matchesProvider && matchesMethod;
+      methodFilter === "all"
+        ? true
+        : (p.payment_method || "").toLowerCase() === methodFilter;
+    return (
+      matchesTab &&
+      matchesOverdue &&
+      matchesSearch &&
+      matchesProvider &&
+      matchesMethod
+    );
   });
 
   if (loading) {
@@ -296,19 +314,30 @@ export default function PaymentsScreen() {
   }
 
   const handleMarkAsPaid = async (payment: any) => {
-    setSelectedPayment(payment);
+    setSelectedPayment({
+      ...payment,
+      clientName: payment.client_name || payment.clientName || "Client",
+      phoneNumber: payment.client_phone || payment.phoneNumber || "",
+      amount: payment.amount || 0,
+      dueDate: payment.due_date || payment.dueDate || "",
+      isOverdue: payment.status === "overdue",
+    });
     setModalVisible(true);
   };
 
   const confirmPayment = async () => {
     try {
+      if (!selectedPayment?.id) {
+        throw new Error("Payment record is missing.");
+      }
+
       await apiService.updatePaymentStatus(selectedPayment.id, "completed");
       Alert.alert(
         "Success",
-        `Payment marked as paid for ${selectedPayment?.client_name}`,
+        `Payment marked as paid for ${selectedPayment?.clientName || selectedPayment?.client_name}`,
       );
       setModalVisible(false);
-      loadPayments(); // Reload data
+      await loadPayments();
     } catch (error) {
       Alert.alert("Error", "Failed to update payment");
     }
@@ -384,14 +413,15 @@ export default function PaymentsScreen() {
               {payment.product_name && (
                 <Text style={styles.productInfo}>
                   Product: {payment.product_name}
-                  {payment.product_power ? ` (${payment.product_power})` : ''}
+                  {payment.product_power ? ` (${payment.product_power})` : ""}
                 </Text>
               )}
-              {payment.mobile_money_number && payment.payment_method === 'mobile_money' && (
-                <Text style={styles.productInfo}>
-                  MM: {payment.mobile_money_number}
-                </Text>
-              )}
+              {payment.mobile_money_number &&
+                payment.payment_method === "mobile_money" && (
+                  <Text style={styles.productInfo}>
+                    MM: {payment.mobile_money_number}
+                  </Text>
+                )}
               {payment.transaction_id && (
                 <Text style={styles.productInfo}>
                   TxID: {payment.transaction_id}
@@ -405,8 +435,10 @@ export default function PaymentsScreen() {
             </Text>
             {payment.payment_method && (
               <Text style={styles.paymentMethod}>
-                {payment.payment_method === 'mobile_money' ? 'Mobile Money' : 'Cash'}
-                {payment.payment_type === 'installment' ? ' (Installment)' : ''}
+                {payment.payment_method === "mobile_money"
+                  ? "Mobile Money"
+                  : "Cash"}
+                {payment.payment_type === "installment" ? " (Installment)" : ""}
               </Text>
             )}
             {isOverdue && <Text style={styles.overdueBadge}>OVERDUE</Text>}
@@ -415,20 +447,24 @@ export default function PaymentsScreen() {
 
         <View style={styles.paymentFooter}>
           <View style={styles.statusContainer}>
-            <View style={[
-              styles.statusDot,
-              payment.status === 'pending' && styles.pendingDot,
-              payment.status === 'completed' && styles.completedDot,
-              payment.status === 'overdue' && styles.overdueDot,
-            ]} />
-            <Text style={[
-              payment.status === 'pending' && styles.pendingText,
-              payment.status === 'completed' && styles.completedText,
-              payment.status === 'overdue' && styles.overdueText,
-            ]}>
+            <View
+              style={[
+                styles.statusDot,
+                payment.status === "pending" && styles.pendingDot,
+                payment.status === "completed" && styles.completedDot,
+                payment.status === "overdue" && styles.overdueDot,
+              ]}
+            />
+            <Text
+              style={[
+                payment.status === "pending" && styles.pendingText,
+                payment.status === "completed" && styles.completedText,
+                payment.status === "overdue" && styles.overdueText,
+              ]}
+            >
               {isPending
-                ? `Due: ${payment.due_date ? new Date(payment.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : (nextDueDate || "N/A")}`
-                : `Paid: ${payment.payment_date ? new Date(payment.payment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A"}`}
+                ? `Due: ${payment.due_date ? new Date(payment.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : nextDueDate || "N/A"}`
+                : `Paid: ${payment.payment_date ? new Date(payment.payment_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "N/A"}`}
             </Text>
           </View>
 
@@ -472,7 +508,9 @@ export default function PaymentsScreen() {
     ),
   };
 
-  const handleSummaryCardPress = (target: "pending" | "overdue" | "completed") => {
+  const handleSummaryCardPress = (
+    target: "pending" | "overdue" | "completed",
+  ) => {
     if (target === "completed") {
       setActiveTab("completed");
       setOverdueOnly(false);
@@ -587,14 +625,19 @@ export default function PaymentsScreen() {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: 100 + insets.bottom },
+        ]}
       >
         {/* Summary Cards */}
         <View style={styles.summaryRow}>
           <TouchableOpacity
             style={[
               styles.summaryCard,
-              activeTab === "pending" && !overdueOnly && styles.summaryCardActive,
+              activeTab === "pending" &&
+                !overdueOnly &&
+                styles.summaryCardActive,
             ]}
             onPress={() => handleSummaryCardPress("pending")}
           >
@@ -643,7 +686,7 @@ export default function PaymentsScreen() {
         </View>
 
         {/* Record Payment Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.recordPaymentButton}
           onPress={handleRecordPayment}
         >
@@ -666,7 +709,9 @@ export default function PaymentsScreen() {
                 activeTab === "pending" && styles.activeTabText,
               ]}
             >
-              {overdueOnly ? `Overdue (${stats.overdue})` : `Pending (${stats.pending})`}
+              {overdueOnly
+                ? `Overdue (${stats.overdue})`
+                : `Pending (${stats.pending})`}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -751,15 +796,17 @@ export default function PaymentsScreen() {
               />
             </View>
             <Text style={styles.progressPercentageText}>
-              {monthlyCollectionPercent.toFixed(0)}
-              % collected
+              {monthlyCollectionPercent.toFixed(0)}% collected
             </Text>
           </View>
         </View>
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleRecordPayment}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleRecordPayment}
+          >
             <Ionicons name="add-circle" size={24} color="#2563EB" />
             <Text style={styles.actionText}>New Payment</Text>
           </TouchableOpacity>
@@ -807,7 +854,8 @@ export default function PaymentsScreen() {
                 <Text
                   style={[
                     styles.methodButtonText,
-                    recordPaymentMethod === "cash" && styles.methodButtonTextActive,
+                    recordPaymentMethod === "cash" &&
+                      styles.methodButtonTextActive,
                   ]}
                 >
                   CASH
@@ -901,7 +949,8 @@ export default function PaymentsScreen() {
                   </TouchableOpacity>
                 </View>
                 <Text style={styles.gatewayHint}>
-                  A payment request will be sent to the client phone for approval.
+                  A payment request will be sent to the client phone for
+                  approval.
                 </Text>
               </>
             )}
@@ -990,7 +1039,8 @@ export default function PaymentsScreen() {
                 <Text
                   style={[
                     styles.methodButtonText,
-                    providerFilter === "airtel" && styles.methodButtonTextActive,
+                    providerFilter === "airtel" &&
+                      styles.methodButtonTextActive,
                   ]}
                 >
                   AIRTEL
@@ -1099,13 +1149,14 @@ export default function PaymentsScreen() {
                     color="#4B5563"
                   />
                   <Text style={styles.modalClientName}>
-                    {selectedPayment.clientName}
+                    {selectedPayment.clientName || selectedPayment.client_name}
                   </Text>
                   <Text style={styles.modalClientPhone}>
-                    {selectedPayment.phoneNumber}
+                    {selectedPayment.phoneNumber ||
+                      selectedPayment.client_phone}
                   </Text>
                   <Text style={styles.modalAmount}>
-                    {selectedPayment.amount}
+                    UGX {Number(selectedPayment.amount || 0).toLocaleString()}
                   </Text>
                   {selectedPayment.isOverdue && (
                     <Text style={styles.modalOverdue}>
@@ -1157,7 +1208,9 @@ export default function PaymentsScreen() {
 
             <View style={styles.summaryMiniRow}>
               <Text style={styles.summaryMiniLabel}>Total payments</Text>
-              <Text style={styles.summaryMiniValue}>{selectedClientPayments.length}</Text>
+              <Text style={styles.summaryMiniValue}>
+                {selectedClientPayments.length}
+              </Text>
             </View>
             <View style={styles.summaryMiniRow}>
               <Text style={styles.summaryMiniLabel}>Total paid</Text>
@@ -1180,16 +1233,20 @@ export default function PaymentsScreen() {
               {selectedClientPayments.map((p) => (
                 <View key={p.id} style={styles.paymentHistoryItem}>
                   <Text style={styles.paymentHistoryTitle}>
-                    UGX {(parseFloat(p.amount) || 0).toLocaleString()} • {p.status}
+                    UGX {(parseFloat(p.amount) || 0).toLocaleString()} •{" "}
+                    {p.status}
                   </Text>
                   <Text style={styles.paymentHistorySub}>
                     Date:{" "}
-                    {new Date(p.payment_date || p.created_at).toLocaleDateString()}
+                    {new Date(
+                      p.payment_date || p.created_at,
+                    ).toLocaleDateString()}
                     {p.due_date ? ` • Due: ${p.due_date}` : ""}
                   </Text>
                   {p.installment_number ? (
                     <Text style={styles.paymentHistorySub}>
-                      Installment {p.installment_number} of {p.total_installments}
+                      Installment {p.installment_number} of{" "}
+                      {p.total_installments}
                     </Text>
                   ) : null}
                 </View>
@@ -1200,7 +1257,12 @@ export default function PaymentsScreen() {
       </Modal>
 
       {/* Bottom Navigation */}
-      <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <View
+        style={[
+          styles.bottomNav,
+          { paddingBottom: Math.max(insets.bottom, 12) },
+        ]}
+      >
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate("CHWDashboard")}
@@ -1212,9 +1274,12 @@ export default function PaymentsScreen() {
         <TouchableOpacity
           style={styles.navItem}
           onPress={() =>
-            navigation.navigate("Screen" as any, {
-              screen: "VHTScreeningStep1",
-            } as any)
+            navigation.navigate(
+              "Screen" as any,
+              {
+                screen: "VHTScreeningStep1",
+              } as any,
+            )
           }
         >
           <Ionicons name="eye-outline" size={24} color="#6B7280" />

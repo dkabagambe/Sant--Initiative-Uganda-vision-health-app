@@ -16,7 +16,8 @@ const educationPoints = [
   {
     id: "importance",
     title: "Eye Health Importance",
-    content: "Explain that eye health is important for learning, working and carrying out daily activities",
+    content:
+      "Explain that eye health is important for learning, working and carrying out daily activities",
     icon: "eye",
   },
   {
@@ -28,19 +29,22 @@ const educationPoints = [
   {
     id: "chronic-diseases",
     title: "Link to Chronic Diseases",
-    content: "Explain that eye problems may be linked to diabetes and hypertension",
+    content:
+      "Explain that eye problems may be linked to diabetes and hypertension",
     icon: "medical",
   },
   {
     id: "age40",
     title: "Age 40+ Vision Changes",
-    content: "Explain that people aged 40+ years may develop difficulty seeing near objects",
+    content:
+      "Explain that people aged 40+ years may develop difficulty seeing near objects",
     icon: "alert-circle",
   },
   {
     id: "handwashing",
     title: "Hand Hygiene",
-    content: "Advise household members to wash hands with soap and clean water always before touching eyes",
+    content:
+      "Advise household members to wash hands with soap and clean water always before touching eyes",
     icon: "water",
   },
   {
@@ -83,8 +87,7 @@ const educationPoints = [
   {
     id: "eye-safety",
     title: "Eye Safety",
-    content:
-      "Advise protecting eyes from injuries, chemicals, smoke and dust",
+    content: "Advise protecting eyes from injuries, chemicals, smoke and dust",
     icon: "shield",
   },
 ];
@@ -115,7 +118,7 @@ export default function VHTScreeningStep3() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top","left","right"]}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
 
       <View style={styles.header}>
@@ -126,7 +129,11 @@ export default function VHTScreeningStep3() {
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.instructionCard}>
           <Ionicons name="school" size={24} color="#7C3AED" />
           <Text style={styles.instructionText}>
@@ -158,7 +165,9 @@ export default function VHTScreeningStep3() {
                 styles.educationCard,
                 expandedId === point.id && styles.educationCardExpanded,
               ]}
-              onPress={() => setExpandedId(expandedId === point.id ? null : point.id)}
+              onPress={() =>
+                setExpandedId(expandedId === point.id ? null : point.id)
+              }
             >
               <View style={styles.educationHeader}>
                 <View style={styles.educationTitleSection}>
@@ -220,7 +229,8 @@ export default function VHTScreeningStep3() {
                     <Text
                       style={[
                         styles.discussButtonText,
-                        discussed.has(point.id) && styles.discussButtonTextDiscussed,
+                        discussed.has(point.id) &&
+                          styles.discussButtonTextDiscussed,
                       ]}
                     >
                       {discussed.has(point.id)
@@ -238,20 +248,10 @@ export default function VHTScreeningStep3() {
           <View style={styles.completionCard}>
             <Ionicons name="checkmark-circle" size={32} color="#10B981" />
             <Text style={styles.completionText}>
-              Great! You've covered all education points. Ready to proceed with screening.
+              Great! You've covered all education points. Ready to proceed with
+              screening.
             </Text>
           </View>
-        )}
-
-        {allDiscussed && (
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={handleContinue}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="arrow-forward-circle" size={22} color="#FFF" />
-            <Text style={styles.continueButtonText}>Continue to Key Questions</Text>
-          </TouchableOpacity>
         )}
       </ScrollView>
 
@@ -262,10 +262,19 @@ export default function VHTScreeningStep3() {
           disabled={!allDiscussed}
           activeOpacity={allDiscussed ? 0.7 : 1}
         >
-          <Text style={[styles.buttonText, !allDiscussed && styles.buttonTextDisabled]}>
-            {allDiscussed ? "Proceed to Key Questions" : "Discuss all topics first"}
+          <Text
+            style={[
+              styles.buttonText,
+              !allDiscussed && styles.buttonTextDisabled,
+            ]}
+          >
+            {allDiscussed
+              ? "Continue to Key Questions"
+              : "Discuss all topics first"}
           </Text>
-          {allDiscussed && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
+          {allDiscussed && (
+            <Ionicons name="arrow-forward" size={20} color="#FFF" />
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>

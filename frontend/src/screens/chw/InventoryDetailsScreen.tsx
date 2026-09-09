@@ -18,7 +18,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { apiService } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { moderateScale, scale, verticalScale, fontSize as responsiveFontSize } from "../../utils/responsive";
+import {
+  moderateScale,
+  scale,
+  verticalScale,
+  fontSize as responsiveFontSize,
+} from "../../utils/responsive";
 import CHWHeader from "../../components/CHWHeader";
 
 interface StockItemProps {
@@ -215,33 +220,44 @@ export default function InventoryDetailsScreen() {
     try {
       const response = await apiService.getPayments();
       if (response.success) {
-        const sales = (response.data || [])
-          .slice(0, 5)
-          .map((payment: any) => ({
-            clientName: payment.client_name || "Unknown",
-            power: "+1.00", // TODO: Get from product when linked
-            frameType: "standard", // TODO: Get from product when linked
-            amount: `UGX ${(payment.amount || 0).toLocaleString()}`,
-            time: new Date(payment.payment_date || payment.created_at).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          }));
+        const sales = (response.data || []).slice(0, 5).map((payment: any) => ({
+          clientName: payment.client_name || "Unknown",
+          power: "+1.00",
+          frameType: "standard",
+          amount: `UGX ${Number(payment.amount || 0).toLocaleString()}`,
+          time: new Date(
+            payment.payment_date || payment.created_at,
+          ).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        }));
         setRecentSales(sales);
 
-        // Calculate stats
-        const weekSold = response.data?.length || 0;
-        const lowStockCount = inventory.filter((p: any) => p.stock_quantity < 10).length;
-        const totalRevenue = response.data?.reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
-        const fullPayments = response.data?.filter((p: any) => p.payment_type === "full").reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
-        const hirePurchase = totalRevenue - fullPayments;
+        const completed = (response.data || []).filter(
+          (p: any) => p.status === "completed",
+        );
+        const fullPayments = completed
+          .filter(
+            (p: any) => p.payment_type === "full" || p.payment_type === "cash",
+          )
+          .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
+        const hirePurchase = completed
+          .filter(
+            (p: any) =>
+              p.payment_type === "installment" ||
+              p.payment_type === "hire-purchase" ||
+              p.payment_type === "hire_purchase",
+          )
+          .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
 
         setStats({
-          weekSold,
-          lowStockCount,
-          totalRevenue,
+          weekSold: completed.length,
+          lowStockCount: inventory.filter((p: any) => p.stock_quantity < 10)
+            .length,
+          totalRevenue: fullPayments + hirePurchase,
           fullPayments,
           hirePurchase,
         });
@@ -251,7 +267,9 @@ export default function InventoryDetailsScreen() {
     }
   };
 
-  const getStatus = (quantity: number): "normal" | "low" | "critical" | undefined => {
+  const getStatus = (
+    quantity: number,
+  ): "normal" | "low" | "critical" | undefined => {
     if (quantity === 0) return "critical";
     if (quantity < 5) return "critical";
     if (quantity < 10) return "low";
@@ -279,7 +297,11 @@ export default function InventoryDetailsScreen() {
         return;
       }
 
-      const result = await apiService.addStock(product.id, addStockQuantity, addStockFrameType);
+      const result = await apiService.addStock(
+        product.id,
+        addStockQuantity,
+        addStockFrameType,
+      );
       if (result.success) {
         Alert.alert("Success", "Stock added successfully");
         setShowAddStockModal(false);
@@ -307,7 +329,7 @@ export default function InventoryDetailsScreen() {
       // await apiService.requestStockReplenishment({ items: lowStockItems });
       Alert.alert(
         "✅ Request Submitted",
-        "Your stock replenishment request has been submitted successfully. You will be notified when stock arrives."
+        "Your stock replenishment request has been submitted successfully. You will be notified when stock arrives.",
       );
     } catch (error) {
       Alert.alert("Error", "Failed to submit request. Please try again.");
@@ -342,11 +364,15 @@ export default function InventoryDetailsScreen() {
         {/* Title Section */}
         <View style={styles.titleSection}>
           <Text style={styles.screenTitle}>Inventory & Sales</Text>
-          <Text style={styles.totalStock}>Total stock: {totals.total_pairs || 0} pairs</Text>
+          <Text style={styles.totalStock}>
+            Total stock: {totals.total_pairs || 0} pairs
+          </Text>
         </View>
 
         {/* Low Stock Alert - Dynamic */}
-        {inventory.filter((p: any) => p.stock_quantity > 0 && p.stock_quantity < 20).length > 0 && (
+        {inventory.filter(
+          (p: any) => p.stock_quantity > 0 && p.stock_quantity < 20,
+        ).length > 0 && (
           <View style={styles.alertCard}>
             <View style={styles.alertHeader}>
               <Ionicons name="alert-circle" size={24} color="#DC2626" />
@@ -354,8 +380,13 @@ export default function InventoryDetailsScreen() {
             </View>
             <Text style={styles.alertText}>
               {inventory
-                .filter((p: any) => p.stock_quantity > 0 && p.stock_quantity < 20)
-                .map((p: any) => `${p.power}D has only ${p.stock_quantity} pairs left`)
+                .filter(
+                  (p: any) => p.stock_quantity > 0 && p.stock_quantity < 20,
+                )
+                .map(
+                  (p: any) =>
+                    `${p.power}D has only ${p.stock_quantity} pairs left`,
+                )
                 .join(". ")}
               . Consider reordering.
             </Text>
@@ -390,7 +421,7 @@ export default function InventoryDetailsScreen() {
 
           <View style={styles.stockList}>
             {inventory.map((item, index) => (
-              <StockItem 
+              <StockItem
                 key={item.id || index}
                 power={item.power}
                 totalPairs={item.stock_quantity}
@@ -409,7 +440,9 @@ export default function InventoryDetailsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Sales</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("SalesDetailsScreen")}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("SalesDetailsScreen")}
+            >
               <Text style={styles.viewAllText}>View All</Text>
             </TouchableOpacity>
           </View>
@@ -422,7 +455,9 @@ export default function InventoryDetailsScreen() {
             ) : (
               <View style={{ padding: 20, alignItems: "center" }}>
                 <Ionicons name="receipt-outline" size={32} color="#D1D5DB" />
-                <Text style={{ color: "#9CA3AF", marginTop: 8, fontSize: 14 }}>No sales this week</Text>
+                <Text style={{ color: "#9CA3AF", marginTop: 8, fontSize: 14 }}>
+                  No sales this week
+                </Text>
               </View>
             )}
           </View>
@@ -432,16 +467,22 @@ export default function InventoryDetailsScreen() {
         <View style={styles.revenueCard}>
           <Text style={styles.revenueTitle}>Revenue Summary</Text>
           <Text style={styles.revenueSubtitle}>Total Sales (This Month)</Text>
-          <Text style={styles.revenueAmount}>UGX {stats.totalRevenue.toLocaleString()}</Text>
+          <Text style={styles.revenueAmount}>
+            UGX {Number(stats.totalRevenue || 0).toLocaleString()}
+          </Text>
 
           <View style={styles.revenueBreakdown}>
             <View style={styles.breakdownItem}>
               <Text style={styles.breakdownLabel}>Full Payments</Text>
-              <Text style={styles.breakdownValue}>UGX {stats.fullPayments.toLocaleString()}</Text>
+              <Text style={styles.breakdownValue}>
+                UGX {Number(stats.fullPayments || 0).toLocaleString()}
+              </Text>
             </View>
             <View style={styles.breakdownItem}>
               <Text style={styles.breakdownLabel}>Hire-Purchase</Text>
-              <Text style={styles.breakdownValue}>UGX {stats.hirePurchase.toLocaleString()}</Text>
+              <Text style={styles.breakdownValue}>
+                UGX {Number(stats.hirePurchase || 0).toLocaleString()}
+              </Text>
             </View>
           </View>
 
@@ -483,19 +524,28 @@ export default function InventoryDetailsScreen() {
                     key={product.id}
                     style={[
                       styles.powerOption,
-                      addStockPower === product.power && styles.powerOptionSelected,
+                      addStockPower === product.power &&
+                        styles.powerOptionSelected,
                     ]}
                     onPress={() => setAddStockPower(product.power)}
                   >
                     <Text
                       style={[
                         styles.powerOptionText,
-                        addStockPower === product.power && styles.powerOptionTextSelected,
+                        addStockPower === product.power &&
+                          styles.powerOptionTextSelected,
                       ]}
                     >
                       {product.power}D
                     </Text>
-                    <Text style={{ fontSize: 11, color: product.stock_quantity === 0 ? "#DC2626" : "#6B7280", marginTop: 2 }}>
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color:
+                          product.stock_quantity === 0 ? "#DC2626" : "#6B7280",
+                        marginTop: 2,
+                      }}
+                    >
                       {product.stock_quantity} in stock
                     </Text>
                   </TouchableOpacity>
@@ -510,14 +560,16 @@ export default function InventoryDetailsScreen() {
                     key={type}
                     style={[
                       styles.frameTypeOption,
-                      addStockFrameType === type && styles.frameTypeOptionSelected,
+                      addStockFrameType === type &&
+                        styles.frameTypeOptionSelected,
                     ]}
                     onPress={() => setAddStockFrameType(type)}
                   >
                     <Text
                       style={[
                         styles.frameTypeText,
-                        addStockFrameType === type && styles.frameTypeTextSelected,
+                        addStockFrameType === type &&
+                          styles.frameTypeTextSelected,
                       ]}
                     >
                       {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -531,14 +583,18 @@ export default function InventoryDetailsScreen() {
               <View style={styles.quantityRow}>
                 <TouchableOpacity
                   style={styles.quantityButton}
-                  onPress={() => setAddStockQuantity(Math.max(0, addStockQuantity - 1))}
+                  onPress={() =>
+                    setAddStockQuantity(Math.max(0, addStockQuantity - 1))
+                  }
                 >
                   <Ionicons name="remove" size={20} color="#6B7280" />
                 </TouchableOpacity>
                 <TextInput
                   style={styles.quantityInput}
                   value={addStockQuantity.toString()}
-                  onChangeText={(text) => setAddStockQuantity(parseInt(text) || 0)}
+                  onChangeText={(text) =>
+                    setAddStockQuantity(parseInt(text) || 0)
+                  }
                   keyboardType="numeric"
                 />
                 <TouchableOpacity
@@ -571,7 +627,10 @@ export default function InventoryDetailsScreen() {
                   <Text style={styles.modalCancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.modalSubmitButton, addStockLoading && { opacity: 0.7 }]}
+                  style={[
+                    styles.modalSubmitButton,
+                    addStockLoading && { opacity: 0.7 },
+                  ]}
                   onPress={handleSubmitAddStock}
                   disabled={addStockLoading}
                 >
@@ -843,7 +902,7 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(12),
   },
   revenueAmount: {
-    fontSize: responsiveFontSize.xxlarge,
+    fontSize: responsiveFontSize.xlarge,
     fontWeight: "700",
     color: "#1F2937",
     marginBottom: verticalScale(20),

@@ -40,7 +40,9 @@ const greetingActions = [
 export default function VHTScreeningStep2() {
   const navigation = useNavigation<any>();
   const { updateScreeningData } = useScreening();
-  const [completedActions, setCompletedActions] = useState<Set<string>>(new Set());
+  const [completedActions, setCompletedActions] = useState<Set<string>>(
+    new Set(),
+  );
   const [consentGiven, setConsentGiven] = useState<boolean | null>(null);
 
   const toggleAction = (id: string) => {
@@ -64,7 +66,7 @@ export default function VHTScreeningStep2() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top","left","right"]}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
 
       <View style={styles.header}>
@@ -75,7 +77,11 @@ export default function VHTScreeningStep2() {
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.instructionCard}>
           <Ionicons name="information-circle" size={24} color="#10B981" />
           <Text style={styles.instructionText}>
@@ -106,7 +112,9 @@ export default function VHTScreeningStep2() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.actionTitle}>{action.title}</Text>
-                  <Text style={styles.actionInstruction}>{action.instruction}</Text>
+                  <Text style={styles.actionInstruction}>
+                    {action.instruction}
+                  </Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -118,7 +126,8 @@ export default function VHTScreeningStep2() {
           <View style={styles.importantBox}>
             <Ionicons name="alert-circle" size={20} color="#DC2626" />
             <Text style={styles.importantText}>
-              Only proceed if household has given permission to conduct screening
+              Only proceed if household has given permission to conduct
+              screening
             </Text>
           </View>
 
@@ -131,7 +140,11 @@ export default function VHTScreeningStep2() {
               onPress={() => setConsentGiven(false)}
             >
               <Ionicons
-                name={consentGiven === false ? "radio-button-on" : "radio-button-off"}
+                name={
+                  consentGiven === false
+                    ? "radio-button-on"
+                    : "radio-button-off"
+                }
                 size={20}
                 color={consentGiven === false ? "#DC2626" : "#D1D5DB"}
               />
@@ -153,7 +166,9 @@ export default function VHTScreeningStep2() {
               onPress={() => setConsentGiven(true)}
             >
               <Ionicons
-                name={consentGiven === true ? "radio-button-on" : "radio-button-off"}
+                name={
+                  consentGiven === true ? "radio-button-on" : "radio-button-off"
+                }
                 size={20}
                 color={consentGiven === true ? "#10B981" : "#D1D5DB"}
               />
@@ -175,7 +190,8 @@ export default function VHTScreeningStep2() {
             <View style={styles.infoBox}>
               <Ionicons name="people" size={20} color="#0891B2" />
               <Text style={styles.infoText}>
-                Screen one household member at a time and open a new register entry for each client
+                Screen one household member at a time and open a new register
+                entry for each client
               </Text>
             </View>
           </View>
@@ -186,21 +202,11 @@ export default function VHTScreeningStep2() {
             <View style={styles.declinedBox}>
               <Ionicons name="close-circle" size={24} color="#DC2626" />
               <Text style={styles.declinedText}>
-                Without consent, you cannot proceed with screening. Thank the household and move to the next house.
+                Without consent, you cannot proceed with screening. Thank the
+                household and move to the next house.
               </Text>
             </View>
           </View>
-        )}
-
-        {canProceed && (
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={handleContinue}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="arrow-forward-circle" size={22} color="#FFF" />
-            <Text style={styles.continueButtonText}>Continue to Eye Health Education</Text>
-          </TouchableOpacity>
         )}
       </ScrollView>
 
@@ -211,10 +217,19 @@ export default function VHTScreeningStep2() {
           disabled={!canProceed}
           activeOpacity={canProceed ? 0.7 : 1}
         >
-          <Text style={[styles.buttonText, !canProceed && styles.buttonTextDisabled]}>
-            {canProceed ? "Proceed to Education" : "Complete actions and get consent"}
+          <Text
+            style={[
+              styles.buttonText,
+              !canProceed && styles.buttonTextDisabled,
+            ]}
+          >
+            {canProceed
+              ? "Continue to Education"
+              : "Complete actions and get consent"}
           </Text>
-          {canProceed && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
+          {canProceed && (
+            <Ionicons name="arrow-forward" size={20} color="#FFF" />
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>

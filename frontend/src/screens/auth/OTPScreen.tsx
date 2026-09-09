@@ -49,7 +49,7 @@ export default function OTPScreen() {
   const isDevNumber = phone === "0705686573";
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setInterval> | undefined;
     if (countdown > 0 && !canResend) {
       timer = setInterval(() => {
         setCountdown((prev) => {
@@ -110,12 +110,12 @@ export default function OTPScreen() {
       }
       if (result.success && result.user) {
         const roleMap: { [key: string]: string } = {
-          'health_worker': 'CHW',
-          'outlet': 'Outlet',
-          'vsla': 'VSLA'
+          health_worker: "CHW",
+          outlet: "Outlet",
+          vsla: "VSLA",
         };
-        const role = result.user.role ?? 'health_worker';
-        const navRole = roleMap[role] || 'CHW';
+        const role = result.user.role ?? "health_worker";
+        const navRole = roleMap[role] || "CHW";
         setLoading(false);
         requestAnimationFrame(() => {
           navigation.navigate("AppTabs", { role: navRole });
@@ -124,7 +124,8 @@ export default function OTPScreen() {
         setErrorMessage(result.error || "Invalid OTP");
       }
     } catch (error: any) {
-      const msg = error?.response?.data?.error || error?.message || "Verification failed";
+      const msg =
+        error?.response?.data?.error || error?.message || "Verification failed";
       setErrorMessage(msg);
     } finally {
       setLoading(false);
@@ -140,7 +141,10 @@ export default function OTPScreen() {
     try {
       const result = await apiService.login(phone);
       if (result.success) {
-        Alert.alert("OTP Resent", "Please check your phone for the verification code.");
+        Alert.alert(
+          "OTP Resent",
+          "Please check your phone for the verification code.",
+        );
         setCountdown(60);
         setCanResend(false);
         setOtp(["", "", "", "", "", ""]);
@@ -193,7 +197,9 @@ export default function OTPScreen() {
 
           {isDevNumber && (
             <View style={styles.devHintBox}>
-              <Text style={styles.devHintText}>Developer login: enter code 123456</Text>
+              <Text style={styles.devHintText}>
+                Developer login: enter code 123456
+              </Text>
             </View>
           )}
 
@@ -202,7 +208,9 @@ export default function OTPScreen() {
             {otp.map((digit, index) => (
               <TextInput
                 key={index}
-                ref={(ref) => { inputRefs.current[index] = ref; }}
+                ref={(ref) => {
+                  inputRefs.current[index] = ref;
+                }}
                 style={[
                   styles.otpInput,
                   digit && styles.otpInputFilled,
@@ -229,7 +237,10 @@ export default function OTPScreen() {
 
           {/* Verify Button */}
           <TouchableOpacity
-            style={[styles.verifyButton, loading && styles.verifyButtonDisabled]}
+            style={[
+              styles.verifyButton,
+              loading && styles.verifyButtonDisabled,
+            ]}
             onPress={handleVerifyOTP}
             disabled={loading}
           >

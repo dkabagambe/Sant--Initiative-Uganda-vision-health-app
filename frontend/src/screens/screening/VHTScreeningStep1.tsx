@@ -51,7 +51,7 @@ export default function VHTScreeningStep1() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
 
       <View style={styles.header}>
@@ -62,11 +62,16 @@ export default function VHTScreeningStep1() {
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.instructionCard}>
           <Ionicons name="information-circle" size={24} color="#1E40AF" />
           <Text style={styles.instructionText}>
-            Before going for household visits, confirm all equipment is present, clean and working
+            Before going for household visits, confirm all equipment is present,
+            clean and working
           </Text>
         </View>
 
@@ -82,7 +87,12 @@ export default function VHTScreeningStep1() {
               style={styles.checklistItem}
               onPress={() => toggleItem(item.id)}
             >
-              <View style={[styles.checkbox, checkedItems.has(item.id) && styles.checkboxChecked]}>
+              <View
+                style={[
+                  styles.checkbox,
+                  checkedItems.has(item.id) && styles.checkboxChecked,
+                ]}
+              >
                 {checkedItems.has(item.id) && (
                   <Ionicons name="checkmark" size={18} color="#FFF" />
                 )}
@@ -121,18 +131,6 @@ export default function VHTScreeningStep1() {
             </Text>
           </View>
         </View>
-
-        <TouchableOpacity
-          style={[styles.startButton, !allChecked && styles.startButtonDisabled]}
-          onPress={handleContinue}
-          disabled={!allChecked}
-          activeOpacity={allChecked ? 0.7 : 1}
-        >
-          <Ionicons name="play-circle" size={22} color={allChecked ? "#FFF" : "#9CA3AF"} />
-          <Text style={[styles.startButtonText, !allChecked && styles.startButtonTextDisabled]}>
-            {allChecked ? "Start Screening" : `Check all equipment first (${checkedItems.size}/${equipmentChecklist.length})`}
-          </Text>
-        </TouchableOpacity>
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: 24 }]}>
@@ -147,12 +145,21 @@ export default function VHTScreeningStep1() {
           disabled={!allChecked}
           activeOpacity={allChecked ? 0.7 : 1}
         >
-          <Text style={[styles.buttonText, !allChecked && styles.buttonTextDisabled]}>
+          <Text
+            style={[
+              styles.buttonText,
+              !allChecked && styles.buttonTextDisabled,
+            ]}
+          >
             {allChecked
               ? "Continue to Screening"
               : `${checkedItems.size}/${equipmentChecklist.length} items checked`}
           </Text>
-          <Ionicons name="arrow-forward" size={20} color={allChecked ? "#FFF" : "#9CA3AF"} />
+          <Ionicons
+            name="arrow-forward"
+            size={20}
+            color={allChecked ? "#FFF" : "#9CA3AF"}
+          />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
