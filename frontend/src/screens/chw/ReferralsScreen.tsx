@@ -17,7 +17,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { apiService } from "../../services/api";
@@ -384,7 +384,14 @@ export default function ReferralsScreen() {
             onPress={() => setActiveTab("pending")}
             activeOpacity={0.8}
           >
-            <Text style={styles.statNumber}>{pendingReferrals.length}</Text>
+            <Text
+              style={[
+                styles.statNumber,
+                activeTab === "pending" && styles.statNumberActive,
+              ]}
+            >
+              {pendingReferrals.length}
+            </Text>
             <Text style={styles.statLabel}>Pending</Text>
           </TouchableOpacity>
 
@@ -396,7 +403,14 @@ export default function ReferralsScreen() {
             onPress={() => setActiveTab("completed")}
             activeOpacity={0.8}
           >
-            <Text style={styles.statNumber}>{completedReferrals.length}</Text>
+            <Text
+              style={[
+                styles.statNumber,
+                activeTab === "completed" && styles.statNumberActive,
+              ]}
+            >
+              {completedReferrals.length}
+            </Text>
             <Text style={styles.statLabel}>Completed</Text>
           </TouchableOpacity>
 
@@ -408,7 +422,14 @@ export default function ReferralsScreen() {
             onPress={() => setActiveTab("all")}
             activeOpacity={0.8}
           >
-            <Text style={styles.statNumber}>{referrals.length}</Text>
+            <Text
+              style={[
+                styles.statNumber,
+                activeTab === "all" && styles.statNumberActive,
+              ]}
+            >
+              {referrals.length}
+            </Text>
             <Text style={styles.statLabel}>Total</Text>
           </TouchableOpacity>
         </View>
@@ -443,8 +464,15 @@ export default function ReferralsScreen() {
                 activeTab === "pending" && styles.activeTabText,
               ]}
             >
-              Pending Referrals
+              Pending
             </Text>
+            {pendingReferrals.length > 0 && (
+              <View style={styles.tabBadge}>
+                <Text style={styles.tabBadgeText}>
+                  {pendingReferrals.length}
+                </Text>
+              </View>
+            )}
             {activeTab === "pending" && (
               <View style={styles.activeTabIndicator} />
             )}
@@ -461,7 +489,32 @@ export default function ReferralsScreen() {
             >
               Completed
             </Text>
+            {completedReferrals.length > 0 && (
+              <View style={[styles.tabBadge, { backgroundColor: "#D1FAE5" }]}>
+                <Text
+                  style={[styles.tabBadgeText, { color: "#065F46" }]}
+                >
+                  {completedReferrals.length}
+                </Text>
+              </View>
+            )}
             {activeTab === "completed" && (
+              <View style={styles.activeTabIndicator} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "all" && styles.activeTab]}
+            onPress={() => setActiveTab("all")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "all" && styles.activeTabText,
+              ]}
+            >
+              All
+            </Text>
+            {activeTab === "all" && (
               <View style={styles.activeTabIndicator} />
             )}
           </TouchableOpacity>
@@ -479,8 +532,10 @@ export default function ReferralsScreen() {
               <Text style={styles.emptyStateTitle}>No referrals found</Text>
               <Text style={styles.emptyStateText}>
                 {activeTab === "all"
-                  ? "No referrals found"
-                  : `No ${activeTab} referrals`}
+                  ? "You have no referrals yet. Create one to get started."
+                  : activeTab === "pending"
+                  ? "No pending referrals. All caught up!"
+                  : "No completed referrals yet."}
               </Text>
             </View>
           ) : (
@@ -774,6 +829,9 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     marginBottom: 4,
   },
+  statNumberActive: {
+    color: "#2563EB",
+  },
   statLabel: {
     fontSize: 14,
     color: "#6B7280",
@@ -793,6 +851,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
     position: "relative",
+    flexDirection: "row",
+    justifyContent: "center",
   },
   activeTab: {
     backgroundColor: "#F3F4F6",
@@ -812,6 +872,18 @@ const styles = StyleSheet.create({
     height: 3,
     backgroundColor: "#2563EB",
     borderRadius: 1.5,
+  },
+  tabBadge: {
+    backgroundColor: "#FEE2E2",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    marginLeft: 4,
+  },
+  tabBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#DC2626",
   },
   referralsList: {
     gap: 16,

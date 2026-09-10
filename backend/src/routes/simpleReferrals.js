@@ -2,6 +2,30 @@ const express = require("express");
 const router = express.Router();
 const { authenticate } = require("../middleware/auth");
 
+// ── Referral stats (MUST be before /:id to avoid route collision) ─────────────
+router.get("/stats", authenticate, async (req, res) => {
+  try {
+    const sql = req.app.locals.sql;
+    const healthWorkerId = req.user?.userId;
+
+    const stats = await sql`
+      SELECT
+        COUNT(*)                                              AS total_referrals,
+        COUNT(*) FILTER (WHERE status = 'completed')         AS completed_referrals,
+        COUNT(*) FILTER (WHERE status = 'pending' OR status IS NULL) AS pending_referrals,
+        COUNT(*) FILTER (WHERE urgency = 'high')             AS high_urgency_referrals,
+        COUNT(*) FILTER (WHERE urgency = 'normal')           AS normal_urgency_referrals
+      FROM referrals
+      WHERE health_worker_id = ${healthWorkerId}
+    `;
+
+    res.json({ success: true, data: stats[0] });
+  } catch (error) {
+    console.error("Get referral stats error:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch referral stats", details: error.message });
+  }
+});
+
 // ── List referrals (scoped to logged-in VHT) ─────────────────────────────────
 router.get("/list", authenticate, async (req, res) => {
   try {
@@ -181,30 +205,6 @@ router.patch("/:id/status", authenticate, async (req, res) => {
   } catch (error) {
     console.error("Update referral status error:", error);
     res.status(500).json({ success: false, error: "Failed to update referral status", details: error.message });
-  }
-});
-
-// ── Referral stats ────────────────────────────────────────────────────────────
-router.get("/stats", authenticate, async (req, res) => {
-  try {
-    const sql = req.app.locals.sql;
-    const healthWorkerId = req.user?.userId;
-
-    const stats = await sql`
-      SELECT
-        COUNT(*)                                              AS total_referrals,
-        COUNT(*) FILTER (WHERE status = 'completed')         AS completed_referrals,
-        COUNT(*) FILTER (WHERE status = 'pending' OR status IS NULL) AS pending_referrals,
-        COUNT(*) FILTER (WHERE urgency = 'high')             AS high_urgency_referrals,
-        COUNT(*) FILTER (WHERE urgency = 'normal')           AS normal_urgency_referrals
-      FROM referrals
-      WHERE health_worker_id = ${healthWorkerId}
-    `;
-
-    res.json({ success: true, data: stats[0] });
-  } catch (error) {
-    console.error("Get referral stats error:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch referral stats", details: error.message });
   }
 });
 
