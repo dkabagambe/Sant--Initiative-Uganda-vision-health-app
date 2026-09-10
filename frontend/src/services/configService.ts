@@ -4,9 +4,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const CONFIG_KEY = "app_config";
 
 // Production API (used when __DEV__ is false — release/store builds)
-export const RENDER_API_URL = "https://sante-backend.onrender.com/api";
+// Use the live backend that is currently serving the app API.
+export const RENDER_API_URL = "https://backend-tau-sepia-43.vercel.app/api";
 // Local backend should match the same app backend used in development.
-// Use localhost only for local development; production builds should target Render.
+// Use localhost only for local development; production builds should target the deployed backend.
 export const LOCAL_API_URL = "http://localhost:5000/api";
 
 export interface AppConfig {

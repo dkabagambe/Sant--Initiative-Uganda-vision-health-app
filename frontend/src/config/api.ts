@@ -1,7 +1,7 @@
 // Default backend URL for the deployed app. Keep localhost only for local development.
 const API_BASE_URL =
   (typeof process !== "undefined" && process.env.EXPO_PUBLIC_API_URL) ||
-  "https://sante-backend.onrender.com/api";
+  "https://backend-tau-sepia-43.vercel.app/api";
 
 // Alternative options:
 // const API_BASE_URL = "http://10.0.2.2:5000/api"; // Android emulator
