@@ -545,17 +545,6 @@ export default function ReferralsScreen() {
           )}
         </View>
 
-        {/* Create New Referral Button */}
-        <TouchableOpacity
-          style={styles.createNewButton}
-          onPress={handleCreateReferral}
-        >
-          <View style={styles.plusIconContainer}>
-            <Ionicons name="add" size={24} color="#FFFFFF" />
-          </View>
-          <Text style={styles.createNewText}>Create New Referral</Text>
-        </TouchableOpacity>
-
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
@@ -974,31 +963,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: "#FFFFFF",
-  },
-  createNewButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-    borderStyle: "dashed",
-    marginBottom: 24,
-  },
-  plusIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#2563EB",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  createNewText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#2563EB",
   },
   partnerFacilitiesSection: {
     marginBottom: 20,

@@ -21,22 +21,18 @@ export default function VHTScreeningStep3() {
   const [discussed, setDiscussed] = useState<Set<string>>(new Set());
 
   const educationPoints = [
-    { id: "importance", title: t("eyeHealthImportance"), content: t("eyeHealthImportanceContent"), icon: "eye" },
-    { id: "early-detection", title: t("earlyDetection"), content: t("earlyDetectionContent"), icon: "heart" },
-    { id: "chronic-diseases", title: t("chronicDiseases"), content: t("chronicDiseasesContent"), icon: "medical" },
-    { id: "age40", title: t("age40Vision"), content: t("age40VisionContent"), icon: "alert-circle" },
-    { id: "handwashing", title: t("handHygiene"), content: t("handHygieneContent"), icon: "water" },
-    { id: "avoid-remedies", title: t("avoidSelfMedication"), content: t("avoidSelfMedicationContent"), icon: "close-circle" },
+    { id: "importance",       title: t("eyeHealthImportance"),  content: t("eyeHealthImportanceContent"),  icon: "eye" },
+    { id: "early-detection",  title: t("earlyDetection"),       content: t("earlyDetectionContent"),       icon: "heart" },
+    { id: "chronic-diseases", title: t("chronicDiseases"),      content: t("chronicDiseasesContent"),      icon: "medical" },
+    { id: "age40",            title: t("age40Vision"),          content: t("age40VisionContent"),          icon: "alert-circle" },
+    { id: "handwashing",      title: t("handHygiene"),          content: t("handHygieneContent"),          icon: "water" },
+    { id: "avoid-remedies",   title: t("avoidSelfMedication"),  content: t("avoidSelfMedicationContent"),  icon: "close-circle" },
   ];
 
   const toggleDiscussed = (id: string) => {
-    const newDiscussed = new Set(discussed);
-    if (newDiscussed.has(id)) {
-      newDiscussed.delete(id);
-    } else {
-      newDiscussed.add(id);
-    }
-    setDiscussed(newDiscussed);
+    const next = new Set(discussed);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setDiscussed(next);
   };
 
   const allDiscussed = discussed.size === educationPoints.length;
@@ -60,21 +56,27 @@ export default function VHTScreeningStep3() {
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.instructionCard}>
           <Ionicons name="school" size={24} color="#7C3AED" />
           <Text style={styles.instructionText}>{t("step3Instruction")}</Text>
         </View>
 
+        {/* Progress bar */}
         <View style={styles.progressSection}>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${(discussed.size / educationPoints.length) * 100}%` }]} />
+            <View style={[styles.progressFill, { width: `${(discussed.size / educationPoints.length) * 100}%` as any }]} />
           </View>
           <Text style={styles.progressText}>
             {discussed.size}/{educationPoints.length} {t("educationTopics").toLowerCase()}
           </Text>
         </View>
 
+        {/* Education topic cards */}
         <View style={styles.section}>
           {educationPoints.map((point) => (
             <TouchableOpacity
@@ -85,14 +87,21 @@ export default function VHTScreeningStep3() {
               <View style={styles.educationHeader}>
                 <View style={styles.educationTitleSection}>
                   <View style={[styles.iconCircle, discussed.has(point.id) && styles.iconCircleDiscussed]}>
-                    <Ionicons name={point.icon as any} size={16} color={discussed.has(point.id) ? "#FFF" : "#7C3AED"} />
+                    <Ionicons
+                      name={point.icon as any}
+                      size={16}
+                      color={discussed.has(point.id) ? "#FFF" : "#7C3AED"}
+                    />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.educationTitle}>{point.title}</Text>
-                    <Text style={styles.educationPreview}>{point.content}</Text>
+                    <Text style={styles.educationPreview} numberOfLines={2}>{point.content}</Text>
                   </View>
                 </View>
-                <TouchableOpacity onPress={(e) => { e.stopPropagation(); toggleDiscussed(point.id); }}>
+                <TouchableOpacity
+                  onPress={(e) => { e.stopPropagation(); toggleDiscussed(point.id); }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
                   <View style={[styles.checkbox, discussed.has(point.id) && styles.checkboxChecked]}>
                     {discussed.has(point.id) && <Ionicons name="checkmark" size={16} color="#FFF" />}
                   </View>
@@ -106,7 +115,11 @@ export default function VHTScreeningStep3() {
                     style={[styles.discussButton, discussed.has(point.id) && styles.discussButtonDiscussed]}
                     onPress={() => toggleDiscussed(point.id)}
                   >
-                    <Ionicons name={discussed.has(point.id) ? "checkmark-circle" : "ellipse-outline"} size={20} color={discussed.has(point.id) ? "#FFF" : "#7C3AED"} />
+                    <Ionicons
+                      name={discussed.has(point.id) ? "checkmark-circle" : "ellipse-outline"}
+                      size={20}
+                      color={discussed.has(point.id) ? "#FFF" : "#7C3AED"}
+                    />
                     <Text style={[styles.discussButtonText, discussed.has(point.id) && styles.discussButtonTextDiscussed]}>
                       {discussed.has(point.id) ? `${t("confirmed")} ✓` : t("confirm")}
                     </Text>
@@ -125,6 +138,7 @@ export default function VHTScreeningStep3() {
         )}
       </ScrollView>
 
+      {/* Single footer button — no duplicate inside scroll */}
       <View style={[styles.footer, { paddingBottom: 24 }]}>
         <TouchableOpacity
           style={[styles.button, !allDiscussed && styles.buttonDisabled]}
@@ -142,194 +156,8 @@ export default function VHTScreeningStep3() {
   );
 }
 
-  const toggleDiscussed = (id: string) => {
-    const newDiscussed = new Set(discussed);
-    if (newDiscussed.has(id)) {
-      newDiscussed.delete(id);
-    } else {
-      newDiscussed.add(id);
-    }
-    setDiscussed(newDiscussed);
-  };
-
-  const allDiscussed = discussed.size === educationPoints.length;
-
-  const handleContinue = () => {
-    if (allDiscussed) {
-      updateScreeningData({ educationProvided: true });
-      navigation.navigate("VisionScreen1", { nextScreen: "VHTScreeningStep4" });
-    }
-  };
-
-  return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
-
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={28} color="#7C3AED" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Step 3: Eye Health Education</Text>
-        <View style={{ width: 28 }} />
-      </View>
-
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={{ paddingBottom: 24 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.instructionCard}>
-          <Ionicons name="school" size={24} color="#7C3AED" />
-          <Text style={styles.instructionText}>
-            Provide all education points before starting screening tests
-          </Text>
-        </View>
-
-        <View style={styles.progressSection}>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${(discussed.size / educationPoints.length) * 100}%`,
-                },
-              ]}
-            />
-          </View>
-          <Text style={styles.progressText}>
-            {discussed.size}/{educationPoints.length} topics discussed
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          {educationPoints.map((point) => (
-            <TouchableOpacity
-              key={point.id}
-              style={[
-                styles.educationCard,
-                expandedId === point.id && styles.educationCardExpanded,
-              ]}
-              onPress={() =>
-                setExpandedId(expandedId === point.id ? null : point.id)
-              }
-            >
-              <View style={styles.educationHeader}>
-                <View style={styles.educationTitleSection}>
-                  <View
-                    style={[
-                      styles.iconCircle,
-                      discussed.has(point.id) && styles.iconCircleDiscussed,
-                    ]}
-                  >
-                    <Ionicons
-                      name={point.icon as any}
-                      size={16}
-                      color={discussed.has(point.id) ? "#FFF" : "#7C3AED"}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.educationTitle}>{point.title}</Text>
-                    <Text style={styles.educationPreview}>{point.content}</Text>
-                  </View>
-                </View>
-                <TouchableOpacity
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    toggleDiscussed(point.id);
-                  }}
-                >
-                  <View
-                    style={[
-                      styles.checkbox,
-                      discussed.has(point.id) && styles.checkboxChecked,
-                    ]}
-                  >
-                    {discussed.has(point.id) && (
-                      <Ionicons name="checkmark" size={16} color="#FFF" />
-                    )}
-                  </View>
-                </TouchableOpacity>
-              </View>
-
-              {expandedId === point.id && (
-                <View style={styles.educationContent}>
-                  <Text style={styles.educationText}>{point.content}</Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.discussButton,
-                      discussed.has(point.id) && styles.discussButtonDiscussed,
-                    ]}
-                    onPress={() => toggleDiscussed(point.id)}
-                  >
-                    <Ionicons
-                      name={
-                        discussed.has(point.id)
-                          ? "checkmark-circle"
-                          : "ellipse-outline"
-                      }
-                      size={20}
-                      color={discussed.has(point.id) ? "#FFF" : "#7C3AED"}
-                    />
-                    <Text
-                      style={[
-                        styles.discussButtonText,
-                        discussed.has(point.id) &&
-                          styles.discussButtonTextDiscussed,
-                      ]}
-                    >
-                      {discussed.has(point.id)
-                        ? "Discussed ✓"
-                        : "Mark as Discussed"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {allDiscussed && (
-          <View style={styles.completionCard}>
-            <Ionicons name="checkmark-circle" size={32} color="#10B981" />
-            <Text style={styles.completionText}>
-              Great! You've covered all education points. Ready to proceed with
-              screening.
-            </Text>
-          </View>
-        )}
-      </ScrollView>
-
-      <View style={[styles.footer, { paddingBottom: 24 }]}>
-        <TouchableOpacity
-          style={[styles.button, !allDiscussed && styles.buttonDisabled]}
-          onPress={handleContinue}
-          disabled={!allDiscussed}
-          activeOpacity={allDiscussed ? 0.7 : 1}
-        >
-          <Text
-            style={[
-              styles.buttonText,
-              !allDiscussed && styles.buttonTextDisabled,
-            ]}
-          >
-            {allDiscussed
-              ? "Continue to Key Questions"
-              : "Discuss all topics first"}
-          </Text>
-          {allDiscussed && (
-            <Ionicons name="arrow-forward" size={20} color="#FFF" />
-          )}
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFF",
-  },
+  container: { flex: 1, backgroundColor: "#FFF" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -339,18 +167,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1F2937",
-    flex: 1,
-    textAlign: "center",
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
+  headerTitle: { fontSize: 18, fontWeight: "600", color: "#1F2937", flex: 1, textAlign: "center" },
+  content: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
   instructionCard: {
     backgroundColor: "#F3E8FF",
     borderLeftWidth: 4,
@@ -361,15 +179,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
   },
-  instructionText: {
-    fontSize: 14,
-    color: "#5B21B6",
-    flex: 1,
-    lineHeight: 20,
-  },
-  progressSection: {
-    marginBottom: 20,
-  },
+  instructionText: { fontSize: 14, color: "#5B21B6", flex: 1, lineHeight: 20 },
+  progressSection: { marginBottom: 20 },
   progressBar: {
     height: 8,
     backgroundColor: "#E5E7EB",
@@ -377,19 +188,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 8,
   },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#7C3AED",
-  },
-  progressText: {
-    fontSize: 13,
-    color: "#6B7280",
-    textAlign: "center",
-    fontWeight: "600",
-  },
-  section: {
-    marginBottom: 24,
-  },
+  progressFill: { height: "100%", backgroundColor: "#7C3AED" },
+  progressText: { fontSize: 13, color: "#6B7280", textAlign: "center", fontWeight: "600" },
+  section: { marginBottom: 24 },
   educationCard: {
     backgroundColor: "#F9FAFB",
     borderRadius: 8,
@@ -398,56 +199,28 @@ const styles = StyleSheet.create({
     borderLeftColor: "#E5E7EB",
     overflow: "hidden",
   },
-  educationCardExpanded: {
-    borderLeftColor: "#7C3AED",
-  },
+  educationCardExpanded: { borderLeftColor: "#7C3AED" },
   educationHeader: {
     flexDirection: "row",
     alignItems: "center",
     padding: 12,
     justifyContent: "space-between",
   },
-  educationTitleSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
+  educationTitleSection: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
   iconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 32, height: 32, borderRadius: 16,
     backgroundColor: "#F3E8FF",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center", justifyContent: "center",
   },
-  iconCircleDiscussed: {
-    backgroundColor: "#7C3AED",
-  },
-  educationTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1F2937",
-  },
-  educationPreview: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
-    lineHeight: 16,
-  },
+  iconCircleDiscussed: { backgroundColor: "#7C3AED" },
+  educationTitle: { fontSize: 14, fontWeight: "600", color: "#1F2937" },
+  educationPreview: { fontSize: 12, color: "#6B7280", marginTop: 2, lineHeight: 16 },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: "#D1D5DB",
-    alignItems: "center",
-    justifyContent: "center",
+    width: 24, height: 24, borderRadius: 6,
+    borderWidth: 2, borderColor: "#D1D5DB",
+    alignItems: "center", justifyContent: "center",
   },
-  checkboxChecked: {
-    backgroundColor: "#7C3AED",
-    borderColor: "#7C3AED",
-  },
+  checkboxChecked: { backgroundColor: "#7C3AED", borderColor: "#7C3AED" },
   educationContent: {
     backgroundColor: "#FFF",
     paddingHorizontal: 12,
@@ -455,12 +228,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
   },
-  educationText: {
-    fontSize: 13,
-    color: "#4B5563",
-    lineHeight: 20,
-    marginBottom: 12,
-  },
+  educationText: { fontSize: 13, color: "#4B5563", lineHeight: 20, marginBottom: 12, marginTop: 8 },
   discussButton: {
     borderWidth: 2,
     borderColor: "#7C3AED",
@@ -471,17 +239,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  discussButtonDiscussed: {
-    backgroundColor: "#7C3AED",
-  },
-  discussButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#7C3AED",
-  },
-  discussButtonTextDiscussed: {
-    color: "#FFF",
-  },
+  discussButtonDiscussed: { backgroundColor: "#7C3AED" },
+  discussButtonText: { fontSize: 14, fontWeight: "600", color: "#7C3AED" },
+  discussButtonTextDiscussed: { color: "#FFF" },
   completionCard: {
     backgroundColor: "#DCFCE7",
     borderLeftWidth: 4,
@@ -492,13 +252,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     gap: 12,
   },
-  completionText: {
-    fontSize: 14,
-    color: "#065F46",
-    fontWeight: "500",
-    textAlign: "center",
-    lineHeight: 20,
-  },
+  completionText: { fontSize: 14, color: "#065F46", fontWeight: "500", textAlign: "center", lineHeight: 20 },
   footer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -514,30 +268,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  buttonDisabled: {
-    backgroundColor: "#D1D5DB",
-  },
-  buttonText: {
-    color: "#FFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  buttonTextDisabled: {
-    color: "#9CA3AF",
-  },
-  continueButton: {
-    backgroundColor: "#16A34A",
-    paddingVertical: 16,
-    borderRadius: 10,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 8,
-  },
-  continueButtonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
+  buttonDisabled: { backgroundColor: "#D1D5DB" },
+  buttonText: { color: "#FFF", fontSize: 15, fontWeight: "600" },
+  buttonTextDisabled: { color: "#9CA3AF" },
 });
