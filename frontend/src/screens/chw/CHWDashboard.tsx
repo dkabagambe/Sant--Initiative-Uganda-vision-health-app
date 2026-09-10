@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import {
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiService } from "../../services/api";
@@ -66,11 +67,17 @@ export default function CHWDashboard() {
 
   useEffect(() => {
     checkOfflineData();
-    syncOfflineData();
     loadUserData();
-    loadDashboardStats();
-    loadRecentActivity();
   }, []);
+
+  // Reload stats and activity every time the screen is focused (e.g. after completing a screening)
+  useFocusEffect(
+    useCallback(() => {
+      syncOfflineData();
+      loadDashboardStats();
+      loadRecentActivity();
+    }, [])
+  );
 
   const loadDashboardStats = async () => {
     try {

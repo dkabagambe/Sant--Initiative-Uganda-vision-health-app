@@ -1,114 +1,128 @@
 const express = require("express");
 const router = express.Router();
+const { authenticate } = require("../middleware/auth");
 
-// Simple inventory endpoint without authentication
-router.get("/summary", async (req, res) => {
+/**
+ * GET /api/simple-inventory/summary
+ *
+ * Returns this VHT's stock from vht_stock (joined with products for metadata).
+ * Falls back to global products pool if the VHT has no vht_stock rows yet.
+ */
+router.get("/summary", authenticate, async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user?.userId || req.query.healthWorkerId || null;
+    const healthWorkerId = req.user?.userId;
+
+    if (!healthWorkerId) {
+      return res.status(401).json({ success: false, error: "Authentication required" });
+    }
+
+    // Check whether this VHT has any allocated stock rows
+    const hasVhtStockRes = await sql`
+      SELECT COUNT(*) AS cnt FROM vht_stock WHERE health_worker_id = ${healthWorkerId}
+    `;
+    const hasVhtStock = Number(hasVhtStockRes[0]?.cnt || 0) > 0;
 
     let products;
     let totals;
 
-    if (healthWorkerId) {
+    if (hasVhtStock) {
+      // VHT has their own allocated stock rows
       products = await sql`
-        SELECT 
+        SELECT
           p.id,
           p.name,
           p.power,
           p.price,
           p.category,
-          COALESCE(v.stock_quantity, 0) as stock_quantity,
-          COALESCE(v.stock_standard, 0) as stock_standard,
-          COALESCE(v.stock_metal, 0) as stock_metal,
-          COALESCE(v.stock_fashion, 0) as stock_fashion,
-          CASE 
-            WHEN COALESCE(v.stock_quantity, 0) = 0 THEN 'out_of_stock'
-            WHEN COALESCE(v.stock_quantity, 0) <= 5 THEN 'critical'
-            WHEN COALESCE(v.stock_quantity, 0) <= 10 THEN 'low'
+          GREATEST(COALESCE(v.stock_quantity, 0), 0)  AS stock_quantity,
+          GREATEST(COALESCE(v.stock_standard, 0), 0)  AS stock_standard,
+          GREATEST(COALESCE(v.stock_metal, 0), 0)     AS stock_metal,
+          GREATEST(COALESCE(v.stock_fashion, 0), 0)   AS stock_fashion,
+          CASE
+            WHEN GREATEST(COALESCE(v.stock_quantity, 0), 0) = 0  THEN 'out_of_stock'
+            WHEN GREATEST(COALESCE(v.stock_quantity, 0), 0) <= 5 THEN 'critical'
+            WHEN GREATEST(COALESCE(v.stock_quantity, 0), 0) <= 10 THEN 'low'
             ELSE 'normal'
-          END as stock_status
+          END AS stock_status
         FROM products p
         LEFT JOIN vht_stock v ON v.product_id = p.id AND v.health_worker_id = ${healthWorkerId}
-        ORDER BY p.power ASC
+        ORDER BY p.power::numeric ASC
       `;
 
       totals = await sql`
-        SELECT 
-          COUNT(*) as total_products,
-          COALESCE(SUM(v.stock_quantity), 0) as total_pairs,
-          COALESCE(SUM(v.stock_standard), 0) as total_standard,
-          COALESCE(SUM(v.stock_metal), 0) as total_metal,
-          COALESCE(SUM(v.stock_fashion), 0) as total_fashion,
-          COALESCE(SUM(v.stock_quantity * p.price), 0) as total_value
+        SELECT
+          COUNT(DISTINCT p.id)                                              AS total_products,
+          GREATEST(COALESCE(SUM(v.stock_quantity), 0), 0)                  AS total_pairs,
+          GREATEST(COALESCE(SUM(v.stock_standard), 0), 0)                  AS total_standard,
+          GREATEST(COALESCE(SUM(v.stock_metal), 0), 0)                     AS total_metal,
+          GREATEST(COALESCE(SUM(v.stock_fashion), 0), 0)                   AS total_fashion,
+          COALESCE(SUM(GREATEST(v.stock_quantity, 0) * p.price), 0)        AS total_value
         FROM products p
         LEFT JOIN vht_stock v ON v.product_id = p.id AND v.health_worker_id = ${healthWorkerId}
       `;
     } else {
+      // No VHT-specific allocation yet — show global products pool
       products = await sql`
-        SELECT 
+        SELECT
           p.id,
           p.name,
           p.power,
           p.price,
           p.category,
-          p.stock_quantity,
-          p.stock_standard,
-          p.stock_metal,
-          p.stock_fashion,
-          CASE 
-            WHEN p.stock_quantity = 0 THEN 'out_of_stock'
-            WHEN p.stock_quantity <= 5 THEN 'critical'
-            WHEN p.stock_quantity <= 10 THEN 'low'
+          GREATEST(COALESCE(p.stock_quantity, 0), 0)  AS stock_quantity,
+          GREATEST(COALESCE(p.stock_standard, 0), 0)  AS stock_standard,
+          GREATEST(COALESCE(p.stock_metal, 0), 0)     AS stock_metal,
+          GREATEST(COALESCE(p.stock_fashion, 0), 0)   AS stock_fashion,
+          CASE
+            WHEN GREATEST(COALESCE(p.stock_quantity, 0), 0) = 0  THEN 'out_of_stock'
+            WHEN GREATEST(COALESCE(p.stock_quantity, 0), 0) <= 5 THEN 'critical'
+            WHEN GREATEST(COALESCE(p.stock_quantity, 0), 0) <= 10 THEN 'low'
             ELSE 'normal'
-          END as stock_status
+          END AS stock_status
         FROM products p
-        ORDER BY p.power ASC
+        ORDER BY p.power::numeric ASC
       `;
 
       totals = await sql`
-        SELECT 
-          COUNT(*) as total_products,
-          SUM(stock_quantity) as total_pairs,
-          SUM(CASE WHEN category = 'reading_glasses' THEN stock_quantity ELSE 0 END) as total_standard,
-          SUM(CASE WHEN category = 'sunglasses' THEN stock_quantity ELSE 0 END) as total_metal,
-          SUM(CASE WHEN category = 'fashion' THEN stock_quantity ELSE 0 END) as total_fashion,
-          SUM(stock_quantity * price) as total_value
+        SELECT
+          COUNT(*)                                                AS total_products,
+          COALESCE(SUM(GREATEST(stock_quantity, 0)), 0)          AS total_pairs,
+          COALESCE(SUM(GREATEST(COALESCE(stock_standard,0),0)),0) AS total_standard,
+          COALESCE(SUM(GREATEST(COALESCE(stock_metal,0),0)),0)   AS total_metal,
+          COALESCE(SUM(GREATEST(COALESCE(stock_fashion,0),0)),0) AS total_fashion,
+          COALESCE(SUM(GREATEST(stock_quantity,0) * price), 0)   AS total_value
         FROM products
       `;
     }
 
-    const lowStockCount = products.filter(
-      (product) =>
-        Number(product.stock_quantity || 0) > 0 &&
-        Number(product.stock_quantity || 0) < 20,
-    ).length;
-
-    const productsWithStatus = products.map((product) => ({
-      ...product,
-      status: product.stock_status,
-      stock_quantity: Number(product.stock_quantity || 0),
-      stock_standard: Number(product.stock_standard || 0),
-      stock_metal: Number(product.stock_metal || 0),
-      stock_fashion: Number(product.stock_fashion || 0),
+    const productsFormatted = products.map((p) => ({
+      ...p,
+      stock_quantity: Number(p.stock_quantity || 0),
+      stock_standard: Number(p.stock_standard || 0),
+      stock_metal:    Number(p.stock_metal    || 0),
+      stock_fashion:  Number(p.stock_fashion  || 0),
     }));
+
+    const lowStockCount = productsFormatted.filter(
+      (p) => p.stock_quantity > 0 && p.stock_quantity < 20,
+    ).length;
 
     res.json({
       success: true,
       data: {
-        products: productsWithStatus,
-        totals: totals[0] || {
-          total_products: 0,
-          total_pairs: 0,
-          total_standard: 0,
-          total_metal: 0,
-          total_fashion: 0,
-          total_value: 0,
+        products: productsFormatted,
+        totals: {
+          total_products: Number(totals[0]?.total_products || 0),
+          total_pairs:    Number(totals[0]?.total_pairs    || 0),
+          total_standard: Number(totals[0]?.total_standard || 0),
+          total_metal:    Number(totals[0]?.total_metal    || 0),
+          total_fashion:  Number(totals[0]?.total_fashion  || 0),
+          total_value:    Number(totals[0]?.total_value    || 0),
         },
         lowStockCount,
-        lowStockAlert: productsWithStatus.filter(
-          (product) =>
-            product.stock_quantity > 0 && product.stock_quantity < 20,
+        lowStockAlert: productsFormatted.filter(
+          (p) => p.stock_quantity > 0 && p.stock_quantity < 20,
         ),
       },
     });

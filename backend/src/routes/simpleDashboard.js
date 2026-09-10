@@ -1,150 +1,204 @@
 const express = require("express");
 const router = express.Router();
+const { authenticate } = require("../middleware/auth");
 
-// Simple working dashboard stats endpoint
-router.get("/stats", async (req, res) => {
+/**
+ * GET /api/simple-dashboard/stats
+ *
+ * Returns live dashboard statistics scoped to the logged-in VHT.
+ *
+ * Key schema facts this query relies on:
+ *   - screenings.health_worker_id  → links screenings to a VHT
+ *   - payments.screening_id        → links payments to a screening (no health_worker_id on payments)
+ *   - referrals.health_worker_id   → links referrals to a VHT
+ *   - vht_stock.health_worker_id   → per-VHT stock allocation
+ *   - needs_glasses = true         → glasses were recommended/given (glasses_dispensed may be 0)
+ */
+router.get("/stats", authenticate, async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const healthWorkerId = req.user?.userId || req.query.healthWorkerId || null;
+    const healthWorkerId = req.user?.userId;
 
-    const screenings = healthWorkerId
-      ? await sql`SELECT COUNT(*) as total FROM screenings WHERE health_worker_id = ${healthWorkerId}`
-      : await sql`SELECT COUNT(*) as total FROM screenings`;
-    const glasses = healthWorkerId
-      ? await sql`SELECT COUNT(*) as total FROM screenings WHERE needs_glasses = true AND health_worker_id = ${healthWorkerId}`
-      : await sql`SELECT COUNT(*) as total FROM screenings WHERE needs_glasses = true`;
-    const referrals = healthWorkerId
-      ? await sql`SELECT COUNT(*) as total FROM screenings WHERE needs_referral = true AND health_worker_id = ${healthWorkerId}`
-      : await sql`SELECT COUNT(*) as total FROM screenings WHERE needs_referral = true`;
-    const clients = healthWorkerId
-      ? await sql`SELECT COUNT(DISTINCT client_phone) as total FROM screenings WHERE client_phone IS NOT NULL AND health_worker_id = ${healthWorkerId}`
-      : await sql`SELECT COUNT(DISTINCT client_phone) as total FROM screenings WHERE client_phone IS NOT NULL`;
-    const payments = healthWorkerId
-      ? await sql`SELECT COUNT(*) as total FROM payments p LEFT JOIN screenings s ON p.screening_id = s.id WHERE COALESCE(s.health_worker_id, p.health_worker_id) = ${healthWorkerId}`
-      : await sql`SELECT COUNT(*) as total FROM payments`;
-    const completedPayments = healthWorkerId
-      ? await sql`SELECT COUNT(*) as total FROM payments p LEFT JOIN screenings s ON p.screening_id = s.id WHERE p.status = 'completed' AND COALESCE(s.health_worker_id, p.health_worker_id) = ${healthWorkerId}`
-      : await sql`SELECT COUNT(*) as total FROM payments WHERE status = 'completed'`;
-    const pendingPayments = healthWorkerId
-      ? await sql`SELECT COUNT(*) as total FROM payments p LEFT JOIN screenings s ON p.screening_id = s.id WHERE p.status IN ('pending', 'overdue') AND COALESCE(s.health_worker_id, p.health_worker_id) = ${healthWorkerId}`
-      : await sql`SELECT COUNT(*) as total FROM payments WHERE status IN ('pending', 'overdue')`;
-    const revenue = healthWorkerId
-      ? await sql`SELECT COALESCE(SUM(p.amount), 0) as total FROM payments p LEFT JOIN screenings s ON p.screening_id = s.id WHERE p.status = 'completed' AND COALESCE(s.health_worker_id, p.health_worker_id) = ${healthWorkerId}`
-      : await sql`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE status = 'completed'`;
-    const referralCount = healthWorkerId
-      ? await sql`SELECT COUNT(*) as total FROM referrals WHERE health_worker_id = ${healthWorkerId}`
-      : await sql`SELECT COUNT(*) as total FROM referrals`;
-    const pendingReferrals = healthWorkerId
-      ? await sql`SELECT COUNT(*) as total FROM referrals WHERE (status = 'pending' OR status IS NULL) AND health_worker_id = ${healthWorkerId}`
-      : await sql`SELECT COUNT(*) as total FROM referrals WHERE status = 'pending' OR status IS NULL`;
-    const completedReferrals = healthWorkerId
-      ? await sql`SELECT COUNT(*) as total FROM referrals WHERE status = 'completed' AND health_worker_id = ${healthWorkerId}`
-      : await sql`SELECT COUNT(*) as total FROM referrals WHERE status = 'completed'`;
-    const overduePayments = healthWorkerId
-      ? await sql`SELECT COUNT(*) as total FROM payments p LEFT JOIN screenings s ON p.screening_id = s.id WHERE p.status = 'overdue' AND COALESCE(s.health_worker_id, p.health_worker_id) = ${healthWorkerId}`
-      : await sql`SELECT COUNT(*) as total FROM payments WHERE status = 'overdue'`;
+    if (!healthWorkerId) {
+      return res.status(401).json({ success: false, error: "Authentication required" });
+    }
 
-    const weekScreenings = healthWorkerId
-      ? await sql`
-          SELECT COUNT(*) as total FROM screenings
+    // Run all queries in parallel for speed
+    const [
+      screeningsRes,
+      weekScreeningsRes,
+      todayScreeningsRes,
+      glassesRes,
+      referralScreeningsRes,
+      clientsRes,
+      paymentsRes,
+      completedPaymentsRes,
+      pendingPaymentsRes,
+      overduePaymentsRes,
+      revenueRes,
+      dueTodayRes,
+      referralCountRes,
+      pendingReferralsRes,
+      completedReferralsRes,
+      vhtStockRes,
+    ] = await Promise.all([
+      // Total screenings by this VHT
+      sql`SELECT COUNT(*) AS total FROM screenings WHERE health_worker_id = ${healthWorkerId}`,
+
+      // Screenings in the last 7 days
+      sql`SELECT COUNT(*) AS total FROM screenings
           WHERE health_worker_id = ${healthWorkerId}
-          AND COALESCE(screening_date::date, created_at::date) >= CURRENT_DATE - INTERVAL '7 days'
-        `
-      : await sql`
-          SELECT COUNT(*) as total FROM screenings
-          WHERE COALESCE(screening_date::date, created_at::date) >= CURRENT_DATE - INTERVAL '7 days'
-        `;
+          AND COALESCE(screening_date::date, created_at::date) >= CURRENT_DATE - INTERVAL '7 days'`,
 
-    const todayScreenings = healthWorkerId
-      ? await sql`
-          SELECT COUNT(*) as total FROM screenings
+      // Screenings today
+      sql`SELECT COUNT(*) AS total FROM screenings
           WHERE health_worker_id = ${healthWorkerId}
-          AND COALESCE(screening_date::date, created_at::date) = CURRENT_DATE
-        `
-      : await sql`
-          SELECT COUNT(*) as total FROM screenings
-          WHERE COALESCE(screening_date::date, created_at::date) = CURRENT_DATE
-        `;
+          AND COALESCE(screening_date::date, created_at::date) = CURRENT_DATE`,
 
-    const inventoryData = healthWorkerId
-      ? await sql`
-          SELECT COALESCE(SUM(v.stock_quantity), 0) as total_stock
-          FROM vht_stock v
-          WHERE v.health_worker_id = ${healthWorkerId}
-        `
-      : await sql`SELECT COALESCE(SUM(stock_quantity), 0) as total_stock FROM products`;
+      // Glasses given — use needs_glasses (glasses_dispensed is unreliable in current data)
+      sql`SELECT COUNT(*) AS total FROM screenings
+          WHERE health_worker_id = ${healthWorkerId}
+          AND needs_glasses = true`,
 
-    const glassesGiven = healthWorkerId
-      ? await sql`SELECT COUNT(*) as total FROM screenings WHERE needs_glasses = true AND health_worker_id = ${healthWorkerId}`
-      : await sql`SELECT COUNT(*) as total FROM screenings WHERE needs_glasses = true`;
+      // Clients referred (from screenings)
+      sql`SELECT COUNT(*) AS total FROM screenings
+          WHERE health_worker_id = ${healthWorkerId}
+          AND needs_referral = true`,
 
-    const dueToday = healthWorkerId
-      ? await sql`
-          SELECT COUNT(*) as total FROM payments p
-          LEFT JOIN screenings s ON p.screening_id = s.id
-          WHERE p.status IN ('pending', 'overdue')
+      // Distinct clients screened (phone preferred; fallback to name)
+      sql`SELECT COUNT(DISTINCT COALESCE(NULLIF(client_phone,''), client_name)) AS total
+          FROM screenings
+          WHERE health_worker_id = ${healthWorkerId}
+          AND (client_phone IS NOT NULL OR client_name IS NOT NULL)`,
+
+      // Total payments linked to this VHT's screenings
+      sql`SELECT COUNT(*) AS total
+          FROM payments p
+          JOIN screenings s ON p.screening_id = s.id
+          WHERE s.health_worker_id = ${healthWorkerId}`,
+
+      // Completed payments
+      sql`SELECT COUNT(*) AS total
+          FROM payments p
+          JOIN screenings s ON p.screening_id = s.id
+          WHERE s.health_worker_id = ${healthWorkerId}
+          AND p.status = 'completed'`,
+
+      // Pending payments
+      sql`SELECT COUNT(*) AS total
+          FROM payments p
+          JOIN screenings s ON p.screening_id = s.id
+          WHERE s.health_worker_id = ${healthWorkerId}
+          AND p.status IN ('pending', 'overdue')`,
+
+      // Overdue payments
+      sql`SELECT COUNT(*) AS total
+          FROM payments p
+          JOIN screenings s ON p.screening_id = s.id
+          WHERE s.health_worker_id = ${healthWorkerId}
+          AND p.status = 'overdue'`,
+
+      // Revenue from completed payments
+      sql`SELECT COALESCE(SUM(p.amount), 0) AS total
+          FROM payments p
+          JOIN screenings s ON p.screening_id = s.id
+          WHERE s.health_worker_id = ${healthWorkerId}
+          AND p.status = 'completed'`,
+
+      // Payments due today or overdue
+      sql`SELECT COUNT(*) AS total
+          FROM payments p
+          JOIN screenings s ON p.screening_id = s.id
+          WHERE s.health_worker_id = ${healthWorkerId}
+          AND p.status IN ('pending', 'overdue')
           AND p.due_date IS NOT NULL
-          AND p.due_date <= CURRENT_DATE
-          AND COALESCE(s.health_worker_id, p.health_worker_id) = ${healthWorkerId}
-        `
-      : await sql`
-          SELECT COUNT(*) as total FROM payments
-          WHERE status IN ('pending', 'overdue') AND due_date IS NOT NULL AND due_date <= CURRENT_DATE
-        `;
+          AND p.due_date::date <= CURRENT_DATE`,
 
-    const pendingAmount = healthWorkerId
-      ? await sql`
-          SELECT COALESCE(SUM(p.amount), 0) as total FROM payments p
-          LEFT JOIN screenings s ON p.screening_id = s.id
-          WHERE p.status IN ('pending', 'overdue')
-          AND COALESCE(s.health_worker_id, p.health_worker_id) = ${healthWorkerId}
-        `
-      : await sql`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE status IN ('pending', 'overdue')`;
+      // All referrals by this VHT
+      sql`SELECT COUNT(*) AS total FROM referrals WHERE health_worker_id = ${healthWorkerId}`,
+
+      // Pending referrals
+      sql`SELECT COUNT(*) AS total FROM referrals
+          WHERE health_worker_id = ${healthWorkerId}
+          AND (status = 'pending' OR status IS NULL)`,
+
+      // Completed referrals
+      sql`SELECT COUNT(*) AS total FROM referrals
+          WHERE health_worker_id = ${healthWorkerId}
+          AND status = 'completed'`,
+
+      // VHT stock — GREATEST(..., 0) guards against negative stock
+      sql`SELECT GREATEST(COALESCE(SUM(stock_quantity), 0), 0) AS total_stock
+          FROM vht_stock
+          WHERE health_worker_id = ${healthWorkerId}`,
+    ]);
+
+    // If VHT has no vht_stock rows, fall back to global products pool
+    let inventoryTotal = Number(vhtStockRes[0]?.total_stock || 0);
+    const hasVhtStock = await sql`
+      SELECT COUNT(*) AS cnt FROM vht_stock WHERE health_worker_id = ${healthWorkerId}
+    `;
+    if (Number(hasVhtStock[0]?.cnt || 0) === 0) {
+      const globalStock = await sql`SELECT COALESCE(SUM(stock_quantity), 0) AS total FROM products`;
+      inventoryTotal = Number(globalStock[0]?.total || 0);
+    }
+
+    const weekScreenings   = Number(weekScreeningsRes[0]?.total || 0);
+    const glassesGiven     = Number(glassesRes[0]?.total || 0);
+    const clients          = Number(clientsRes[0]?.total || 0);
+    const pendingPay       = Number(pendingPaymentsRes[0]?.total || 0);
+    const overduePay       = Number(overduePaymentsRes[0]?.total || 0);
+    const pendingReferrals = Number(pendingReferralsRes[0]?.total || 0);
+    const referralCount    = Number(referralCountRes[0]?.total || 0);
+    const completedRef     = Number(completedReferralsRes[0]?.total || 0);
+    const dueToday         = Number(dueTodayRes[0]?.total || 0);
+    const revenue          = Number(revenueRes[0]?.total || 0);
+    const totalScreenings  = Number(screeningsRes[0]?.total || 0);
+    const referralScreen   = Number(referralScreeningsRes[0]?.total || 0);
+    const completedPay     = Number(completedPaymentsRes[0]?.total || 0);
+    const totalPayments    = Number(paymentsRes[0]?.total || 0);
+    const todayScreenings  = Number(todayScreeningsRes[0]?.total || 0);
 
     res.json({
       success: true,
       data: {
-        weekScreenings: Number(weekScreenings[0]?.total || 0),
-        glassesGiven: Number(glassesGiven[0]?.total || 0),
-        clients: Number(clients[0]?.total || 0),
-        clientsDueRepayment: Number(
-          (pendingPayments[0]?.total || 0) + (overduePayments[0]?.total || 0),
-        ),
-        inventory: Number(inventoryData[0]?.total_stock || 0),
-        referrals: Number(pendingReferrals[0]?.total || 0),
-        referralsOutstanding: Math.max(
-          0,
-          Number(referralCount[0]?.total || 0) -
-            Number(completedReferrals[0]?.total || 0),
-        ),
-        paymentsDue: Number(dueToday[0]?.total || 0),
-        expectedAmount: Number(revenue[0]?.total || 0),
+        // Fields used by CHWDashboard.tsx (main dashboard)
+        weekScreenings,
+        glassesGiven,
+        clients,
+        clientsDueRepayment: pendingPay + overduePay,
+        inventory: inventoryTotal,
+        referrals: pendingReferrals,
+        referralsOutstanding: Math.max(0, referralCount - completedRef),
+        paymentsDue: dueToday,
+        expectedAmount: revenue,
 
-        total_screenings: Number(screenings[0]?.total || 0),
-        clients_needing_glasses: Number(glasses[0]?.total || 0),
-        clients_referred: Number(referrals[0]?.total || 0),
-        total_clients: Number(clients[0]?.total || 0),
-        total_payments: Number(payments[0]?.total || 0),
-        completed_payments: Number(completedPayments[0]?.total || 0),
-        pending_payments: Number(pendingPayments[0]?.total || 0),
-        total_revenue: Number(revenue[0]?.total || 0),
-        total_referrals: Number(referralCount[0]?.total || 0),
-        pending_referrals: Number(pendingReferrals[0]?.total || 0),
-        completed_referrals: Number(completedReferrals[0]?.total || 0),
-        screenings_this_week: Number(weekScreenings[0]?.total || 0),
-        screenings_today: Number(todayScreenings[0]?.total || 0),
-        screenings_this_month: Number(screenings[0]?.total || 0),
-        due_today: Number(dueToday[0]?.total || 0),
-        pending_amount: Number(pendingAmount[0]?.total || 0),
-        outstanding_referrals: Number(
-          Math.max(
-            0,
-            Number(referralCount[0]?.total || 0) -
-              Number(completedReferrals[0]?.total || 0),
-          ),
-        ),
-        total_stock: Number(inventoryData[0]?.total_stock || 0),
-        total_products: 0,
+        // Fields used by CHWDashboardScreen.tsx (tab dashboard)
+        screenings_this_week:     weekScreenings,
+        screenings_today:         todayScreenings,
+        screenings_this_month:    totalScreenings,
+        total_screenings:         totalScreenings,
+        clients_needing_glasses:  glassesGiven,
+        clients_referred:         referralScreen,
+        total_clients:            clients,
+        total_payments:           totalPayments,
+        completed_payments:       completedPay,
+        pending_payments:         pendingPay,
+        total_revenue:            revenue,
+        total_referrals:          referralCount,
+        pending_referrals:        pendingReferrals,
+        completed_referrals:      completedRef,
+        due_today:                dueToday,
+        pending_amount:           Number((await sql`
+          SELECT COALESCE(SUM(p.amount), 0) AS total
+          FROM payments p
+          JOIN screenings s ON p.screening_id = s.id
+          WHERE s.health_worker_id = ${healthWorkerId}
+          AND p.status IN ('pending', 'overdue')
+        `)[0]?.total || 0),
+        outstanding_referrals:    Math.max(0, referralCount - completedRef),
+        total_stock:              inventoryTotal,
+        total_products:           0,
       },
     });
   } catch (error) {

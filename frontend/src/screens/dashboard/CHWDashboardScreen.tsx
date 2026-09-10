@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { apiService, User } from "../../services/api";
 
@@ -47,18 +48,38 @@ export default function CHWDashboardScreen() {
     fullName: "VHT",
     village: "",
   });
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+  // useFocusEffect ensures stats reload every time the user navigates back to this screen
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboardData();
+    }, [])
+  );
+
+  const getTimeAgo = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays > 0) return `${diffDays}d ago`;
+    if (diffHours > 0) return `${diffHours}h ago`;
+    return "Just now";
+  };
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [dashboardData, userData] = await Promise.all([
-        apiService.getDashboardStats(),
-        apiService.getCurrentUser(),
-      ]);
+      const [dashboardData, userData, screeningsRes, paymentsRes, referralsRes] =
+        await Promise.all([
+          apiService.getDashboardStats(),
+          apiService.getCurrentUser(),
+          apiService.getScreenings().catch(() => ({ data: [] })),
+          apiService.getPayments().catch(() => ({ data: [] })),
+          apiService.getReferrals().catch(() => ({ data: [] })),
+        ]);
 
       const raw = dashboardData?.data || {};
       const liveStats = {
@@ -74,7 +95,7 @@ export default function CHWDashboardScreen() {
         clients_referred: Number(
           raw.clients_referred ?? raw.total_referrals ?? 0,
         ),
-        clients: Number(raw.clients ?? 0),
+        clients: Number(raw.clients ?? raw.total_clients ?? 0),
         inventory: Number(raw.inventory ?? raw.total_stock ?? 0),
         referrals: Number(raw.referrals ?? raw.pending_referrals ?? 0),
         paymentsDue: Number(raw.paymentsDue ?? raw.due_today ?? 0),
@@ -87,6 +108,52 @@ export default function CHWDashboardScreen() {
       if (userData) {
         setUser(userData);
       }
+
+      // Build real recent activity from live data
+      const activities: any[] = [];
+
+      const screeningsList = Array.isArray(screeningsRes?.data)
+        ? screeningsRes.data
+        : [];
+      const paymentsList = Array.isArray(paymentsRes?.data)
+        ? paymentsRes.data
+        : [];
+      const referralsList = Array.isArray(referralsRes?.data)
+        ? referralsRes.data
+        : [];
+
+      screeningsList.slice(0, 2).forEach((s: any) => {
+        activities.push({
+          name: s.client_name || s.clientName || "Unknown",
+          description: `Screening completed${s.recommended_power ? ` • ${s.recommended_power}` : ""}`,
+          time: getTimeAgo(s.created_at || s.screening_date),
+          type: "screening",
+          amount: s.recommended_power || null,
+        });
+      });
+
+      paymentsList.slice(0, 2).forEach((p: any) => {
+        activities.push({
+          name: p.client_name || p.clientName || "Unknown",
+          description: `Payment received • UGX ${Number(p.amount || 0).toLocaleString()}`,
+          time: getTimeAgo(p.created_at || p.date),
+          type: "payment",
+          amount: p.amount,
+        });
+      });
+
+      referralsList.slice(0, 1).forEach((r: any) => {
+        activities.push({
+          name: r.client_name || r.clientName || "Unknown",
+          description: `Referred${r.facility_name || r.facilityName ? ` to ${r.facility_name || r.facilityName}` : ""}`,
+          time: getTimeAgo(r.created_at),
+          type: "referral",
+          amount: null,
+        });
+      });
+
+      // Sort by most recent first (activities already come ordered from API)
+      setRecentActivities(activities.slice(0, 4));
     } catch (error) {
       console.error("Failed to load dashboard:", error);
     } finally {
@@ -251,57 +318,56 @@ export default function CHWDashboardScreen() {
           </View>
 
           <View style={styles.activityList}>
-            {/* Activity 1 */}
-            <View style={styles.activityItem}>
-              <View style={styles.activityAvatar}>
-                <Ionicons name="person-circle" size={40} color="#6B7280" />
+            {recentActivities.length === 0 ? (
+              <View style={styles.activityItem}>
+                <View style={styles.activityDetails}>
+                  <Text style={styles.activityDescription}>
+                    No recent activity yet. Start a screening!
+                  </Text>
+                </View>
               </View>
-              <View style={styles.activityDetails}>
-                <Text style={styles.activityName}>Nakato Grace</Text>
-                <Text style={styles.activityDescription}>
-                  Screening completed • +2.50D
-                </Text>
-                <Text style={styles.activityTime}>2h ago</Text>
-              </View>
-              <View style={styles.activityAmountNeutral}>
-                <Text style={styles.neutralAmount}>+2.50</Text>
-              </View>
-            </View>
-
-            {/* Activity 2 */}
-            <View style={styles.activityItem}>
-              <View style={styles.activityAvatar}>
-                <Ionicons name="person-circle" size={40} color="#6B7280" />
-              </View>
-              <View style={styles.activityDetails}>
-                <Text style={styles.activityName}>Musoke Peter</Text>
-                <Text style={styles.activityDescription}>
-                  Payment received • UGX 5,000
-                </Text>
-                <Text style={styles.activityTime}>5h ago</Text>
-              </View>
-              <View style={styles.activityAmountPositive}>
-                <Ionicons name="arrow-down" size={16} color="#059669" />
-                <Text style={styles.positiveAmount}>+5,000</Text>
-              </View>
-            </View>
-
-            {/* Activity 3 */}
-            <View style={styles.activityItem}>
-              <View style={styles.activityAvatar}>
-                <Ionicons name="person-circle" size={40} color="#6B7280" />
-              </View>
-              <View style={styles.activityDetails}>
-                <Text style={styles.activityName}>Nansubuga Sarah</Text>
-                <Text style={styles.activityDescription}>
-                  Referred to Luweero Hospital
-                </Text>
-                <Text style={styles.activityTime}>1d ago</Text>
-              </View>
-              <View style={styles.activityAmountInfo}>
-                <Ionicons name="arrow-forward" size={16} color="#3B82F6" />
-              </View>
-            </View>
+            ) : (
+              recentActivities.map((activity, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.activityItem,
+                    index === recentActivities.length - 1 && {
+                      borderBottomWidth: 0,
+                    },
+                  ]}
+                >
+                  <View style={styles.activityAvatar}>
+                    <Ionicons name="person-circle" size={40} color="#6B7280" />
+                  </View>
+                  <View style={styles.activityDetails}>
+                    <Text style={styles.activityName}>{activity.name}</Text>
+                    <Text style={styles.activityDescription}>
+                      {activity.description}
+                    </Text>
+                    {activity.time ? (
+                      <Text style={styles.activityTime}>{activity.time}</Text>
+                    ) : null}
+                  </View>
+                  {activity.type === "payment" && activity.amount ? (
+                    <View style={styles.activityAmountPositive}>
+                      <Ionicons name="arrow-down" size={16} color="#059669" />
+                      <Text style={styles.positiveAmount}>
+                        +{Number(activity.amount).toLocaleString()}
+                      </Text>
+                    </View>
+                  ) : activity.type === "screening" && activity.amount ? (
+                    <View style={styles.activityAmountNeutral}>
+                      <Text style={styles.neutralAmount}>{activity.amount}</Text>
+                    </View>
+                  ) : activity.type === "referral" ? (
+                    <View style={styles.activityAmountInfo}>
+                      <Ionicons name="arrow-forward" size={16} color="#3B82F6" />
+                    </View>
+                  ) : null}
+                </View>
+              ))
+            )}
           </View>
         </View>
 

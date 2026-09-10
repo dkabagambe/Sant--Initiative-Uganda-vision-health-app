@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import {
 } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { apiService } from "../../services/api";
 import CHWHeader from "../../components/CHWHeader";
@@ -233,10 +234,16 @@ export default function InventoryScreen() {
   };
 
   useEffect(() => {
-    loadInventory();
     loadUserData();
-    loadSalesData();
   }, []);
+
+  // Reload inventory & sales every time the user comes back to this screen
+  useFocusEffect(
+    useCallback(() => {
+      loadInventory();
+      loadSalesData();
+    }, [])
+  );
 
   const loadUserData = async () => {
     try {
@@ -296,47 +303,69 @@ export default function InventoryScreen() {
 
   const loadSalesData = async () => {
     try {
-      // Get screenings with glasses sold this week
+      // Screenings with glasses sold this week (needs_glasses = true)
       const screenings = await apiService.getScreenings();
       if (screenings.success && screenings.data) {
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
 
         const weekSales = screenings.data.filter(
-          (s: any) => s.needs_glasses && new Date(s.created_at) >= weekAgo,
+          (s: any) =>
+            s.needs_glasses &&
+            new Date(s.created_at || s.screening_date) >= weekAgo,
         );
 
-        // Get recent sales (last 4)
-        const recent = weekSales.slice(0, 4).map((s: any) => ({
+        // Recent sales list — last 4 screenings where glasses were given
+        const allGlassesSales = screenings.data.filter(
+          (s: any) => s.needs_glasses,
+        );
+        const recent = allGlassesSales.slice(0, 4).map((s: any) => ({
           clientName: s.client_name || "Unknown",
-          power: s.recommended_power || "N/A",
-          frameType: s.selected_frame_type || "Standard",
+          power: s.recommended_power || s.glasses_power || "N/A",
+          frameType:
+            s.selected_frame_type ||
+            s.glasses_frame_type ||
+            "Standard",
           amount: `UGX ${(s.glasses_price || 15000).toLocaleString()}`,
-          time: getTimeAgo(s.created_at),
+          time: getTimeAgo(s.created_at || s.screening_date),
         }));
 
         setRecentSales(recent);
 
-        // Get payment stats
+        // Payment revenue — completed payments linked to this VHT
         const payments = await apiService.getPayments();
         if (payments.success && payments.data) {
+          const monthAgo = new Date();
+          monthAgo.setDate(monthAgo.getDate() - 30);
+
           const completed = payments.data.filter(
             (p: any) => p.status === "completed",
           );
-          const fullPayments = completed
+          const thisMonthCompleted = completed.filter(
+            (p: any) =>
+              new Date(p.created_at || p.payment_date) >= monthAgo,
+          );
+
+          const fullPayments = thisMonthCompleted
             .filter(
               (p: any) =>
                 p.payment_type === "full" || p.payment_type === "cash",
             )
-            .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
-          const hirePurchase = completed
+            .reduce(
+              (sum: number, p: any) => sum + (Number(p.amount) || 0),
+              0,
+            );
+          const hirePurchase = thisMonthCompleted
             .filter(
               (p: any) =>
                 p.payment_type === "installment" ||
                 p.payment_type === "hire-purchase" ||
                 p.payment_type === "hire_purchase",
             )
-            .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
+            .reduce(
+              (sum: number, p: any) => sum + (Number(p.amount) || 0),
+              0,
+            );
 
           setStats((prev) => ({
             ...prev,
@@ -344,6 +373,12 @@ export default function InventoryScreen() {
             totalRevenue: fullPayments + hirePurchase,
             fullPayments,
             hirePurchase,
+          }));
+        } else {
+          // If payments fail, still update weekSold
+          setStats((prev) => ({
+            ...prev,
+            weekSold: weekSales.length,
           }));
         }
       }

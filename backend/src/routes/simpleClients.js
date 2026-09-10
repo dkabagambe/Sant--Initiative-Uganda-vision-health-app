@@ -1,12 +1,18 @@
 const express = require('express');
 const router = express.Router();
+const { authenticate } = require('../middleware/auth');
 
-// Simple clients endpoint without authentication
-router.get('/list', async (req, res) => {
+// Clients endpoint — requires JWT so list is scoped to the logged-in VHT
+router.get('/list', authenticate, async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    
-    // Get all clients from screenings (most reliable source)
+    const healthWorkerId = req.user?.userId;
+
+    if (!healthWorkerId) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    // Get clients from screenings belonging to this VHT only
     const clients = await sql`
       SELECT DISTINCT
         client_name as full_name,
@@ -15,20 +21,22 @@ router.get('/list', async (req, res) => {
         client_gender as gender,
         client_village as village,
         client_district as district,
-        MAX(screening_date) as last_screening_date,
+        MAX(COALESCE(screening_date::date, created_at::date)) as last_screening_date,
         COUNT(*) as total_screenings
       FROM screenings
       WHERE client_name IS NOT NULL
+        AND health_worker_id = ${healthWorkerId}
       GROUP BY client_name, client_phone, client_age, client_gender, client_village, client_district
-      ORDER BY MAX(screening_date) DESC
-      LIMIT 50
+      ORDER BY MAX(COALESCE(screening_date::date, created_at::date)) DESC
+      LIMIT 100
     `;
-    
+
     res.json({
       success: true,
-      data: clients
+      data: clients,
+      count: clients.length
     });
-    
+
   } catch (error) {
     console.error('Simple clients error:', error);
     res.status(500).json({
