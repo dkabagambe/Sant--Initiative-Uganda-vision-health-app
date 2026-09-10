@@ -3,6 +3,7 @@ const router = express.Router();
 const screeningController = require("../controllers/screeningController");
 const { authenticate } = require("../middleware/auth");
 
+router.use(authenticate);
 router.post("/", screeningController.createScreening);
 router.get("/", screeningController.getScreenings);
 router.get("/stats", screeningController.getScreeningStats);

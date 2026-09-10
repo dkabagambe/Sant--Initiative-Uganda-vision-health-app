@@ -4,20 +4,14 @@ exports.createScreening = async (req, res) => {
     const sql = req.app.locals.sql;
     let healthWorkerId = req.user?.userId;
 
-    // If no health worker ID (e.g., testing), get a valid one
+    // Require an authenticated health worker so screenings are attached to the correct person.
     if (!healthWorkerId) {
-      const workers =
-        await sql`SELECT id FROM users WHERE role IN ('CHW', 'health_worker') ORDER BY CASE WHEN role = 'CHW' THEN 0 ELSE 1 END, created_at DESC LIMIT 1`;
-      if (workers.length > 0) {
-        healthWorkerId = workers[0].id;
-      } else {
-        return res.status(400).json({
-          success: false,
-          error: "No health worker available",
-          details:
-            "Please ensure there is at least one CHW or health worker in the system",
-        });
-      }
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required",
+        details:
+          "Please log in again before creating a screening so it is saved under your profile.",
+      });
     }
 
     // Extract and normalize field names (frontend uses camelCase, DB uses snake_case)
