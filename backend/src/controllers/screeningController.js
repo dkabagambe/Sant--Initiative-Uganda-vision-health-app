@@ -336,8 +336,8 @@ exports.getScreeningStats = async (req, res) => {
         COUNT(*) as total_screenings,
         COUNT(CASE WHEN needs_glasses = true THEN 1 END) as clients_needing_glasses,
         COUNT(CASE WHEN needs_referral = true THEN 1 END) as clients_referred,
-        COUNT(CASE WHEN screening_date >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as screenings_this_week,
-        COUNT(CASE WHEN screening_date >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as screenings_this_month
+        COUNT(CASE WHEN COALESCE(screening_date::date, created_at::date) >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as screenings_this_week,
+        COUNT(CASE WHEN COALESCE(screening_date::date, created_at::date) >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as screenings_this_month
       FROM screenings
       WHERE health_worker_id = ${healthWorkerId}
     `;

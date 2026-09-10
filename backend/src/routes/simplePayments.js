@@ -6,80 +6,154 @@ router.get("/list", async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     const { status, limit = 50, offset = 0 } = req.query;
+    const healthWorkerId = req.user?.userId || req.query.healthWorkerId || null;
 
     let payments;
     if (status) {
-      payments = await sql`
-        SELECT 
-          p.id,
-          p.client_name,
-          p.client_phone,
-          p.amount,
-          p.payment_method,
-          p.payment_type,
-          p.installment_number,
-          p.total_installments,
-          p.due_date,
-          p.payment_date,
-          p.verified_at,
-          p.transaction_id,
-          p.offline_id,
-          p.is_synced,
-          p.created_at,
-          p.status,
-          prod.name as product_name,
-          prod.power as product_power,
-          prod.price as product_price,
-          prod.category as product_category,
-          s.client_age,
-          s.client_gender,
-          s.client_village,
-          s.client_district
-        FROM payments p
-        LEFT JOIN products prod ON p.product_id = prod.id
-        LEFT JOIN screenings s ON p.screening_id = s.id
-        WHERE p.status = ${status}
-        ORDER BY p.created_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `;
+      if (healthWorkerId) {
+        payments = await sql`
+          SELECT 
+            p.id,
+            p.client_name,
+            p.client_phone,
+            p.amount,
+            p.payment_method,
+            p.payment_type,
+            p.installment_number,
+            p.total_installments,
+            p.due_date,
+            p.payment_date,
+            p.verified_at,
+            p.transaction_id,
+            p.offline_id,
+            p.is_synced,
+            p.created_at,
+            p.status,
+            prod.name as product_name,
+            prod.power as product_power,
+            prod.price as product_price,
+            prod.category as product_category,
+            s.client_age,
+            s.client_gender,
+            s.client_village,
+            s.client_district
+          FROM payments p
+          LEFT JOIN products prod ON p.product_id = prod.id
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          WHERE p.status = ${status}
+            AND COALESCE(s.health_worker_id, p.health_worker_id) = ${healthWorkerId}
+          ORDER BY p.created_at DESC
+          LIMIT ${limit} OFFSET ${offset}
+        `;
+      } else {
+        payments = await sql`
+          SELECT 
+            p.id,
+            p.client_name,
+            p.client_phone,
+            p.amount,
+            p.payment_method,
+            p.payment_type,
+            p.installment_number,
+            p.total_installments,
+            p.due_date,
+            p.payment_date,
+            p.verified_at,
+            p.transaction_id,
+            p.offline_id,
+            p.is_synced,
+            p.created_at,
+            p.status,
+            prod.name as product_name,
+            prod.power as product_power,
+            prod.price as product_price,
+            prod.category as product_category,
+            s.client_age,
+            s.client_gender,
+            s.client_village,
+            s.client_district
+          FROM payments p
+          LEFT JOIN products prod ON p.product_id = prod.id
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          WHERE p.status = ${status}
+          ORDER BY p.created_at DESC
+          LIMIT ${limit} OFFSET ${offset}
+        `;
+      }
     } else {
-      payments = await sql`
-        SELECT 
-          p.id,
-          p.client_name,
-          p.client_phone,
-          p.amount,
-          p.payment_method,
-          p.payment_type,
-          p.installment_number,
-          p.total_installments,
-          p.due_date,
-          p.payment_date,
-          p.verified_at,
-          p.transaction_id,
-          p.offline_id,
-          p.is_synced,
-          p.created_at,
-          p.status,
-          prod.name as product_name,
-          prod.power as product_power,
-          prod.price as product_price,
-          prod.category as product_category,
-          s.client_age,
-          s.client_gender,
-          s.client_village,
-          s.client_district
-        FROM payments p
-        LEFT JOIN products prod ON p.product_id = prod.id
-        LEFT JOIN screenings s ON p.screening_id = s.id
-        ORDER BY p.created_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `;
+      if (healthWorkerId) {
+        payments = await sql`
+          SELECT 
+            p.id,
+            p.client_name,
+            p.client_phone,
+            p.amount,
+            p.payment_method,
+            p.payment_type,
+            p.installment_number,
+            p.total_installments,
+            p.due_date,
+            p.payment_date,
+            p.verified_at,
+            p.transaction_id,
+            p.offline_id,
+            p.is_synced,
+            p.created_at,
+            p.status,
+            prod.name as product_name,
+            prod.power as product_power,
+            prod.price as product_price,
+            prod.category as product_category,
+            s.client_age,
+            s.client_gender,
+            s.client_village,
+            s.client_district
+          FROM payments p
+          LEFT JOIN products prod ON p.product_id = prod.id
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          WHERE COALESCE(s.health_worker_id, p.health_worker_id) = ${healthWorkerId}
+          ORDER BY p.created_at DESC
+          LIMIT ${limit} OFFSET ${offset}
+        `;
+      } else {
+        payments = await sql`
+          SELECT 
+            p.id,
+            p.client_name,
+            p.client_phone,
+            p.amount,
+            p.payment_method,
+            p.payment_type,
+            p.installment_number,
+            p.total_installments,
+            p.due_date,
+            p.payment_date,
+            p.verified_at,
+            p.transaction_id,
+            p.offline_id,
+            p.is_synced,
+            p.created_at,
+            p.status,
+            prod.name as product_name,
+            prod.power as product_power,
+            prod.price as product_price,
+            prod.category as product_category,
+            s.client_age,
+            s.client_gender,
+            s.client_village,
+            s.client_district
+          FROM payments p
+          LEFT JOIN products prod ON p.product_id = prod.id
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          ORDER BY p.created_at DESC
+          LIMIT ${limit} OFFSET ${offset}
+        `;
+      }
     }
 
-    const total = await sql`
-      SELECT COUNT(*) as count FROM payments
-    `;
+    const total = healthWorkerId
+      ? await sql`SELECT COUNT(*) as count FROM payments p LEFT JOIN screenings s ON p.screening_id = s.id WHERE COALESCE(s.health_worker_id, p.health_worker_id) = ${healthWorkerId}`
+      : await sql`SELECT COUNT(*) as count FROM payments`;
 
     res.json({
       success: true,

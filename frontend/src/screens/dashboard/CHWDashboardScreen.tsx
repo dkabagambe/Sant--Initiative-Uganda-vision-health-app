@@ -37,8 +37,16 @@ export default function CHWDashboardScreen() {
     clients_needing_glasses: 0,
     total_screenings: 0,
     clients_referred: 0,
+    clients: 0,
+    inventory: 0,
+    referrals: 0,
+    paymentsDue: 0,
+    expectedAmount: 0,
   });
-  const [user, setUser] = useState<Partial<User>>({ fullName: "VHT", village: "" });
+  const [user, setUser] = useState<Partial<User>>({
+    fullName: "VHT",
+    village: "",
+  });
 
   useEffect(() => {
     loadDashboardData();
@@ -52,8 +60,29 @@ export default function CHWDashboardScreen() {
         apiService.getCurrentUser(),
       ]);
 
-      if (dashboardData.success) {
-        setStats(dashboardData.data.screenings);
+      const raw = dashboardData?.data || {};
+      const liveStats = {
+        screenings_this_week: Number(
+          raw.screenings_this_week ?? raw.weekScreenings ?? 0,
+        ),
+        clients_needing_glasses: Number(
+          raw.clients_needing_glasses ?? raw.glassesGiven ?? 0,
+        ),
+        total_screenings: Number(
+          raw.total_screenings ?? raw.weekScreenings ?? 0,
+        ),
+        clients_referred: Number(
+          raw.clients_referred ?? raw.total_referrals ?? 0,
+        ),
+        clients: Number(raw.clients ?? 0),
+        inventory: Number(raw.inventory ?? raw.total_stock ?? 0),
+        referrals: Number(raw.referrals ?? raw.pending_referrals ?? 0),
+        paymentsDue: Number(raw.paymentsDue ?? raw.due_today ?? 0),
+        expectedAmount: Number(raw.expectedAmount ?? raw.total_revenue ?? 0),
+      };
+
+      if (dashboardData?.success) {
+        setStats(liveStats);
       }
       if (userData) {
         setUser(userData);
@@ -87,7 +116,9 @@ export default function CHWDashboardScreen() {
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.organization}>Santé Initiative Uganda</Text>
-              <Text style={styles.userName}>{user.fullName || user.full_name}</Text>
+              <Text style={styles.userName}>
+                {user.fullName || user.full_name}
+              </Text>
             </View>
             <TouchableOpacity style={styles.profileButton}>
               <Ionicons name="person-circle" size={40} color="#1E40AF" />
@@ -104,11 +135,15 @@ export default function CHWDashboardScreen() {
           <Text style={styles.sectionTitle}>This Week</Text>
           <View style={styles.weekStats}>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{stats.screenings_this_week}</Text>
+              <Text style={styles.statNumber}>
+                {stats.screenings_this_week}
+              </Text>
               <Text style={styles.statLabel}>Screened</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{stats.clients_needing_glasses}</Text>
+              <Text style={styles.statNumber}>
+                {stats.clients_needing_glasses}
+              </Text>
               <Text style={styles.statLabel}>Glasses Given</Text>
             </View>
           </View>
@@ -141,8 +176,12 @@ export default function CHWDashboardScreen() {
               <Text style={styles.cardTitle}>My Clients</Text>
               <Ionicons name="people-outline" size={24} color="#1E40AF" />
             </View>
-            <Text style={styles.cardSubtitle}>47 Active clients</Text>
-            <Text style={styles.cardNote}>8 due for repayment</Text>
+            <Text style={styles.cardSubtitle}>
+              {stats.clients} active clients
+            </Text>
+            <Text style={styles.cardNote}>
+              {stats.paymentsDue} due for repayment
+            </Text>
           </TouchableOpacity>
 
           {/* Inventory */}
@@ -154,8 +193,12 @@ export default function CHWDashboardScreen() {
               <Text style={styles.cardTitle}>Inventory</Text>
               <Ionicons name="cube-outline" size={24} color="#1E40AF" />
             </View>
-            <Text style={styles.cardSubtitle}>45 Glasses in stock</Text>
-            <Text style={styles.goodStock}>Good stock level</Text>
+            <Text style={styles.cardSubtitle}>
+              {stats.inventory} glasses in stock
+            </Text>
+            <Text style={styles.goodStock}>
+              {stats.inventory > 0 ? "Good stock level" : "Out of stock"}
+            </Text>
           </TouchableOpacity>
 
           {/* Referrals */}
@@ -167,8 +210,12 @@ export default function CHWDashboardScreen() {
               <Text style={styles.cardTitle}>Referrals</Text>
               <Ionicons name="share-outline" size={24} color="#1E40AF" />
             </View>
-            <Text style={styles.cardSubtitle}>3 Pending referrals</Text>
-            <Text style={styles.cardNote}>1 outstanding</Text>
+            <Text style={styles.cardSubtitle}>
+              {stats.referrals} pending referrals
+            </Text>
+            <Text style={styles.cardNote}>
+              {stats.clients_referred} outstanding
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -180,10 +227,12 @@ export default function CHWDashboardScreen() {
               <Text style={styles.paymentsDueSubtitle}>Clients due today</Text>
             </View>
             <View style={styles.paymentsDueBadge}>
-              <Text style={styles.paymentsDueNumber}>3</Text>
+              <Text style={styles.paymentsDueNumber}>{stats.paymentsDue}</Text>
             </View>
           </View>
-          <Text style={styles.paymentsDueAmount}>UGX 15,000 expected</Text>
+          <Text style={styles.paymentsDueAmount}>
+            UGX {Number(stats.expectedAmount || 0).toLocaleString()} expected
+          </Text>
           <TouchableOpacity
             style={styles.paymentsDueButton}
             onPress={() => navigation.navigate("Payments")}

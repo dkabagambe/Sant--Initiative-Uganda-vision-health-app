@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,12 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { apiService } from "../../services/api";
 
 type RootStackParamList = {
   Dashboard: undefined;
@@ -31,6 +33,57 @@ type DashboardScreenNavigationProp = NativeStackNavigationProp<
 
 export default function VSLADashboardScreen() {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    screenings_this_week: 0,
+    clients_needing_glasses: 0,
+    clients: 0,
+    inventory: 0,
+    referrals: 0,
+    paymentsDue: 0,
+    expectedAmount: 0,
+  });
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.getDashboardStats();
+        const raw = response?.data || {};
+        setStats({
+          screenings_this_week: Number(
+            raw.screenings_this_week ?? raw.weekScreenings ?? 0,
+          ),
+          clients_needing_glasses: Number(
+            raw.clients_needing_glasses ?? raw.glassesGiven ?? 0,
+          ),
+          clients: Number(raw.clients ?? 0),
+          inventory: Number(raw.inventory ?? raw.total_stock ?? 0),
+          referrals: Number(raw.referrals ?? raw.pending_referrals ?? 0),
+          paymentsDue: Number(raw.paymentsDue ?? raw.due_today ?? 0),
+          expectedAmount: Number(raw.expectedAmount ?? raw.total_revenue ?? 0),
+        });
+      } catch (error) {
+        console.error("Failed to load VSLA dashboard stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#F8FFF8" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1E40AF" />
+          <Text style={styles.loadingText}>Loading dashboard...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,14 +122,18 @@ export default function VSLADashboardScreen() {
               <View style={styles.statIconContainer}>
                 <Ionicons name="swap-horizontal" size={20} color="#1E40AF" />
               </View>
-              <Text style={styles.statNumber}>34</Text>
+              <Text style={styles.statNumber}>
+                {stats.screenings_this_week}
+              </Text>
               <Text style={styles.statLabel}>Transactions</Text>
             </View>
             <View style={styles.statCard}>
               <View style={styles.statIconContainer}>
                 <Ionicons name="eye-outline" size={20} color="#059669" />
               </View>
-              <Text style={styles.statNumber}>22</Text>
+              <Text style={styles.statNumber}>
+                {stats.clients_needing_glasses}
+              </Text>
               <Text style={styles.statLabel}>Glasses Issued</Text>
             </View>
           </View>
@@ -116,10 +173,14 @@ export default function VSLADashboardScreen() {
                 </View>
                 <Text style={styles.cardTitle}>Members</Text>
               </View>
-              <Text style={styles.cardSubtitle}>32 VSLA members</Text>
+              <Text style={styles.cardSubtitle}>
+                {stats.clients} VSLA members
+              </Text>
               <View style={styles.pendingContainer}>
                 <View style={styles.pendingBadge}>
-                  <Text style={styles.pendingText}>5 pending</Text>
+                  <Text style={styles.pendingText}>
+                    {stats.referrals} pending
+                  </Text>
                 </View>
               </View>
               <View style={styles.cardFooter}>
@@ -140,10 +201,14 @@ export default function VSLADashboardScreen() {
                 </View>
                 <Text style={styles.cardTitle}>Stock</Text>
               </View>
-              <Text style={styles.cardSubtitle}>67 Glasses in stock</Text>
+              <Text style={styles.cardSubtitle}>
+                {stats.inventory} glasses in stock
+              </Text>
               <View style={styles.stockStatus}>
                 <View style={styles.statusIndicator} />
-                <Text style={styles.goodStock}>Good stock level</Text>
+                <Text style={styles.goodStock}>
+                  {stats.inventory > 0 ? "Good stock level" : "Out of stock"}
+                </Text>
               </View>
               <View style={styles.cardFooter}>
                 <Text style={styles.cardActionText}>View</Text>
@@ -180,10 +245,12 @@ export default function VSLADashboardScreen() {
               <Text style={styles.paymentsDueSubtitle}>Due today</Text>
             </View>
             <View style={styles.paymentsDueBadge}>
-              <Text style={styles.paymentsDueNumber}>3</Text>
+              <Text style={styles.paymentsDueNumber}>{stats.paymentsDue}</Text>
             </View>
           </View>
-          <Text style={styles.paymentsDueAmount}>UGX 15,000 expected</Text>
+          <Text style={styles.paymentsDueAmount}>
+            UGX {Number(stats.expectedAmount || 0).toLocaleString()} expected
+          </Text>
           <TouchableOpacity
             style={styles.paymentsDueButton}
             activeOpacity={0.7}
@@ -339,6 +406,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8FFF8",
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F8FFF8",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#1F2937",
+    fontWeight: "600",
   },
   header: {
     backgroundColor: "#FFFFFF",
