@@ -11,44 +11,105 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
-
-const preparationSteps = [
-  {
-    id: "chair",
-    title: "Place Chair",
-    instruction: "Place chair in a location with good light",
-    icon: "home",
-  },
-  {
-    id: "measure",
-    title: "Measure Distance",
-    instruction: "Measure exactly 3 metres using rope",
-    icon: "ruler",
-  },
-  {
-    id: "chart",
-    title: "Position E-Chart",
-    instruction: "Place E-chart at 3 metres distance",
-    icon: "image",
-  },
-  {
-    id: "hands",
-    title: "Wash Hands",
-    instruction: "Wash or disinfect hands",
-    icon: "water",
-  },
-  {
-    id: "torch",
-    title: "Prepare Torch",
-    instruction: "Prepare torch and screening materials",
-    icon: "flashlight",
-  },
-];
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function VHTScreeningStep5() {
   const navigation = useNavigation<any>();
   const { updateScreeningData } = useScreening();
+  const { t } = useLanguage();
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
+
+  const preparationSteps = [
+    { id: "chair", title: t("placeChair"), instruction: t("placeChairInstruction"), icon: "home" },
+    { id: "measure", title: t("measureDistance"), instruction: t("measureDistanceInstruction"), icon: "ruler" },
+    { id: "chart", title: t("positionEChart"), instruction: t("positionEChartInstruction"), icon: "image" },
+    { id: "hands", title: t("washHands"), instruction: t("washHandsInstruction"), icon: "water" },
+    { id: "torch", title: t("prepareTorch"), instruction: t("prepareTorchInstruction"), icon: "flashlight" },
+  ];
+
+  const toggleStep = (id: string) => {
+    const newCompleted = new Set(completedSteps);
+    if (newCompleted.has(id)) {
+      newCompleted.delete(id);
+    } else {
+      newCompleted.add(id);
+    }
+    setCompletedSteps(newCompleted);
+  };
+
+  const allStepsCompleted = completedSteps.size === preparationSteps.length;
+
+  const handleContinue = () => {
+    if (allStepsCompleted) {
+      updateScreeningData({ screeningAreaPrepared: true });
+      navigation.navigate("VHTScreeningStep6");
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={28} color="#0891B2" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t("step5Title")}</Text>
+        <View style={{ width: 28 }} />
+      </View>
+
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+        <View style={styles.instructionCard}>
+          <Ionicons name="settings" size={24} color="#0891B2" />
+          <Text style={styles.instructionText}>{t("step5Instruction")}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t("preparationSteps")}</Text>
+          <Text style={styles.sectionSubtitle}>{t("completeAllSteps")}</Text>
+
+          {preparationSteps.map((step) => (
+            <TouchableOpacity key={step.id} style={styles.stepCard} onPress={() => toggleStep(step.id)}>
+              <View style={styles.stepLeft}>
+                <View style={[styles.checkbox, completedSteps.has(step.id) && styles.checkboxChecked]}>
+                  {completedSteps.has(step.id) && <Ionicons name="checkmark" size={16} color="#FFF" />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.stepTitle}>{step.title}</Text>
+                  <Text style={styles.stepInstruction}>{step.instruction}</Text>
+                </View>
+              </View>
+              <Ionicons name={step.icon as any} size={24} color={completedSteps.has(step.id) ? "#0891B2" : "#D1D5DB"} />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {allStepsCompleted && (
+          <View style={styles.readyCard}>
+            <Ionicons name="checkmark-circle" size={32} color="#10B981" />
+            <Text style={styles.readyText}>{t("setupComplete")}</Text>
+          </View>
+        )}
+      </ScrollView>
+
+      <View style={[styles.footer, { paddingBottom: 24 }]}>
+        <TouchableOpacity
+          style={[styles.button, !allStepsCompleted && styles.buttonDisabled]}
+          onPress={handleContinue}
+          disabled={!allStepsCompleted}
+          activeOpacity={allStepsCompleted ? 0.7 : 1}
+        >
+          <Text style={[styles.buttonText, !allStepsCompleted && styles.buttonTextDisabled]}>
+            {allStepsCompleted
+              ? t("continueToDemo")
+              : `${completedSteps.size}/${preparationSteps.length} ${t("itemsChecked")}`}
+          </Text>
+          {allStepsCompleted && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
 
   const toggleStep = (id: string) => {
     const newCompleted = new Set(completedSteps);

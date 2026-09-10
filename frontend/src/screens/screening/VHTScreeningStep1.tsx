@@ -11,25 +11,27 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
-
-const equipmentChecklist = [
-  { id: "echart", label: "E-chart" },
-  { id: "torch", label: "Torch" },
-  { id: "batteries", label: "Batteries" },
-  { id: "rope", label: "3-metre rope" },
-  { id: "glasses", label: "Reading glasses" },
-  { id: "referral", label: "Referral forms" },
-  { id: "register", label: "Register" },
-  { id: "mirror", label: "Mirror" },
-  { id: "cases", label: "Glasses cases" },
-  { id: "disinfectant", label: "Disinfectant" },
-  { id: "cloth", label: "Clean cloth" },
-];
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function VHTScreeningStep1() {
   const navigation = useNavigation<any>();
   const { updateScreeningData } = useScreening();
+  const { t } = useLanguage();
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+
+  const equipmentChecklist = [
+    { id: "echart", label: t("equip_echart") },
+    { id: "torch", label: t("equip_torch") },
+    { id: "batteries", label: t("equip_batteries") },
+    { id: "rope", label: t("equip_rope") },
+    { id: "glasses", label: t("equip_glasses") },
+    { id: "referral", label: t("equip_referral") },
+    { id: "register", label: t("equip_register") },
+    { id: "mirror", label: t("equip_mirror") },
+    { id: "cases", label: t("equip_cases") },
+    { id: "disinfectant", label: t("equip_disinfectant") },
+    { id: "cloth", label: t("equip_cloth") },
+  ];
 
   const toggleItem = (id: string) => {
     const newChecked = new Set(checkedItems);
@@ -58,7 +60,7 @@ export default function VHTScreeningStep1() {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={28} color="#1E40AF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Step 1: Prepare for Visit</Text>
+        <Text style={styles.headerTitle}>{t("step1Title")}</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -69,17 +71,12 @@ export default function VHTScreeningStep1() {
       >
         <View style={styles.instructionCard}>
           <Ionicons name="information-circle" size={24} color="#1E40AF" />
-          <Text style={styles.instructionText}>
-            Before going for household visits, confirm all equipment is present,
-            clean and working
-          </Text>
+          <Text style={styles.instructionText}>{t("step1Instruction")}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Equipment Checklist</Text>
-          <Text style={styles.sectionSubtitle}>
-            Check that you have all these items:
-          </Text>
+          <Text style={styles.sectionTitle}>{t("equipmentChecklist")}</Text>
+          <Text style={styles.sectionSubtitle}>{t("checkHaveItems")}</Text>
 
           {equipmentChecklist.map((item) => (
             <TouchableOpacity
@@ -103,41 +100,33 @@ export default function VHTScreeningStep1() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Equipment Condition</Text>
+          <Text style={styles.sectionTitle}>{t("equipmentCondition")}</Text>
           <View style={styles.infoBox}>
             <Ionicons name="alert-circle" size={20} color="#D97706" />
-            <Text style={styles.infoText}>
-              Confirm all equipment is clean and working before proceeding
-            </Text>
+            <Text style={styles.infoText}>{t("confirmCleanWorking")}</Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Supervisor Notification</Text>
+          <Text style={styles.sectionTitle}>{t("supervisorNotification")}</Text>
           <View style={styles.infoBox}>
             <Ionicons name="people" size={20} color="#0891B2" />
-            <Text style={styles.infoText}>
-              Have you informed your supervisor of planned visits?
-            </Text>
+            <Text style={styles.infoText}>{t("informedSupervisor")}</Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Referral Pathways</Text>
+          <Text style={styles.sectionTitle}>{t("referralPathways")}</Text>
           <View style={styles.infoBox}>
             <Ionicons name="map" size={20} color="#7C3AED" />
-            <Text style={styles.infoText}>
-              Review referral pathways to health facilities before leaving
-            </Text>
+            <Text style={styles.infoText}>{t("reviewReferralPathways")}</Text>
           </View>
         </View>
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: 24 }]}>
         <Text style={styles.footerHint}>
-          {allChecked
-            ? "Equipment ready. Continue to household screening."
-            : "Complete the checklist to continue to household screening."}
+          {allChecked ? t("equipmentReady") : t("completeChecklist")}
         </Text>
         <TouchableOpacity
           style={[styles.button, !allChecked && styles.buttonDisabled]}
@@ -146,14 +135,11 @@ export default function VHTScreeningStep1() {
           activeOpacity={allChecked ? 0.7 : 1}
         >
           <Text
-            style={[
-              styles.buttonText,
-              !allChecked && styles.buttonTextDisabled,
-            ]}
+            style={[styles.buttonText, !allChecked && styles.buttonTextDisabled]}
           >
             {allChecked
-              ? "Continue to Screening"
-              : `${checkedItems.size}/${equipmentChecklist.length} items checked`}
+              ? t("continueToScreening")
+              : `${checkedItems.size}/${equipmentChecklist.length} ${t("itemsChecked")}`}
           </Text>
           <Ionicons
             name="arrow-forward"
@@ -167,10 +153,7 @@ export default function VHTScreeningStep1() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFF",
-  },
+  container: { flex: 1, backgroundColor: "#FFF" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -187,11 +170,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
+  content: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
   instructionCard: {
     backgroundColor: "#DBEAFE",
     borderLeftWidth: 4,
@@ -202,26 +181,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
   },
-  instructionText: {
-    fontSize: 14,
-    color: "#0C4A6E",
-    flex: 1,
-    lineHeight: 20,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1F2937",
-    marginBottom: 8,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginBottom: 12,
-  },
+  instructionText: { fontSize: 14, color: "#0C4A6E", flex: 1, lineHeight: 20 },
+  section: { marginBottom: 24 },
+  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#1F2937", marginBottom: 8 },
+  sectionSubtitle: { fontSize: 14, color: "#6B7280", marginBottom: 12 },
   checklistItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -239,15 +202,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  checkboxChecked: {
-    backgroundColor: "#16A34A",
-    borderColor: "#16A34A",
-  },
-  checklistLabel: {
-    fontSize: 15,
-    color: "#374151",
-    flex: 1,
-  },
+  checkboxChecked: { backgroundColor: "#16A34A", borderColor: "#16A34A" },
+  checklistLabel: { fontSize: 15, color: "#374151", flex: 1 },
   infoBox: {
     backgroundColor: "#F9FAFB",
     padding: 12,
@@ -255,12 +211,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
   },
-  infoText: {
-    fontSize: 14,
-    color: "#4B5563",
-    flex: 1,
-    lineHeight: 20,
-  },
+  infoText: { fontSize: 14, color: "#4B5563", flex: 1, lineHeight: 20 },
   footer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -268,12 +219,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#E5E7EB",
     backgroundColor: "#FFF",
   },
-  footerHint: {
-    fontSize: 13,
-    color: "#4B5563",
-    marginBottom: 8,
-    textAlign: "center",
-  },
+  footerHint: { fontSize: 13, color: "#4B5563", marginBottom: 8, textAlign: "center" },
   button: {
     backgroundColor: "#16A34A",
     paddingVertical: 14,
@@ -283,38 +229,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  buttonDisabled: {
-    backgroundColor: "#D1D5DB",
-  },
-  buttonText: {
-    color: "#FFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  buttonTextDisabled: {
-    color: "#9CA3AF",
-  },
-  startButton: {
-    backgroundColor: "#16A34A",
-    paddingVertical: 16,
-    borderRadius: 10,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 10,
-    marginHorizontal: 0,
-    marginTop: 8,
-    marginBottom: 8,
-  },
-  startButtonDisabled: {
-    backgroundColor: "#D1D5DB",
-  },
-  startButtonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  startButtonTextDisabled: {
-    color: "#9CA3AF",
-  },
+  buttonDisabled: { backgroundColor: "#D1D5DB" },
+  buttonText: { color: "#FFF", fontSize: 15, fontWeight: "600" },
+  buttonTextDisabled: { color: "#9CA3AF" },
 });

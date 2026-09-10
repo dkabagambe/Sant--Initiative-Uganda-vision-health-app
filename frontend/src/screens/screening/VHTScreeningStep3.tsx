@@ -11,92 +11,136 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
-
-const educationPoints = [
-  {
-    id: "importance",
-    title: "Eye Health Importance",
-    content:
-      "Explain that eye health is important for learning, working and carrying out daily activities",
-    icon: "eye",
-  },
-  {
-    id: "early-detection",
-    title: "Early Detection",
-    content: "Explain that detecting eye problems early can prevent blindness",
-    icon: "heart",
-  },
-  {
-    id: "chronic-diseases",
-    title: "Link to Chronic Diseases",
-    content:
-      "Explain that eye problems may be linked to diabetes and hypertension",
-    icon: "medical",
-  },
-  {
-    id: "age40",
-    title: "Age 40+ Vision Changes",
-    content:
-      "Explain that people aged 40+ years may develop difficulty seeing near objects",
-    icon: "alert-circle",
-  },
-  {
-    id: "handwashing",
-    title: "Hand Hygiene",
-    content:
-      "Advise household members to wash hands with soap and clean water always before touching eyes",
-    icon: "water",
-  },
-  {
-    id: "face-washing",
-    title: "Face Hygiene",
-    content: "Advise washing faces with clean water",
-    icon: "water",
-  },
-  {
-    id: "vitamin-a",
-    title: "Vitamin A Foods",
-    content:
-      "Promote Vitamin A rich foods: green vegetables, mangoes, pawpaw, pumpkin, carrots, eggs, etc",
-    icon: "leaf",
-  },
-  {
-    id: "breastfeeding",
-    title: "Breastfeeding",
-    content: "Promote exclusive breastfeeding for the first six months",
-    icon: "heart",
-  },
-  {
-    id: "annual-exams",
-    title: "Regular Eye Exams",
-    content: "Advise annual eye examinations",
-    icon: "checkmark-circle",
-  },
-  {
-    id: "seek-care",
-    title: "Seek Care Early",
-    content: "Advise seeking care early when eye problems occur",
-    icon: "alert-circle",
-  },
-  {
-    id: "avoid-remedies",
-    title: "Avoid Traditional Remedies",
-    content: "Advise avoiding traditional eye medicines / herbs",
-    icon: "close-circle",
-  },
-  {
-    id: "eye-safety",
-    title: "Eye Safety",
-    content: "Advise protecting eyes from injuries, chemicals, smoke and dust",
-    icon: "shield",
-  },
-];
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function VHTScreeningStep3() {
   const navigation = useNavigation<any>();
   const { updateScreeningData } = useScreening();
+  const { t } = useLanguage();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [discussed, setDiscussed] = useState<Set<string>>(new Set());
+
+  const educationPoints = [
+    { id: "importance", title: t("eyeHealthImportance"), content: t("eyeHealthImportanceContent"), icon: "eye" },
+    { id: "early-detection", title: t("earlyDetection"), content: t("earlyDetectionContent"), icon: "heart" },
+    { id: "chronic-diseases", title: t("chronicDiseases"), content: t("chronicDiseasesContent"), icon: "medical" },
+    { id: "age40", title: t("age40Vision"), content: t("age40VisionContent"), icon: "alert-circle" },
+    { id: "handwashing", title: t("handHygiene"), content: t("handHygieneContent"), icon: "water" },
+    { id: "avoid-remedies", title: t("avoidSelfMedication"), content: t("avoidSelfMedicationContent"), icon: "close-circle" },
+  ];
+
+  const toggleDiscussed = (id: string) => {
+    const newDiscussed = new Set(discussed);
+    if (newDiscussed.has(id)) {
+      newDiscussed.delete(id);
+    } else {
+      newDiscussed.add(id);
+    }
+    setDiscussed(newDiscussed);
+  };
+
+  const allDiscussed = discussed.size === educationPoints.length;
+
+  const handleContinue = () => {
+    if (allDiscussed) {
+      updateScreeningData({ educationProvided: true });
+      navigation.navigate("VisionScreen1", { nextScreen: "VHTScreeningStep4" });
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="chevron-back" size={28} color="#7C3AED" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t("step3Title")}</Text>
+        <View style={{ width: 28 }} />
+      </View>
+
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+        <View style={styles.instructionCard}>
+          <Ionicons name="school" size={24} color="#7C3AED" />
+          <Text style={styles.instructionText}>{t("step3Instruction")}</Text>
+        </View>
+
+        <View style={styles.progressSection}>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${(discussed.size / educationPoints.length) * 100}%` }]} />
+          </View>
+          <Text style={styles.progressText}>
+            {discussed.size}/{educationPoints.length} {t("educationTopics").toLowerCase()}
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          {educationPoints.map((point) => (
+            <TouchableOpacity
+              key={point.id}
+              style={[styles.educationCard, expandedId === point.id && styles.educationCardExpanded]}
+              onPress={() => setExpandedId(expandedId === point.id ? null : point.id)}
+            >
+              <View style={styles.educationHeader}>
+                <View style={styles.educationTitleSection}>
+                  <View style={[styles.iconCircle, discussed.has(point.id) && styles.iconCircleDiscussed]}>
+                    <Ionicons name={point.icon as any} size={16} color={discussed.has(point.id) ? "#FFF" : "#7C3AED"} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.educationTitle}>{point.title}</Text>
+                    <Text style={styles.educationPreview}>{point.content}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity onPress={(e) => { e.stopPropagation(); toggleDiscussed(point.id); }}>
+                  <View style={[styles.checkbox, discussed.has(point.id) && styles.checkboxChecked]}>
+                    {discussed.has(point.id) && <Ionicons name="checkmark" size={16} color="#FFF" />}
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              {expandedId === point.id && (
+                <View style={styles.educationContent}>
+                  <Text style={styles.educationText}>{point.content}</Text>
+                  <TouchableOpacity
+                    style={[styles.discussButton, discussed.has(point.id) && styles.discussButtonDiscussed]}
+                    onPress={() => toggleDiscussed(point.id)}
+                  >
+                    <Ionicons name={discussed.has(point.id) ? "checkmark-circle" : "ellipse-outline"} size={20} color={discussed.has(point.id) ? "#FFF" : "#7C3AED"} />
+                    <Text style={[styles.discussButtonText, discussed.has(point.id) && styles.discussButtonTextDiscussed]}>
+                      {discussed.has(point.id) ? `${t("confirmed")} ✓` : t("confirm")}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {allDiscussed && (
+          <View style={styles.completionCard}>
+            <Ionicons name="checkmark-circle" size={32} color="#10B981" />
+            <Text style={styles.completionText}>{t("allTopicsCovered")}</Text>
+          </View>
+        )}
+      </ScrollView>
+
+      <View style={[styles.footer, { paddingBottom: 24 }]}>
+        <TouchableOpacity
+          style={[styles.button, !allDiscussed && styles.buttonDisabled]}
+          onPress={handleContinue}
+          disabled={!allDiscussed}
+          activeOpacity={allDiscussed ? 0.7 : 1}
+        >
+          <Text style={[styles.buttonText, !allDiscussed && styles.buttonTextDisabled]}>
+            {allDiscussed ? t("continueToAssessment") : t("coverAllTopics")}
+          </Text>
+          {allDiscussed && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
 
   const toggleDiscussed = (id: string) => {
     const newDiscussed = new Set(discussed);

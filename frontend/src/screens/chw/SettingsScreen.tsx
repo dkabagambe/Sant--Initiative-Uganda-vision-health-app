@@ -17,9 +17,11 @@ import * as ImagePicker from "expo-image-picker";
 import { apiService } from "../../services/api";
 import CHWHeader from "../../components/CHWHeader";
 import ApiConfigScreen from "./ApiConfigScreen";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function SettingsScreen() {
   const navigation = useNavigation<any>();
+  const { language, setLanguage } = useLanguage();
   const [offlineSync, setOfflineSync] = React.useState(true);
   const [userData, setUserData] = useState<any>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -380,6 +382,43 @@ export default function SettingsScreen() {
             <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
           </TouchableOpacity>
           <Text style={styles.menuSubtitle}>Text size, contrast, audio</Text>
+
+          {/* Language Switcher */}
+          <View style={styles.menuItem}>
+            <View style={styles.menuItemLeft}>
+              <Ionicons name="language-outline" size={20} color="#1E40AF" />
+              <Text style={styles.menuItemText}>Language / Olulimi</Text>
+            </View>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <TouchableOpacity
+                onPress={() => setLanguage("en")}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 16,
+                  backgroundColor: language === "en" ? "#1E40AF" : "#F3F4F6",
+                  borderWidth: 1,
+                  borderColor: language === "en" ? "#1E40AF" : "#E5E7EB",
+                }}
+              >
+                <Text style={{ fontSize: 13, fontWeight: "600", color: language === "en" ? "#FFF" : "#6B7280" }}>EN</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setLanguage("lg")}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 16,
+                  backgroundColor: language === "lg" ? "#1E40AF" : "#F3F4F6",
+                  borderWidth: 1,
+                  borderColor: language === "lg" ? "#1E40AF" : "#E5E7EB",
+                }}
+              >
+                <Text style={{ fontSize: 13, fontWeight: "600", color: language === "lg" ? "#FFF" : "#6B7280" }}>LG</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <Text style={styles.menuSubtitle}>English / Oluganda</Text>
 
           <TouchableOpacity style={styles.menuItem} onPress={handleMobileMoneySetup}>
             <View style={styles.menuItemLeft}>
