@@ -234,13 +234,10 @@ exports.createScreening = async (req, res) => {
 exports.getScreenings = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    let healthWorkerId = req.user?.userId;
+    const healthWorkerId = req.user?.userId;
 
-    // Get a valid CHW ID for testing if no authenticated user
     if (!healthWorkerId) {
-      const chwUsers =
-        await sql`SELECT id FROM users WHERE role = 'CHW' LIMIT 1`;
-      healthWorkerId = chwUsers.length > 0 ? chwUsers[0].id : null;
+      return res.status(401).json({ success: false, error: "Authentication required" });
     }
     const { limit = 50, offset = 0 } = req.query;
 
@@ -316,13 +313,10 @@ exports.getScreeningById = async (req, res) => {
 exports.getScreeningStats = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    let healthWorkerId = req.user?.userId;
+    const healthWorkerId = req.user?.userId;
 
-    // Get a valid CHW ID for testing if no authenticated user
     if (!healthWorkerId) {
-      const chwUsers =
-        await sql`SELECT id FROM users WHERE role = 'CHW' LIMIT 1`;
-      healthWorkerId = chwUsers.length > 0 ? chwUsers[0].id : null;
+      return res.status(401).json({ success: false, error: "Authentication required" });
     }
 
     const stats = await sql`

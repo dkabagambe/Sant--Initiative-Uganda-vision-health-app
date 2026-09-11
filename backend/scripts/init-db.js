@@ -420,6 +420,24 @@ async function initDB() {
     await sql`CREATE INDEX IF NOT EXISTS idx_payments_due_date ON payments(due_date)`;
     console.log("✓ Indexes created");
 
+    // Seed vht_stock for any VHTs that have no stock rows yet
+    await sql`
+      INSERT INTO vht_stock (health_worker_id, product_id, stock_quantity, stock_standard, stock_metal, stock_fashion)
+      SELECT u.id, p.id,
+        p.stock_quantity,
+        COALESCE(p.stock_standard, 0),
+        COALESCE(p.stock_metal, 0),
+        COALESCE(p.stock_fashion, 0)
+      FROM users u
+      CROSS JOIN products p
+      WHERE u.role IN ('health_worker', 'CHW', 'vht')
+        AND NOT EXISTS (
+          SELECT 1 FROM vht_stock vs
+          WHERE vs.health_worker_id = u.id AND vs.product_id = p.id
+        )
+    `;
+    console.log("✓ VHT stock rows seeded for all workers");
+
     console.log("\n✅ Database initialized successfully!");
   } catch (error) {
     console.error("\n❌ Database initialization failed:", error.message);
