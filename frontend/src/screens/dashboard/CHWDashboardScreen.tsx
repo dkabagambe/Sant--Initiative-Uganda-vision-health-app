@@ -54,7 +54,7 @@ export default function CHWDashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       loadDashboardData();
-    }, [])
+    }, []),
   );
 
   const getTimeAgo = (dateString: string) => {
@@ -72,14 +72,19 @@ export default function CHWDashboardScreen() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [dashboardData, userData, screeningsRes, paymentsRes, referralsRes] =
-        await Promise.all([
-          apiService.getDashboardStats(),
-          apiService.getCurrentUser(),
-          apiService.getScreenings().catch(() => ({ data: [] })),
-          apiService.getPayments().catch(() => ({ data: [] })),
-          apiService.getReferrals().catch(() => ({ data: [] })),
-        ]);
+      const [
+        dashboardData,
+        userData,
+        screeningsRes,
+        paymentsRes,
+        referralsRes,
+      ] = await Promise.all([
+        apiService.getDashboardStats(),
+        apiService.getCurrentUser(),
+        apiService.getScreenings().catch(() => ({ data: [] })),
+        apiService.getPayments().catch(() => ({ data: [] })),
+        apiService.getReferrals().catch(() => ({ data: [] })),
+      ]);
 
       const raw = dashboardData?.data || {};
       const liveStats = {
@@ -221,7 +226,14 @@ export default function CHWDashboardScreen() {
           {/* Start New Screening - Blue Primary Card */}
           <TouchableOpacity
             style={styles.primaryCard}
-            onPress={() => navigation.navigate("VHTScreeningStep1" as any)}
+            onPress={() => {
+              const parent = navigation.getParent<any>();
+              if (parent) {
+                parent.navigate("Screen", { screen: "VHTScreeningStep1" });
+              } else {
+                navigation.navigate("VHTScreeningStep1" as any);
+              }
+            }}
           >
             <View style={styles.cardHeader}>
               <Text style={[styles.cardTitle, styles.primaryCardText]}>
@@ -358,11 +370,17 @@ export default function CHWDashboardScreen() {
                     </View>
                   ) : activity.type === "screening" && activity.amount ? (
                     <View style={styles.activityAmountNeutral}>
-                      <Text style={styles.neutralAmount}>{activity.amount}</Text>
+                      <Text style={styles.neutralAmount}>
+                        {activity.amount}
+                      </Text>
                     </View>
                   ) : activity.type === "referral" ? (
                     <View style={styles.activityAmountInfo}>
-                      <Ionicons name="arrow-forward" size={16} color="#3B82F6" />
+                      <Ionicons
+                        name="arrow-forward"
+                        size={16}
+                        color="#3B82F6"
+                      />
                     </View>
                   ) : null}
                 </View>

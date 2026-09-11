@@ -19,7 +19,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { apiService } from "../../services/api";
 import SaleComplete from "./SaleComplete";
-import { moderateScale, scale, verticalScale, fontSize as responsiveFontSize } from "../../utils/responsive";
+import {
+  moderateScale,
+  scale,
+  verticalScale,
+  fontSize as responsiveFontSize,
+} from "../../utils/responsive";
 import CHWHeader from "../../components/CHWHeader";
 
 interface ClientRegistrationProps {
@@ -41,32 +46,83 @@ interface ClientRegistrationProps {
 export default function ClientRegistration() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  
+
   const clientData = route.params?.clientData || {};
   const screeningId = route.params?.screeningId || "";
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"full" | "hire-purchase">("hire-purchase");
+  const [paymentMethod, setPaymentMethod] = useState<"full" | "hire-purchase">(
+    "hire-purchase",
+  );
   const [vslaGroup, setVslaGroup] = useState<any>(null);
   const [showVslaDropdown, setShowVslaDropdown] = useState(false);
   const [mobileProvider, setMobileProvider] = useState<"MTN" | "Airtel">("MTN");
-  const [mobileNumber, setMobileNumber] = useState(clientData.clientPhone || "");
-  const [merchantCode] = useState(`SAN-UG-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`);
+  const [mobileNumber, setMobileNumber] = useState(
+    clientData.clientPhone || "",
+  );
+  const [merchantCode] = useState(
+    `SAN-UG-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`,
+  );
   const [loading, setLoading] = useState(false);
   const [showSaleComplete, setShowSaleComplete] = useState(false);
   const [saleData, setSaleData] = useState<any>(null);
 
   // VSLA Groups data (grouped by district and sub-county)
   const vslaGroups = [
-    { id: "1", name: "Twezimbe Women's Group", district: "Luweero", subCounty: "Wobulenzi" },
-    { id: "2", name: "Bweyogerere Savings Circle", district: "Luweero", subCounty: "Wobulenzi" },
-    { id: "3", name: "Kikyusa Farmers VSLA", district: "Luweero", subCounty: "Kikyusa" },
-    { id: "4", name: "Bamunanika Youth Savers", district: "Luweero", subCounty: "Bamunanika" },
-    { id: "5", name: "Katikamu Women United", district: "Luweero", subCounty: "Katikamu" },
-    { id: "6", name: "Nakaseke Bright Future", district: "Nakaseke", subCounty: "Nakaseke TC" },
-    { id: "7", name: "Kiwoko Health Savers", district: "Nakaseke", subCounty: "Kiwoko" },
-    { id: "8", name: "Kampala Central VSLA", district: "Kampala", subCounty: "Central Division" },
-    { id: "9", name: "Mukono Traders Group", district: "Mukono", subCounty: "Mukono TC" },
+    {
+      id: "1",
+      name: "Twezimbe Women's Group",
+      district: "Luweero",
+      subCounty: "Wobulenzi",
+    },
+    {
+      id: "2",
+      name: "Bweyogerere Savings Circle",
+      district: "Luweero",
+      subCounty: "Wobulenzi",
+    },
+    {
+      id: "3",
+      name: "Kikyusa Farmers VSLA",
+      district: "Luweero",
+      subCounty: "Kikyusa",
+    },
+    {
+      id: "4",
+      name: "Bamunanika Youth Savers",
+      district: "Luweero",
+      subCounty: "Bamunanika",
+    },
+    {
+      id: "5",
+      name: "Katikamu Women United",
+      district: "Luweero",
+      subCounty: "Katikamu",
+    },
+    {
+      id: "6",
+      name: "Nakaseke Bright Future",
+      district: "Nakaseke",
+      subCounty: "Nakaseke TC",
+    },
+    {
+      id: "7",
+      name: "Kiwoko Health Savers",
+      district: "Nakaseke",
+      subCounty: "Kiwoko",
+    },
+    {
+      id: "8",
+      name: "Kampala Central VSLA",
+      district: "Kampala",
+      subCounty: "Central Division",
+    },
+    {
+      id: "9",
+      name: "Mukono Traders Group",
+      district: "Mukono",
+      subCounty: "Mukono TC",
+    },
   ];
 
   useEffect(() => {
@@ -79,14 +135,14 @@ export default function ClientRegistration() {
       if (response.success) {
         // Filter products matching recommended power, or show all if no match
         let matchingProducts = response.data.filter(
-          (p: any) => p.power === clientData.recommendedPower
+          (p: any) => p.power === clientData.recommendedPower,
         );
-        
+
         // If no matching products, show all products
         if (matchingProducts.length === 0) {
           matchingProducts = response.data;
         }
-        
+
         setProducts(matchingProducts);
         if (matchingProducts.length > 0) {
           setSelectedProduct(matchingProducts[0]);
@@ -135,7 +191,8 @@ export default function ClientRegistration() {
         mobile_money_number: mobileNumber,
         payment_method:
           paymentMethod === "hire-purchase" ? "mobile_money" : "cash",
-        payment_type: paymentMethod === "hire-purchase" ? "installment" : "full",
+        payment_type:
+          paymentMethod === "hire-purchase" ? "installment" : "full",
         total_installments: paymentMethod === "hire-purchase" ? 3 : 1,
         installment_number: 1,
         // Used by backend for reminders / SMS text
@@ -158,7 +215,8 @@ export default function ClientRegistration() {
         let currentStatus = result.data.status || "pending";
 
         for (let i = 0; i < 20; i += 1) {
-          if (currentStatus === "completed" || currentStatus === "failed") break;
+          if (currentStatus === "completed" || currentStatus === "failed")
+            break;
           await new Promise((resolve) => setTimeout(resolve, 3000));
           const statusResult = await apiService.getPaymentStatus(paymentId);
           if (statusResult.success) {
@@ -231,7 +289,9 @@ export default function ClientRegistration() {
     }
   };
 
-  const installmentAmount = selectedProduct ? Math.ceil(selectedProduct.price / 3) : 0;
+  const installmentAmount = selectedProduct
+    ? Math.ceil(selectedProduct.price / 3)
+    : 0;
 
   // Show sale complete screen
   if (showSaleComplete && saleData) {
@@ -244,11 +304,23 @@ export default function ClientRegistration() {
         paymentMethod={saleData.paymentMethod}
         installmentAmount={saleData.installmentAmount}
         nextPaymentDate={saleData.nextPaymentDate}
-        onBackToHome={() => navigation.reset({
-          index: 0,
-          routes: [{ name: "AppTabs" }],
-        })}
-        onScreenNext={() => navigation.navigate("VHTScreeningStep1" as any)}
+        onBackToHome={() =>
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "AppTabs" }],
+          })
+        }
+        onScreenNext={() => {
+          const parent = navigation.getParent<any>();
+          if (parent) {
+            parent.navigate("Screen", { screen: "VHTScreeningStep1" });
+          } else {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "AppTabs", params: { role: "CHW" } }],
+            });
+          }
+        }}
       />
     );
   }
@@ -271,189 +343,271 @@ export default function ClientRegistration() {
         >
           {/* Client Details Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle} numberOfLines={2}>{clientData.clientName}</Text>
+            <Text style={styles.cardTitle} numberOfLines={2}>
+              {clientData.clientName}
+            </Text>
 
             <View style={styles.detailRow}>
-              <Ionicons name="calendar" size={16} color="#6B7280" style={styles.detailIcon} />
-              <Text style={styles.detailText}>Age: {clientData.clientAge} years</Text>
+              <Ionicons
+                name="calendar"
+                size={16}
+                color="#6B7280"
+                style={styles.detailIcon}
+              />
+              <Text style={styles.detailText}>
+                Age: {clientData.clientAge} years
+              </Text>
             </View>
 
             <View style={styles.detailRow}>
-              <Ionicons name="call" size={16} color="#6B7280" style={styles.detailIcon} />
-              <Text style={styles.detailText}>Phone: {clientData.clientPhone}</Text>
+              <Ionicons
+                name="call"
+                size={16}
+                color="#6B7280"
+                style={styles.detailIcon}
+              />
+              <Text style={styles.detailText}>
+                Phone: {clientData.clientPhone}
+              </Text>
             </View>
 
             {clientData.recommendedPower && (
               <View style={styles.detailRow}>
-                <Ionicons name="glasses" size={16} color="#6B7280" style={styles.detailIcon} />
-                <Text style={styles.detailText}>Power: {clientData.recommendedPower}</Text>
+                <Ionicons
+                  name="glasses"
+                  size={16}
+                  color="#6B7280"
+                  style={styles.detailIcon}
+                />
+                <Text style={styles.detailText}>
+                  Power: {clientData.recommendedPower}
+                </Text>
               </View>
             )}
 
             <View style={styles.detailRow}>
-              <Ionicons name="location" size={16} color="#6B7280" style={styles.detailIcon} />
+              <Ionicons
+                name="location"
+                size={16}
+                color="#6B7280"
+                style={styles.detailIcon}
+              />
               <Text style={[styles.detailText, styles.detailTextWrap]}>
-                {clientData.clientVillage}, {clientData.parish}, {clientData.subCounty}, {clientData.county}, {clientData.district}
+                {clientData.clientVillage}, {clientData.parish},{" "}
+                {clientData.subCounty}, {clientData.county},{" "}
+                {clientData.district}
               </Text>
             </View>
           </View>
 
-        {/* Issue Glasses Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Issue Glasses</Text>
-          <Text style={styles.sectionSubtitle}>Select from Inventory</Text>
-
-          {selectedProduct && (
-            <View style={styles.productCard}>
-              <Text style={styles.productName}>
-                {selectedProduct.power} - Frame
-              </Text>
-              <Text style={styles.productStock}>Stock Available: {selectedProduct.stock_quantity || 0} units</Text>
-              <Text style={styles.productPrice}>UGX {(selectedProduct.price || 0).toLocaleString()}</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Total Cost */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Total Cost</Text>
-          <Text style={styles.totalAmount}>
-            UGX {selectedProduct ? selectedProduct.price.toLocaleString() : "0"}
-          </Text>
-        </View>
-
-        {/* Payment Method */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment Method</Text>
-
-          <TouchableOpacity
-            style={[styles.paymentOption, paymentMethod === "hire-purchase" && styles.paymentOptionSelected]}
-            onPress={() => setPaymentMethod("hire-purchase")}
-          >
-            <View style={styles.radio}>
-              {paymentMethod === "hire-purchase" && <View style={styles.radioSelected} />}
-            </View>
-            <View style={styles.paymentContent}>
-              <Text style={styles.paymentTitle}>Hire-Purchase (3 months)</Text>
-              <Text style={styles.paymentSubtitle}>3 monthly installments via MTN/Airtel Money</Text>
-              <Text style={styles.paymentDetail}>
-                UGX {installmentAmount.toLocaleString()}/month × 3
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.paymentOption, paymentMethod === "full" && styles.paymentOptionSelected]}
-            onPress={() => setPaymentMethod("full")}
-          >
-            <View style={styles.radio}>
-              {paymentMethod === "full" && <View style={styles.radioSelected} />}
-            </View>
-            <View style={styles.paymentContent}>
-              <Text style={styles.paymentTitle}>Full Payment</Text>
-              <Text style={styles.paymentSubtitle}>
-                Pay UGX {selectedProduct ? selectedProduct.price.toLocaleString() : "0"} today
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* VSLA Group (only for hire-purchase) */}
-        {paymentMethod === "hire-purchase" && (
+          {/* Issue Glasses Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>VSLA Group</Text>
-            <TouchableOpacity
-              style={styles.dropdownButton}
-              onPress={() => setShowVslaDropdown(true)}
-            >
-              {vslaGroup ? (
-                <View>
-                  <Text style={styles.dropdownSelectedText}>{vslaGroup.name}</Text>
-                  <Text style={styles.dropdownSubText}>{vslaGroup.district} • {vslaGroup.subCounty}</Text>
-                </View>
-              ) : (
-                <Text style={styles.dropdownPlaceholder}>Select VSLA Group</Text>
-              )}
-              <Ionicons name="chevron-down" size={20} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
-        )}
+            <Text style={styles.sectionTitle}>Issue Glasses</Text>
+            <Text style={styles.sectionSubtitle}>Select from Inventory</Text>
 
-        {/* Mobile Money Number */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Mobile Money Number</Text>
-          
-          <View style={styles.providerRow}>
-            <TouchableOpacity
-              style={[styles.providerButton, mobileProvider === "MTN" && styles.providerButtonSelected]}
-              onPress={() => setMobileProvider("MTN")}
-            >
-              <Text style={[styles.providerText, mobileProvider === "MTN" && styles.providerTextSelected]}>
-                MTN
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.providerButton, mobileProvider === "Airtel" && styles.providerButtonSelected]}
-              onPress={() => setMobileProvider("Airtel")}
-            >
-              <Text style={[styles.providerText, mobileProvider === "Airtel" && styles.providerTextSelected]}>
-                Airtel
-              </Text>
-            </TouchableOpacity>
+            {selectedProduct && (
+              <View style={styles.productCard}>
+                <Text style={styles.productName}>
+                  {selectedProduct.power} - Frame
+                </Text>
+                <Text style={styles.productStock}>
+                  Stock Available: {selectedProduct.stock_quantity || 0} units
+                </Text>
+                <Text style={styles.productPrice}>
+                  UGX {(selectedProduct.price || 0).toLocaleString()}
+                </Text>
+              </View>
+            )}
           </View>
 
-          <TextInput
-            style={styles.input}
-            placeholder="0700123456"
-            value={mobileNumber}
-            onChangeText={setMobileNumber}
-            keyboardType="phone-pad"
-          />
-        </View>
-
-        {/* Merchant Code */}
-        <View style={styles.merchantCodeCard}>
-          <Text style={styles.merchantCodeTitle}>Merchant Code</Text>
-          <Text style={styles.merchantCodeSubtitle}>Share this code with client for installment payments</Text>
-          <Text style={styles.merchantCode}>{merchantCode}</Text>
-          <Text style={styles.merchantCodeNote}>
-            Client can use this code to pay via Mobile Money or at any Santé Initiative agent
-          </Text>
-        </View>
-
-        {/* Agreement Note */}
-        {paymentMethod === "hire-purchase" && (
-          <View style={styles.agreementCard}>
-            <Text style={styles.agreementText}>
-              Client agrees to pay UGX {installmentAmount.toLocaleString()} monthly for 3 months. Late payments may incur fees.
+          {/* Total Cost */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Total Cost</Text>
+            <Text style={styles.totalAmount}>
+              UGX{" "}
+              {selectedProduct ? selectedProduct.price.toLocaleString() : "0"}
             </Text>
           </View>
-        )}
 
-        {/* Action Buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.confirmButton, loading && { opacity: 0.7 }]}
-            onPress={handleConfirmSale}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Text style={styles.confirmButtonText}>Confirm Sale</Text>
-            )}
-          </TouchableOpacity>
+          {/* Payment Method */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Payment Method</Text>
 
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => navigation.reset({
-              index: 0,
-              routes: [{ name: "AppTabs" }],
-            })}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={[
+                styles.paymentOption,
+                paymentMethod === "hire-purchase" &&
+                  styles.paymentOptionSelected,
+              ]}
+              onPress={() => setPaymentMethod("hire-purchase")}
+            >
+              <View style={styles.radio}>
+                {paymentMethod === "hire-purchase" && (
+                  <View style={styles.radioSelected} />
+                )}
+              </View>
+              <View style={styles.paymentContent}>
+                <Text style={styles.paymentTitle}>
+                  Hire-Purchase (3 months)
+                </Text>
+                <Text style={styles.paymentSubtitle}>
+                  3 monthly installments via MTN/Airtel Money
+                </Text>
+                <Text style={styles.paymentDetail}>
+                  UGX {installmentAmount.toLocaleString()}/month × 3
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.paymentOption,
+                paymentMethod === "full" && styles.paymentOptionSelected,
+              ]}
+              onPress={() => setPaymentMethod("full")}
+            >
+              <View style={styles.radio}>
+                {paymentMethod === "full" && (
+                  <View style={styles.radioSelected} />
+                )}
+              </View>
+              <View style={styles.paymentContent}>
+                <Text style={styles.paymentTitle}>Full Payment</Text>
+                <Text style={styles.paymentSubtitle}>
+                  Pay UGX{" "}
+                  {selectedProduct
+                    ? selectedProduct.price.toLocaleString()
+                    : "0"}{" "}
+                  today
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* VSLA Group (only for hire-purchase) */}
+          {paymentMethod === "hire-purchase" && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>VSLA Group</Text>
+              <TouchableOpacity
+                style={styles.dropdownButton}
+                onPress={() => setShowVslaDropdown(true)}
+              >
+                {vslaGroup ? (
+                  <View>
+                    <Text style={styles.dropdownSelectedText}>
+                      {vslaGroup.name}
+                    </Text>
+                    <Text style={styles.dropdownSubText}>
+                      {vslaGroup.district} • {vslaGroup.subCounty}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={styles.dropdownPlaceholder}>
+                    Select VSLA Group
+                  </Text>
+                )}
+                <Ionicons name="chevron-down" size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Mobile Money Number */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Mobile Money Number</Text>
+
+            <View style={styles.providerRow}>
+              <TouchableOpacity
+                style={[
+                  styles.providerButton,
+                  mobileProvider === "MTN" && styles.providerButtonSelected,
+                ]}
+                onPress={() => setMobileProvider("MTN")}
+              >
+                <Text
+                  style={[
+                    styles.providerText,
+                    mobileProvider === "MTN" && styles.providerTextSelected,
+                  ]}
+                >
+                  MTN
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.providerButton,
+                  mobileProvider === "Airtel" && styles.providerButtonSelected,
+                ]}
+                onPress={() => setMobileProvider("Airtel")}
+              >
+                <Text
+                  style={[
+                    styles.providerText,
+                    mobileProvider === "Airtel" && styles.providerTextSelected,
+                  ]}
+                >
+                  Airtel
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={styles.input}
+              placeholder="0700123456"
+              value={mobileNumber}
+              onChangeText={setMobileNumber}
+              keyboardType="phone-pad"
+            />
+          </View>
+
+          {/* Merchant Code */}
+          <View style={styles.merchantCodeCard}>
+            <Text style={styles.merchantCodeTitle}>Merchant Code</Text>
+            <Text style={styles.merchantCodeSubtitle}>
+              Share this code with client for installment payments
+            </Text>
+            <Text style={styles.merchantCode}>{merchantCode}</Text>
+            <Text style={styles.merchantCodeNote}>
+              Client can use this code to pay via Mobile Money or at any Santé
+              Initiative agent
+            </Text>
+          </View>
+
+          {/* Agreement Note */}
+          {paymentMethod === "hire-purchase" && (
+            <View style={styles.agreementCard}>
+              <Text style={styles.agreementText}>
+                Client agrees to pay UGX {installmentAmount.toLocaleString()}{" "}
+                monthly for 3 months. Late payments may incur fees.
+              </Text>
+            </View>
+          )}
+
+          {/* Action Buttons */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.confirmButton, loading && { opacity: 0.7 }]}
+              onPress={handleConfirmSale}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text style={styles.confirmButtonText}>Confirm Sale</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() =>
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "AppTabs" }],
+                })
+              }
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.bottomSpacer} />
         </ScrollView>
@@ -488,20 +642,30 @@ export default function ClientRegistration() {
                     }}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={[
-                        styles.vslaName,
-                        vslaGroup?.id === item.id && { color: "#10B981" },
-                      ]}>{item.name}</Text>
+                      <Text
+                        style={[
+                          styles.vslaName,
+                          vslaGroup?.id === item.id && { color: "#10B981" },
+                        ]}
+                      >
+                        {item.name}
+                      </Text>
                       <Text style={styles.vslaLocation}>
                         {item.district} • {item.subCounty}
                       </Text>
                     </View>
                     {vslaGroup?.id === item.id && (
-                      <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={24}
+                        color="#10B981"
+                      />
                     )}
                   </TouchableOpacity>
                 )}
-                ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: "#F3F4F6" }} />}
+                ItemSeparatorComponent={() => (
+                  <View style={{ height: 1, backgroundColor: "#F3F4F6" }} />
+                )}
               />
             </View>
           </View>

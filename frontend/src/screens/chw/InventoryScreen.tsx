@@ -242,7 +242,7 @@ export default function InventoryScreen() {
     useCallback(() => {
       loadInventory();
       loadSalesData();
-    }, [])
+    }, []),
   );
 
   const loadUserData = async () => {
@@ -335,10 +335,17 @@ export default function InventoryScreen() {
       });
 
       const fullPayments = monthCompleted
-        .filter((p: any) => p.payment_type === "full" || p.payment_method === "cash")
+        .filter(
+          (p: any) => p.payment_type === "full" || p.payment_method === "cash",
+        )
         .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
       const hirePurchase = monthCompleted
-        .filter((p: any) => p.payment_type === "installment" || p.payment_type === "hire-purchase" || p.payment_type === "hire_purchase")
+        .filter(
+          (p: any) =>
+            p.payment_type === "installment" ||
+            p.payment_type === "hire-purchase" ||
+            p.payment_type === "hire_purchase",
+        )
         .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
 
       setStats((prev) => ({
@@ -703,7 +710,12 @@ export default function InventoryScreen() {
       >
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate("CHWDashboard")}
+          onPress={() =>
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "AppTabs", params: { role: "CHW" } }],
+            })
+          }
         >
           <Ionicons name="home-outline" size={24} color="#6B7280" />
           <Text style={styles.navText}>Home</Text>

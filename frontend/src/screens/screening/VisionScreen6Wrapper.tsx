@@ -9,7 +9,8 @@ import { apiService } from "../../services/api";
 
 export default function VisionScreen6Wrapper() {
   const navigation = useNavigation<any>();
-  const { screeningData, updateScreeningData, resetScreeningData } = useScreening();
+  const { screeningData, updateScreeningData, resetScreeningData } =
+    useScreening();
   const [submitting, setSubmitting] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
   const [screeningId, setScreeningId] = useState<string | null>(null);
@@ -54,7 +55,9 @@ export default function VisionScreen6Wrapper() {
   const createReferral = async (screeningId: string, referralData: any) => {
     try {
       // Get nearest facility based on client's district
-      const facilitiesResponse = await apiService.getHealthFacilities(screeningData.district);
+      const facilitiesResponse = await apiService.getHealthFacilities(
+        screeningData.district,
+      );
       const facility = facilitiesResponse.data?.[0]; // Get first/nearest facility
 
       const referral = await apiService.createReferral({
@@ -64,7 +67,7 @@ export default function VisionScreen6Wrapper() {
         urgency: referralData.referralUrgency || "normal",
         facilityName: facility?.name || "Nearest Health Facility",
         facilityLocation: facility?.location || screeningData.district,
-        notes: `Referred from ${referralData.referralStep || "screening"}`
+        notes: `Referred from ${referralData.referralStep || "screening"}`,
       });
 
       return referral;
@@ -79,7 +82,7 @@ export default function VisionScreen6Wrapper() {
 
     try {
       const clientAge = Number(screeningData.clientAge) || 0;
-      
+
       // Check if presbyopia (age 40+ with failed near vision)
       if (!passed && clientAge >= 40) {
         // Navigate to VHT Reading Glasses screen (full VHT protocol)
@@ -159,13 +162,13 @@ export default function VisionScreen6Wrapper() {
       console.error("Screening submission error:", error);
       setSubmitting(false);
       Alert.alert(
-        "Error", 
-        `An unexpected error occurred: ${(error as any)?.message || 'Unknown error'}`,
+        "Error",
+        `An unexpected error occurred: ${(error as any)?.message || "Unknown error"}`,
         [
           {
             text: "OK",
           },
-        ]
+        ],
       );
     }
   };
@@ -177,7 +180,9 @@ export default function VisionScreen6Wrapper() {
       const completeData = {
         ...screeningData,
         needsReferral: true,
-        referralReason: screeningData.referralReason || "Failed vision tests - requires specialist examination",
+        referralReason:
+          screeningData.referralReason ||
+          "Failed vision tests - requires specialist examination",
         referralUrgency: screeningData.referralUrgency || "normal",
       };
 
@@ -186,11 +191,14 @@ export default function VisionScreen6Wrapper() {
 
         if (result.success) {
           // Create referral with hospital assignment
-          const referralResult = await createReferral(result.data.id, completeData);
+          const referralResult = await createReferral(
+            result.data.id,
+            completeData,
+          );
 
           Alert.alert(
             "Referral Created",
-            referralResult 
+            referralResult
               ? `Client referred to ${referralResult.data?.facilityName || "health facility"}`
               : "Client has been referred for specialist examination.",
             [
@@ -204,7 +212,7 @@ export default function VisionScreen6Wrapper() {
                   });
                 },
               },
-            ]
+            ],
           );
         } else {
           throw new Error("API returned error");
@@ -227,7 +235,7 @@ export default function VisionScreen6Wrapper() {
                   });
                 },
               },
-            ]
+            ],
           );
         } else {
           Alert.alert("Error", "Failed to create referral.");
@@ -250,7 +258,10 @@ export default function VisionScreen6Wrapper() {
 
   const handleReturnHome = () => {
     resetScreeningData();
-    navigation.navigate("CHWDashboard");
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "AppTabs", params: { role: "CHW" } }],
+    });
   };
 
   // Navigate to completion screen when showComplete is true

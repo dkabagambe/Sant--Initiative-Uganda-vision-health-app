@@ -39,12 +39,16 @@ interface Referral {
 
 export default function ReferralManagementScreen() {
   const navigation = useNavigation<any>();
-  const [activeTab, setActiveTab] = useState<"active" | "completed">("completed");
+  const [activeTab, setActiveTab] = useState<"active" | "completed">(
+    "completed",
+  );
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userData, setUserData] = useState<any>(null);
-  const [selectedReferral, setSelectedReferral] = useState<Referral | null>(null);
+  const [selectedReferral, setSelectedReferral] = useState<Referral | null>(
+    null,
+  );
   const [detailVisible, setDetailVisible] = useState(false);
   const [editFacilityName, setEditFacilityName] = useState("");
   const [editFacilityLocation, setEditFacilityLocation] = useState("");
@@ -103,15 +107,25 @@ export default function ReferralManagementScreen() {
           text: "Yes, Complete",
           onPress: async () => {
             try {
-              const result = await apiService.updateReferralStatus(referralId, "completed");
+              const result = await apiService.updateReferralStatus(
+                referralId,
+                "completed",
+              );
               if (result.success) {
                 // Update local state immediately
-                setReferrals(prev => prev.map(r => 
-                  r.id === referralId ? { ...r, status: "completed" as const } : r
-                ));
+                setReferrals((prev) =>
+                  prev.map((r) =>
+                    r.id === referralId
+                      ? { ...r, status: "completed" as const }
+                      : r,
+                  ),
+                );
                 Alert.alert("Success", "Referral marked as completed");
               } else {
-                Alert.alert("Error", result.error || "Failed to update referral");
+                Alert.alert(
+                  "Error",
+                  result.error || "Failed to update referral",
+                );
               }
             } catch (error) {
               console.error("Mark complete error:", error);
@@ -119,7 +133,7 @@ export default function ReferralManagementScreen() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -129,18 +143,18 @@ export default function ReferralManagementScreen() {
       Alert.alert(
         "Impact Dashboard",
         `People Screened: ${stats.data?.totalScreenings || 0}\n` +
-        `Glasses Provided: ${stats.data?.totalSales || 0}\n` +
-        `Repayments on Track: ${stats.data?.repaymentRate || 0}%\n` +
-        `Referrals Made: ${stats.data?.totalReferrals || 0}\n` +
-        `NCD Detected: ${stats.data?.ncdDetected || 0}`,
+          `Glasses Provided: ${stats.data?.totalSales || 0}\n` +
+          `Repayments on Track: ${stats.data?.repaymentRate || 0}%\n` +
+          `Referrals Made: ${stats.data?.totalReferrals || 0}\n` +
+          `NCD Detected: ${stats.data?.ncdDetected || 0}`,
         [
           { text: "Close", style: "cancel" },
-          { text: "Export", onPress: handleExportDialog }
-        ]
+          { text: "Export", onPress: handleExportDialog },
+        ],
       );
     } catch (error) {
-      console.error('Impact error:', error);
-      Alert.alert('Error', 'Failed to load impact data');
+      console.error("Impact error:", error);
+      Alert.alert("Error", "Failed to load impact data");
     }
   };
 
@@ -149,23 +163,35 @@ export default function ReferralManagementScreen() {
       "Export Program Report",
       "Select reporting period for data export",
       [
-        { text: "📅 Daily Report", onPress: () => handleExport('daily') },
-        { text: "📊 Weekly Report", onPress: () => handleExport('weekly') },
-        { text: "📈 Monthly Report", onPress: () => handleExport('monthly') },
-        { text: "📉 Quarterly Report", onPress: () => handleExport('quarterly') },
-        { text: "📑 Six Months Report", onPress: () => handleExport('sixmonths') },
-        { text: "📋 Yearly Report", onPress: () => handleExport('yearly') },
-        { text: "Cancel", style: "cancel" }
-      ]
+        { text: "📅 Daily Report", onPress: () => handleExport("daily") },
+        { text: "📊 Weekly Report", onPress: () => handleExport("weekly") },
+        { text: "📈 Monthly Report", onPress: () => handleExport("monthly") },
+        {
+          text: "📉 Quarterly Report",
+          onPress: () => handleExport("quarterly"),
+        },
+        {
+          text: "📑 Six Months Report",
+          onPress: () => handleExport("sixmonths"),
+        },
+        { text: "📋 Yearly Report", onPress: () => handleExport("yearly") },
+        { text: "Cancel", style: "cancel" },
+      ],
     );
   };
 
   const handleExport = async (period: string) => {
     try {
       const stats = await apiService.getDashboardStats();
-      const activeReferrals = referrals.filter((r) => r.status === "active" || r.status === "pending");
-      const completedReferrals = referrals.filter((r) => r.status === "completed");
-      const urgentCount = activeReferrals.filter((r) => r.urgency === "urgent" || r.urgency === "high").length;
+      const activeReferrals = referrals.filter(
+        (r) => r.status === "active" || r.status === "pending",
+      );
+      const completedReferrals = referrals.filter(
+        (r) => r.status === "completed",
+      );
+      const urgentCount = activeReferrals.filter(
+        (r) => r.urgency === "urgent" || r.urgency === "high",
+      ).length;
       await exportCsvFile({
         fileBaseName: `referrals-${period}-report`,
         title: `${period.toUpperCase()} Referrals CSV`,
@@ -219,8 +245,8 @@ export default function ReferralManagementScreen() {
         ]),
       });
     } catch (error) {
-      console.error('Export error:', error);
-      Alert.alert('Error', 'Failed to export data');
+      console.error("Export error:", error);
+      Alert.alert("Error", "Failed to export data");
     }
   };
 
@@ -228,10 +254,15 @@ export default function ReferralManagementScreen() {
     navigation.navigate("CreateReferralScreen");
   };
 
-  const activeReferrals = referrals.filter((r) => r.status === "active" || r.status === "pending");
+  const activeReferrals = referrals.filter(
+    (r) => r.status === "active" || r.status === "pending",
+  );
   const completedReferrals = referrals.filter((r) => r.status === "completed");
-  const urgentCount = activeReferrals.filter((r) => r.urgency === "urgent" || r.urgency === "high").length;
-  const displayedReferrals = activeTab === "active" ? activeReferrals : completedReferrals;
+  const urgentCount = activeReferrals.filter(
+    (r) => r.urgency === "urgent" || r.urgency === "high",
+  ).length;
+  const displayedReferrals =
+    activeTab === "active" ? activeReferrals : completedReferrals;
 
   const openReferralDetail = (referral: Referral) => {
     setSelectedReferral(referral);
@@ -279,7 +310,7 @@ export default function ReferralManagementScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#2E7D32" barStyle="light-content" />
 
-      <AppHeader 
+      <AppHeader
         userName={userData?.fullName || userData?.full_name}
         userRole={userData?.role}
         district={userData?.district}
@@ -288,7 +319,9 @@ export default function ReferralManagementScreen() {
       {/* Title Section */}
       <View style={styles.titleSection}>
         <Text style={styles.pageTitle}>Referral Management</Text>
-        <Text style={styles.pageSubtitle}>Advanced eye care & NCD screening</Text>
+        <Text style={styles.pageSubtitle}>
+          Advanced eye care & NCD screening
+        </Text>
       </View>
 
       {/* Stats Row */}
@@ -299,11 +332,15 @@ export default function ReferralManagementScreen() {
         </View>
         <View style={styles.statBox}>
           <Text style={styles.statLabel}>High Priority</Text>
-          <Text style={[styles.statNumber, styles.statOrange]}>{urgentCount}</Text>
+          <Text style={[styles.statNumber, styles.statOrange]}>
+            {urgentCount}
+          </Text>
         </View>
         <View style={styles.statBox}>
           <Text style={styles.statLabel}>Completed</Text>
-          <Text style={[styles.statNumber, styles.statGreen]}>{completedReferrals.length}</Text>
+          <Text style={[styles.statNumber, styles.statGreen]}>
+            {completedReferrals.length}
+          </Text>
         </View>
       </View>
 
@@ -326,15 +363,28 @@ export default function ReferralManagementScreen() {
           style={[styles.tabBtn, activeTab === "active" && styles.tabBtnActive]}
           onPress={() => setActiveTab("active")}
         >
-          <Text style={[styles.tabBtnText, activeTab === "active" && styles.tabBtnTextActive]}>
+          <Text
+            style={[
+              styles.tabBtnText,
+              activeTab === "active" && styles.tabBtnTextActive,
+            ]}
+          >
             Active Referrals
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tabBtn, activeTab === "completed" && styles.tabBtnActive]}
+          style={[
+            styles.tabBtn,
+            activeTab === "completed" && styles.tabBtnActive,
+          ]}
           onPress={() => setActiveTab("completed")}
         >
-          <Text style={[styles.tabBtnText, activeTab === "completed" && styles.tabBtnTextActive]}>
+          <Text
+            style={[
+              styles.tabBtnText,
+              activeTab === "completed" && styles.tabBtnTextActive,
+            ]}
+          >
             Completed
           </Text>
         </TouchableOpacity>
@@ -343,7 +393,9 @@ export default function ReferralManagementScreen() {
       {/* Referrals List */}
       <ScrollView
         style={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {displayedReferrals.length === 0 ? (
           <View style={styles.emptyState}>
@@ -360,20 +412,31 @@ export default function ReferralManagementScreen() {
               >
                 <View style={styles.cardHeader}>
                   <Text style={styles.clientName}>{referral.client_name}</Text>
-                  {(referral.urgency === "urgent" || referral.urgency === "high") && (
+                  {(referral.urgency === "urgent" ||
+                    referral.urgency === "high") && (
                     <View style={styles.urgentBadge}>
-                      <Text style={styles.urgentText}>{referral.urgency === "urgent" ? "Urgent" : "High"}</Text>
+                      <Text style={styles.urgentText}>
+                        {referral.urgency === "urgent" ? "Urgent" : "High"}
+                      </Text>
                     </View>
                   )}
                 </View>
 
                 {/* Client details row */}
                 <Text style={styles.clientInfo}>
-                  {[referral.client_age ? `Age ${referral.client_age}` : null, referral.client_gender, referral.client_district].filter(Boolean).join(" • ")}
+                  {[
+                    referral.client_age ? `Age ${referral.client_age}` : null,
+                    referral.client_gender,
+                    referral.client_district,
+                  ]
+                    .filter(Boolean)
+                    .join(" • ")}
                 </Text>
 
                 {referral.client_phone ? (
-                  <Text style={styles.clientPhone}>{referral.client_phone}</Text>
+                  <Text style={styles.clientPhone}>
+                    {referral.client_phone}
+                  </Text>
                 ) : null}
 
                 {activeTab === "completed" ? (
@@ -388,18 +451,23 @@ export default function ReferralManagementScreen() {
                     </View>
                     <Text style={styles.infoValue}>
                       {referral.facility_name || "Not specified"}
-                      {referral.facility_location ? ` — ${referral.facility_location}` : ""}
+                      {referral.facility_location
+                        ? ` — ${referral.facility_location}`
+                        : ""}
                     </Text>
 
                     <View style={styles.infoRow}>
                       <Text style={styles.infoLabel}>Referred</Text>
                     </View>
                     <Text style={styles.infoValue}>
-                      {new Date(referral.referred_date).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                      {new Date(referral.referred_date).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        },
+                      )}
                     </Text>
 
                     <View style={styles.infoRow}>
@@ -407,11 +475,14 @@ export default function ReferralManagementScreen() {
                     </View>
                     <Text style={styles.infoValue}>
                       {referral.completed_date
-                        ? new Date(referral.completed_date).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })
+                        ? new Date(referral.completed_date).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            },
+                          )
                         : "N/A"}
                     </Text>
 
@@ -436,18 +507,23 @@ export default function ReferralManagementScreen() {
                     </View>
                     <Text style={styles.cardValue}>
                       {referral.facility_name || "Not specified"}
-                      {referral.facility_location ? ` — ${referral.facility_location}` : ""}
+                      {referral.facility_location
+                        ? ` — ${referral.facility_location}`
+                        : ""}
                     </Text>
 
                     <View style={styles.cardRow}>
                       <Text style={styles.cardLabel}>Referred on</Text>
                     </View>
                     <Text style={styles.cardValue}>
-                      {new Date(referral.referred_date).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                      {new Date(referral.referred_date).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        },
+                      )}
                     </Text>
 
                     {referral.notes ? (
@@ -463,7 +539,9 @@ export default function ReferralManagementScreen() {
                       style={styles.markCompleteBtn}
                       onPress={() => handleMarkComplete(referral.id)}
                     >
-                      <Text style={styles.markCompleteBtnText}>Mark Complete</Text>
+                      <Text style={styles.markCompleteBtnText}>
+                        Mark Complete
+                      </Text>
                     </TouchableOpacity>
                   </>
                 )}
@@ -472,7 +550,9 @@ export default function ReferralManagementScreen() {
 
             {activeTab === "completed" && (
               <View style={styles.historyFooter}>
-                <Text style={styles.historyText}>Showing recent completed referrals</Text>
+                <Text style={styles.historyText}>
+                  Showing recent completed referrals
+                </Text>
                 <TouchableOpacity style={styles.viewAllBtn}>
                   <Text style={styles.viewAllText}>View All History</Text>
                 </TouchableOpacity>
@@ -482,7 +562,10 @@ export default function ReferralManagementScreen() {
         )}
 
         {/* Create Button */}
-        <TouchableOpacity style={styles.createBtn} onPress={handleCreateReferral}>
+        <TouchableOpacity
+          style={styles.createBtn}
+          onPress={handleCreateReferral}
+        >
           <Text style={styles.createBtnText}>+ Create New Referral</Text>
         </TouchableOpacity>
 
@@ -567,7 +650,8 @@ export default function ReferralManagementScreen() {
                         <Text
                           style={[
                             styles.urgencyChipText,
-                            editUrgency === level && styles.urgencyChipTextActive,
+                            editUrgency === level &&
+                              styles.urgencyChipTextActive,
                           ]}
                         >
                           {level}
@@ -634,14 +718,29 @@ export default function ReferralManagementScreen() {
       <View style={styles.tabBar}>
         <TouchableOpacity
           style={styles.tabItem}
-          onPress={() => navigation.navigate("CHWDashboard")}
+          onPress={() =>
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "AppTabs", params: { role: "CHW" } }],
+            })
+          }
         >
           <Ionicons name="home-outline" size={24} color="#666666" />
           <Text style={styles.tabLabel}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.tabItem}
-          onPress={() => navigation.navigate("VHTScreeningStep1" as any)}
+          onPress={() => {
+            const parent = navigation.getParent<any>();
+            if (parent) {
+              parent.navigate("Screen", { screen: "VHTScreeningStep1" });
+            } else {
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "AppTabs", params: { role: "CHW" } }],
+              });
+            }
+          }}
         >
           <Ionicons name="eye-outline" size={24} color="#666666" />
           <Text style={styles.tabLabel}>Screen</Text>
@@ -662,7 +761,9 @@ export default function ReferralManagementScreen() {
         </TouchableOpacity>
         <TouchableOpacity style={styles.tabItem}>
           <Ionicons name="share-social" size={24} color="#2E7D32" />
-          <Text style={[styles.tabLabel, styles.tabLabelActive]}>Referrals</Text>
+          <Text style={[styles.tabLabel, styles.tabLabelActive]}>
+            Referrals
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

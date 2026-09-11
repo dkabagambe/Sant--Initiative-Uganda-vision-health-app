@@ -12,7 +12,10 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import {
   Ionicons,
   MaterialIcons,
@@ -78,7 +81,7 @@ export default function CHWDashboard() {
       syncOfflineData();
       loadDashboardStats();
       loadRecentActivity();
-    }, [])
+    }, []),
   );
 
   const loadDashboardStats = async () => {
@@ -95,7 +98,10 @@ export default function CHWDashboard() {
       }
     } catch (error) {
       console.error("CHWDashboard: Failed to load stats:", error);
-      console.error("CHWDashboard: Stats error details:", JSON.stringify(error, null, 2));
+      console.error(
+        "CHWDashboard: Stats error details:",
+        JSON.stringify(error, null, 2),
+      );
     } finally {
       setStatsLoading(false);
     }
@@ -117,7 +123,7 @@ export default function CHWDashboard() {
         screenings.data.slice(0, 1).forEach((s: any) => {
           activities.push({
             name: s.client_name,
-            action: `Screening completed • ${s.recommended_power || 'N/A'}`,
+            action: `Screening completed • ${s.recommended_power || "N/A"}`,
             time: getTimeAgo(s.created_at),
           });
         });
@@ -160,7 +166,7 @@ export default function CHWDashboard() {
 
     if (diffDays > 0) return `${diffDays}d ago`;
     if (diffHours > 0) return `${diffHours}h ago`;
-    return 'Just now';
+    return "Just now";
   };
 
   const loadUserData = async () => {
@@ -168,13 +174,19 @@ export default function CHWDashboard() {
       console.log("CHWDashboard: Loading user data...");
       const user = await apiService.getCurrentUser();
       console.log("CHWDashboard: Loaded user data:", user);
-      console.log("CHWDashboard: User name:", user?.first_name || user?.full_name || user?.fullName);
+      console.log(
+        "CHWDashboard: User name:",
+        user?.first_name || user?.full_name || user?.fullName,
+      );
       console.log("CHWDashboard: User district:", user?.district);
       console.log("CHWDashboard: User role:", user?.role);
       setUserData(user);
     } catch (error) {
       console.error("CHWDashboard: Failed to load user data:", error);
-      console.error("CHWDashboard: Error details:", JSON.stringify(error, null, 2));
+      console.error(
+        "CHWDashboard: Error details:",
+        JSON.stringify(error, null, 2),
+      );
     }
   };
 
@@ -192,7 +204,7 @@ export default function CHWDashboard() {
     try {
       const offlineQueue = await AsyncStorage.getItem("offlineScreenings");
       const queue = offlineQueue ? JSON.parse(offlineQueue) : [];
-      
+
       if (queue.length === 0) return;
 
       setSyncing(true);
@@ -211,11 +223,17 @@ export default function CHWDashboard() {
       if (synced > 0) {
         // Remove synced items
         const remaining = queue.slice(synced);
-        await AsyncStorage.setItem("offlineScreenings", JSON.stringify(remaining));
+        await AsyncStorage.setItem(
+          "offlineScreenings",
+          JSON.stringify(remaining),
+        );
         setOfflineCount(remaining.length);
-        
+
         if (remaining.length === 0) {
-          Alert.alert("✅ Sync Complete", `${synced} screening(s) synced successfully!`);
+          Alert.alert(
+            "✅ Sync Complete",
+            `${synced} screening(s) synced successfully!`,
+          );
         }
       }
     } catch (error) {
@@ -230,25 +248,36 @@ export default function CHWDashboard() {
       label: "My Clients",
       value: (stats.clients || 0).toString(),
       subtitle: "Active clients",
-      subValue: stats.clientsDueRepayment ? `${stats.clientsDueRepayment} due for repayment` : "No repayments due",
+      subValue: stats.clientsDueRepayment
+        ? `${stats.clientsDueRepayment} due for repayment`
+        : "No repayments due",
     },
     {
       label: "Inventory",
       value: (stats.inventory || 0).toString(),
       subtitle: "Glasses in stock",
-      subValue: stats.inventory === 0 ? "Out of stock" : stats.inventory < 100 ? "Low stock" : "Good stock level",
+      subValue:
+        stats.inventory === 0
+          ? "Out of stock"
+          : stats.inventory < 100
+            ? "Low stock"
+            : "Good stock level",
     },
     {
       label: "Referrals",
       value: (stats.referrals || 0).toString(),
       subtitle: "Pending referrals",
-      subValue: stats.referralsOutstanding ? `${stats.referralsOutstanding} outstanding` : "All up to date",
+      subValue: stats.referralsOutstanding
+        ? `${stats.referralsOutstanding} outstanding`
+        : "All up to date",
     },
     {
       label: "Payments Due",
       value: (stats.paymentsDue || 0).toString(),
       subtitle: "Clients due today",
-      subValue: stats.expectedAmount ? `UGX ${stats.expectedAmount.toLocaleString()} expected` : "No payments due",
+      subValue: stats.expectedAmount
+        ? `UGX ${stats.expectedAmount.toLocaleString()} expected`
+        : "No payments due",
     },
   ];
 
@@ -264,7 +293,10 @@ export default function CHWDashboard() {
             screen: "VHTScreeningStep1",
           });
         } else {
-          navigation.navigate("VHTScreeningStep1" as any);
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "AppTabs", params: { role: "CHW" } }],
+          });
         }
       },
     },
@@ -277,7 +309,7 @@ export default function CHWDashboard() {
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
       {/* Offline Sync Banner */}
@@ -285,7 +317,9 @@ export default function CHWDashboard() {
         <View style={styles.syncBanner}>
           <Ionicons name="cloud-offline" size={16} color="#F59E0B" />
           <Text style={styles.syncText}>
-            {syncing ? "Syncing..." : `${offlineCount} screening(s) pending sync`}
+            {syncing
+              ? "Syncing..."
+              : `${offlineCount} screening(s) pending sync`}
           </Text>
           {!syncing && (
             <TouchableOpacity onPress={syncOfflineData}>
@@ -309,7 +343,9 @@ export default function CHWDashboard() {
 
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>
-            {userData?.full_name || userData?.fullName || "Santé Initiative Uganda"}
+            {userData?.full_name ||
+              userData?.fullName ||
+              "Santé Initiative Uganda"}
           </Text>
           <Text style={styles.headerSubtitle}>
             {userData?.district ? `VHT - ${userData.district} District` : ""}
@@ -331,7 +367,11 @@ export default function CHWDashboard() {
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeTitle}>
-            {t('welcome')}, {userData?.first_name || userData?.full_name || userData?.fullName || "User"}
+            {t("welcome")},{" "}
+            {userData?.first_name ||
+              userData?.full_name ||
+              userData?.fullName ||
+              "User"}
           </Text>
           <Text style={styles.userRole}>
             {userData?.district ? `${userData.district} District` : ""}
@@ -339,15 +379,15 @@ export default function CHWDashboard() {
 
           <View style={styles.readyCard}>
             <MaterialIcons name="access-time" size={20} color="#1A4D8F" />
-            <Text style={styles.readyText}>{t('readyToScreen')}</Text>
+            <Text style={styles.readyText}>{t("readyToScreen")}</Text>
           </View>
         </View>
 
         {/* This Week Stats */}
         <View style={styles.weekStatsSection}>
-          <Text style={styles.sectionTitle}>{t('thisWeek')}</Text>
+          <Text style={styles.sectionTitle}>{t("thisWeek")}</Text>
           <View style={styles.weekStatsRow}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.weekStatCard}
               onPress={() => navigation.navigate("MyClients")}
               activeOpacity={0.7}
@@ -356,14 +396,20 @@ export default function CHWDashboard() {
                 <FontAwesome5 name="users" size={20} color="#FFFFFF" />
               </View>
               {statsLoading ? (
-                <ActivityIndicator size="small" color="#1A4D8F" style={{ marginVertical: 4 }} />
+                <ActivityIndicator
+                  size="small"
+                  color="#1A4D8F"
+                  style={{ marginVertical: 4 }}
+                />
               ) : (
-                <Text style={styles.weekStatNumber}>{stats.weekScreenings || 0}</Text>
+                <Text style={styles.weekStatNumber}>
+                  {stats.weekScreenings || 0}
+                </Text>
               )}
-              <Text style={styles.weekStatLabel}>{t('screened')}</Text>
+              <Text style={styles.weekStatLabel}>{t("screened")}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.weekStatCard}
               onPress={() => navigation.navigate("Inventory")}
               activeOpacity={0.7}
@@ -377,11 +423,17 @@ export default function CHWDashboard() {
                 <MaterialIcons name="school" size={20} color="#FFFFFF" />
               </View>
               {statsLoading ? (
-                <ActivityIndicator size="small" color="#1A4D8F" style={{ marginVertical: 4 }} />
+                <ActivityIndicator
+                  size="small"
+                  color="#1A4D8F"
+                  style={{ marginVertical: 4 }}
+                />
               ) : (
-                <Text style={styles.weekStatNumber}>{stats.glassesGiven || 0}</Text>
+                <Text style={styles.weekStatNumber}>
+                  {stats.glassesGiven || 0}
+                </Text>
               )}
-              <Text style={styles.weekStatLabel}>{t('glassesGiven')}</Text>
+              <Text style={styles.weekStatLabel}>{t("glassesGiven")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -495,7 +547,12 @@ export default function CHWDashboard() {
       </ScrollView>
 
       {/* Bottom Navigation - Fixed at bottom */}
-      <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <View
+        style={[
+          styles.bottomNav,
+          { paddingBottom: Math.max(insets.bottom, 12) },
+        ]}
+      >
         {[
           { name: "Home", icon: "home", screen: "CHWDashboard" },
           {

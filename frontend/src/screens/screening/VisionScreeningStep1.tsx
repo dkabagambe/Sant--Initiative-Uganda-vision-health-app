@@ -16,7 +16,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { getDistrictNames, getCountiesForDistrict, getSubCountiesForCounty, getParishesForSubCounty } from "../../data/ugandaLocations";
+import {
+  getDistrictNames,
+  getCountiesForDistrict,
+  getSubCountiesForCounty,
+  getParishesForSubCounty,
+} from "../../data/ugandaLocations";
 
 const { width } = Dimensions.get("window");
 
@@ -306,24 +311,39 @@ export default function VisionScreeningFlow() {
   const [selectedVSLA, setSelectedVSLA] = useState("");
   const [mobileMoneyNumber, setMobileMoneyNumber] = useState("0700123456");
 
-  const districts = useMemo(() => 
-    getDistrictNames().map((d) => ({ label: d, value: d })),
-    []
+  const districts = useMemo(
+    () => getDistrictNames().map((d) => ({ label: d, value: d })),
+    [],
   );
 
-  const counties = useMemo(() => 
-    district ? getCountiesForDistrict(district).map((c) => ({ label: c, value: c })) : [],
-    [district]
+  const counties = useMemo(
+    () =>
+      district
+        ? getCountiesForDistrict(district).map((c) => ({ label: c, value: c }))
+        : [],
+    [district],
   );
 
-  const subCounties = useMemo(() => 
-    county ? getSubCountiesForCounty(county).map((sc) => ({ label: sc, value: sc })) : [],
-    [county]
+  const subCounties = useMemo(
+    () =>
+      county
+        ? getSubCountiesForCounty(county).map((sc) => ({
+            label: sc,
+            value: sc,
+          }))
+        : [],
+    [county],
   );
 
-  const parishes = useMemo(() => 
-    subCounty ? getParishesForSubCounty(subCounty).map((p) => ({ label: p, value: p })) : [],
-    [subCounty]
+  const parishes = useMemo(
+    () =>
+      subCounty
+        ? getParishesForSubCounty(subCounty).map((p) => ({
+            label: p,
+            value: p,
+          }))
+        : [],
+    [subCounty],
   );
 
   const villages: { label: string; value: string }[] = [];
@@ -416,7 +436,10 @@ export default function VisionScreeningFlow() {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     } else {
-      navigation.navigate("CHWDashboard");
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "AppTabs", params: { role: "CHW" } }],
+      });
     }
   };
 
@@ -444,7 +467,11 @@ export default function VisionScreeningFlow() {
       [
         {
           text: "OK",
-          onPress: () => navigation.navigate("MainTabs"),
+          onPress: () =>
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "AppTabs", params: { role: "CHW" } }],
+            }),
         },
       ],
     );
@@ -457,7 +484,11 @@ export default function VisionScreeningFlow() {
       [
         {
           text: "OK",
-          onPress: () => navigation.navigate("CHWDashboard"),
+          onPress: () =>
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "AppTabs", params: { role: "CHW" } }],
+            }),
         },
       ],
     );
@@ -513,7 +544,12 @@ export default function VisionScreeningFlow() {
               value={district}
               placeholder="Select district"
               options={districts}
-              onSelect={(val) => { setDistrict(val); setCounty(""); setSubCounty(""); setParish(""); }}
+              onSelect={(val) => {
+                setDistrict(val);
+                setCounty("");
+                setSubCounty("");
+                setParish("");
+              }}
             />
 
             <Dropdown
@@ -521,7 +557,11 @@ export default function VisionScreeningFlow() {
               value={county}
               placeholder="Select county/sub-county"
               options={counties}
-              onSelect={(val) => { setCounty(val); setSubCounty(""); setParish(""); }}
+              onSelect={(val) => {
+                setCounty(val);
+                setSubCounty("");
+                setParish("");
+              }}
               disabled={!district}
             />
 
@@ -530,7 +570,10 @@ export default function VisionScreeningFlow() {
               value={subCounty}
               placeholder="Select sub-county/parish"
               options={subCounties}
-              onSelect={(val) => { setSubCounty(val); setParish(""); }}
+              onSelect={(val) => {
+                setSubCounty(val);
+                setParish("");
+              }}
               disabled={!county}
             />
 

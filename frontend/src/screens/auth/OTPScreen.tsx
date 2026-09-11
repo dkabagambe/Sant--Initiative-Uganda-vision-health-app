@@ -34,7 +34,9 @@ type OTPScreenNavigationProp = NativeStackNavigationProp<
 export default function OTPScreen() {
   const route = useRoute<OTPScreenRouteProp>();
   const navigation = useNavigation<OTPScreenNavigationProp>();
-  const { phone, role } = route.params;
+  const phoneParam =
+    typeof route.params?.phone === "string" ? route.params.phone.trim() : "";
+  const role = route.params?.role ?? "CHW";
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
@@ -45,8 +47,27 @@ export default function OTPScreen() {
 
   const inputRefs = useRef<(TextInput | null)[]>(Array(6).fill(null));
 
-  const formattedPhone = `+256 ${phone.substring(1, 4)} ${phone.substring(4, 7)} ${phone.substring(7)}`;
-  const isDevNumber = phone === "0705686573";
+  const isValidPhone = /^0\d{9}$/.test(phoneParam);
+  const safePhone = isValidPhone ? phoneParam : "";
+  const formattedPhone = safePhone
+    ? `+256 ${safePhone.substring(1, 4)} ${safePhone.substring(4, 7)} ${safePhone.substring(7)}`
+    : "Invalid phone";
+  const isDevNumber = safePhone === "0705686573";
+
+  useEffect(() => {
+    if (!isValidPhone) {
+      Alert.alert(
+        "Invalid phone number",
+        "The OTP screen was opened without a valid phone number. Please try again from login.",
+        [
+          {
+            text: "Back to login",
+            onPress: () => navigation.goBack(),
+          },
+        ],
+      );
+    }
+  }, [isValidPhone, navigation]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | undefined;
@@ -92,6 +113,13 @@ export default function OTPScreen() {
   };
 
   const handleVerifyOTP = async () => {
+    if (!isValidPhone || !safePhone) {
+      setErrorMessage(
+        "Phone number is missing or invalid. Please go back and retry.",
+      );
+      return;
+    }
+
     const otpString = otp.join("");
 
     if (otpString.length !== 6) {
@@ -103,7 +131,7 @@ export default function OTPScreen() {
     setErrorMessage(null);
 
     try {
-      const result = await apiService.verifyOTP(phone, otpString);
+      const result = await apiService.verifyOTP(safePhone, otpString);
       if (!result) {
         setErrorMessage("Invalid response from server");
         return;
@@ -134,12 +162,18 @@ export default function OTPScreen() {
 
   const handleResendOTP = async () => {
     if (!canResend) return;
+    if (!isValidPhone || !safePhone) {
+      setErrorMessage(
+        "Phone number is missing or invalid. Please go back and retry.",
+      );
+      return;
+    }
 
     setResendLoading(true);
     setErrorMessage(null);
 
     try {
-      const result = await apiService.login(phone);
+      const result = await apiService.login(safePhone);
       if (result.success) {
         Alert.alert(
           "OTP Resent",
