@@ -10,6 +10,7 @@ import {
   Image,
   Alert,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -51,6 +52,7 @@ export default function CHWDashboard() {
   const insets = useSafeAreaInsets();
   const [offlineCount, setOfflineCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
   const [stats, setStats] = useState({
     weekScreenings: 0,
@@ -81,6 +83,7 @@ export default function CHWDashboard() {
 
   const loadDashboardStats = async () => {
     try {
+      setStatsLoading(true);
       console.log("CHWDashboard: Loading dashboard stats...");
       const response = await apiService.getDashboardStats();
       console.log("CHWDashboard: Dashboard stats response:", response);
@@ -93,6 +96,8 @@ export default function CHWDashboard() {
     } catch (error) {
       console.error("CHWDashboard: Failed to load stats:", error);
       console.error("CHWDashboard: Stats error details:", JSON.stringify(error, null, 2));
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -350,7 +355,11 @@ export default function CHWDashboard() {
               <View style={styles.statIconContainer}>
                 <FontAwesome5 name="users" size={20} color="#FFFFFF" />
               </View>
-              <Text style={styles.weekStatNumber}>{stats.weekScreenings || 0}</Text>
+              {statsLoading ? (
+                <ActivityIndicator size="small" color="#1A4D8F" style={{ marginVertical: 4 }} />
+              ) : (
+                <Text style={styles.weekStatNumber}>{stats.weekScreenings || 0}</Text>
+              )}
               <Text style={styles.weekStatLabel}>{t('screened')}</Text>
             </TouchableOpacity>
 
@@ -367,7 +376,11 @@ export default function CHWDashboard() {
               >
                 <MaterialIcons name="school" size={20} color="#FFFFFF" />
               </View>
-              <Text style={styles.weekStatNumber}>{stats.glassesGiven || 0}</Text>
+              {statsLoading ? (
+                <ActivityIndicator size="small" color="#1A4D8F" style={{ marginVertical: 4 }} />
+              ) : (
+                <Text style={styles.weekStatNumber}>{stats.glassesGiven || 0}</Text>
+              )}
               <Text style={styles.weekStatLabel}>{t('glassesGiven')}</Text>
             </TouchableOpacity>
           </View>

@@ -55,10 +55,11 @@ router.get("/stats", authenticate, async (req, res) => {
           WHERE health_worker_id = ${healthWorkerId}
           AND COALESCE(screening_date::date, created_at::date) = CURRENT_DATE`,
 
-      // Glasses given — count where glasses were dispensed or client needs glasses
+      // Glasses given this week — count where glasses were dispensed or client needs glasses in the last 7 days
       sql`SELECT COUNT(*) AS total FROM screenings
           WHERE health_worker_id = ${healthWorkerId}
-          AND (needs_glasses = true OR glasses_dispensed = true)`,
+          AND (needs_glasses = true OR glasses_dispensed = true)
+          AND COALESCE(screening_date::date, created_at::date) >= CURRENT_DATE - INTERVAL '7 days'`,
 
       // Clients referred (from screenings)
       sql`SELECT COUNT(*) AS total FROM screenings
