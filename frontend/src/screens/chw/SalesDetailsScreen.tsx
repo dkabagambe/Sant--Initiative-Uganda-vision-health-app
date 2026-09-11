@@ -28,8 +28,10 @@ interface SaleItemProps {
   frameType: string;
   amount: string;
   time: string;
+  rawDate: string;          // ISO date string for filtering
   paymentMethod: string;
   paymentType: string;
+  status: string;
 }
 
 const SaleItem = ({
@@ -40,7 +42,9 @@ const SaleItem = ({
   time,
   paymentMethod,
   paymentType,
+  status,
 }: SaleItemProps) => {
+  const isCompleted = status === "completed";
   return (
     <View style={styles.saleItem}>
       <View style={styles.saleAvatar}>
@@ -49,16 +53,23 @@ const SaleItem = ({
       <View style={styles.saleDetails}>
         <Text style={styles.saleClientName}>{clientName}</Text>
         <Text style={styles.saleDescription}>
-          {power} • {frameType}
+          {power !== "N/A" ? `${power}D` : "—"} • {frameType}
         </Text>
         <Text style={styles.saleTime}>{time}</Text>
-        <View style={styles.paymentBadge}>
-          <Text style={styles.paymentBadgeText}>
-            {paymentType === "full" ? "Full Payment" : "Hire-Purchase"}
-          </Text>
+        <View style={styles.badgeRow}>
+          <View style={[styles.paymentBadge, !isCompleted && styles.pendingBadge]}>
+            <Text style={[styles.paymentBadgeText, !isCompleted && styles.pendingBadgeText]}>
+              {paymentType === "full" || paymentMethod === "cash" ? "Full Payment" : "Hire-Purchase"}
+            </Text>
+          </View>
+          {!isCompleted && (
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusBadgeText}>{status}</Text>
+            </View>
+          )}
         </View>
       </View>
-      <Text style={styles.saleAmount}>{amount}</Text>
+      <Text style={[styles.saleAmount, !isCompleted && styles.pendingAmount]}>{amount}</Text>
     </View>
   );
 };
@@ -88,39 +99,51 @@ export default function SalesDetailsScreen() {
     filterSales();
   }, [sales, filterType, customStartDate, customEndDate]);
 
+  const formatTimeAgo = (dateStr: string): string => {
+    if (!dateStr) return "—";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "—";
+    const diffMs = Date.now() - d.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return `Today, ${d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`;
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  };
+
   const loadSales = async () => {
     try {
       const response = await apiService.getPayments();
       if (response.success) {
-        const formattedSales = (response.data || []).map((payment: any) => ({
-          id: payment.id,
-          clientName: payment.client_name || "Unknown",
-          power: "+1.00", // TODO: Get from product when linked
-          frameType: "standard", // TODO: Get from product when linked
-          amount: `UGX ${(payment.amount || 0).toLocaleString()}`,
-          time: new Date(payment.payment_date || payment.created_at).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          paymentMethod: payment.payment_method || "mobile_money",
-          paymentType: payment.payment_type || "full",
-        }));
+        const formattedSales = (response.data || []).map((payment: any) => {
+          const rawDate = payment.payment_date || payment.created_at || "";
+          return {
+            id: payment.id,
+            clientName: payment.client_name || "Unknown",
+            power: payment.product_power || "N/A",
+            frameType: payment.product_name || "Standard",
+            amount: `UGX ${Number(payment.amount || 0).toLocaleString()}`,
+            time: formatTimeAgo(rawDate),
+            rawDate,
+            paymentMethod: payment.payment_method || "cash",
+            paymentType: payment.payment_type || "full",
+            status: payment.status || "pending",
+          };
+        });
         setSales(formattedSales);
 
-        // Calculate stats
-        const totalSales = response.data?.length || 0;
-        const totalRevenue = response.data?.reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
-        const fullPayments = response.data?.filter((p: any) => p.payment_type === "full").reduce((sum: number, p: any) => sum + (p.amount || 0), 0) || 0;
-        const hirePurchase = totalRevenue - fullPayments;
+        const allData: any[] = response.data || [];
+        const totalSales = allData.length;
+        const completed = allData.filter((p: any) => p.status === "completed");
+        const totalRevenue = completed.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
+        const fullPayments = completed
+          .filter((p: any) => p.payment_type === "full" || p.payment_method === "cash")
+          .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
+        const hirePurchase = completed
+          .filter((p: any) => p.payment_type === "installment" || p.payment_type === "hire-purchase")
+          .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
 
-        setStats({
-          totalSales,
-          totalRevenue,
-          fullPayments,
-          hirePurchase,
-        });
+        setStats({ totalSales, totalRevenue, fullPayments, hirePurchase });
       }
     } catch (error) {
       console.error("Failed to load sales:", error);
@@ -143,22 +166,22 @@ export default function SalesDetailsScreen() {
     if (filterType === "week") {
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       filtered = sales.filter((sale) => {
-        const saleDate = new Date(sale.time);
-        return saleDate >= weekAgo;
+        const d = new Date(sale.rawDate);
+        return !isNaN(d.getTime()) && d >= weekAgo;
       });
     } else if (filterType === "month") {
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       filtered = sales.filter((sale) => {
-        const saleDate = new Date(sale.time);
-        return saleDate >= monthAgo;
+        const d = new Date(sale.rawDate);
+        return !isNaN(d.getTime()) && d >= monthAgo;
       });
     } else if (filterType === "custom") {
       if (customStartDate && customEndDate) {
         const start = new Date(customStartDate);
-        const end = new Date(customEndDate);
+        const end = new Date(customEndDate + "T23:59:59");
         filtered = sales.filter((sale) => {
-          const saleDate = new Date(sale.time);
-          return saleDate >= start && saleDate <= end;
+          const d = new Date(sale.rawDate);
+          return !isNaN(d.getTime()) && d >= start && d <= end;
         });
       }
     }
@@ -197,14 +220,14 @@ export default function SalesDetailsScreen() {
     if (period === "week") {
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       dataToExport = sales.filter((sale) => {
-        const saleDate = new Date(sale.time);
-        return saleDate >= weekAgo;
+        const d = new Date(sale.rawDate);
+        return !isNaN(d.getTime()) && d >= weekAgo;
       });
     } else if (period === "month") {
       const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       dataToExport = sales.filter((sale) => {
-        const saleDate = new Date(sale.time);
-        return saleDate >= monthAgo;
+        const d = new Date(sale.rawDate);
+        return !isNaN(d.getTime()) && d >= monthAgo;
       });
     }
 
@@ -268,6 +291,18 @@ export default function SalesDetailsScreen() {
 
       <CHWHeader />
 
+      {/* Page title + export button */}
+      <View style={styles.pageTitleRow}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color="#1E40AF" />
+        </TouchableOpacity>
+        <Text style={styles.pageTitle}>Sales Details</Text>
+        <TouchableOpacity style={styles.exportBtn} onPress={handleExport}>
+          <Ionicons name="download-outline" size={18} color="#1E40AF" />
+          <Text style={styles.exportBtnText}>Export</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         refreshControl={
@@ -280,11 +315,11 @@ export default function SalesDetailsScreen() {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{stats.totalSales}</Text>
-            <Text style={styles.statLabel}>Total Sales</Text>
+            <Text style={styles.statLabel}>Total Records</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>UGX {stats.totalRevenue.toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Total Revenue</Text>
+            <Text style={styles.statLabel}>Revenue Collected</Text>
           </View>
         </View>
 
@@ -441,20 +476,40 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8FFF8",
   },
-  header: {
+  pageTitleRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: scale(16),
     paddingVertical: verticalScale(12),
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
+    gap: scale(8),
   },
-  headerTitle: {
+  backBtn: {
+    padding: scale(4),
+  },
+  pageTitle: {
+    flex: 1,
     fontSize: responsiveFontSize.large,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#1F2937",
+  },
+  exportBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: scale(4),
+    backgroundColor: "#EFF6FF",
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(6),
+    borderRadius: moderateScale(8),
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+  },
+  exportBtnText: {
+    fontSize: responsiveFontSize.small,
+    fontWeight: "600",
+    color: "#1E40AF",
   },
   loadingContainer: {
     flex: 1,
@@ -605,15 +660,42 @@ const styles = StyleSheet.create({
   },
   paymentBadge: {
     alignSelf: "flex-start",
+    backgroundColor: "#EFF6FF",
+    paddingHorizontal: scale(8),
+    paddingVertical: verticalScale(2),
+    borderRadius: moderateScale(4),
+  },
+  pendingBadge: {
+    backgroundColor: "#FEF3C7",
   },
   paymentBadgeText: {
     fontSize: responsiveFontSize.small,
     fontWeight: "600",
     color: "#1E40AF",
-    backgroundColor: "#EFF6FF",
+  },
+  pendingBadgeText: {
+    color: "#92400E",
+  },
+  badgeRow: {
+    flexDirection: "row",
+    gap: scale(6),
+    flexWrap: "wrap",
+  },
+  statusBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#FEE2E2",
     paddingHorizontal: scale(8),
     paddingVertical: verticalScale(2),
     borderRadius: moderateScale(4),
+  },
+  statusBadgeText: {
+    fontSize: responsiveFontSize.small,
+    fontWeight: "600",
+    color: "#DC2626",
+    textTransform: "capitalize",
+  },
+  pendingAmount: {
+    color: "#D97706",
   },
   saleAmount: {
     fontSize: responsiveFontSize.medium,

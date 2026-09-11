@@ -89,33 +89,29 @@ export default function VHTScreeningStep4() {
 
   const handleAnswer = (questionId: string, answer: "yes" | "no") => {
     const question = questions.find((q) => q.id === questionId);
+    if (!question) return;
+
     const newAnswered = new Set(questionsAnswered);
     newAnswered.add(questionId);
     setQuestionsAnswered(newAnswered);
     const newAnswers = { ...answers, [questionId]: answer };
     setAnswers(newAnswers);
 
-    let newReasons = referralReasons.filter((reason) => reason !== question?.yesMessage && reason !== question?.noMessage);
-    let shouldReferNow = false;
-
-    if (question) {
-      if (
-        answer === "yes" &&
-        (question.yesAction === "REFER" || question.yesAction === "REFER_EDUCATE")
-      ) {
-        shouldReferNow = true;
-        newReasons.push(question.yesMessage);
-      } else if (
-        answer === "no" &&
-        question.noAction === "REFER"
-      ) {
-        shouldReferNow = true;
-        newReasons.push(question.noMessage);
+    // Rebuild all referral reasons from ALL answers so far
+    const newReasons: string[] = [];
+    questions.forEach((q) => {
+      const a = q.id === questionId ? answer : newAnswers[q.id];
+      if (!a) return;
+      if (a === "yes" && (q.yesAction === "REFER" || q.yesAction === "REFER_EDUCATE")) {
+        newReasons.push(q.yesMessage);
+      } else if (a === "no" && q.noAction === "REFER") {
+        newReasons.push(q.noMessage!);
       }
-    }
+    });
 
+    const referralTriggered = newReasons.length > 0;
     setReferralReasons(newReasons);
-    setShouldRefer(shouldReferNow);
+    setShouldRefer(referralTriggered);
 
     updateScreeningData({
       hasEyeConcerns: newAnswers["eye-concerns"] === "yes",
@@ -130,21 +126,33 @@ export default function VHTScreeningStep4() {
       referralReasonsFromQuestions: newReasons,
     });
 
-    if (shouldReferNow) {
+    // Only prompt to navigate on the specific answer that first triggers referral
+    if (
+      referralTriggered &&
+      (
+        (answer === "yes" && (question.yesAction === "REFER" || question.yesAction === "REFER_EDUCATE")) ||
+        (answer === "no" && question.noAction === "REFER")
+      )
+    ) {
+      const reason = answer === "yes" ? question.yesMessage : question.noMessage!;
       Alert.alert(
         "Referral Required",
-        question?.yesMessage || question?.noMessage || "",
+        reason,
         [
           {
-            text: "OK",
+            text: "Continue to Referral",
             onPress: () => {
               updateScreeningData({
                 needsReferral: true,
-                referralReason: question?.yesMessage || question?.noMessage || "",
+                referralReason: newReasons.join("; "),
                 referralReasonsFromQuestions: newReasons,
               });
               navigation.navigate("VHTReferral");
             },
+          },
+          {
+            text: "Answer Remaining First",
+            style: "cancel",
           },
         ]
       );
@@ -156,9 +164,18 @@ export default function VHTScreeningStep4() {
   const handleContinue = () => {
     if (allQuestionsAnswered && !shouldRefer) {
       updateScreeningData({
+        needsReferral: false,
         referralReasonsFromQuestions: referralReasons,
       });
       navigation.navigate("VHTScreeningStep5");
+    } else if (allQuestionsAnswered && shouldRefer) {
+      // All questions answered and a referral is needed — send to referral screen
+      updateScreeningData({
+        needsReferral: true,
+        referralReason: referralReasons.join("; "),
+        referralReasonsFromQuestions: referralReasons,
+      });
+      navigation.navigate("VHTReferral");
     }
   };
 
@@ -270,15 +287,13 @@ export default function VHTScreeningStep4() {
           </View>
         )}
 
-        {allQuestionsAnswered && !shouldRefer && (
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={handleContinue}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="arrow-forward-circle" size={22} color="#FFF" />
-            <Text style={styles.continueButtonText}>Continue to Prepare Screening Area</Text>
-          </TouchableOpacity>
+        {allQuestionsAnswered && shouldRefer && (
+          <View style={[styles.proceedCard, { backgroundColor: "#FEE2E2", borderLeftColor: "#DC2626" }]}>
+            <Ionicons name="alert-circle" size={32} color="#DC2626" />
+            <Text style={[styles.proceedText, { color: "#7F1D1D" }]}>
+              Referral required based on answers. Complete remaining questions then proceed.
+            </Text>
+          </View>
         )}
       </ScrollView>
 
@@ -298,6 +313,19 @@ export default function VHTScreeningStep4() {
             {allQuestionsAnswered && (
               <Ionicons name="arrow-forward" size={20} color="#FFF" />
             )}
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {shouldRefer && allQuestionsAnswered && (
+        <View style={[styles.footer, { paddingBottom: 24 }]}>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: "#DC2626" }]}
+            onPress={handleContinue}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="medical" size={20} color="#FFF" />
+            <Text style={styles.buttonText}>Complete Referral</Text>
           </TouchableOpacity>
         </View>
       )}

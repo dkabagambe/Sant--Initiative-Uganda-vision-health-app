@@ -137,9 +137,11 @@ export default function VHTReadingGlassesScreen() {
   const handleComplete = () => {
     if (selectedPower && selectedFrame && caseProvided && allEducationProvided) {
       updateScreeningData({
+        needsGlasses: true,
         glassesDispensed: true,
         glassesPower: selectedPower,
         selectedGlassesPower: selectedPower,
+        recommendedPower: selectedPower,        // used by ClientRegistration to filter products
         glassesFrameType: selectedFrame,
         selectedFrameType: selectedFrame,
         glassesEducationProvided: true,

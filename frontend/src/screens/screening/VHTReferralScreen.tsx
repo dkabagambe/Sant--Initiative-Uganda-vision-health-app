@@ -18,6 +18,7 @@ export default function VHTReferralScreen() {
   const navigation = useNavigation<any>();
   const { screeningData, updateScreeningData } = useScreening();
   const [referralFacility, setReferralFacility] = useState("");
+  const [otherFacilityName, setOtherFacilityName] = useState("");
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [facilitySelected, setFacilitySelected] = useState(false);
 
@@ -45,17 +46,22 @@ export default function VHTReferralScreen() {
       return;
     }
 
+    const finalFacility =
+      referralFacility === "Other (specify below)"
+        ? otherFacilityName.trim() || "Other"
+        : referralFacility;
+
     updateScreeningData({
       needsReferral: true,
       referralReason: referralReason,
-      referralFacility: referralFacility === "Other (specify below)" ? additionalNotes : referralFacility,
+      referralFacility: finalFacility,
       referralStep: "pending",
       notes: additionalNotes,
     });
 
     Alert.alert(
       "Referral Completed",
-      `Client has been referred to: ${referralFacility}\n\nVHT Actions:\n• Explain why referral is necessary\n• Encourage prompt attendance\n• Record in register\n• Follow up on attendance during next visits`,
+      `Client has been referred to: ${finalFacility}\n\nVHT Actions:\n• Explain why referral is necessary\n• Encourage prompt attendance\n• Record in register\n• Follow up on attendance during next visits`,
       [
         {
           text: "OK",
@@ -163,14 +169,13 @@ export default function VHTReferralScreen() {
 
         {referralFacility === "Other (specify below)" && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Specify Facility</Text>
+            <Text style={styles.sectionTitle}>Specify Facility Name</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter health facility name"
               placeholderTextColor="#9CA3AF"
-              value={additionalNotes}
-              onChangeText={setAdditionalNotes}
-              multiline
+              value={otherFacilityName}
+              onChangeText={setOtherFacilityName}
             />
           </View>
         )}
@@ -203,17 +208,19 @@ export default function VHTReferralScreen() {
         <TouchableOpacity
           style={[
             styles.button,
-            (!facilitySelected || !referralFacility) &&
+            (!facilitySelected || !referralFacility ||
+              (referralFacility === "Other (specify below)" && !otherFacilityName.trim())) &&
               styles.buttonDisabled,
           ]}
           onPress={handleCompleteReferral}
-          disabled={!facilitySelected || !referralFacility}
-          activeOpacity={facilitySelected && referralFacility ? 0.7 : 1}
+          disabled={
+            !facilitySelected ||
+            !referralFacility ||
+            (referralFacility === "Other (specify below)" && !otherFacilityName.trim())
+          }
         >
-          <Text style={[styles.buttonText, (!facilitySelected || !referralFacility) && styles.buttonTextDisabled]}>
-            Complete Referral
-          </Text>
-          {facilitySelected && referralFacility && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
+          <Text style={styles.buttonText}>Complete Referral</Text>
+          <Ionicons name="arrow-forward" size={20} color="#FFF" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>

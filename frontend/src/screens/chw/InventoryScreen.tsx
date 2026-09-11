@@ -303,85 +303,51 @@ export default function InventoryScreen() {
 
   const loadSalesData = async () => {
     try {
-      // Screenings with glasses sold this week (needs_glasses = true)
-      const screenings = await apiService.getScreenings();
-      if (screenings.success && screenings.data) {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
+      // Use payments API which already JOINs to products for power/name
+      const paymentsRes = await apiService.getPayments();
+      if (!paymentsRes.success) return;
 
-        const weekSales = screenings.data.filter(
-          (s: any) =>
-            s.needs_glasses &&
-            new Date(s.created_at || s.screening_date) >= weekAgo,
-        );
+      const allPayments: any[] = paymentsRes.data || [];
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-        // Recent sales list — last 4 screenings where glasses were given
-        const allGlassesSales = screenings.data.filter(
-          (s: any) => s.needs_glasses,
-        );
-        const recent = allGlassesSales.slice(0, 4).map((s: any) => ({
-          clientName: s.client_name || "Unknown",
-          power: s.recommended_power || s.glasses_power || "N/A",
-          frameType:
-            s.selected_frame_type ||
-            s.glasses_frame_type ||
-            "Standard",
-          amount: `UGX ${(s.glasses_price || 15000).toLocaleString()}`,
-          time: getTimeAgo(s.created_at || s.screening_date),
-        }));
+      // Count glasses sold this week (completed payments)
+      const weekSales = allPayments.filter((p: any) => {
+        const d = new Date(p.payment_date || p.created_at);
+        return !isNaN(d.getTime()) && d >= weekAgo;
+      });
 
-        setRecentSales(recent);
+      // Recent sales list — last 4 payments
+      const recent = allPayments.slice(0, 4).map((p: any) => ({
+        clientName: p.client_name || "Unknown",
+        power: p.product_power || "N/A",
+        frameType: p.product_name || "Standard",
+        amount: `UGX ${Number(p.amount || 0).toLocaleString()}`,
+        time: getTimeAgo(p.payment_date || p.created_at),
+      }));
+      setRecentSales(recent);
 
-        // Payment revenue — completed payments linked to this VHT
-        const payments = await apiService.getPayments();
-        if (payments.success && payments.data) {
-          const monthAgo = new Date();
-          monthAgo.setDate(monthAgo.getDate() - 30);
+      // Revenue — completed payments this month
+      const monthCompleted = allPayments.filter((p: any) => {
+        const d = new Date(p.payment_date || p.created_at);
+        return p.status === "completed" && !isNaN(d.getTime()) && d >= monthAgo;
+      });
 
-          const completed = payments.data.filter(
-            (p: any) => p.status === "completed",
-          );
-          const thisMonthCompleted = completed.filter(
-            (p: any) =>
-              new Date(p.created_at || p.payment_date) >= monthAgo,
-          );
+      const fullPayments = monthCompleted
+        .filter((p: any) => p.payment_type === "full" || p.payment_method === "cash")
+        .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
+      const hirePurchase = monthCompleted
+        .filter((p: any) => p.payment_type === "installment" || p.payment_type === "hire-purchase" || p.payment_type === "hire_purchase")
+        .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
 
-          const fullPayments = thisMonthCompleted
-            .filter(
-              (p: any) =>
-                p.payment_type === "full" || p.payment_type === "cash",
-            )
-            .reduce(
-              (sum: number, p: any) => sum + (Number(p.amount) || 0),
-              0,
-            );
-          const hirePurchase = thisMonthCompleted
-            .filter(
-              (p: any) =>
-                p.payment_type === "installment" ||
-                p.payment_type === "hire-purchase" ||
-                p.payment_type === "hire_purchase",
-            )
-            .reduce(
-              (sum: number, p: any) => sum + (Number(p.amount) || 0),
-              0,
-            );
-
-          setStats((prev) => ({
-            ...prev,
-            weekSold: weekSales.length,
-            totalRevenue: fullPayments + hirePurchase,
-            fullPayments,
-            hirePurchase,
-          }));
-        } else {
-          // If payments fail, still update weekSold
-          setStats((prev) => ({
-            ...prev,
-            weekSold: weekSales.length,
-          }));
-        }
-      }
+      setStats((prev) => ({
+        ...prev,
+        weekSold: weekSales.length,
+        totalRevenue: fullPayments + hirePurchase,
+        fullPayments,
+        hirePurchase,
+      }));
     } catch (error) {
       console.error("Failed to load sales data:", error);
     }

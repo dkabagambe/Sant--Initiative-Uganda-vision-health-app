@@ -30,6 +30,7 @@ interface PendingReferral {
   referred_date: string;
   screening_id: string;
   follow_up_type: "referral";
+  created_at: string;
 }
 
 interface PendingGlasses {
@@ -41,6 +42,7 @@ interface PendingGlasses {
   glasses_power: string;
   screening_date: string;
   follow_up_type: "glasses";
+  created_at: string;
 }
 
 export default function VHTCommunityFollowUpScreen() {
