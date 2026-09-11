@@ -23,11 +23,11 @@ Render sets `PORT` for you; the app already uses `process.env.PORT`.
 
 In the Render service → **Environment** tab, add:
 
-| Key            | Value |
-|----------------|--------|
-| `NODE_ENV`     | `production` |
+| Key            | Value                                                                           |
+| -------------- | ------------------------------------------------------------------------------- |
+| `NODE_ENV`     | `production`                                                                    |
 | `DATABASE_URL` | Your Postgres URL (e.g. Neon: `postgresql://user:pass@host/db?sslmode=require`) |
-| `JWT_SECRET`   | A long random string (same as you use elsewhere for sessions) |
+| `JWT_SECRET`   | A long random string (same as you use elsewhere for sessions)                   |
 
 Optional:
 
@@ -88,12 +88,12 @@ const API_BASE_URL =
 
 ## Summary
 
-| Item            | Heroku              | Render                    |
-|-----------------|---------------------|---------------------------|
-| Node / Express  | ✅                  | ✅                        |
-| PORT            | Set by Heroku       | Set by Render             |
-| Postgres        | Add-on or Neon      | Neon or Render Postgres   |
-| Env vars        | Dashboard / CLI     | Dashboard                 |
-| Migrations      | `heroku run`        | Shell or local with URL   |
+| Item           | Legacy platform | Render                  |
+| -------------- | --------------- | ----------------------- |
+| Node / Express | ✅              | ✅                      |
+| PORT           | Set by platform | Set by Render           |
+| Postgres       | Add-on or Neon  | Neon or Render Postgres |
+| Env vars       | Dashboard / CLI | Dashboard               |
+| Migrations     | Shell command   | Shell or local with URL |
 
 Switching to Render is only a matter of deployment target and env/URL; the same backend code works on both.

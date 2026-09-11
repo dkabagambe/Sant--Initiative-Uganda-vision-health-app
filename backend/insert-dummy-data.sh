@@ -6,9 +6,9 @@
 echo "🔧 Inserting dummy referral data..."
 echo ""
 
-# Check if we're using Heroku or local
+# Check whether a production PostgreSQL database is configured, otherwise use local development data.
 if [ -n "$DATABASE_URL" ]; then
-  echo "📡 Using Heroku PostgreSQL database"
+  echo "📡 Using production PostgreSQL database"
   psql $DATABASE_URL < insert-dummy-referrals.sql
 else
   echo "💾 Using local SQLite database"
