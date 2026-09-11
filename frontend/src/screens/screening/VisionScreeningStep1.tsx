@@ -34,6 +34,7 @@ type RootStackParamList = {
   ClientRegistration: undefined;
   CHWDashboard: undefined;
   MainTabs: undefined;
+  AppTabs: { role?: string };
 };
 
 type ScreeningScreenNavigationProp = NativeStackNavigationProp<
@@ -346,7 +347,12 @@ export default function VisionScreeningFlow() {
     [subCounty],
   );
 
-  const villages: { label: string; value: string }[] = [];
+  const villages = useMemo(() => {
+    if (!parish) return [];
+    const cleanedVillage = parish.trim();
+    if (!cleanedVillage) return [];
+    return [{ label: cleanedVillage, value: cleanedVillage }];
+  }, [parish]);
 
   const powerOptions = [
     "+1.00D",
@@ -436,10 +442,15 @@ export default function VisionScreeningFlow() {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     } else {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "AppTabs", params: { role: "CHW" } }],
-      });
+      const parent = navigation.getParent<any>();
+      if (parent) {
+        parent.navigate("Screen", { screen: "VHTScreeningStep1" });
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "AppTabs", params: { role: "CHW" } }],
+        });
+      }
     }
   };
 
@@ -599,14 +610,17 @@ export default function VisionScreeningFlow() {
               />
             )}
 
-            <Dropdown
-              label="Village"
-              value={village}
-              placeholder="Select village"
-              options={villages}
-              onSelect={setVillage}
-              disabled={!parish}
-            />
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Village</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Type village name"
+                value={village}
+                onChangeText={setVillage}
+                placeholderTextColor="#9CA3AF"
+                editable={!!parish}
+              />
+            </View>
           </>
         );
 

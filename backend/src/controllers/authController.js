@@ -43,7 +43,8 @@ async function findUserByPhone(sql, phoneNumber) {
 
 /** Best-effort normalize stored phone to 0XXXXXXXXX (fixes legacy rows) */
 async function normalizeStoredPhone(sql, userId, currentPhone, targetPhone) {
-  if (!targetPhone || phonesMatch(currentPhone, targetPhone)) return currentPhone;
+  if (!targetPhone || phonesMatch(currentPhone, targetPhone))
+    return currentPhone;
 
   try {
     const updated = await sql`
@@ -66,7 +67,9 @@ exports.login = async (req, res) => {
     const sql = req.app.locals.sql;
 
     if (!phoneNumber) {
-      return res.status(400).json({ success: false, error: "Phone number required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Phone number required" });
     }
 
     const canonicalPhone = toCanonicalPhone(phoneNumber);
@@ -104,10 +107,13 @@ exports.login = async (req, res) => {
       sql,
       existingUser.id,
       existingUser.phone_number,
-      canonicalPhone
+      canonicalPhone,
     );
 
-    const smsResult = await smsService.sendOTP(storedPhone || canonicalPhone, null);
+    const smsResult = await smsService.sendOTP(
+      storedPhone || canonicalPhone,
+      null,
+    );
 
     if (!smsResult.success) {
       console.error("SMS failed:", smsResult.error);
@@ -150,12 +156,16 @@ exports.verifyOTP = async (req, res) => {
     const sql = req.app.locals.sql;
 
     if (!phoneNumber || !otp) {
-      return res.status(400).json({ success: false, error: "Phone number and OTP required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Phone number and OTP required" });
     }
 
     const canonicalPhone = toCanonicalPhone(phoneNumber);
     if (!canonicalPhone) {
-      return res.status(400).json({ success: false, error: "Invalid phone number" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid phone number" });
     }
 
     let user = await findUserByPhone(sql, phoneNumber);
@@ -181,7 +191,9 @@ exports.verifyOTP = async (req, res) => {
         });
       }
     } else {
-      console.log(`📝 [REGISTRATION] Skipping OTP verification for ${canonicalPhone}`);
+      console.log(
+        `📝 [REGISTRATION] Skipping OTP verification for ${canonicalPhone}`,
+      );
     }
 
     // When registering, create user if they don't exist yet
@@ -300,7 +312,12 @@ exports.verifyOTP = async (req, res) => {
     } else {
       const currentTime = new Date().toISOString();
 
-      await normalizeStoredPhone(sql, userId, userData.phone_number, canonicalPhone);
+      await normalizeStoredPhone(
+        sql,
+        userId,
+        userData.phone_number,
+        canonicalPhone,
+      );
 
       await sql`
         UPDATE users SET
@@ -325,14 +342,20 @@ exports.verifyOTP = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: userData.id, phoneNumber: userData.phone_number, role: userData.role },
+      {
+        userId: userData.id,
+        phoneNumber: userData.phone_number,
+        role: userData.role,
+      },
       process.env.JWT_SECRET || "your_jwt_secret",
-      { expiresIn: "30d" }
+      { expiresIn: "30d" },
     );
 
     res.json({
       success: true,
-      message: registrationData ? "Registration successful" : "Login successful",
+      message: registrationData
+        ? "Registration successful"
+        : "Login successful",
       token,
       user: {
         id: userData.id,
@@ -390,7 +413,16 @@ exports.updateProfile = async (req, res) => {
   try {
     const sql = req.app.locals.sql;
     const userId = req.user.userId;
-    const { full_name, age, sex, district, county, sub_county, parish } = req.body;
+    const {
+      full_name,
+      age,
+      sex,
+      district,
+      county,
+      sub_county,
+      parish,
+      village,
+    } = req.body;
 
     await sql`
       UPDATE users SET
@@ -401,7 +433,7 @@ exports.updateProfile = async (req, res) => {
         county = ${county || null},
         sub_county = ${sub_county || null},
         parish = ${parish || null},
-        village = ${parish || null}
+        village = ${village || parish || null}
       WHERE id = ${userId}
     `;
 

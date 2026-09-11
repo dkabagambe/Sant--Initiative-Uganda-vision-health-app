@@ -50,6 +50,7 @@ export default function VisionScreen1() {
         county: "",
         subCounty: "",
         parish: "",
+        village: "",
       });
     }
   }, [screeningData]);
@@ -72,6 +73,7 @@ export default function VisionScreen1() {
     county: "",
     subCounty: "",
     parish: "",
+    village: "",
   });
 
   const [showDistrictModal, setShowDistrictModal] = useState(false);
@@ -167,7 +169,7 @@ export default function VisionScreen1() {
       clientPhone: formData.phoneNumber,
       clientAge: parseInt(formData.age),
       clientGender: formData.sex,
-      clientVillage: formData.parish,
+      clientVillage: formData.village || formData.parish,
       district: formData.district,
       county: formData.county,
       subCounty: formData.subCounty,
@@ -454,6 +456,20 @@ export default function VisionScreen1() {
                 <Ionicons name="chevron-down" size={20} color="#666" />
               </TouchableOpacity>
             )}
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Village</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Type village name"
+              value={formData.village}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, village: text }))
+              }
+              placeholderTextColor="#999"
+              editable={!!formData.parish}
+            />
           </View>
         </View>
 
