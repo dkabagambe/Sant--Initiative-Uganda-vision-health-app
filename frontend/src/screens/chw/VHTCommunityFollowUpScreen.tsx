@@ -189,6 +189,26 @@ export default function VHTCommunityFollowUpScreen() {
     }
   };
 
+  const formatDate = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return "Unknown date";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  };
+
+  const timeAgo = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "";
+    const diffMs = Date.now() - d.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+    return formatDate(dateStr);
+  };
+
   const renderBoolToggle = (
     value: boolean | null,
     onChange: (v: boolean) => void,
@@ -218,13 +238,38 @@ export default function VHTCommunityFollowUpScreen() {
   const renderReferralForm = () => (
     <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
       <View style={styles.clientCard}>
-        <Text style={styles.clientName}>{(selectedClient as PendingReferral).client_name}</Text>
-        <Text style={styles.clientDetail}>
-          Referred to: {(selectedClient as PendingReferral).facility_name}
-        </Text>
-        <Text style={styles.clientDetail}>
-          Reason: {(selectedClient as PendingReferral).reason}
-        </Text>
+        <View style={styles.clientCardHeader}>
+          <View style={styles.clientIconBadge}>
+            <Ionicons name="medical" size={20} color="#FFF" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.clientName}>{(selectedClient as PendingReferral).client_name}</Text>
+            <Text style={styles.clientDateBadge}>
+              Referred {timeAgo((selectedClient as PendingReferral).created_at)}
+              {" · "}{formatDate((selectedClient as PendingReferral).created_at)}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.clientDetailRow}>
+          <Ionicons name="business-outline" size={14} color="#107569" />
+          <Text style={styles.clientDetail}>
+            Facility: {(selectedClient as PendingReferral).facility_name || "Not specified"}
+          </Text>
+        </View>
+        <View style={styles.clientDetailRow}>
+          <Ionicons name="alert-circle-outline" size={14} color="#107569" />
+          <Text style={styles.clientDetail}>
+            Reason: {(selectedClient as PendingReferral).reason}
+          </Text>
+        </View>
+        {(selectedClient as PendingReferral).client_phone ? (
+          <View style={styles.clientDetailRow}>
+            <Ionicons name="call-outline" size={14} color="#107569" />
+            <Text style={styles.clientDetail}>
+              {(selectedClient as PendingReferral).client_phone}
+            </Text>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.section}>
@@ -281,13 +326,43 @@ export default function VHTCommunityFollowUpScreen() {
   const renderGlassesForm = () => (
     <ScrollView style={styles.formScroll} showsVerticalScrollIndicator={false}>
       <View style={styles.clientCard}>
-        <Text style={styles.clientName}>{(selectedClient as PendingGlasses).client_name}</Text>
-        <Text style={styles.clientDetail}>
-          Glasses power: {(selectedClient as PendingGlasses).glasses_power || "N/A"}
-        </Text>
-        <Text style={styles.clientDetail}>
-          Dispensed: {(selectedClient as PendingGlasses).screening_date}
-        </Text>
+        <View style={styles.clientCardHeader}>
+          <View style={[styles.clientIconBadge, { backgroundColor: "#9333EA" }]}>
+            <Ionicons name="glasses-outline" size={20} color="#FFF" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.clientName}>{(selectedClient as PendingGlasses).client_name}</Text>
+            <Text style={styles.clientDateBadge}>
+              Dispensed {timeAgo((selectedClient as PendingGlasses).created_at)}
+              {" · "}{formatDate((selectedClient as PendingGlasses).created_at)}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.glassesPowerRow}>
+          <Ionicons name="glasses" size={22} color="#7C3AED" />
+          <View style={styles.glassesPowerBadge}>
+            <Text style={styles.glassesPowerLabel}>Lens Power</Text>
+            <Text style={styles.glassesPowerValue}>
+              {(selectedClient as PendingGlasses).glasses_power || "Not recorded"}
+            </Text>
+          </View>
+        </View>
+        {(selectedClient as PendingGlasses).client_phone ? (
+          <View style={styles.clientDetailRow}>
+            <Ionicons name="call-outline" size={14} color="#107569" />
+            <Text style={styles.clientDetail}>
+              {(selectedClient as PendingGlasses).client_phone}
+            </Text>
+          </View>
+        ) : null}
+        {(selectedClient as PendingGlasses).client_district ? (
+          <View style={styles.clientDetailRow}>
+            <Ionicons name="location-outline" size={14} color="#107569" />
+            <Text style={styles.clientDetail}>
+              {(selectedClient as PendingGlasses).client_district}
+            </Text>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.section}>
@@ -416,8 +491,11 @@ export default function VHTCommunityFollowUpScreen() {
                 <Text style={styles.listItemName}>{item.client_name}</Text>
                 <Text style={styles.listItemSub}>
                   {activeTab === "referral"
-                    ? `Referred: ${(item as PendingReferral).facility_name}`
-                    : `Power: ${(item as PendingGlasses).glasses_power || "N/A"}`}
+                    ? `→ ${(item as PendingReferral).facility_name || "Facility not set"}`
+                    : `Lens: ${(item as PendingGlasses).glasses_power || "N/A"}`}
+                </Text>
+                <Text style={styles.listItemDate}>
+                  {timeAgo(item.created_at)}
                 </Text>
               </View>
             </View>
@@ -574,8 +652,43 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: "#10B981",
   },
-  clientName: { fontSize: 18, fontWeight: "700", color: "#065F46" },
-  clientDetail: { fontSize: 13, color: "#107569", marginTop: 4 },
+  clientCardHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    marginBottom: 12,
+  },
+  clientIconBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#DC2626",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  clientName: { fontSize: 17, fontWeight: "700", color: "#065F46" },
+  clientDateBadge: { fontSize: 12, color: "#6B7280", marginTop: 2 },
+  clientDetailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 6,
+  },
+  clientDetail: { fontSize: 13, color: "#107569", flex: 1 },
+  glassesPowerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#EDE9FE",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  glassesPowerBadge: { flex: 1 },
+  glassesPowerLabel: { fontSize: 11, color: "#7C3AED", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
+  glassesPowerValue: { fontSize: 20, fontWeight: "700", color: "#4C1D95", marginTop: 2 },
+  listItemDate: { fontSize: 11, color: "#9CA3AF", marginTop: 2 },
   section: { marginBottom: 20 },
   sectionTitle: { fontSize: 15, fontWeight: "600", color: "#1F2937", marginBottom: 10 },
   toggleRow: { flexDirection: "row", gap: 10 },

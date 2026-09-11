@@ -1,10 +1,17 @@
 const express = require("express");
 const router = express.Router();
+const { authenticate } = require("../middleware/auth");
 
 // List clients needing follow-up (pending referrals + glasses dispensed)
-router.get("/pending", async (req, res) => {
+// Scoped to the logged-in VHT via health_worker_id
+router.get("/pending", authenticate, async (req, res) => {
   try {
     const sql = req.app.locals.sql;
+    const healthWorkerId = req.user?.userId;
+
+    if (!healthWorkerId) {
+      return res.status(401).json({ success: false, error: "Authentication required" });
+    }
 
     const pendingReferrals = await sql`
       SELECT
@@ -24,6 +31,7 @@ router.get("/pending", async (req, res) => {
         r.created_at
       FROM referrals r
       WHERE r.status = 'pending'
+        AND r.health_worker_id = ${healthWorkerId}
       ORDER BY r.created_at DESC
       LIMIT 50
     `;
@@ -37,11 +45,12 @@ router.get("/pending", async (req, res) => {
         s.client_gender,
         s.client_district,
         s.glasses_power,
-        s.screening_date,
-        'glasses' as follow_up_type,
-        s.created_at
+        COALESCE(s.screening_date, s.created_at::date::text) as screening_date,
+        s.created_at,
+        'glasses' as follow_up_type
       FROM screenings s
       WHERE s.glasses_dispensed = true
+        AND s.health_worker_id = ${healthWorkerId}
         AND s.client_name IS NOT NULL
       ORDER BY s.created_at DESC
       LIMIT 50
@@ -65,9 +74,15 @@ router.get("/pending", async (req, res) => {
 });
 
 // Record a community follow-up visit
-router.post("/create", async (req, res) => {
+router.post("/create", authenticate, async (req, res) => {
   try {
     const sql = req.app.locals.sql;
+    const healthWorkerId = req.user?.userId;
+
+    if (!healthWorkerId) {
+      return res.status(401).json({ success: false, error: "Authentication required" });
+    }
+
     const {
       follow_up_type,
       screening_id,
@@ -86,15 +101,7 @@ router.post("/create", async (req, res) => {
       education_reinforced,
       needs_referral,
       notes,
-      health_worker_id,
     } = req.body;
-
-    let workerId = health_worker_id;
-    if (!workerId) {
-      const workers =
-        await sql`SELECT id FROM users WHERE role IN ('CHW', 'health_worker') ORDER BY CASE WHEN role = 'CHW' THEN 0 ELSE 1 END, created_at DESC LIMIT 1`;
-      if (workers.length > 0) workerId = workers[0].id;
-    }
 
     const followUp = await sql`
       INSERT INTO follow_ups (
@@ -110,7 +117,7 @@ router.post("/create", async (req, res) => {
         ${attended_facility ?? null}, ${treatment_received || null}, ${barriers || null},
         ${glasses_in_use ?? null}, ${glasses_help ?? null}, ${has_headaches ?? null}, ${glasses_condition || null},
         ${education_reinforced ?? false}, ${needs_referral ?? false}, ${notes || null},
-        ${workerId || null}, ${new Date().toISOString().split("T")[0]}, NOW()
+        ${healthWorkerId}, ${new Date().toISOString().split("T")[0]}, NOW()
       )
       RETURNING *
     `;
