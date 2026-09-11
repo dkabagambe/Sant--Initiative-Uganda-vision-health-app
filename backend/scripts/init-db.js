@@ -292,25 +292,37 @@ async function initDB() {
         id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
         screening_id UUID REFERENCES screenings(id),
         product_id UUID REFERENCES products(id),
+        health_worker_id UUID REFERENCES users(id),
         client_name VARCHAR(200),
         client_phone VARCHAR(20),
         amount DECIMAL(10, 2) NOT NULL,
         currency VARCHAR(3) DEFAULT 'UGX',
-        mobile_money_number VARCHAR(20) NOT NULL,
+        mobile_money_number VARCHAR(20),
         transaction_id VARCHAR(100),
         status VARCHAR(20) DEFAULT 'pending',
-        payment_method VARCHAR(50) DEFAULT 'mobile_money',
+        payment_method VARCHAR(50) DEFAULT 'cash',
         payment_type VARCHAR(50) DEFAULT 'full',
         installment_number INTEGER,
         total_installments INTEGER,
         due_date DATE,
-        payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        payment_date DATE,
         verified_at TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         is_synced BOOLEAN DEFAULT true,
         offline_id VARCHAR(100)
       )
+    `;
+    // Add health_worker_id if missing (idempotent for existing tables)
+    await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS health_worker_id UUID REFERENCES users(id)`;
+    // Backfill health_worker_id from linked screenings
+    await sql`
+      UPDATE payments p
+      SET health_worker_id = s.health_worker_id
+      FROM screenings s
+      WHERE p.screening_id = s.id
+        AND p.health_worker_id IS NULL
+        AND s.health_worker_id IS NOT NULL
     `;
     console.log("✓ Payments table created");
 
