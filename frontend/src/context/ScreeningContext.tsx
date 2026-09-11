@@ -34,6 +34,7 @@ interface ScreeningData {
   distanceVisionLeft: string;
   distanceVisionRight: string;
   distanceVisionBoth: string;
+  distanceVisionResult: string;
   nearVisionResult: string;
   pinholeTestLeft: string;
   pinholeTestRight: string;

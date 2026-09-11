@@ -169,7 +169,25 @@ export default function ClientRegistration() {
         if (currentStatus !== "completed") {
           Alert.alert(
             "Payment Pending",
-            "Mobile money request was sent. Ask the client to complete approval on phone; the payment status will update automatically.",
+            "Mobile money request was sent. Ask the client to complete approval on their phone. The payment status will update automatically when approved.",
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  // Still show sale complete so VHT can record the glasses were given
+                  setSaleData({
+                    clientName: clientData.clientName,
+                    clientPhone: mobileNumber,
+                    productName: `${selectedProduct.power} - ${selectedProduct.name || "Reading Glasses"}`,
+                    totalAmount: selectedProduct.price,
+                    paymentMethod,
+                    installmentAmount,
+                    nextPaymentDate: undefined,
+                  });
+                  setShowSaleComplete(true);
+                },
+              },
+            ],
           );
           return;
         }

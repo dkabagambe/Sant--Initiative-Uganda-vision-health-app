@@ -101,28 +101,48 @@ export default function VisionScreen6Wrapper() {
         return;
       }
 
-      // If failed and age < 40, navigate to CreateReferralScreen with pre-filled data
-      setSubmitting(false);
-      updateScreeningData({
+      // If failed and age < 40, save screening then navigate to CreateReferralScreen
+      const failedData = {
+        ...screeningData,
         nearVisionResult: "failed",
         needsGlasses: false,
         needsReferral: true,
         referralReason: `Near vision problem detected in client under 40 years (age: ${clientAge}) - requires eye examination`,
-      });
+        referralStep: "Step 6 - Near Vision Test",
+      };
+
+      updateScreeningData(failedData);
+
+      // Save screening record first
+      let savedScreeningId: string | null = null;
+      try {
+        const result = await apiService.createScreening(failedData);
+        if (result.success) {
+          savedScreeningId = result.data?.id || result.screeningId || null;
+        }
+      } catch (err) {
+        console.error("Failed to save screening, saving offline:", err);
+        await saveOffline(failedData);
+      }
+
+      setSubmitting(false);
 
       const referralParams = {
         fromScreening: true,
+        screeningId: savedScreeningId,
         clientName: screeningData.clientName || "",
         clientPhone: screeningData.clientPhone || "",
         clientAge: clientAge.toString(),
         clientSex: screeningData.clientGender || "",
         district: screeningData.district || "",
-        reason: `Near vision problem detected in client under 40 years (age: ${clientAge}) - requires eye examination`,
+        county: screeningData.county || "",
+        subCounty: screeningData.subCounty || "",
+        parish: screeningData.parish || "",
+        reason: failedData.referralReason,
         urgency: "high",
         notes: `Referred from Step 6 — Near Vision Test.\nClient age: ${clientAge} (under 40).\nNear vision failed — abnormal for this age group.`,
       };
 
-      // Navigate to root-level CreateReferralScreen
       const root = navigation.getParent()?.getParent();
       if (root) {
         root.navigate("CreateReferralScreen", referralParams);

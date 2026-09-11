@@ -75,37 +75,38 @@ export default function DistanceVisionTestScreen() {
       return;
     }
 
-    if (line1Score < 2 || line2Score < 4) {
-      const eyeTested = testStage === "rightEye" ? "Right" : "Left";
+    const eyeLabel = testStage === "rightEye" ? "Right" : "Left";
+    const passed = line1Score >= 2 && line2Score >= 4;
+    const resultStr = `${line1Score}/3 line1, ${line2Score}/5 line2`;
 
+    if (!passed) {
       const referralData = {
         ...screeningData,
+        distanceVisionRight: testStage === "rightEye" ? resultStr : (screeningData.distanceVisionRight || ""),
+        distanceVisionLeft:  testStage === "leftEye"  ? resultStr : (screeningData.distanceVisionLeft  || ""),
         distanceVisionResult: "failed",
         nearVisionResult: "not_tested",
         needsReferral: true,
         needsGlasses: false,
-        referralReason: `${eyeTested} eye failed distance vision test. Line 1: ${line1Score}/3, Line 2: ${line2Score}/5`,
+        referralReason: `${eyeLabel} eye failed distance vision test. Line 1: ${line1Score}/3, Line 2: ${line2Score}/5`,
         referralUrgency: "normal",
         referralStep: "Step 5 - Distance Vision Test",
       };
 
       updateScreeningData(referralData);
 
-      // Save screening record first, then navigate to referral form
+      // Save screening record first
       let savedScreeningId: string | null = null;
       try {
         const result = await apiService.createScreening(referralData);
         if (result.success) {
-          savedScreeningId = result.data?.id || null;
+          savedScreeningId = result.data?.id || result.screeningId || null;
         }
       } catch (error) {
         console.error("Failed to save screening, saving offline:", error);
         await saveOffline(referralData);
       }
 
-      const reasonText = referralData.referralReason;
-
-      // Navigate to pre-filled referral form (go up to root navigator)
       const referralParams = {
         fromScreening: true,
         screeningId: savedScreeningId,
@@ -117,12 +118,11 @@ export default function DistanceVisionTestScreen() {
         county: screeningData.county || "",
         subCounty: screeningData.subCounty || "",
         parish: screeningData.parish || "",
-        reason: reasonText,
+        reason: referralData.referralReason,
         urgency: "normal",
-        notes: `Referred from Step 5 — Distance Vision Test.\n${eyeTested} eye failed. Line 1: ${line1Score}/3, Line 2: ${line2Score}/5.\nNear vision test NOT performed.`,
+        notes: `Referred from Step 5 — Distance Vision Test.\n${eyeLabel} eye failed. Line 1: ${line1Score}/3, Line 2: ${line2Score}/5.\nNear vision test NOT performed.`,
       };
 
-      // Try root navigator (ScreeningStack -> CHWTabs -> Root)
       const root = navigation.getParent()?.getParent();
       if (root) {
         root.navigate("CreateReferralScreen", referralParams);
@@ -137,13 +137,18 @@ export default function DistanceVisionTestScreen() {
       return;
     }
 
+    // Eye passed — save result to context
     if (testStage === "rightEye") {
-      // Reset scores for left eye
+      updateScreeningData({ distanceVisionRight: resultStr });
       setLine1Score(null);
       setLine2Score(null);
       setTestStage("leftEye");
     } else {
-      // Both eyes completed, navigate to next step
+      // Both eyes passed
+      updateScreeningData({
+        distanceVisionLeft: resultStr,
+        distanceVisionResult: "passed",
+      });
       navigation.navigate("VisionScreen6");
     }
   };
