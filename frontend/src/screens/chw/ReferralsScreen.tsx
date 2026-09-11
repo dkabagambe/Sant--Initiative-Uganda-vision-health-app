@@ -72,6 +72,8 @@ export default function ReferralsScreen() {
   const [editReason, setEditReason] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const [editUrgency, setEditUrgency] = useState<string>("normal");
+  // Stats from backend (accurate totals even when > 50 records)
+  const [stats, setStats] = useState({ total: 0, pending: 0, completed: 0 });
 
   useEffect(() => {
     loadUserData();
@@ -79,7 +81,7 @@ export default function ReferralsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadReferrals();
+      loadReferrals(false);
     }, []),
   );
 
@@ -92,24 +94,37 @@ export default function ReferralsScreen() {
     }
   };
 
-  const loadReferrals = async () => {
+  const loadReferrals = async (isRefresh = false) => {
     try {
-      setLoading(true);
-      const response = await apiService.getReferrals();
-      if (response.success) {
-        setReferrals(response.data);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      const [referralRes, statsRes] = await Promise.all([
+        apiService.getReferrals(),
+        apiService.getReferralStats(),
+      ]);
+      if (referralRes.success) {
+        setReferrals(referralRes.data);
+      }
+      if (statsRes.success && statsRes.data) {
+        setStats({
+          total: Number(statsRes.data.total_referrals || 0),
+          pending: Number(statsRes.data.pending_referrals || 0),
+          completed: Number(statsRes.data.completed_referrals || 0),
+        });
       }
     } catch (error) {
       console.error("Failed to load referrals:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
   const onRefresh = async () => {
-    setRefreshing(true);
-    await loadReferrals();
-    setRefreshing(false);
+    loadReferrals(true);
   };
 
   const handleMarkComplete = (referralId: string, clientName: string) => {
@@ -127,14 +142,7 @@ export default function ReferralsScreen() {
                 "completed",
               );
               if (result.success) {
-                // Remove from local state immediately
-                setReferrals((prev) =>
-                  prev.map((r) =>
-                    r.id === referralId
-                      ? { ...r, status: "completed" as const }
-                      : r,
-                  ),
-                );
+                await loadReferrals(false);
                 Alert.alert("Success", "Referral marked as completed");
               } else {
                 Alert.alert(
@@ -184,7 +192,7 @@ export default function ReferralsScreen() {
     }
   };
 
-  const pendingReferrals = referrals.filter((r) => r.status === "pending");
+  const pendingReferrals = referrals.filter((r) => r.status === "pending" || !r.status);
   const completedReferrals = referrals.filter((r) => r.status === "completed");
 
   const currentReferrals =
@@ -193,6 +201,13 @@ export default function ReferralsScreen() {
       : activeTab === "completed"
         ? completedReferrals
         : referrals;
+
+  const formatDate = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return "—";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  };
 
   const openReferralDetail = (referral: ReferralItem) => {
     setSelectedReferral(referral);
@@ -208,15 +223,16 @@ export default function ReferralsScreen() {
     if (!selectedReferral) return;
     try {
       const result = await apiService.updateReferral(selectedReferral.id, {
-        facility_name: editFacilityName,
-        facility_location: editFacilityLocation,
-        reason: editReason,
-        notes: editNotes,
+        facility_name: editFacilityName.trim() || null,
+        facility_location: editFacilityLocation.trim() || null,
+        reason: editReason.trim() || null,
+        notes: editNotes.trim() || null,
         urgency: editUrgency,
       });
       if (result.success) {
-        await loadReferrals();
         setDetailVisible(false);
+        await loadReferrals(false);
+        Alert.alert("Saved", "Referral updated successfully.");
       } else {
         Alert.alert("Error", result.error || "Failed to update referral");
       }
@@ -233,23 +249,49 @@ export default function ReferralsScreen() {
       normal: { bg: "#FEF3C7", text: "#D97706" },
       low: { bg: "#E0F2FE", text: "#0284C7" },
     };
-    const colors = urgencyColors[referral.urgency] || urgencyColors.normal;
+    const urgencyColor = urgencyColors[referral.urgency] || urgencyColors.normal;
+    const isCompleted = referral.status === "completed";
 
     return (
       <TouchableOpacity
-        style={styles.outlinedCard}
+        style={[styles.outlinedCard, isCompleted && styles.completedCard]}
         activeOpacity={0.9}
         onPress={() => openReferralDetail(referral)}
       >
         {/* Patient Header */}
         <View style={styles.patientHeader}>
-          <Text style={styles.patientName}>
-            {referral.client_name || "Unknown Client"}
-          </Text>
-          <View style={[styles.statusBadge, { backgroundColor: colors.bg }]}>
-            <Text style={[styles.statusText, { color: colors.text }]}>
-              {referral.urgency}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.patientName}>
+              {referral.client_name || "Unknown Client"}
             </Text>
+            {/* Status row */}
+            <View style={styles.badgeRow}>
+              {/* Status badge */}
+              <View style={[
+                styles.statusBadge,
+                isCompleted
+                  ? { backgroundColor: "#D1FAE5" }
+                  : { backgroundColor: "#FEF3C7" },
+              ]}>
+                <Ionicons
+                  name={isCompleted ? "checkmark-circle" : "time-outline"}
+                  size={12}
+                  color={isCompleted ? "#065F46" : "#92400E"}
+                />
+                <Text style={[
+                  styles.statusText,
+                  { color: isCompleted ? "#065F46" : "#92400E", marginLeft: 3 },
+                ]}>
+                  {isCompleted ? "Completed" : "Pending"}
+                </Text>
+              </View>
+              {/* Urgency badge */}
+              <View style={[styles.urgencyBadge, { backgroundColor: urgencyColor.bg }]}>
+                <Text style={[styles.urgencyBadgeText, { color: urgencyColor.text }]}>
+                  {referral.urgency || "normal"}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
 
@@ -279,24 +321,20 @@ export default function ReferralsScreen() {
         {/* Referral Details */}
         <View style={styles.detailSection}>
           <Text style={styles.detailLabel}>Reason for referral</Text>
-          <Text style={styles.detailValue}>{referral.reason}</Text>
+          <Text style={styles.detailValue}>{referral.reason || "—"}</Text>
         </View>
 
         <View style={styles.detailSection}>
           <Text style={styles.detailLabel}>Referred to</Text>
           <Text style={styles.detailValue}>
             {referral.facility_name || "Not specified"}
-            {referral.facility_location
-              ? ` — ${referral.facility_location}`
-              : ""}
+            {referral.facility_location ? ` — ${referral.facility_location}` : ""}
           </Text>
         </View>
 
         <View style={styles.detailSection}>
           <Text style={styles.detailLabel}>Referred on</Text>
-          <Text style={styles.detailValue}>
-            {new Date(referral.referred_date).toLocaleDateString()}
-          </Text>
+          <Text style={styles.detailValue}>{formatDate(referral.referred_date)}</Text>
         </View>
 
         {referral.notes ? (
@@ -306,28 +344,22 @@ export default function ReferralsScreen() {
           </View>
         ) : null}
 
-        {referral.status === "completed" && referral.completed_date ? (
+        {isCompleted && referral.completed_date ? (
           <View style={styles.detailSection}>
             <Text style={styles.detailLabel}>Completed on</Text>
-            <Text
-              style={[
-                styles.detailValue,
-                { color: "#2E7D32", fontWeight: "600" },
-              ]}
-            >
-              {new Date(referral.completed_date).toLocaleDateString()}
+            <Text style={[styles.detailValue, { color: "#2E7D32", fontWeight: "600" }]}>
+              {formatDate(referral.completed_date)}
             </Text>
           </View>
         ) : null}
 
-        {/* Action Button */}
-        {referral.status === "pending" && (
+        {/* Action Button — only for pending */}
+        {!isCompleted && (
           <TouchableOpacity
             style={styles.markCompleteButton}
-            onPress={() =>
-              handleMarkComplete(referral.id, referral.client_name)
-            }
+            onPress={() => handleMarkComplete(referral.id, referral.client_name)}
           >
+            <Ionicons name="checkmark-circle-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
             <Text style={styles.markCompleteButtonText}>Mark Complete</Text>
           </TouchableOpacity>
         )}
@@ -390,7 +422,7 @@ export default function ReferralsScreen() {
                 activeTab === "pending" && styles.statNumberActive,
               ]}
             >
-              {pendingReferrals.length}
+              {stats.pending}
             </Text>
             <Text style={styles.statLabel}>Pending</Text>
           </TouchableOpacity>
@@ -409,7 +441,7 @@ export default function ReferralsScreen() {
                 activeTab === "completed" && styles.statNumberActive,
               ]}
             >
-              {completedReferrals.length}
+              {stats.completed}
             </Text>
             <Text style={styles.statLabel}>Completed</Text>
           </TouchableOpacity>
@@ -428,7 +460,7 @@ export default function ReferralsScreen() {
                 activeTab === "all" && styles.statNumberActive,
               ]}
             >
-              {referrals.length}
+              {stats.total}
             </Text>
             <Text style={styles.statLabel}>Total</Text>
           </TouchableOpacity>
@@ -469,7 +501,7 @@ export default function ReferralsScreen() {
             {pendingReferrals.length > 0 && (
               <View style={styles.tabBadge}>
                 <Text style={styles.tabBadgeText}>
-                  {pendingReferrals.length}
+                  {stats.pending}
                 </Text>
               </View>
             )}
@@ -494,7 +526,7 @@ export default function ReferralsScreen() {
                 <Text
                   style={[styles.tabBadgeText, { color: "#065F46" }]}
                 >
-                  {completedReferrals.length}
+                  {stats.completed}
                 </Text>
               </View>
             )}
@@ -643,25 +675,11 @@ export default function ReferralsScreen() {
 
                   <Text style={styles.detailSectionTitle}>Dates</Text>
                   <Text style={styles.detailModalText}>
-                    Referred:{" "}
-                    {new Date(
-                      selectedReferral.referred_date,
-                    ).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
+                    Referred: {formatDate(selectedReferral.referred_date)}
                   </Text>
                   {selectedReferral.completed_date ? (
                     <Text style={styles.detailModalText}>
-                      Completed:{" "}
-                      {new Date(
-                        selectedReferral.completed_date,
-                      ).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                      Completed: {formatDate(selectedReferral.completed_date)}
                     </Text>
                   ) : null}
                 </ScrollView>
@@ -885,24 +903,44 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#E5E7EB",
   },
+  completedCard: {
+    borderColor: "#D1FAE5",
+    backgroundColor: "#F9FFFE",
+  },
   patientHeader: {
-    marginBottom: 16,
+    marginBottom: 12,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   patientName: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "700",
     color: "#1F2937",
-    flex: 1,
+    marginBottom: 6,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    gap: 6,
+    flexWrap: "wrap",
   },
   statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 12,
   },
   statusText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  urgencyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  urgencyBadgeText: {
     fontSize: 12,
     fontWeight: "600",
     textTransform: "capitalize",
@@ -951,13 +989,13 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   markCompleteButton: {
-    marginTop: 16,
+    marginTop: 14,
     backgroundColor: "#2E7D32",
-    paddingVertical: 12,
+    paddingVertical: 11,
     borderRadius: 8,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#1D4ED8",
+    flexDirection: "row",
+    justifyContent: "center",
   },
   markCompleteButtonText: {
     fontSize: 15,
