@@ -48,6 +48,7 @@ export default function ScreeningComplete() {
     const clientAge = screeningData.clientAge ?? 0;
     const clientPhone = screeningData.clientPhone || "";
     const clientGender = screeningData.clientGender || "";
+    const needsGlasses = Boolean(screeningData.needsGlasses || glassesDispensed);
 
     const completeData = {
       ...screeningData,
@@ -60,40 +61,25 @@ export default function ScreeningComplete() {
       subCounty: screeningData.subCounty || "",
       parish: screeningData.parish || "",
       clientVillage: screeningData.clientVillage || "",
-      needsGlasses: Boolean(screeningData.needsGlasses || glassesDispensed),
+      needsGlasses,
+      // Mark glasses as dispensed when glassesDispensed is true
+      glassesDispensed: glassesDispensed || needsGlasses,
+      glassesPower: glassesPower || screeningData.glassesPower || screeningData.recommendedPower || "",
       needsReferral: Boolean(screeningData.needsReferral),
       notes: screeningData.notes || "All vision tests completed.",
     };
 
-    // If glasses were dispensed, go to ClientRegistration for payment/sale flow
-    if (glassesDispensed || completeData.needsGlasses) {
-      navigation.navigate("ClientRegistration", {
-        clientData: {
-          clientName,
-          clientAge,
-          clientPhone,
-          clientGender,
-          recommendedPower:
-            glassesPower || screeningData.recommendedPower || "",
-          district: screeningData.district || "",
-          county: screeningData.county || "",
-          subCounty: screeningData.subCounty || "",
-          parish: screeningData.parish || "",
-          clientVillage: screeningData.clientVillage || "",
-        },
-        screeningId: screeningData.screeningId || "",
-      });
-      return;
-    }
-
     setSaving(true);
     try {
+      // Always save the screening first, regardless of whether glasses were dispensed
+      let savedScreeningId: string = screeningData.screeningId || "";
       let savedSuccessfully = false;
 
       try {
         const result = await apiService.createScreening(completeData);
         if (result?.success) {
           savedSuccessfully = true;
+          savedScreeningId = result.screeningId || result.data?.id || savedScreeningId;
         }
       } catch (apiError) {
         console.error("API save failed:", apiError);
@@ -106,9 +92,10 @@ export default function ScreeningComplete() {
             const offlineQueue =
               await AsyncStorage.getItem("offlineScreenings");
             const queue = offlineQueue ? JSON.parse(offlineQueue) : [];
+            const offlineId = Date.now().toString();
             queue.push({
               ...completeData,
-              offlineId: Date.now().toString(),
+              offlineId,
               timestamp: new Date().toISOString(),
             });
             await AsyncStorage.setItem(
@@ -116,6 +103,7 @@ export default function ScreeningComplete() {
               JSON.stringify(queue),
             );
             savedSuccessfully = true;
+            savedScreeningId = offlineId;
           } catch (offlineError) {
             console.error("Offline save failed:", offlineError);
           }
@@ -124,26 +112,51 @@ export default function ScreeningComplete() {
         }
       }
 
-      if (savedSuccessfully) {
-        Alert.alert(
-          "✅ Record Saved",
-          `Screening for ${clientName || "client"} has been saved successfully.`,
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                resetScreeningData();
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: "AppTabs" }],
-                });
-              },
-            },
-          ],
-        );
-      } else {
-        Alert.alert("Error", "Failed to save record. Please try again.");
+      if (!savedSuccessfully) {
+        Alert.alert("Error", "Failed to save screening record. Please try again.");
+        return;
       }
+
+      // If glasses were dispensed, navigate to ClientRegistration for the payment/sale flow
+      if (glassesDispensed || needsGlasses) {
+        // Reset screening context but keep navigation going
+        resetScreeningData();
+        navigation.navigate("ClientRegistration", {
+          clientData: {
+            clientName,
+            clientAge,
+            clientPhone,
+            clientGender,
+            recommendedPower:
+              glassesPower || screeningData.recommendedPower || "",
+            district: screeningData.district || "",
+            county: screeningData.county || "",
+            subCounty: screeningData.subCounty || "",
+            parish: screeningData.parish || "",
+            clientVillage: screeningData.clientVillage || "",
+          },
+          screeningId: savedScreeningId,
+        });
+        return;
+      }
+
+      // No glasses dispensed — screening is already saved; show confirmation
+      Alert.alert(
+        "✅ Record Saved",
+        `Screening for ${clientName || "client"} has been saved successfully.`,
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              resetScreeningData();
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "AppTabs" }],
+              });
+            },
+          },
+        ],
+      );
     } catch (error) {
       console.error("Save error:", error);
       Alert.alert("Error", "An unexpected error occurred.");

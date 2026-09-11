@@ -12,7 +12,7 @@ const { authenticate } = require("../middleware/auth");
  *   - payments.screening_id        → links payments to a screening (no health_worker_id on payments)
  *   - referrals.health_worker_id   → links referrals to a VHT
  *   - vht_stock.health_worker_id   → per-VHT stock allocation
- *   - needs_glasses = true         → glasses were recommended/given (glasses_dispensed may be 0)
+ *   - needs_glasses OR glasses_dispensed = true → glasses were given to the client
  */
 router.get("/stats", authenticate, async (req, res) => {
   try {
@@ -55,10 +55,10 @@ router.get("/stats", authenticate, async (req, res) => {
           WHERE health_worker_id = ${healthWorkerId}
           AND COALESCE(screening_date::date, created_at::date) = CURRENT_DATE`,
 
-      // Glasses given — use needs_glasses (glasses_dispensed is unreliable in current data)
+      // Glasses given — count where glasses were dispensed or client needs glasses
       sql`SELECT COUNT(*) AS total FROM screenings
           WHERE health_worker_id = ${healthWorkerId}
-          AND needs_glasses = true`,
+          AND (needs_glasses = true OR glasses_dispensed = true)`,
 
       // Clients referred (from screenings)
       sql`SELECT COUNT(*) AS total FROM screenings
