@@ -268,8 +268,27 @@ export const apiService = {
     data: Product[];
     count: number;
   }> {
-    const response = await api.get("/products");
-    return response.data;
+    try {
+      const response = await api.get("/products");
+      const payload = response?.data;
+
+      if (Array.isArray(payload)) {
+        return { success: true, data: payload, count: payload.length };
+      }
+
+      if (payload && Array.isArray(payload.data)) {
+        return {
+          success: Boolean(payload.success ?? true),
+          data: payload.data,
+          count: payload.data.length,
+        };
+      }
+
+      return { success: false, data: [], count: 0 };
+    } catch (error) {
+      console.error("Failed to load products:", error);
+      return { success: false, data: [], count: 0 };
+    }
   },
 
   async updateProductStock(

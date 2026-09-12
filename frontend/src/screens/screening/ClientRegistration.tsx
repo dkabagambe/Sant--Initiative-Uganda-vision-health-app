@@ -60,9 +60,9 @@ export default function ClientRegistration() {
   const [mobileNumber, setMobileNumber] = useState(
     clientData.clientPhone || "",
   );
-  const [merchantCode] = useState(
-    `SAN-UG-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000)}`,
-  );
+  const buildMerchantCode = () =>
+    `SAN-UG-${new Date().getFullYear()}-${Math.floor(Math.random() * 9000) + 1000}`;
+  const [merchantCode] = useState(() => buildMerchantCode());
   const [loading, setLoading] = useState(false);
   const [showSaleComplete, setShowSaleComplete] = useState(false);
   const [saleData, setSaleData] = useState<any>(null);
@@ -132,31 +132,44 @@ export default function ClientRegistration() {
   const loadProducts = async () => {
     try {
       const response = await apiService.getProducts();
-      if (response.success) {
-        // Filter products matching recommended power, or show all if no match
-        let matchingProducts = response.data.filter(
-          (p: any) => p.power === clientData.recommendedPower,
-        );
+      const productList = Array.isArray(response?.data) ? response.data : [];
 
-        // If no matching products, show all products
-        if (matchingProducts.length === 0) {
-          matchingProducts = response.data;
-        }
+      if (!response?.success || productList.length === 0) {
+        setProducts([]);
+        setSelectedProduct(null);
+        return;
+      }
 
-        setProducts(matchingProducts);
-        if (matchingProducts.length > 0) {
-          setSelectedProduct(matchingProducts[0]);
-        }
+      // Filter products matching recommended power, or show all if no match
+      let matchingProducts = productList.filter(
+        (p: any) => p?.power === clientData?.recommendedPower,
+      );
+
+      // If no matching products, show all products
+      if (matchingProducts.length === 0) {
+        matchingProducts = productList;
+      }
+
+      setProducts(matchingProducts);
+      if (matchingProducts.length > 0) {
+        setSelectedProduct(matchingProducts[0]);
       }
     } catch (error) {
       console.error("Failed to load products:", error);
+      setProducts([]);
+      setSelectedProduct(null);
       Alert.alert("Error", "Failed to load products. Please try again.");
     }
   };
 
+  const activeProduct = selectedProduct ?? products[0] ?? null;
+
   const handleConfirmSale = async () => {
-    if (!selectedProduct) {
-      Alert.alert("Error", "Please select a product");
+    if (!activeProduct) {
+      Alert.alert(
+        "Error",
+        "No glasses are available for this screening. Please try again.",
+      );
       return;
     }
 
@@ -184,10 +197,10 @@ export default function ClientRegistration() {
       // Create payment record
       const paymentData = {
         screening_id: screeningId,
-        product_id: selectedProduct.id,
+        product_id: activeProduct.id,
         client_name: clientData.clientName,
         client_phone: mobileNumber,
-        amount: selectedProduct.price,
+        amount: Number(activeProduct.price || 0),
         mobile_money_number: mobileNumber,
         payment_method:
           paymentMethod === "hire-purchase" ? "mobile_money" : "cash",
@@ -236,8 +249,8 @@ export default function ClientRegistration() {
                   setSaleData({
                     clientName: clientData.clientName,
                     clientPhone: mobileNumber,
-                    productName: `${selectedProduct.power} - ${selectedProduct.name || "Reading Glasses"}`,
-                    totalAmount: selectedProduct.price,
+                    productName: `${activeProduct.power} - ${activeProduct.name || "Reading Glasses"}`,
+                    totalAmount: Number(activeProduct.price || 0),
                     paymentMethod,
                     installmentAmount,
                     nextPaymentDate: undefined,
@@ -269,10 +282,10 @@ export default function ClientRegistration() {
         setSaleData({
           clientName: clientData.clientName,
           clientPhone: mobileNumber,
-          productName: `${selectedProduct.power} - ${
-            selectedProduct.name || "Reading Glasses"
+          productName: `${activeProduct.power} - ${
+            activeProduct.name || "Reading Glasses"
           }`,
-          totalAmount: selectedProduct.price,
+          totalAmount: Number(activeProduct.price || 0),
           paymentMethod,
           installmentAmount,
           nextPaymentDate: displayNextPaymentDate,
@@ -289,8 +302,8 @@ export default function ClientRegistration() {
     }
   };
 
-  const installmentAmount = selectedProduct
-    ? Math.ceil(selectedProduct.price / 3)
+  const installmentAmount = activeProduct
+    ? Math.ceil(Number(activeProduct.price || 0) / 3)
     : 0;
 
   // Show sale complete screen
@@ -405,16 +418,16 @@ export default function ClientRegistration() {
             <Text style={styles.sectionTitle}>Issue Glasses</Text>
             <Text style={styles.sectionSubtitle}>Select from Inventory</Text>
 
-            {selectedProduct && (
+            {activeProduct && (
               <View style={styles.productCard}>
                 <Text style={styles.productName}>
-                  {selectedProduct.power} - Frame
+                  {activeProduct.power} - Frame
                 </Text>
                 <Text style={styles.productStock}>
-                  Stock Available: {selectedProduct.stock_quantity || 0} units
+                  Stock Available: {activeProduct.stock_quantity || 0} units
                 </Text>
                 <Text style={styles.productPrice}>
-                  UGX {(selectedProduct.price || 0).toLocaleString()}
+                  UGX {(activeProduct.price || 0).toLocaleString()}
                 </Text>
               </View>
             )}
@@ -425,7 +438,9 @@ export default function ClientRegistration() {
             <Text style={styles.sectionTitle}>Total Cost</Text>
             <Text style={styles.totalAmount}>
               UGX{" "}
-              {selectedProduct ? selectedProduct.price.toLocaleString() : "0"}
+              {activeProduct
+                ? Number(activeProduct.price || 0).toLocaleString()
+                : "0"}
             </Text>
           </View>
 
@@ -475,8 +490,8 @@ export default function ClientRegistration() {
                 <Text style={styles.paymentTitle}>Full Payment</Text>
                 <Text style={styles.paymentSubtitle}>
                   Pay UGX{" "}
-                  {selectedProduct
-                    ? selectedProduct.price.toLocaleString()
+                  {activeProduct
+                    ? Number(activeProduct.price || 0).toLocaleString()
                     : "0"}{" "}
                   today
                 </Text>
