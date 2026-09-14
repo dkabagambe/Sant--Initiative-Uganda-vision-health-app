@@ -67,16 +67,21 @@ export default function RoleLoginScreen() {
     try {
       const result = await apiService.login(fullPhone);
       if (result.success) {
-        Alert.alert(
-          "OTP Sent", 
-          "Please check your phone for the verification code.",
-          [{ text: "OK", onPress: () => navigation.navigate("OTP", { phone: fullPhone, role }) }]
-        );
+        // Navigate immediately — no Alert needed, OTP screen shows the phone number
+        navigation.navigate("OTP", { phone: fullPhone, role });
       } else {
         const errorMsg = result.error || "Failed to send OTP";
-        if (errorMsg.includes("blocked") || errorMsg.includes("fraudulent")) {
-          Alert.alert("Number Blocked", "This phone number is temporarily blocked. Please contact support or use a different number.");
-        } else if (result.code === "NOT_REGISTERED" || errorMsg.toLowerCase().includes("not registered")) {
+        const details = result.details || "";
+        const combined = `${errorMsg} ${details}`.toLowerCase();
+        if (combined.includes("blocked") || combined.includes("fraudulent")) {
+          Alert.alert(
+            "Number Blocked",
+            "This phone number is temporarily blocked by our SMS provider. Please contact support or try a different number."
+          );
+        } else if (
+          result.code === "NOT_REGISTERED" ||
+          combined.includes("not registered")
+        ) {
           Alert.alert(
             "Not Registered",
             "This phone number is not registered. Please register first (CHW, Outlet, or VSLA), then you can log in with OTP.",
@@ -90,20 +95,8 @@ export default function RoleLoginScreen() {
         }
       }
     } catch (error: any) {
-      const errMsg = error?.response?.data?.error;
-      const code = error?.response?.data?.code;
-      if (code === "NOT_REGISTERED" || (errMsg && String(errMsg).toLowerCase().includes("not registered"))) {
-        Alert.alert(
-          "Not Registered",
-          "This phone number is not registered. Please register first (CHW, Outlet, or VSLA), then you can log in with OTP.",
-          [
-            { text: "OK" },
-            { text: "Register", onPress: () => navigation.navigate("RoleSelection") },
-          ]
-        );
-      } else {
-        Alert.alert("Error", errMsg || "Failed to connect to server. Please try again.");
-      }
+      // Fallback safety net — apiService.login() should not throw, but just in case
+      Alert.alert("Error", "Failed to connect to server. Please check your internet connection and try again.");
     } finally {
       setIsLoading(false);
     }

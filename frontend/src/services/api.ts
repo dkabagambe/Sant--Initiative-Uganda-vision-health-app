@@ -155,16 +155,42 @@ export const apiService = {
 
   // ============ AUTHENTICATION ============
   async login(phoneNumber: string) {
-    const response = await api.post("/auth/login", { phoneNumber });
-    return response.data;
+    try {
+      const response = await api.post("/auth/login", { phoneNumber });
+      return response.data;
+    } catch (error: any) {
+      // Surface structured error so callers can inspect code/error without crashing
+      const data = error?.response?.data;
+      if (data) return { success: false, ...data };
+      if (error?.code === "ECONNABORTED" || error?.message?.includes("timeout")) {
+        return { success: false, error: "Request timed out. Please try again." };
+      }
+      return {
+        success: false,
+        error: error?.message || "Failed to connect to server. Please try again.",
+      };
+    }
   },
 
   async verifyOTP(phoneNumber: string, otp: string, registrationData?: any) {
-    const response = await api.post("/auth/verify-otp", {
-      phoneNumber,
-      otp,
-      registrationData,
-    });
+    let response: any;
+    try {
+      response = await api.post("/auth/verify-otp", {
+        phoneNumber,
+        otp,
+        registrationData,
+      });
+    } catch (error: any) {
+      const data = error?.response?.data;
+      if (data) return { success: false, ...data };
+      if (error?.code === "ECONNABORTED" || error?.message?.includes("timeout")) {
+        return { success: false, error: "Request timed out. Please try again." };
+      }
+      return {
+        success: false,
+        error: error?.message || "Verification failed. Please try again.",
+      };
+    }
 
     const data = response?.data;
     if (!data) {
