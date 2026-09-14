@@ -19,36 +19,42 @@ router.get("/list", authenticate, async (req, res) => {
     const status = req.query.status || null;
     const healthWorkerId = req.user?.userId;
 
-    const SELECT_COLS = sql`
-      SELECT
-        p.id, p.client_name, p.client_phone, p.amount,
-        p.payment_method, p.payment_type,
-        p.installment_number, p.total_installments,
-        p.due_date, p.payment_date, p.verified_at,
-        p.transaction_id, p.offline_id, p.is_synced,
-        p.created_at, p.status, p.health_worker_id,
-        prod.name     AS product_name,
-        prod.power    AS product_power,
-        prod.price    AS product_price,
-        prod.category AS product_category,
-        s.client_age, s.client_gender, s.client_village, s.client_district
-      FROM payments p
-      LEFT JOIN products   prod ON p.product_id  = prod.id
-      LEFT JOIN screenings s    ON p.screening_id = s.id
-    `;
-
-    // Split filtered vs unfiltered to avoid Neon parameter-numbering issues
-    // when mixing conditional sql`` fragments with LIMIT/OFFSET params.
+    // Split filtered vs unfiltered — avoids Neon parameter-numbering issues
+    // when mixing conditional fragments with LIMIT/OFFSET params.
     const payments = status
       ? await sql`
-          ${SELECT_COLS}
+          SELECT
+            p.id, p.client_name, p.client_phone, p.amount,
+            p.payment_method, p.payment_type,
+            p.installment_number, p.total_installments,
+            p.due_date, p.payment_date, p.verified_at,
+            p.transaction_id, p.offline_id, p.is_synced,
+            p.created_at, p.status, p.health_worker_id,
+            prod.name AS product_name, prod.power AS product_power,
+            prod.price AS product_price, prod.category AS product_category,
+            s.client_age, s.client_gender, s.client_village, s.client_district
+          FROM payments p
+          LEFT JOIN products   prod ON p.product_id  = prod.id
+          LEFT JOIN screenings s    ON p.screening_id = s.id
           WHERE (s.health_worker_id = ${healthWorkerId} OR p.health_worker_id = ${healthWorkerId})
             AND p.status = ${status}
           ORDER BY p.created_at DESC
           LIMIT ${limit} OFFSET ${offset}
         `
       : await sql`
-          ${SELECT_COLS}
+          SELECT
+            p.id, p.client_name, p.client_phone, p.amount,
+            p.payment_method, p.payment_type,
+            p.installment_number, p.total_installments,
+            p.due_date, p.payment_date, p.verified_at,
+            p.transaction_id, p.offline_id, p.is_synced,
+            p.created_at, p.status, p.health_worker_id,
+            prod.name AS product_name, prod.power AS product_power,
+            prod.price AS product_price, prod.category AS product_category,
+            s.client_age, s.client_gender, s.client_village, s.client_district
+          FROM payments p
+          LEFT JOIN products   prod ON p.product_id  = prod.id
+          LEFT JOIN screenings s    ON p.screening_id = s.id
           WHERE (s.health_worker_id = ${healthWorkerId} OR p.health_worker_id = ${healthWorkerId})
           ORDER BY p.created_at DESC
           LIMIT ${limit} OFFSET ${offset}

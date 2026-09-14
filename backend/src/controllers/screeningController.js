@@ -137,7 +137,7 @@ exports.createScreening = async (req, res) => {
     const screening = await sql`
       INSERT INTO screenings (
         health_worker_id, client_name, client_phone, client_age, client_gender, client_village,
-        client_district, client_county, client_sub_county, client_parish,
+        client_district, client_county, client_sub_county, parish,
         equipment_checked, consent_obtained, education_provided,
         has_eye_concerns, follows_movement, has_severe_eye_pain, has_sudden_vision_loss,
         has_diabetes_hypertension, family_history_blindness, referral_reasons_from_questions,
