@@ -14,58 +14,60 @@ const { authenticate } = require("../middleware/auth");
 router.get("/list", authenticate, async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const { status, limit = 50, offset = 0 } = req.query;
+    const limit  = parseInt(req.query.limit  || "50");
+    const offset = parseInt(req.query.offset || "0");
+    const status = req.query.status || null;
     const healthWorkerId = req.user?.userId;
 
-    const payments = await sql`
+    const SELECT_COLS = sql`
       SELECT
-        p.id,
-        p.client_name,
-        p.client_phone,
-        p.amount,
-        p.payment_method,
-        p.payment_type,
-        p.installment_number,
-        p.total_installments,
-        p.due_date,
-        p.payment_date,
-        p.verified_at,
-        p.transaction_id,
-        p.offline_id,
-        p.is_synced,
-        p.created_at,
-        p.status,
-        p.health_worker_id,
+        p.id, p.client_name, p.client_phone, p.amount,
+        p.payment_method, p.payment_type,
+        p.installment_number, p.total_installments,
+        p.due_date, p.payment_date, p.verified_at,
+        p.transaction_id, p.offline_id, p.is_synced,
+        p.created_at, p.status, p.health_worker_id,
         prod.name     AS product_name,
         prod.power    AS product_power,
         prod.price    AS product_price,
         prod.category AS product_category,
-        s.client_age,
-        s.client_gender,
-        s.client_village,
-        s.client_district
+        s.client_age, s.client_gender, s.client_village, s.client_district
       FROM payments p
       LEFT JOIN products   prod ON p.product_id  = prod.id
       LEFT JOIN screenings s    ON p.screening_id = s.id
-      WHERE (
-        s.health_worker_id = ${healthWorkerId}
-        OR p.health_worker_id = ${healthWorkerId}
-      )
-        ${status ? sql`AND p.status = ${status}` : sql``}
-      ORDER BY p.created_at DESC
-      LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
     `;
 
-    const totalRes = await sql`
-      SELECT COUNT(*) AS count
-      FROM payments p
-      LEFT JOIN screenings s ON p.screening_id = s.id
-      WHERE (
-        s.health_worker_id = ${healthWorkerId}
-        OR p.health_worker_id = ${healthWorkerId}
-      )
-      ${status ? sql`AND p.status = ${status}` : sql``}
-    `;
+    // Split filtered vs unfiltered to avoid Neon parameter-numbering issues
+    // when mixing conditional sql`` fragments with LIMIT/OFFSET params.
+    const payments = status
+      ? await sql`
+          ${SELECT_COLS}
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.health_worker_id = ${healthWorkerId})
+            AND p.status = ${status}
+          ORDER BY p.created_at DESC
+          LIMIT ${limit} OFFSET ${offset}
+        `
+      : await sql`
+          ${SELECT_COLS}
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.health_worker_id = ${healthWorkerId})
+          ORDER BY p.created_at DESC
+          LIMIT ${limit} OFFSET ${offset}
+        `;
+
+    const totalRes = status
+      ? await sql`
+          SELECT COUNT(*) AS count
+          FROM payments p
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.health_worker_id = ${healthWorkerId})
+            AND p.status = ${status}
+        `
+      : await sql`
+          SELECT COUNT(*) AS count
+          FROM payments p
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.health_worker_id = ${healthWorkerId})
+        `;
 
     res.json({
       success: true,

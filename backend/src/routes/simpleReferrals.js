@@ -30,45 +30,55 @@ router.get("/stats", authenticate, async (req, res) => {
 router.get("/list", authenticate, async (req, res) => {
   try {
     const sql = req.app.locals.sql;
-    const { status, limit = 50, offset = 0 } = req.query;
+    const limit  = parseInt(req.query.limit  || "50");
+    const offset = parseInt(req.query.offset || "0");
+    const status = req.query.status || null;
     const healthWorkerId = req.user?.userId;
 
-    const referrals = await sql`
-      SELECT
-        r.id,
-        r.client_name,
-        r.client_phone,
-        r.client_age,
-        r.client_gender,
-        r.client_district,
-        r.reason,
-        r.facility_name,
-        r.facility_location,
-        r.urgency,
-        r.status,
-        r.referred_date,
-        r.completed_date,
-        r.notes,
-        r.health_worker_id,
-        u.full_name AS health_worker_name,
-        r.created_at,
-        r.screening_id,
-        s.needs_glasses,
-        s.needs_referral
-      FROM referrals r
-      LEFT JOIN users      u ON r.health_worker_id = u.id
-      LEFT JOIN screenings s ON r.screening_id     = s.id
-      WHERE r.health_worker_id = ${healthWorkerId}
-        ${status ? sql`AND r.status = ${status}` : sql``}
-      ORDER BY r.created_at DESC
-      LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
-    `;
+    // Split into filtered vs unfiltered to avoid Neon parameter-numbering issues
+    // when combining conditional sql`` fragments with LIMIT/OFFSET params.
+    const referrals = status
+      ? await sql`
+          SELECT
+            r.id, r.client_name, r.client_phone, r.client_age, r.client_gender,
+            r.client_district, r.reason, r.facility_name, r.facility_location,
+            r.urgency, r.status, r.referred_date, r.completed_date, r.notes,
+            r.health_worker_id, u.full_name AS health_worker_name,
+            r.created_at, r.screening_id,
+            s.needs_glasses, s.needs_referral
+          FROM referrals r
+          LEFT JOIN users      u ON r.health_worker_id = u.id
+          LEFT JOIN screenings s ON r.screening_id     = s.id
+          WHERE r.health_worker_id = ${healthWorkerId}
+            AND r.status = ${status}
+          ORDER BY r.created_at DESC
+          LIMIT ${limit} OFFSET ${offset}
+        `
+      : await sql`
+          SELECT
+            r.id, r.client_name, r.client_phone, r.client_age, r.client_gender,
+            r.client_district, r.reason, r.facility_name, r.facility_location,
+            r.urgency, r.status, r.referred_date, r.completed_date, r.notes,
+            r.health_worker_id, u.full_name AS health_worker_name,
+            r.created_at, r.screening_id,
+            s.needs_glasses, s.needs_referral
+          FROM referrals r
+          LEFT JOIN users      u ON r.health_worker_id = u.id
+          LEFT JOIN screenings s ON r.screening_id     = s.id
+          WHERE r.health_worker_id = ${healthWorkerId}
+          ORDER BY r.created_at DESC
+          LIMIT ${limit} OFFSET ${offset}
+        `;
 
-    const totalRes = await sql`
-      SELECT COUNT(*) AS count FROM referrals
-      WHERE health_worker_id = ${healthWorkerId}
-      ${status ? sql`AND status = ${status}` : sql``}
-    `;
+    const totalRes = status
+      ? await sql`
+          SELECT COUNT(*) AS count FROM referrals
+          WHERE health_worker_id = ${healthWorkerId} AND status = ${status}
+        `
+      : await sql`
+          SELECT COUNT(*) AS count FROM referrals
+          WHERE health_worker_id = ${healthWorkerId}
+        `;
 
     res.json({
       success: true,
@@ -78,6 +88,9 @@ router.get("/list", authenticate, async (req, res) => {
     });
   } catch (error) {
     console.error("Get referrals error:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch referrals", details: error.message });
+  }
+});
     res.status(500).json({ success: false, error: "Failed to fetch referrals", details: error.message });
   }
 });

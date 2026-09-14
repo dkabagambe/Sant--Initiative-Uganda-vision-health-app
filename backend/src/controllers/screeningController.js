@@ -180,35 +180,49 @@ exports.createScreening = async (req, res) => {
       `;
     }
 
-    // Deduct from this VHT's stock when glasses are dispensed
+    // Deduct from this VHT's stock when glasses are dispensed.
+    // Wrapped in its own try/catch so a missing vht_stock row never kills the screening save.
     if (
       (glassesDispensed || needsGlasses) &&
       recommendedProductId &&
       (glassesFrameType || selectedFrameType)
     ) {
-      const frameType = glassesFrameType || selectedFrameType;
+      try {
+        const frameType = glassesFrameType || selectedFrameType;
 
-      // Normalize frame type names
-      let stockColumn = "stock_standard";
-      if (frameType === "metal" || frameType === "Metal Frame (Durable)") {
-        stockColumn = "stock_metal";
-      } else if (
-        frameType === "plastic" ||
-        frameType === "Plastic Frame (Comfortable)" ||
-        frameType === "halfrim" ||
-        frameType === "Half-Rim Frame (Lightweight)"
-      ) {
-        stockColumn = "stock_metal"; // Use metal for half-rim too, or adjust as needed
-      } else if (frameType === "fashion") {
-        stockColumn = "stock_fashion";
+        // Use explicit column names — avoid sql() identifier interpolation which
+        // breaks on Neon/Vercel postgres when mixed with other parameters.
+        if (frameType === "metal" || frameType === "Metal Frame (Durable)" ||
+            frameType === "plastic" || frameType === "Plastic Frame (Comfortable)" ||
+            frameType === "halfrim" || frameType === "Half-Rim Frame (Lightweight)") {
+          await sql`
+            UPDATE vht_stock
+            SET stock_quantity = GREATEST(stock_quantity - 1, 0),
+                stock_metal    = GREATEST(stock_metal    - 1, 0)
+            WHERE health_worker_id = ${healthWorkerId}
+              AND product_id       = ${recommendedProductId}
+          `;
+        } else if (frameType === "fashion") {
+          await sql`
+            UPDATE vht_stock
+            SET stock_quantity = GREATEST(stock_quantity - 1, 0),
+                stock_fashion  = GREATEST(stock_fashion  - 1, 0)
+            WHERE health_worker_id = ${healthWorkerId}
+              AND product_id       = ${recommendedProductId}
+          `;
+        } else {
+          await sql`
+            UPDATE vht_stock
+            SET stock_quantity = GREATEST(stock_quantity - 1, 0),
+                stock_standard = GREATEST(stock_standard - 1, 0)
+            WHERE health_worker_id = ${healthWorkerId}
+              AND product_id       = ${recommendedProductId}
+          `;
+        }
+      } catch (stockError) {
+        // Non-fatal — vht_stock row may not exist yet for this VHT/product combination
+        console.warn("Stock deduction skipped (non-fatal):", stockError.message);
       }
-
-      await sql`
-        UPDATE vht_stock
-        SET stock_quantity = stock_quantity - 1,
-            ${sql(stockColumn)} = ${sql(stockColumn)} - 1
-        WHERE health_worker_id = ${healthWorkerId} AND product_id = ${recommendedProductId}
-      `;
     }
 
     res.json({
