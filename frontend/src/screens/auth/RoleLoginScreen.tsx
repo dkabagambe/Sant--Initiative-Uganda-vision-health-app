@@ -84,10 +84,13 @@ export default function RoleLoginScreen() {
         ) {
           Alert.alert(
             "Not Registered",
-            "This phone number is not registered. Please register first (CHW, Outlet, or VSLA), then you can log in with OTP.",
+            "This phone number is not registered. Please register first as a CHW, Outlet, or VSLA — then you can log in with OTP.",
             [
-              { text: "OK" },
-              { text: "Register", onPress: () => navigation.navigate("RoleSelection") },
+              { text: "Stay Here" },
+              {
+                text: "Register Now",
+                onPress: () => navigation.navigate("RoleSelection"),
+              },
             ]
           );
         } else {
