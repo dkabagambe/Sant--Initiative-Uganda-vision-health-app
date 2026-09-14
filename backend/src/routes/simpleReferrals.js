@@ -91,9 +91,6 @@ router.get("/list", authenticate, async (req, res) => {
     res.status(500).json({ success: false, error: "Failed to fetch referrals", details: error.message });
   }
 });
-    res.status(500).json({ success: false, error: "Failed to fetch referrals", details: error.message });
-  }
-});
 
 // ── Create referral ───────────────────────────────────────────────────────────
 router.post("/create", authenticate, async (req, res) => {
