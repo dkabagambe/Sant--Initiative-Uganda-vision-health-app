@@ -110,63 +110,84 @@ export default function CHWDashboard() {
 
   const loadRecentActivity = async () => {
     try {
-      // Fetch recent screenings, payments, and referrals
       const [screenings, payments, referrals] = await Promise.all([
-        apiService.getScreenings(),
-        apiService.getPayments(),
-        apiService.getReferrals(),
+        apiService.getScreenings().catch(() => ({ data: [] })),
+        apiService.getPayments().catch(() => ({ data: [] })),
+        apiService.getReferrals().catch(() => ({ data: [] })),
       ]);
 
       const activities: any[] = [];
 
-      // Add recent screenings
+      // Add recent screenings (up to 3)
       if (screenings.data) {
-        screenings.data.slice(0, 1).forEach((s: any) => {
+        screenings.data.slice(0, 3).forEach((s: any) => {
+          // glasses_power is the actual dispensed power; recommended_power is fallback
+          const power = s.glasses_power || s.recommended_power || null;
+          const action = s.glasses_dispensed
+            ? `Glasses dispensed${power ? ` • ${power}` : ""}`
+            : s.needs_referral
+            ? "Referred to health facility"
+            : "Screening completed";
           activities.push({
-            name: s.client_name,
-            action: `Screening completed • ${s.recommended_power || "N/A"}`,
-            time: getTimeAgo(s.created_at),
+            name: s.client_name || "Unknown client",
+            action,
+            time: s.created_at,
+            type: "screening",
           });
         });
       }
 
-      // Add recent payments
+      // Add recent payments (up to 3)
       if (payments.data) {
-        payments.data.slice(0, 1).forEach((p: any) => {
+        payments.data.slice(0, 3).forEach((p: any) => {
           activities.push({
-            name: p.client_name,
-            action: `Payment received • UGX ${p.amount.toLocaleString()}`,
-            time: getTimeAgo(p.created_at),
+            name: p.client_name || "Unknown client",
+            action: `Payment received • UGX ${Number(p.amount || 0).toLocaleString()}`,
+            time: p.created_at,
+            type: "payment",
           });
         });
       }
 
-      // Add recent referrals
+      // Add recent referrals (up to 3)
       if (referrals.data) {
-        referrals.data.slice(0, 1).forEach((r: any) => {
+        referrals.data.slice(0, 3).forEach((r: any) => {
           activities.push({
-            name: r.client_name,
-            action: `Referred to ${r.facility_name}`,
-            time: getTimeAgo(r.created_at),
+            name: r.client_name || "Unknown client",
+            action: `Referred to ${r.facility_name || "health facility"}`,
+            time: r.created_at,
+            type: "referral",
           });
         });
       }
 
-      setRecentActivities(activities);
+      // Sort all by most recent first, keep top 5
+      activities.sort(
+        (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()
+      );
+      const top5 = activities.slice(0, 5).map((a) => ({
+        ...a,
+        time: getTimeAgo(a.time),
+      }));
+
+      setRecentActivities(top5);
     } catch (error) {
       console.error("Failed to load recent activity:", error);
     }
   };
 
   const getTimeAgo = (dateString: string) => {
+    if (!dateString) return "";
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
     if (diffDays > 0) return `${diffDays}d ago`;
     if (diffHours > 0) return `${diffHours}h ago`;
+    if (diffMins > 1) return `${diffMins}m ago`;
     return "Just now";
   };
 
@@ -507,15 +528,23 @@ export default function CHWDashboard() {
           </View>
 
           <View style={styles.activityList}>
-            {recentActivities.map((activity, index) => (
-              <View key={index} style={styles.activityItem}>
-                <View style={styles.activityContent}>
-                  <Text style={styles.activityName}>{activity.name}</Text>
-                  <Text style={styles.activityAction}>{activity.action}</Text>
-                </View>
-                <Text style={styles.activityTime}>{activity.time}</Text>
+            {recentActivities.length === 0 ? (
+              <View style={styles.activityItem}>
+                <Text style={[styles.activityAction, { color: "#9CA3AF", textAlign: "center", flex: 1, paddingVertical: 8 }]}>
+                  No recent activity yet. Complete a screening to see it here.
+                </Text>
               </View>
-            ))}
+            ) : (
+              recentActivities.map((activity, index) => (
+                <View key={index} style={styles.activityItem}>
+                  <View style={styles.activityContent}>
+                    <Text style={styles.activityName}>{activity.name}</Text>
+                    <Text style={styles.activityAction}>{activity.action}</Text>
+                  </View>
+                  <Text style={styles.activityTime}>{activity.time}</Text>
+                </View>
+              ))
+            )}
           </View>
         </View>
 
