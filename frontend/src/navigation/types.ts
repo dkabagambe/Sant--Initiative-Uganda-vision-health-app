@@ -29,4 +29,11 @@ export type RootStackParamList = {
   CHWDashboard: undefined;
   OutletDashboard: undefined;
   VSLADashboard: undefined;
+
+  // Tab navigator
+  AppTabs: { role?: string } | undefined;
+
+  // Extra screens referenced in navigation
+  CommunityFollowUp: undefined;
+  Screen: { screen?: string } | undefined;
 };

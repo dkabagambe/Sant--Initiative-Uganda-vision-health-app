@@ -32,6 +32,7 @@ type RootStackParamList = {
   InventoryScreen: undefined;
   ReferralsScreen: undefined;
   PaymentDetails: { paymentId: string };
+  AppTabs: { role?: string } | undefined;
 };
 
 type PaymentsScreenNavigationProp = NativeStackNavigationProp<

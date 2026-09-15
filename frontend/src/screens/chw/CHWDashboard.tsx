@@ -40,6 +40,7 @@ type RootStackParamList = {
   VisionScreeningStep1: undefined;
   Settings: undefined;
   UserDirectoryScreen: undefined;
+  AppTabs: { role?: string } | undefined;
 };
 
 type DashboardScreenNavigationProp = NativeStackNavigationProp<

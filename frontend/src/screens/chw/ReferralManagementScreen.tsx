@@ -731,7 +731,7 @@ export default function ReferralManagementScreen() {
         <TouchableOpacity
           style={styles.tabItem}
           onPress={() => {
-            const parent = navigation.getParent<any>();
+            const parent = (navigation.getParent as any)();
             if (parent) {
               parent.navigate("Screen", { screen: "VHTScreeningStep1" });
             } else {

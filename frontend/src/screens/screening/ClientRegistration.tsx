@@ -324,7 +324,7 @@ export default function ClientRegistration() {
           })
         }
         onScreenNext={() => {
-          const parent = navigation.getParent<any>();
+          const parent = (navigation.getParent as any)();
           if (parent) {
             parent.navigate("Screen", { screen: "VHTScreeningStep1" });
           } else {

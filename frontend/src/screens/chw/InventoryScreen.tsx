@@ -33,6 +33,7 @@ type RootStackParamList = {
   VisionScreeningStep1: undefined;
   Payments: undefined;
   Referrals: undefined;
+  AppTabs: { role?: string } | undefined;
 };
 
 type InventoryScreenNavigationProp = NativeStackNavigationProp<
