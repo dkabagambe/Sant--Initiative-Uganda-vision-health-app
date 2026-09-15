@@ -129,6 +129,8 @@ export default function VHTReadingGlassesScreen() {
   const canFinish         = allEducationDone && allRecordingDone && selectedFrame && caseProvided;
 
   const handleFinish = () => {
+    // Update context AND pass all glasses data as route params so ScreeningComplete
+    // can read them immediately without waiting for React state to flush.
     updateScreeningData({
       needsGlasses:             true,
       glassesDispensed:         true,
@@ -140,8 +142,9 @@ export default function VHTReadingGlassesScreen() {
       glassesEducationProvided: true,
     });
     navigation.navigate("ScreeningComplete", {
-      glassesDispensed: true,
-      glassesPower:     selectedPower,
+      glassesDispensed:  true,
+      glassesPower:      selectedPower,
+      glassesFrameType:  selectedFrame,
     });
   };
 

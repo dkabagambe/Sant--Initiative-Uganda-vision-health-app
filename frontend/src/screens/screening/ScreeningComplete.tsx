@@ -27,88 +27,73 @@ export default function ScreeningComplete() {
   const { resetScreeningData, screeningData } = useScreening();
   const [saving, setSaving] = useState(false);
 
-  const glassesDispensed = route.params?.glassesDispensed || false;
-  const glassesPower = route.params?.glassesPower || "";
+  // Route params are the source of truth for glasses data — context may not
+  // have flushed yet when this screen first mounts (React state is async).
+  const glassesDispensed: boolean = route.params?.glassesDispensed || false;
+  const glassesPower: string      = route.params?.glassesPower      || "";
+  const glassesFrameType: string  = route.params?.glassesFrameType  || screeningData.glassesFrameType || "";
 
-  // Simple offline detection - check if API is reachable
-  const checkNetworkConnectivity = async (): Promise<boolean> => {
-    try {
-      // Try a simple API call to check connectivity
-      await apiService.getCurrentUser();
-      return false; // If API works, we're online
-    } catch (error) {
-      // If API fails, assume we're offline
-      console.log("API connectivity check failed, assuming offline");
-      return true;
-    }
+  const saveOffline = async (data: any): Promise<string> => {
+    const queue = JSON.parse(
+      (await AsyncStorage.getItem("offlineScreenings")) || "[]"
+    );
+    const offlineId = Date.now().toString();
+    queue.push({ ...data, offlineId, timestamp: new Date().toISOString() });
+    await AsyncStorage.setItem("offlineScreenings", JSON.stringify(queue));
+    return offlineId;
   };
 
   const handleRegisterAndSave = async () => {
-    const clientName = screeningData.clientName || "";
-    const clientAge = screeningData.clientAge ?? 0;
-    const clientPhone = screeningData.clientPhone || "";
+    const clientName   = screeningData.clientName   || "";
+    const clientAge    = screeningData.clientAge    ?? 0;
+    const clientPhone  = screeningData.clientPhone  || "";
     const clientGender = screeningData.clientGender || "";
-    const needsGlasses = Boolean(screeningData.needsGlasses || glassesDispensed);
 
+    // Build the complete payload — prefer route params over context for glasses fields
     const completeData = {
       ...screeningData,
       clientName,
       clientAge,
       clientPhone,
       clientGender,
-      district: screeningData.district || "",
-      county: screeningData.county || "",
-      subCounty: screeningData.subCounty || "",
-      parish: screeningData.parish || "",
-      clientVillage: screeningData.clientVillage || "",
-      needsGlasses,
-      // Mark glasses as dispensed when glassesDispensed is true
-      glassesDispensed: glassesDispensed || needsGlasses,
-      glassesPower: glassesPower || screeningData.glassesPower || screeningData.recommendedPower || "",
-      needsReferral: Boolean(screeningData.needsReferral),
-      notes: screeningData.notes || "All vision tests completed.",
+      district:        screeningData.district        || "",
+      county:          screeningData.county          || "",
+      subCounty:       screeningData.subCounty       || "",
+      parish:          screeningData.parish          || "",
+      clientVillage:   screeningData.clientVillage   || "",
+      needsGlasses:    glassesDispensed || Boolean(screeningData.needsGlasses),
+      glassesDispensed,
+      glassesPower:    glassesPower    || screeningData.glassesPower    || screeningData.recommendedPower || "",
+      recommendedPower: glassesPower   || screeningData.recommendedPower || "",
+      glassesFrameType: glassesFrameType,
+      selectedFrameType: glassesFrameType,
+      needsReferral:   Boolean(screeningData.needsReferral),
+      notes:           screeningData.notes || "All vision tests completed.",
     };
 
     setSaving(true);
     try {
-      // Always save the screening first, regardless of whether glasses were dispensed
-      let savedScreeningId: string = screeningData.screeningId || "";
-      let savedSuccessfully = false;
+      let savedScreeningId: string = "";
+      let savedSuccessfully        = false;
 
+      // 1. Try to save to the server
       try {
         const result = await apiService.createScreening(completeData);
         if (result?.success) {
-          savedSuccessfully = true;
-          savedScreeningId = result.screeningId || result.data?.id || savedScreeningId;
-        }
-      } catch (apiError) {
-        console.error("API save failed:", apiError);
-
-        const isOffline = await checkNetworkConnectivity();
-
-        if (isOffline) {
-          console.log("Device is offline, saving to offline queue");
-          try {
-            const offlineQueue =
-              await AsyncStorage.getItem("offlineScreenings");
-            const queue = offlineQueue ? JSON.parse(offlineQueue) : [];
-            const offlineId = Date.now().toString();
-            queue.push({
-              ...completeData,
-              offlineId,
-              timestamp: new Date().toISOString(),
-            });
-            await AsyncStorage.setItem(
-              "offlineScreenings",
-              JSON.stringify(queue),
-            );
-            savedSuccessfully = true;
-            savedScreeningId = offlineId;
-          } catch (offlineError) {
-            console.error("Offline save failed:", offlineError);
-          }
+          savedSuccessfully  = true;
+          savedScreeningId   = result.screeningId || result.data?.id || "";
         } else {
-          console.log("Device is online but API failed - not saving offline");
+          // Server returned a non-success response — fall through to offline
+          throw new Error(result?.error || "Server returned failure");
+        }
+      } catch (apiError: any) {
+        console.warn("API save failed, falling back to offline queue:", apiError?.message);
+        // Always queue offline on any API failure — never silently discard
+        try {
+          savedScreeningId  = await saveOffline(completeData);
+          savedSuccessfully = true;
+        } catch (offlineError) {
+          console.error("Offline save also failed:", offlineError);
         }
       }
 
@@ -117,9 +102,8 @@ export default function ScreeningComplete() {
         return;
       }
 
-      // If glasses were dispensed, navigate to ClientRegistration for the payment/sale flow
-      if (glassesDispensed || needsGlasses) {
-        // Reset screening context but keep navigation going
+      // 2. If glasses were dispensed → go to payment (ClientRegistration)
+      if (glassesDispensed) {
         resetScreeningData();
         navigation.navigate("ClientRegistration", {
           clientData: {
@@ -127,12 +111,12 @@ export default function ScreeningComplete() {
             clientAge,
             clientPhone,
             clientGender,
-            recommendedPower:
-              glassesPower || screeningData.recommendedPower || "",
-            district: screeningData.district || "",
-            county: screeningData.county || "",
-            subCounty: screeningData.subCounty || "",
-            parish: screeningData.parish || "",
+            recommendedPower: glassesPower || screeningData.recommendedPower || "",
+            glassesFrameType,
+            district:      screeningData.district      || "",
+            county:        screeningData.county        || "",
+            subCounty:     screeningData.subCounty     || "",
+            parish:        screeningData.parish        || "",
             clientVillage: screeningData.clientVillage || "",
           },
           screeningId: savedScreeningId,
@@ -140,7 +124,7 @@ export default function ScreeningComplete() {
         return;
       }
 
-      // No glasses dispensed — screening is already saved; show confirmation
+      // 3. No glasses — saved, just confirm and go home
       Alert.alert(
         "✅ Record Saved",
         `Screening for ${clientName || "client"} has been saved successfully.`,
@@ -149,17 +133,14 @@ export default function ScreeningComplete() {
             text: "OK",
             onPress: () => {
               resetScreeningData();
-              navigation.reset({
-                index: 0,
-                routes: [{ name: "AppTabs" }],
-              });
+              navigation.reset({ index: 0, routes: [{ name: "AppTabs" }] });
             },
           },
         ],
       );
     } catch (error) {
       console.error("Save error:", error);
-      Alert.alert("Error", "An unexpected error occurred.");
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
     } finally {
       setSaving(false);
     }
