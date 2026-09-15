@@ -93,14 +93,20 @@ export default function VHTNormalFindingsScreen() {
 
   const handleComplete = () => {
     if (canComplete) {
+      const finalNotes =
+        (screeningData.notes || "") +
+        "\nAll tests passed — normal findings. Counseling provided. Supplies disinfected. Register updated.";
+      // Update context AND pass notes as param — context flush is async so
+      // ScreeningComplete might read stale notes if we rely on context alone.
       updateScreeningData({
         needsReferral: false,
         needsGlasses: false,
-        notes:
-          (screeningData.notes || "") +
-          "\nAll tests passed — normal findings. Counseling provided. Supplies disinfected. Register updated.",
+        notes: finalNotes,
       });
-      navigation.navigate("ScreeningComplete", { glassesDispensed: false });
+      navigation.navigate("ScreeningComplete", {
+        glassesDispensed: false,
+        notes: finalNotes,
+      });
     }
   };
 

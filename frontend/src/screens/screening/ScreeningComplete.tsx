@@ -32,6 +32,7 @@ export default function ScreeningComplete() {
   const glassesDispensed: boolean = route.params?.glassesDispensed || false;
   const glassesPower: string      = route.params?.glassesPower      || "";
   const glassesFrameType: string  = route.params?.glassesFrameType  || screeningData.glassesFrameType || "";
+  const paramNotes: string        = route.params?.notes             || "";
 
   const saveOffline = async (data: any): Promise<string> => {
     const queue = JSON.parse(
@@ -68,7 +69,7 @@ export default function ScreeningComplete() {
       glassesFrameType: glassesFrameType,
       selectedFrameType: glassesFrameType,
       needsReferral:   Boolean(screeningData.needsReferral),
-      notes:           screeningData.notes || "All vision tests completed.",
+      notes:           paramNotes || screeningData.notes || "All vision tests completed.",
     };
 
     setSaving(true);
