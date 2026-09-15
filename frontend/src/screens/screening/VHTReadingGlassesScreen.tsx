@@ -190,7 +190,11 @@ export default function VHTReadingGlassesScreen() {
         })}
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
 
         {/* ── STEP: POWER TESTING ─────────────────────────────────────── */}
         {step === "power" && (
@@ -316,35 +320,6 @@ export default function VHTReadingGlassesScreen() {
                 <Text style={styles.stepText}>Refer to health facility for further eye examination</Text>
               </View>
             </View>
-
-            <TouchableOpacity
-              style={[styles.finishBtn, { backgroundColor: "#DC2626" }]}
-              onPress={() => {
-                updateScreeningData({
-                  needsReferral: true,
-                  needsGlasses: false,
-                  referralReason: "None of the 5 reading glass powers (+1.00 to +3.00) corrected near vision. Requires specialist examination.",
-                  referralStep: "Step 7 - Reading Glasses",
-                  referralUrgency: "normal",
-                });
-                const params = {
-                  fromScreening: true,
-                  clientName: screeningData.clientName || "",
-                  clientPhone: screeningData.clientPhone || "",
-                  clientAge: String(screeningData.clientAge || ""),
-                  clientSex: screeningData.clientGender || "",
-                  district: screeningData.district || "",
-                  reason: "None of the 5 reading glass powers (+1.00 to +3.00) corrected near vision. Requires specialist examination.",
-                  urgency: "normal",
-                };
-                // From ScreeningStack: getParent() = CHWTabs, getParent().getParent() = Root Stack
-                const root = navigation.getParent()?.getParent();
-                if (root) root.navigate("CreateReferralScreen", params);
-                else navigation.navigate("CreateReferralScreen" as any, params);
-              }}
-            >
-              <Text style={styles.finishBtnText}>Create Referral →</Text>
-            </TouchableOpacity>
           </>
         )}
 
@@ -413,13 +388,6 @@ export default function VHTReadingGlassesScreen() {
               </View>
               <Text style={styles.checkboxLabel}>Glasses case (or clean cloth) has been provided to client</Text>
             </TouchableOpacity>
-
-            {selectedFrame && caseProvided && (
-              <TouchableOpacity style={styles.nextBtn} onPress={() => setStep("education")}>
-                <Text style={styles.nextBtnText}>Continue → Educate Client</Text>
-                <Ionicons name="arrow-forward" size={20} color="#FFF" />
-              </TouchableOpacity>
-            )}
           </>
         )}
 
@@ -459,13 +427,6 @@ export default function VHTReadingGlassesScreen() {
                 );
               })}
             </View>
-
-            {allEducationDone && (
-              <TouchableOpacity style={styles.nextBtn} onPress={() => setStep("recording")}>
-                <Text style={styles.nextBtnText}>Continue → Record Dispensing</Text>
-                <Ionicons name="arrow-forward" size={20} color="#FFF" />
-              </TouchableOpacity>
-            )}
           </>
         )}
 
@@ -522,20 +483,95 @@ export default function VHTReadingGlassesScreen() {
                 <Ionicons name="clipboard-outline" size={22} color={recordingDone.has("consumption-log") ? "#0891B2" : "#D1D5DB"} />
               </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-              style={[styles.finishBtn, !canFinish && styles.finishBtnDisabled]}
-              onPress={handleFinish}
-              disabled={!canFinish}
-            >
-              <Text style={[styles.finishBtnText, !canFinish && { color: "#9CA3AF" }]}>
-                {canFinish ? "✅ Complete Dispensing" : "Complete all recording above"}
-              </Text>
-            </TouchableOpacity>
           </>
         )}
 
       </ScrollView>
+
+      {/* ── STICKY FOOTER — always visible ──────────────────────────────── */}
+      <View style={styles.footer}>
+
+        {/* Power step — no footer button, user taps Yes/No cards above */}
+
+        {/* Referred step */}
+        {step === "referred" && (
+          <TouchableOpacity
+            style={styles.footerBtnRed}
+            onPress={() => {
+              updateScreeningData({
+                needsReferral: true,
+                needsGlasses: false,
+                referralReason: "None of the 5 reading glass powers (+1.00 to +3.00) corrected near vision. Requires specialist examination.",
+                referralStep: "Step 7 - Reading Glasses",
+                referralUrgency: "normal",
+              });
+              const params = {
+                fromScreening: true,
+                clientName: screeningData.clientName || "",
+                clientPhone: screeningData.clientPhone || "",
+                clientAge: String(screeningData.clientAge || ""),
+                clientSex: screeningData.clientGender || "",
+                district: screeningData.district || "",
+                reason: "None of the 5 reading glass powers (+1.00 to +3.00) corrected near vision. Requires specialist examination.",
+                urgency: "normal",
+              };
+              const root = navigation.getParent()?.getParent();
+              if (root) root.navigate("CreateReferralScreen", params);
+              else navigation.navigate("CreateReferralScreen" as any, params);
+            }}
+          >
+            <Ionicons name="medical" size={20} color="#FFF" />
+            <Text style={styles.footerBtnText}>Create Referral →</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Frame step */}
+        {step === "frame" && (
+          <TouchableOpacity
+            style={[styles.footerBtnGreen, !(selectedFrame && caseProvided) && styles.footerBtnDisabled]}
+            onPress={() => { if (selectedFrame && caseProvided) setStep("education"); }}
+            activeOpacity={selectedFrame && caseProvided ? 0.8 : 1}
+          >
+            <Text style={[styles.footerBtnText, !(selectedFrame && caseProvided) && styles.footerBtnTextDisabled]}>
+              {selectedFrame && caseProvided
+                ? "Continue → Educate Client"
+                : `${!selectedFrame ? "Select a frame" : "Confirm case given"} to continue`}
+            </Text>
+            {selectedFrame && caseProvided && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
+          </TouchableOpacity>
+        )}
+
+        {/* Education step */}
+        {step === "education" && (
+          <TouchableOpacity
+            style={[styles.footerBtnGreen, !allEducationDone && styles.footerBtnDisabled]}
+            onPress={() => { if (allEducationDone) setStep("recording"); }}
+            activeOpacity={allEducationDone ? 0.8 : 1}
+          >
+            <Text style={[styles.footerBtnText, !allEducationDone && styles.footerBtnTextDisabled]}>
+              {allEducationDone
+                ? "Continue → Record Dispensing"
+                : `${EDUCATION_POINTS.length - educationDone.size} education point(s) remaining`}
+            </Text>
+            {allEducationDone && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
+          </TouchableOpacity>
+        )}
+
+        {/* Recording step */}
+        {step === "recording" && (
+          <TouchableOpacity
+            style={[styles.footerBtnGreen, !canFinish && styles.footerBtnDisabled]}
+            onPress={handleFinish}
+            activeOpacity={canFinish ? 0.8 : 1}
+          >
+            <Ionicons name="checkmark-circle" size={20} color={canFinish ? "#FFF" : "#9CA3AF"} />
+            <Text style={[styles.footerBtnText, !canFinish && styles.footerBtnTextDisabled]}>
+              {canFinish ? "✅ Complete Dispensing" : "Complete both records above to continue"}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+      </View>
     </SafeAreaView>
   );
 }
@@ -679,8 +715,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   nextBtnText: { fontSize: 15, fontWeight: "700", color: "#FFF" },
-
-  // Education
   educationCard: {
     flexDirection: "row", alignItems: "flex-start", gap: 12,
     backgroundColor: "#F9FAFB", borderRadius: 8, padding: 12,
@@ -707,4 +741,42 @@ const styles = StyleSheet.create({
   },
   finishBtnDisabled: { backgroundColor: "#E5E7EB" },
   finishBtnText: { fontSize: 16, fontWeight: "700", color: "#FFF" },
+
+  // Sticky footer
+  footer: {
+    backgroundColor: "#FFF",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
+  footerBtnGreen: {
+    backgroundColor: "#10B981",
+    paddingVertical: 15,
+    borderRadius: 10,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+  footerBtnRed: {
+    backgroundColor: "#DC2626",
+    paddingVertical: 15,
+    borderRadius: 10,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+  footerBtnDisabled: {
+    backgroundColor: "#E5E7EB",
+  },
+  footerBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#FFF",
+  },
+  footerBtnTextDisabled: {
+    color: "#9CA3AF",
+  },
 });
