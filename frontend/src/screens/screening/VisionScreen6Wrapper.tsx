@@ -146,11 +146,12 @@ export default function VisionScreen6Wrapper() {
         notes: `Referred from Step 6 — Near Vision Test.\nClient age: ${clientAge} (under 40).\nNear vision failed — abnormal for this age group.`,
       };
 
-      const root = navigation.getParent()?.getParent();
+      // Navigator depth: ScreeningStack → CHWTabs → AppTabs → Root Stack
+      const root = navigation.getParent()?.getParent()?.getParent();
       if (root) {
         root.navigate("CreateReferralScreen", referralParams);
       } else {
-        const parent = navigation.getParent();
+        const parent = navigation.getParent()?.getParent();
         if (parent) {
           parent.navigate("CreateReferralScreen", referralParams);
         } else {

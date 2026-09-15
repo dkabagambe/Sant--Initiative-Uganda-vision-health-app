@@ -158,13 +158,13 @@ export default function TorchLightStepScreen() {
         notes: `Referred from Step 4 — Torch Light Test.\nAbnormal signs: ${abnormalLabels.join(", ")}.\nDO NOT proceed with other vision tests.`,
       };
 
-      // Try root navigator (ScreeningStack -> CHWTabs -> Root)
-      const root = navigation.getParent()?.getParent();
+      // Navigator depth: ScreeningStack → CHWTabs → AppTabs → Root Stack
+      // Need 3 levels up to reach Root Stack where CreateReferralScreen lives.
+      const root = navigation.getParent()?.getParent()?.getParent();
       if (root) {
         root.navigate("CreateReferralScreen", referralParams);
       } else {
-        // Fallback: try one level up
-        const parent = navigation.getParent();
+        const parent = navigation.getParent()?.getParent();
         if (parent) {
           parent.navigate("CreateReferralScreen", referralParams);
         } else {
@@ -230,9 +230,8 @@ export default function TorchLightStepScreen() {
           );
         }
       } else {
-        // Age 6+: Show 2-minute wait, then continue
-        setIsWaiting(true);
-        setCurrentSubStep(4.5);
+        // Age 6+: Mark as passed — the footer button will start the 2-minute wait.
+        // (Do not auto-jump to 4.5 here; the VHT needs to tap "Test Passed" to confirm.)
       }
     }
   };
@@ -413,6 +412,7 @@ export default function TorchLightStepScreen() {
   const renderSubStep4 = () => {
     const hasAbnormalSigns =
       abnormalSigns.length > 0 && !abnormalSigns.includes("none");
+    const eyesNormal = abnormalSigns.includes("none");
 
     return (
       <View style={styles.contentContainer}>
@@ -426,20 +426,20 @@ export default function TorchLightStepScreen() {
             <>
               <Ionicons name="warning-outline" size={32} color="#DC2626" />
               <Text style={styles.resultTitleFail}>
-                ❌ Torch Light Test - Failed
+                ❌ Torch Light Test - Abnormal Signs Detected
               </Text>
               <Text style={styles.resultSubtitle}>
-                Abnormal signs detected - referral required
+                Referral required — do NOT proceed with other vision tests
               </Text>
             </>
           ) : (
             <>
               <Ionicons name="checkmark-circle" size={32} color="#10B981" />
               <Text style={styles.resultTitlePass}>
-                ✅ Torch Light Test - Passed
+                ✅ Torch Light Test - Eyes Look Normal
               </Text>
               <Text style={styles.resultSubtitle}>
-                Eyes look normal - no abnormal signs detected
+                No abnormal signs detected
               </Text>
             </>
           )}
@@ -451,8 +451,8 @@ export default function TorchLightStepScreen() {
           </Text>
 
           <View style={styles.testInfoBox}>
-            <Text style={styles.infoLabel}>Test Name:</Text>
-            <Text style={styles.infoValue}>Eye Exam with Torch Light</Text>
+            <Text style={styles.infoLabel}>Column to record:</Text>
+            <Text style={styles.infoValue}>Eye Exam w/ Torch Light — Pass?</Text>
           </View>
 
           {hasAbnormalSigns && (
@@ -470,36 +470,62 @@ export default function TorchLightStepScreen() {
           <View style={styles.divider} />
 
           <Text style={styles.passQuestion}>
-            Eye Exam with Torch Light - Pass?
+            Confirm result and record in register:
           </Text>
 
           <View style={styles.passButtons}>
+            {/* PASS button — only enabled if no abnormal signs */}
             <TouchableOpacity
-              style={[styles.passButton, styles.passButtonYes]}
-              onPress={() => handleTestComplete(true)}
+              style={[
+                styles.passButton,
+                styles.passButtonYes,
+                (hasAbnormalSigns || testPassed !== null) && { opacity: 0.4 },
+              ]}
+              onPress={() => testPassed === null && !hasAbnormalSigns && handleTestComplete(true)}
               activeOpacity={0.7}
             >
               <Text style={styles.passButtonEmoji}>✓</Text>
-              <Text style={styles.passButtonText}>Yes - Pass</Text>
+              <Text style={styles.passButtonText}>
+                Y — Pass{"\n"}(No signs)
+              </Text>
             </TouchableOpacity>
 
+            {/* FAIL / REFER button — only enabled if abnormal signs selected */}
             <TouchableOpacity
-              style={[styles.passButton, styles.passButtonNo]}
-              onPress={() => handleTestComplete(false)}
+              style={[
+                styles.passButton,
+                styles.passButtonNo,
+                (!hasAbnormalSigns || testPassed !== null) && { opacity: 0.4 },
+              ]}
+              onPress={() => testPassed === null && hasAbnormalSigns && handleTestComplete(false)}
               activeOpacity={0.7}
             >
               <Text style={styles.passButtonEmoji}>✗</Text>
-              <Text style={styles.passButtonText}>No - Fail</Text>
+              <Text style={styles.passButtonText}>
+                N — Fail{"\n"}(Refer)
+              </Text>
             </TouchableOpacity>
           </View>
 
-          {hasAbnormalSigns && (
+          {hasAbnormalSigns && testPassed === null && (
             <View style={styles.referralWarning}>
               <Text style={styles.warningTitle}>
-                ⚠️ Referral Required
+                ⚠️ Action Required
               </Text>
               <Text style={styles.warningText}>
-                Clicking "No - Fail" will open the referral form with client details pre-filled. Do NOT proceed with other vision tests.
+                Tap "N — Fail (Refer)" to record the result and open the pre-filled referral form.
+                Do NOT proceed with distance or near vision tests.
+              </Text>
+            </View>
+          )}
+
+          {eyesNormal && testPassed === null && (
+            <View style={[styles.referralWarning, { backgroundColor: "#D1FAE5", borderColor: "#A7F3D0" }]}>
+              <Text style={[styles.warningTitle, { color: "#065F46" }]}>
+                ✅ Eyes Normal
+              </Text>
+              <Text style={[styles.warningText, { color: "#065F46" }]}>
+                Tap "Y — Pass" to record the result and start the 2-minute wait before distance vision testing.
               </Text>
             </View>
           )}
@@ -652,7 +678,10 @@ export default function TorchLightStepScreen() {
               styles.primaryButton,
               abnormalSigns.length === 0 && styles.disabledButton,
             ]}
-            onPress={() => setCurrentSubStep(4)}
+            onPress={() => {
+              setTestPassed(null); // reset any previous answer when revisiting
+              setCurrentSubStep(4);
+            }}
             disabled={abnormalSigns.length === 0}
             activeOpacity={0.8}
           >
@@ -661,23 +690,32 @@ export default function TorchLightStepScreen() {
             </Text>
           </TouchableOpacity>
         ) : currentSubStep === 4 ? (
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              testPassed === null && styles.disabledButton,
-            ]}
-            onPress={() => {
-              if (testPassed === true) {
+          // Only show footer continue button after a PASS is confirmed.
+          // A FAIL auto-navigates to referral via handleTestComplete.
+          // Note: handleTestComplete(true) already sets currentSubStep to 4.5
+          // and starts isWaiting — this button is a fallback for the rare case
+          // the user taps back and needs to re-enter the wait screen.
+          testPassed === true ? (
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => {
+                setCountdown(120); // reset countdown in case user navigated back
+                setIsWaiting(true);
                 setCurrentSubStep(4.5);
-              }
-            }}
-            disabled={testPassed === null || testPassed === false}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.primaryButtonText}>
-              Continue to Next Step
-            </Text>
-          </TouchableOpacity>
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.primaryButtonText}>
+                ✅ Test Passed — Start 2-Minute Wait
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={[styles.primaryButton, styles.disabledButton]}>
+              <Text style={[styles.primaryButtonText, { color: "#9CA3AF" }]}>
+                Select Pass or Fail above to continue
+              </Text>
+            </View>
+          )
         ) : (
           /* SubStep 4.5 */
           <TouchableOpacity

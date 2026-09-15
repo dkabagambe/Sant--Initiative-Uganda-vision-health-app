@@ -30,28 +30,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { useLanguage } from "../../context/LanguageContext";
+import TumblingE from "../../components/TumblingE";
 
-// ─── Block E ─────────────────────────────────────────────────────────────────
 type EDir = "right" | "down" | "left" | "up";
-
-function BlockE({ direction, size }: { direction: EDir; size: number }) {
-  const t = Math.round(size / 5);
-  const deg =
-    direction === "right" ? "0deg"
-    : direction === "down"  ? "90deg"
-    : direction === "left"  ? "180deg"
-    : "270deg";
-  return (
-    <View style={{ transform: [{ rotate: deg }] }}>
-      <View style={{ width: size, height: size }}>
-        <View style={{ position: "absolute", left: 0, top: 0, width: t, height: size, backgroundColor: "#0A0A0A" }} />
-        <View style={{ position: "absolute", left: 0, top: 0, width: size, height: t, backgroundColor: "#0A0A0A" }} />
-        <View style={{ position: "absolute", left: 0, top: Math.round((size - t) / 2), width: size - t, height: t, backgroundColor: "#0A0A0A" }} />
-        <View style={{ position: "absolute", left: 0, bottom: 0, width: size, height: t, backgroundColor: "#0A0A0A" }} />
-      </View>
-    </View>
-  );
-}
+// Alias so existing JSX (<BlockE>) keeps working without changes
+const BlockE = ({ direction, size }: { direction: EDir; size: number }) => (
+  <TumblingE direction={direction} size={size} />
+);
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function VHTScreeningStep6() {

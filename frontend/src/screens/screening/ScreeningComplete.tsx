@@ -225,12 +225,8 @@ export default function ScreeningComplete() {
             style={styles.followUpButton}
             onPress={() => {
               resetScreeningData();
-              const parent = navigation.getParent();
-              if (parent) {
-                parent.navigate("CommunityFollowUp");
-              } else {
-                navigation.navigate("CommunityFollowUp" as any);
-              }
+              // CommunityFollowUp is registered in ScreeningStack — navigate directly
+              navigation.navigate("CommunityFollowUp" as any);
             }}
             activeOpacity={0.8}
           >

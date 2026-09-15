@@ -14,9 +14,11 @@
  *  - Repeat for both RIGHT and LEFT eye
  *  - If wearing distance spectacles, keep them on
  *
- * Each E shown one at a time (like Peek Acuity).
- * VHT taps ✓ Correct or ✗ Wrong for each letter.
- * "Can't See" counts as Wrong.
+ * Testing UI mirrors Peek Acuity:
+ *  - Full-screen pure-white background
+ *  - SVG Tumbling E occupies ~65% of screen width
+ *  - Large arrow direction buttons at the bottom
+ *  - Minimal chrome during the test — the E is the only focus
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -29,7 +31,6 @@ import {
   StatusBar,
   Dimensions,
   Image,
-  Alert,
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,112 +38,37 @@ import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import TumblingE, { EDirection } from "../../components/TumblingE";
 
 const { width, height } = Dimensions.get("window");
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type EDirection = "right" | "down" | "left" | "up";
 type Eye = "right" | "left";
 type Line = 1 | 2;
 type Phase =
-  | "instructions"   // setup instructions before starting each eye
-  | "testing"        // showing letters one at a time
-  | "eye_result"     // summary after one eye finishes
-  | "final_result";  // both eyes done
+  | "instructions"
+  | "testing"
+  | "eye_result"
+  | "final_result";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const DIRECTIONS: EDirection[] = ["right", "down", "left", "up"];
-const LINE1_COUNT = 3; // 6/60 — 3 letters
-const LINE2_COUNT = 5; // 6/12 — 5 letters
-const LINE1_PASS = 2;  // need ≥2 correct on line 1
-const LINE2_PASS = 4;  // need ≥4 correct on line 2
+const LINE1_COUNT = 3;
+const LINE2_COUNT = 5;
+const LINE1_PASS = 2;
+const LINE2_PASS = 4;
 
-/** Pick a random direction different from the previous one */
 function randomDirection(prev?: EDirection): EDirection {
   let dir: EDirection;
-  do {
-    dir = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
-  } while (dir === prev);
+  do { dir = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)]; }
+  while (dir === prev);
   return dir;
 }
 
-/** Generate the sequence of directions for a line */
 function generateSequence(count: number): EDirection[] {
   const seq: EDirection[] = [];
-  for (let i = 0; i < count; i++) {
-    seq.push(randomDirection(seq[i - 1]));
-  }
+  for (let i = 0; i < count; i++) seq.push(randomDirection(seq[i - 1]));
   return seq;
-}
-
-// ─── Block E renderer ────────────────────────────────────────────────────────
-function BlockE({ direction, size }: { direction: EDirection; size: number }) {
-  const t = Math.round(size / 5); // thickness of each bar
-
-  const rotationDeg =
-    direction === "right"
-      ? "0deg"
-      : direction === "down"
-      ? "90deg"
-      : direction === "left"
-      ? "180deg"
-      : "270deg";
-
-  return (
-    <View style={{ transform: [{ rotate: rotationDeg }] }}>
-      <View style={{ width: size, height: size, backgroundColor: "transparent" }}>
-        {/* Vertical spine */}
-        <View
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            width: t,
-            height: size,
-            backgroundColor: "#0A0A0A",
-          }}
-        />
-        {/* Top bar */}
-        <View
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            width: size,
-            height: t,
-            backgroundColor: "#0A0A0A",
-          }}
-        />
-        {/* Middle bar */}
-        <View
-          style={{
-            position: "absolute",
-            left: 0,
-            top: Math.round((size - t) / 2),
-            width: size - t,
-            height: t,
-            backgroundColor: "#0A0A0A",
-          }}
-        />
-        {/* Bottom bar */}
-        <View
-          style={{
-            position: "absolute",
-            left: 0,
-            bottom: 0,
-            width: size,
-            height: t,
-            backgroundColor: "#0A0A0A",
-          }}
-        />
-      </View>
-    </View>
-  );
-}
-
-// ─── Direction label helper ───────────────────────────────────────────────────
-function dirLabel(d: EDirection) {
-  return d === "right" ? "→ Right" : d === "left" ? "← Left" : d === "up" ? "↑ Up" : "↓ Down";
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -151,28 +77,22 @@ export default function DistanceVisionTestScreen() {
   const { screeningData, updateScreeningData } = useScreening();
   const [userData, setUserData] = useState<any>(null);
 
-  // Which eye we are currently testing
   const [currentEye, setCurrentEye] = useState<Eye>("right");
-
-  // Per-eye results store
   const [eyeResults, setEyeResults] = useState<
     Record<Eye, { line1: boolean[]; line2: boolean[] } | null>
   >({ right: null, left: null });
 
-  // Current test state
   const [phase, setPhase] = useState<Phase>("instructions");
   const [currentLine, setCurrentLine] = useState<Line>(1);
   const [sequence, setSequence] = useState<EDirection[]>([]);
   const [letterIndex, setLetterIndex] = useState(0);
   const [lineResults, setLineResults] = useState<boolean[]>([]);
-  // Store line1 results while testing line2
   const [savedLine1Results, setSavedLine1Results] = useState<boolean[]>([]);
 
   useEffect(() => {
     apiService.getCurrentUser().then((u) => { if (u) setUserData(u); }).catch(() => {});
   }, []);
 
-  // ── Start a new eye ─────────────────────────────────────────────────────────
   const startEye = useCallback((eye: Eye) => {
     setCurrentEye(eye);
     setPhase("instructions");
@@ -182,7 +102,6 @@ export default function DistanceVisionTestScreen() {
     setSavedLine1Results([]);
   }, []);
 
-  // ── Begin the actual letter-by-letter test ───────────────────────────────────
   const beginTest = useCallback(() => {
     setSequence(generateSequence(LINE1_COUNT));
     setLetterIndex(0);
@@ -191,7 +110,6 @@ export default function DistanceVisionTestScreen() {
     setPhase("testing");
   }, []);
 
-  // ── Record answer for current letter ─────────────────────────────────────────
   const recordAnswer = useCallback(
     (correct: boolean) => {
       const newResults = [...lineResults, correct];
@@ -199,27 +117,20 @@ export default function DistanceVisionTestScreen() {
       const isLastLetter = newResults.length === totalLetters;
 
       if (!isLastLetter) {
-        // More letters to go on this line
         setLineResults(newResults);
         setLetterIndex((i) => i + 1);
         return;
       }
 
-      // Line finished — evaluate
       const correctCount = newResults.filter(Boolean).length;
       const passThreshold = currentLine === 1 ? LINE1_PASS : LINE2_PASS;
       const linePassed = correctCount >= passThreshold;
 
       if (currentLine === 1) {
         if (!linePassed) {
-          // Failed line 1 → save results and show eye result (fail)
-          setEyeResults((prev) => ({
-            ...prev,
-            [currentEye]: { line1: newResults, line2: [] },
-          }));
+          setEyeResults((prev) => ({ ...prev, [currentEye]: { line1: newResults, line2: [] } }));
           setPhase("eye_result");
         } else {
-          // Passed line 1 → proceed to line 2
           setSavedLine1Results(newResults);
           setSequence(generateSequence(LINE2_COUNT));
           setLetterIndex(0);
@@ -227,18 +138,13 @@ export default function DistanceVisionTestScreen() {
           setCurrentLine(2);
         }
       } else {
-        // Line 2 done
-        setEyeResults((prev) => ({
-          ...prev,
-          [currentEye]: { line1: savedLine1Results, line2: newResults },
-        }));
+        setEyeResults((prev) => ({ ...prev, [currentEye]: { line1: savedLine1Results, line2: newResults } }));
         setPhase("eye_result");
       }
     },
     [lineResults, currentLine, currentEye, savedLine1Results]
   );
 
-  // ── After eye result, decide next step ───────────────────────────────────────
   const handleEyeResultNext = useCallback(async () => {
     const result = eyeResults[currentEye];
     const line2Correct = result?.line2.filter(Boolean).length ?? 0;
@@ -249,21 +155,16 @@ export default function DistanceVisionTestScreen() {
       line2Correct >= LINE2_PASS;
 
     if (!eyePassed) {
-      // This eye failed — REFER
       await handleFail(currentEye, result);
       return;
     }
-
     if (currentEye === "right") {
-      // Right eye passed → test left eye
       startEye("left");
     } else {
-      // Both eyes passed
       setPhase("final_result");
     }
   }, [currentEye, eyeResults, startEye]);
 
-  // ── Handle fail ──────────────────────────────────────────────────────────────
   const handleFail = async (eye: Eye, result: any) => {
     const line1c = result?.line1.filter(Boolean).length ?? 0;
     const line2c = result?.line2.filter(Boolean).length ?? 0;
@@ -323,17 +224,15 @@ export default function DistanceVisionTestScreen() {
       notes: `Referred from Step 5 — Distance Vision Test.\n${eyeLabel} eye failed.\n${failDetail}`,
     };
 
-    const root = navigation.getParent()?.getParent();
-    if (root) {
-      root.navigate("CreateReferralScreen", params);
-    } else {
-      const parent = navigation.getParent();
+    const root = navigation.getParent()?.getParent()?.getParent();
+    if (root) root.navigate("CreateReferralScreen", params);
+    else {
+      const parent = navigation.getParent()?.getParent();
       if (parent) parent.navigate("CreateReferralScreen", params);
       else navigation.navigate("CreateReferralScreen" as any, params);
     }
   };
 
-  // ── Both eyes passed → go to near vision ──────────────────────────────────
   const handleBothEyesPassed = () => {
     const rResult = eyeResults.right;
     const lResult = eyeResults.left;
@@ -345,57 +244,51 @@ export default function DistanceVisionTestScreen() {
     navigation.navigate("VisionScreen6");
   };
 
-  // ─── RENDER ─────────────────────────────────────────────────────────────────
-  const clientAge = Number(screeningData.clientAge) || 0;
   const eyeLabel = currentEye === "right" ? "RIGHT" : "LEFT";
   const coverEye = currentEye === "right" ? "LEFT" : "RIGHT";
 
-  // ── Phase: Instructions ────────────────────────────────────────────────────
+  // ── Phase: Instructions ──────────────────────────────────────────────────
   if (phase === "instructions") {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
         <Header userData={userData} navigation={navigation} />
 
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <Text style={styles.stepTitle}>Step 5: Distance Vision Test</Text>
 
           <View style={styles.badge}>
             <Ionicons name="eye" size={16} color="#1565C0" />
-            <Text style={styles.badgeText}>E-Chart • 3 Metres • Ages 6+</Text>
+            <Text style={styles.badgeText}>E-Chart · 3 Metres · Ages 6+</Text>
           </View>
 
-          {/* Which eye */}
           <View style={[styles.eyeBadge, { backgroundColor: currentEye === "right" ? "#1565C0" : "#6A1B9A" }]}>
             <Text style={styles.eyeBadgeText}>
               {currentEye === "right" ? "1st" : "2nd"}: Testing {eyeLabel} EYE 👁️
             </Text>
           </View>
 
-          {/* Setup instructions */}
+          {/* Setup */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>⚙️ Set Up:</Text>
-
-            <StepRow n="1" text={`Stand exactly 3 metres away from client`} />
+            <StepRow n="1" text="Stand exactly 3 metres away from the client" />
             <StepRow n="2" text={`Ask client to cover their ${coverEye} eye gently with palm`} />
             <StepRow n="3" text="Hold E-chart at client's eye level" />
-            <StepRow n="4" text='Say: "Tell me which way the legs of the E are pointing — Up, Down, Left, or Right."' />
-            <StepRow n="5" text="Show the E chart to demonstrate (the hand/stool key)" />
+            <StepRow n="4" text='"Tell me which way the legs of the E are pointing — Up, Down, Left, or Right."' />
           </View>
 
-          {/* E direction demo */}
+          {/* Direction key preview using SVG TumblingE */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>📋 E Direction Key (show client):</Text>
-            <Text style={styles.cardSubtitle}>The "legs" of the E point in one of 4 directions:</Text>
+            <Text style={styles.cardTitle}>📋 E Direction Key:</Text>
             <View style={styles.directionDemo}>
               {(["right", "up", "left", "down"] as EDirection[]).map((d) => (
                 <View key={d} style={styles.directionItem}>
-                  <BlockE direction={d} size={36} />
-                  <Text style={styles.directionLabel}>{dirLabel(d).replace("→ ", "").replace("← ", "").replace("↑ ", "").replace("↓ ", "")}</Text>
+                  <View style={styles.directionEBox}>
+                    <TumblingE direction={d} size={40} />
+                  </View>
+                  <Text style={styles.directionLabel}>
+                    {d === "right" ? "Right" : d === "left" ? "Left" : d === "up" ? "Up" : "Down"}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -403,32 +296,30 @@ export default function DistanceVisionTestScreen() {
 
           {/* Chart preview */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>📊 E-Chart (Distance Vision — top 2 lines):</Text>
-
+            <Text style={styles.cardTitle}>📊 E-Chart — top 2 lines:</Text>
             <View style={styles.chartPreviewRow}>
               <Text style={styles.chartLineLabel}>Line 1{"\n"}6/60</Text>
               <View style={styles.chartEs}>
-                <BlockE direction="right" size={56} />
-                <BlockE direction="down" size={56} />
-                <BlockE direction="left" size={56} />
+                <TumblingE direction="right" size={56} />
+                <TumblingE direction="down"  size={56} />
+                <TumblingE direction="left"  size={56} />
               </View>
-              <Text style={styles.chartPassNote}>Need ≥2{"\n"}correct</Text>
+              <Text style={styles.chartPassNote}>≥2/3{"\n"}to pass</Text>
             </View>
-
-            <View style={[styles.chartPreviewRow, { marginTop: 16 }]}>
+            <View style={styles.chartDivider} />
+            <View style={[styles.chartPreviewRow, { marginTop: 12 }]}>
               <Text style={styles.chartLineLabel}>Line 2{"\n"}6/12</Text>
               <View style={styles.chartEs}>
-                <BlockE direction="right" size={30} />
-                <BlockE direction="up" size={30} />
-                <BlockE direction="down" size={30} />
-                <BlockE direction="left" size={30} />
-                <BlockE direction="right" size={30} />
+                <TumblingE direction="right" size={34} />
+                <TumblingE direction="up"    size={34} />
+                <TumblingE direction="down"  size={34} />
+                <TumblingE direction="left"  size={34} />
+                <TumblingE direction="right" size={34} />
               </View>
-              <Text style={styles.chartPassNote}>Need ≥4{"\n"}correct</Text>
+              <Text style={styles.chartPassNote}>≥4/5{"\n"}to pass</Text>
             </View>
           </View>
 
-          {/* Spectacles note */}
           <View style={styles.infoBox}>
             <Ionicons name="information-circle" size={18} color="#1565C0" />
             <Text style={styles.infoText}>
@@ -446,117 +337,109 @@ export default function DistanceVisionTestScreen() {
     );
   }
 
-  // ── Phase: Testing (one letter at a time) ─────────────────────────────────
+  // ── Phase: Testing — Full-screen Peek-style ──────────────────────────────
   if (phase === "testing") {
     const totalLetters = currentLine === 1 ? LINE1_COUNT : LINE2_COUNT;
     const passThreshold = currentLine === 1 ? LINE1_PASS : LINE2_PASS;
     const currentDirection = sequence[letterIndex];
-    const eSize = currentLine === 1 ? width * 0.45 : width * 0.3;
     const correctSoFar = lineResults.filter(Boolean).length;
     const wrongSoFar = lineResults.filter((r) => !r).length;
 
-    // Early fail detection: too many wrong already
+    // Line 1 (6/60) → large E (~65% screen width)
+    // Line 2 (6/12) → smaller E (~42% screen width)
+    const eSize = currentLine === 1
+      ? Math.round(width * 0.65)
+      : Math.round(width * 0.42);
+
     const remainingLetters = totalLetters - lineResults.length - 1;
     const canStillPass = correctSoFar + remainingLetters + 1 >= passThreshold;
 
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.testContainer}>
         <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
-        <Header userData={userData} navigation={navigation} />
 
-        <View style={styles.testingContainer}>
-          {/* Progress bar */}
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${(letterIndex / totalLetters) * 100}%` },
-              ]}
-            />
+        {/* ── Top strip — minimal info ─────────────────────────────────── */}
+        <View style={styles.testTopBar}>
+          <View style={[styles.eyePill, { backgroundColor: currentEye === "right" ? "#1565C0" : "#6A1B9A" }]}>
+            <Text style={styles.eyePillText}>{eyeLabel} EYE</Text>
           </View>
 
-          {/* Status row */}
-          <View style={styles.statusRow}>
-            <View style={[styles.eyePill, { backgroundColor: currentEye === "right" ? "#1565C0" : "#6A1B9A" }]}>
-              <Text style={styles.eyePillText}>{eyeLabel} EYE</Text>
-            </View>
-            <Text style={styles.lineTag}>
-              Line {currentLine} ({currentLine === 1 ? "6/60" : "6/12"})
-            </Text>
-            <Text style={styles.letterCount}>
-              {letterIndex + 1} / {totalLetters}
-            </Text>
-          </View>
-
-          {/* Score running total */}
-          <View style={styles.scoreRow}>
-            <View style={styles.scorePill}>
-              <Text style={[styles.scorePillText, { color: "#10B981" }]}>✓ {correctSoFar}</Text>
-            </View>
-            <View style={styles.scorePill}>
-              <Text style={[styles.scorePillText, { color: "#EF4444" }]}>✗ {wrongSoFar}</Text>
-            </View>
-            <Text style={styles.needText}>Need ≥{passThreshold} correct</Text>
-          </View>
-
-          {/* The big E */}
-          <View style={styles.eDisplay}>
-            <View style={styles.eWhiteBox}>
-              <BlockE direction={currentDirection} size={eSize} />
-            </View>
-          </View>
-
-          {/* Instruction */}
-          <Text style={styles.askText}>
-            Ask: "Which way do the legs of the E point?"
+          <Text style={styles.lineTag}>
+            Line {currentLine}  ({currentLine === 1 ? "6/60" : "6/12"})
           </Text>
 
-          {/* Answer buttons */}
-          <View style={styles.answerGrid}>
-            <TouchableOpacity
-              style={[styles.answerBtn, styles.correctBtn]}
-              onPress={() => recordAnswer(true)}
-              activeOpacity={0.75}
-            >
-              <Text style={styles.answerBtnIcon}>✓</Text>
-              <Text style={styles.answerBtnText}>CORRECT</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.answerBtn, styles.wrongBtn]}
-              onPress={() => recordAnswer(false)}
-              activeOpacity={0.75}
-            >
-              <Text style={styles.answerBtnIcon}>✗</Text>
-              <Text style={styles.answerBtnText}>WRONG</Text>
-            </TouchableOpacity>
+          {/* Letter progress dots */}
+          <View style={styles.progressDots}>
+            {Array.from({ length: totalLetters }).map((_, i) => {
+              const answered = i < lineResults.length;
+              const correct  = answered && lineResults[i];
+              const wrong    = answered && !lineResults[i];
+              const current  = i === lineResults.length;
+              return (
+                <View
+                  key={i}
+                  style={[
+                    styles.dot,
+                    correct  && styles.dotCorrect,
+                    wrong    && styles.dotWrong,
+                    current  && styles.dotCurrent,
+                    !answered && !current && styles.dotPending,
+                  ]}
+                />
+              );
+            })}
           </View>
-
-          {/* Can't see button */}
-          <TouchableOpacity
-            style={styles.cantSeeBtn}
-            onPress={() => recordAnswer(false)}
-            activeOpacity={0.75}
-          >
-            <Ionicons name="eye-off" size={18} color="#6B7280" />
-            <Text style={styles.cantSeeBtnText}>Can't See / No Response</Text>
-          </TouchableOpacity>
-
-          {/* Early fail warning */}
-          {!canStillPass && (
-            <View style={styles.earlyFailBanner}>
-              <Ionicons name="alert-circle" size={16} color="#DC2626" />
-              <Text style={styles.earlyFailText}>
-                Cannot reach {passThreshold} correct — eye will fail this line
-              </Text>
-            </View>
-          )}
         </View>
+
+        {/* ── Score strip ─────────────────────────────────────────────── */}
+        <View style={styles.scoreStrip}>
+          <Text style={styles.scoreCorrect}>✓ {correctSoFar} correct</Text>
+          <Text style={styles.scoreNeed}>need ≥{passThreshold}</Text>
+          <Text style={styles.scoreWrong}>✗ {wrongSoFar} wrong</Text>
+        </View>
+
+        {/* ── THE E — full white canvas ─────────────────────────────── */}
+        <View style={styles.eCanvas}>
+          <TumblingE direction={currentDirection} size={eSize} color="#111111" />
+        </View>
+
+        {/* ── Prompt ────────────────────────────────────────────────── */}
+        <Text style={styles.promptText}>
+          Ask: "Which way do the legs point?"
+        </Text>
+
+        {/* ── Direction answer buttons (arrow style) ───────────────── */}
+        <View style={styles.arrowGrid}>
+          {/* Up */}
+          <View style={styles.arrowRow}>
+            <ArrowBtn direction="up"    onPress={() => recordAnswer(sequence[letterIndex] === "up")} />
+          </View>
+          {/* Left / Can't see / Right */}
+          <View style={styles.arrowRow}>
+            <ArrowBtn direction="left"  onPress={() => recordAnswer(sequence[letterIndex] === "left")} />
+            <CantSeeBtn                 onPress={() => recordAnswer(false)} />
+            <ArrowBtn direction="right" onPress={() => recordAnswer(sequence[letterIndex] === "right")} />
+          </View>
+          {/* Down */}
+          <View style={styles.arrowRow}>
+            <ArrowBtn direction="down"  onPress={() => recordAnswer(sequence[letterIndex] === "down")} />
+          </View>
+        </View>
+
+        {/* ── Early fail warning ───────────────────────────────────── */}
+        {!canStillPass && (
+          <View style={styles.earlyFailBanner}>
+            <Ionicons name="alert-circle" size={15} color="#DC2626" />
+            <Text style={styles.earlyFailText}>
+              Cannot reach {passThreshold} correct — eye will fail this line
+            </Text>
+          </View>
+        )}
       </SafeAreaView>
     );
   }
 
-  // ── Phase: Eye Result ──────────────────────────────────────────────────────
+  // ── Phase: Eye Result ───────────────────────────────────────────────────
   if (phase === "eye_result") {
     const result = eyeResults[currentEye];
     const line1Correct = result?.line1.filter(Boolean).length ?? 0;
@@ -576,12 +459,11 @@ export default function DistanceVisionTestScreen() {
           <View style={[styles.resultCard, eyePassed ? styles.resultPass : styles.resultFail]}>
             <Text style={styles.resultEyeLabel}>{eyeLabel} EYE — {eyePassed ? "✅ PASSED" : "❌ FAILED"}</Text>
 
-            {/* Line 1 result */}
             <View style={styles.resultLineRow}>
               <Text style={styles.resultLineTitle}>Line 1 (6/60) — 3 letters</Text>
               <View style={styles.resultLetters}>
                 {result?.line1.map((ok, i) => (
-                  <View key={i} style={[styles.resultDot, ok ? styles.dotCorrect : styles.dotWrong]}>
+                  <View key={i} style={[styles.resultDot, ok ? styles.dotCorrectBig : styles.dotWrongBig]}>
                     <Text style={styles.resultDotText}>{ok ? "✓" : "✗"}</Text>
                   </View>
                 ))}
@@ -591,13 +473,12 @@ export default function DistanceVisionTestScreen() {
               </Text>
             </View>
 
-            {/* Line 2 result (if tested) */}
             {line2Done ? (
               <View style={styles.resultLineRow}>
                 <Text style={styles.resultLineTitle}>Line 2 (6/12) — 5 letters</Text>
                 <View style={styles.resultLetters}>
                   {result?.line2.map((ok, i) => (
-                    <View key={i} style={[styles.resultDot, ok ? styles.dotCorrect : styles.dotWrong]}>
+                    <View key={i} style={[styles.resultDot, ok ? styles.dotCorrectBig : styles.dotWrongBig]}>
                       <Text style={styles.resultDotText}>{ok ? "✓" : "✗"}</Text>
                     </View>
                   ))}
@@ -614,35 +495,20 @@ export default function DistanceVisionTestScreen() {
             )}
           </View>
 
-          {/* Next action */}
           <View style={styles.actionCard}>
             {eyePassed && currentEye === "right" ? (
-              <>
-                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                <Text style={styles.actionText}>Right eye passed. Now test the LEFT eye.</Text>
-              </>
+              <><Ionicons name="checkmark-circle" size={24} color="#10B981" /><Text style={styles.actionText}>Right eye passed. Now test the LEFT eye.</Text></>
             ) : eyePassed && currentEye === "left" ? (
-              <>
-                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                <Text style={styles.actionText}>Both eyes passed! Proceed to Near Vision Test.</Text>
-              </>
+              <><Ionicons name="checkmark-circle" size={24} color="#10B981" /><Text style={styles.actionText}>Both eyes passed! Proceed to Near Vision Test.</Text></>
             ) : (
-              <>
-                <Ionicons name="alert-circle" size={24} color="#DC2626" />
-                <Text style={styles.actionText}>
-                  {eyeLabel} eye failed. STOP and REFER to health facility.
-                  {"\n"}Record "N" under "Distance Vision Test — Pass?" and "Y" under "Referred?".
-                </Text>
-              </>
+              <><Ionicons name="alert-circle" size={24} color="#DC2626" /><Text style={styles.actionText}>{eyeLabel} eye failed. STOP and REFER.{"\n"}Record "N" under "Distance Vision Test — Pass?" and "Y" under "Referred?".</Text></>
             )}
           </View>
 
-          <TouchableOpacity style={styles.nextBtn} onPress={handleEyeResultNext}>
+          <TouchableOpacity style={[styles.nextBtn, { backgroundColor: eyePassed ? "#1565C0" : "#DC2626" }]} onPress={handleEyeResultNext}>
             <Text style={styles.nextBtnText}>
-              {eyePassed && currentEye === "right"
-                ? "Test LEFT Eye →"
-                : eyePassed && currentEye === "left"
-                ? "Continue to Near Vision Test →"
+              {eyePassed && currentEye === "right" ? "Test LEFT Eye →"
+                : eyePassed && currentEye === "left" ? "Continue to Near Vision Test →"
                 : "Complete Referral →"}
             </Text>
           </TouchableOpacity>
@@ -653,7 +519,7 @@ export default function DistanceVisionTestScreen() {
     );
   }
 
-  // ── Phase: Final Result (both passed) ─────────────────────────────────────
+  // ── Phase: Final Result ─────────────────────────────────────────────────
   if (phase === "final_result") {
     const rResult = eyeResults.right;
     const lResult = eyeResults.left;
@@ -666,22 +532,16 @@ export default function DistanceVisionTestScreen() {
         <ScrollView contentContainerStyle={styles.resultContent}>
           <View style={[styles.resultCard, styles.resultPass]}>
             <Text style={styles.resultEyeLabel}>✅ DISTANCE VISION — BOTH EYES PASSED</Text>
-
-            {/* Right eye summary */}
             <View style={styles.resultLineRow}>
               <Text style={styles.resultLineTitle}>RIGHT EYE</Text>
               <Text style={[styles.resultLineSummary, styles.passText]}>
-                Line 1: {rResult?.line1.filter(Boolean).length}/{LINE1_COUNT} ✓ &nbsp;
-                Line 2: {rResult?.line2.filter(Boolean).length}/{LINE2_COUNT} ✓
+                Line 1: {rResult?.line1.filter(Boolean).length}/{LINE1_COUNT} ✓  ·  Line 2: {rResult?.line2.filter(Boolean).length}/{LINE2_COUNT} ✓
               </Text>
             </View>
-
-            {/* Left eye summary */}
             <View style={styles.resultLineRow}>
               <Text style={styles.resultLineTitle}>LEFT EYE</Text>
               <Text style={[styles.resultLineSummary, styles.passText]}>
-                Line 1: {lResult?.line1.filter(Boolean).length}/{LINE1_COUNT} ✓ &nbsp;
-                Line 2: {lResult?.line2.filter(Boolean).length}/{LINE2_COUNT} ✓
+                Line 1: {lResult?.line1.filter(Boolean).length}/{LINE1_COUNT} ✓  ·  Line 2: {lResult?.line2.filter(Boolean).length}/{LINE2_COUNT} ✓
               </Text>
             </View>
           </View>
@@ -689,8 +549,7 @@ export default function DistanceVisionTestScreen() {
           <View style={styles.actionCard}>
             <Ionicons name="checkmark-circle" size={24} color="#10B981" />
             <Text style={styles.actionText}>
-              Record "Y" under "Distance Vision Test — Pass?" in the register.
-              {"\n"}Proceed to Step 6: Near Vision Test.
+              Record "Y" under "Distance Vision Test — Pass?".{"\n"}Proceed to Step 6: Near Vision Test.
             </Text>
           </View>
 
@@ -707,24 +566,42 @@ export default function DistanceVisionTestScreen() {
   return null;
 }
 
+// ─── Arrow direction button ───────────────────────────────────────────────────
+function ArrowBtn({ direction, onPress }: { direction: EDirection; onPress: () => void }) {
+  const icon =
+    direction === "up" ? "arrow-up" :
+    direction === "down" ? "arrow-down" :
+    direction === "left" ? "arrow-back" : "arrow-forward";
+
+  return (
+    <TouchableOpacity style={styles.arrowBtn} onPress={onPress} activeOpacity={0.7}>
+      <Ionicons name={icon as any} size={36} color="#1565C0" />
+      <Text style={styles.arrowBtnLabel}>
+        {direction === "up" ? "Up" : direction === "down" ? "Down" : direction === "left" ? "Left" : "Right"}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+function CantSeeBtn({ onPress }: { onPress: () => void }) {
+  return (
+    <TouchableOpacity style={styles.cantSeeBtn} onPress={onPress} activeOpacity={0.7}>
+      <Ionicons name="eye-off" size={22} color="#9CA3AF" />
+      <Text style={styles.cantSeeBtnLabel}>Can't{"\n"}See</Text>
+    </TouchableOpacity>
+  );
+}
+
 // ─── Shared sub-components ────────────────────────────────────────────────────
 function Header({ userData, navigation }: any) {
   return (
     <View style={styles.header}>
       <View style={styles.logoBox}>
-        <Image
-          source={require("../../../assets/logo.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <Image source={require("../../../assets/logo.png")} style={styles.logo} resizeMode="contain" />
       </View>
       <View style={styles.headerCenter}>
-        <Text style={styles.headerTitle}>
-          {userData?.fullName || userData?.full_name || "Santé Initiative Uganda"}
-        </Text>
-        <Text style={styles.headerSubtitle}>
-          {userData?.district ? `VHT — ${userData.district} District` : ""}
-        </Text>
+        <Text style={styles.headerTitle}>{userData?.fullName || userData?.full_name || "Santé Initiative Uganda"}</Text>
+        <Text style={styles.headerSubtitle}>{userData?.district ? `VHT — ${userData.district} District` : ""}</Text>
       </View>
       <TouchableOpacity onPress={() => navigation.navigate("Settings")} style={styles.menuBtn}>
         <Ionicons name="menu" size={28} color="#1A4D8F" />
@@ -736,9 +613,7 @@ function Header({ userData, navigation }: any) {
 function StepRow({ n, text }: { n: string; text: string }) {
   return (
     <View style={styles.stepRow}>
-      <View style={styles.stepNum}>
-        <Text style={styles.stepNumText}>{n}</Text>
-      </View>
+      <View style={styles.stepNum}><Text style={styles.stepNumText}>{n}</Text></View>
       <Text style={styles.stepText}>{text}</Text>
     </View>
   );
@@ -748,21 +623,13 @@ function StepRow({ n, text }: { n: string; text: string }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
 
-  // Header
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "row", alignItems: "center",
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: 44,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    paddingHorizontal: 16, paddingVertical: 12, paddingTop: 44,
+    borderBottomWidth: 1, borderBottomColor: "#E5E7EB",
+    elevation: 2, shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2,
   },
   logoBox: { width: 44, height: 44, justifyContent: "center", alignItems: "center" },
   logo: { width: 40, height: 40 },
@@ -771,231 +638,179 @@ const styles = StyleSheet.create({
   headerSubtitle: { fontSize: 11, color: "#6B7280", marginTop: 1 },
   menuBtn: { width: 44, alignItems: "flex-end" },
 
-  // Scroll
-  scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
+  resultContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
 
-  // Step title + badge
   stepTitle: { fontSize: 22, fontWeight: "700", color: "#111827", marginBottom: 8 },
+
   badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EFF6FF",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-    marginBottom: 16,
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "#EFF6FF", paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 20, alignSelf: "flex-start", marginBottom: 16,
   },
   badgeText: { fontSize: 13, fontWeight: "600", color: "#1565C0", marginLeft: 6 },
 
   eyeBadge: {
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 24,
-    alignSelf: "center",
-    marginBottom: 20,
+    paddingVertical: 10, paddingHorizontal: 24, borderRadius: 24,
+    alignSelf: "center", marginBottom: 20,
   },
   eyeBadgeText: { fontSize: 18, fontWeight: "700", color: "#FFFFFF" },
 
-  // Cards
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
+    backgroundColor: "#FFFFFF", borderRadius: 12, padding: 18, marginBottom: 16,
+    borderWidth: 1, borderColor: "#E5E7EB",
+    elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04, shadowRadius: 3,
   },
   cardTitle: { fontSize: 15, fontWeight: "700", color: "#111827", marginBottom: 12 },
-  cardSubtitle: { fontSize: 13, color: "#6B7280", marginBottom: 12 },
 
-  // Step rows inside card
+  directionDemo: { flexDirection: "row", justifyContent: "space-around", paddingVertical: 8 },
+  directionItem: { alignItems: "center", gap: 6 },
+  directionEBox: {
+    backgroundColor: "#FFFFFF", borderRadius: 8, padding: 6,
+    elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06, shadowRadius: 3, borderWidth: 1, borderColor: "#E5E7EB",
+  },
+  directionLabel: { fontSize: 12, fontWeight: "700", color: "#374151", marginTop: 4 },
+
+  chartPreviewRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  chartLineLabel: { fontSize: 12, color: "#6B7280", fontWeight: "600", textAlign: "center", width: 48 },
+  chartEs: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1, justifyContent: "center" },
+  chartPassNote: { fontSize: 11, color: "#10B981", fontWeight: "600", textAlign: "center", width: 56 },
+  chartDivider: { height: 1, backgroundColor: "#E5E7EB", marginVertical: 12 },
+
+  infoBox: {
+    flexDirection: "row", alignItems: "flex-start",
+    backgroundColor: "#EFF6FF", padding: 12, borderRadius: 10, marginBottom: 20, gap: 8,
+  },
+  infoText: { flex: 1, fontSize: 13, color: "#1565C0", lineHeight: 18 },
+
+  startBtn: { backgroundColor: "#1565C0", paddingVertical: 16, borderRadius: 12, alignItems: "center" },
+  startBtnText: { fontSize: 17, fontWeight: "700", color: "#FFFFFF" },
+
   stepRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 12 },
   stepNum: {
-    width: 26, height: 26, borderRadius: 13,
-    backgroundColor: "#1565C0",
-    justifyContent: "center", alignItems: "center",
-    marginRight: 12, marginTop: 1,
+    width: 26, height: 26, borderRadius: 13, backgroundColor: "#1565C0",
+    justifyContent: "center", alignItems: "center", marginRight: 12, marginTop: 1,
   },
   stepNumText: { fontSize: 13, fontWeight: "700", color: "#FFFFFF" },
   stepText: { flex: 1, fontSize: 14, color: "#374151", lineHeight: 20 },
 
-  // Direction demo
-  directionDemo: { flexDirection: "row", justifyContent: "space-around", paddingVertical: 8 },
-  directionItem: { alignItems: "center", gap: 6 },
-  directionLabel: { fontSize: 13, color: "#374151", fontWeight: "600", marginTop: 6 },
+  // ── TESTING PHASE — full screen white ─────────────────────────────────────
+  testContainer: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
 
-  // Chart preview
-  chartPreviewRow: {
+  testTopBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingTop: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
   },
-  chartLineLabel: { fontSize: 12, color: "#6B7280", fontWeight: "600", textAlign: "center", width: 48 },
-  chartEs: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1, justifyContent: "center" },
-  chartPassNote: { fontSize: 11, color: "#10B981", fontWeight: "600", textAlign: "center", width: 56 },
 
-  // Info box
-  infoBox: {
+  eyePill: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 14 },
+  eyePillText: { fontSize: 12, fontWeight: "700", color: "#FFFFFF" },
+  lineTag: { fontSize: 13, fontWeight: "600", color: "#374151" },
+
+  progressDots: { flexDirection: "row", gap: 6 },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  dotCorrect: { backgroundColor: "#10B981" },
+  dotWrong:   { backgroundColor: "#EF4444" },
+  dotCurrent: { backgroundColor: "#1565C0" },
+  dotPending: { backgroundColor: "#D1D5DB" },
+
+  scoreStrip: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: "#EFF6FF",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 20,
-    gap: 8,
-  },
-  infoText: { flex: 1, fontSize: 13, color: "#1565C0", lineHeight: 18 },
-
-  // Start button
-  startBtn: {
-    backgroundColor: "#1565C0",
-    paddingVertical: 16,
-    borderRadius: 12,
+    justifyContent: "space-between",
     alignItems: "center",
-  },
-  startBtnText: { fontSize: 17, fontWeight: "700", color: "#FFFFFF" },
-
-  // ── Testing phase ─────────────────────────────────────────────────────────
-  testingContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 6,
     backgroundColor: "#F9FAFB",
   },
+  scoreCorrect: { fontSize: 13, fontWeight: "700", color: "#10B981" },
+  scoreNeed:    { fontSize: 12, color: "#6B7280" },
+  scoreWrong:   { fontSize: 13, fontWeight: "700", color: "#EF4444" },
 
-  progressBar: {
-    height: 6, backgroundColor: "#E5E7EB", borderRadius: 3, overflow: "hidden", marginBottom: 14,
-  },
-  progressFill: { height: "100%", backgroundColor: "#1565C0", borderRadius: 3 },
-
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  eyePill: {
-    paddingHorizontal: 12, paddingVertical: 4, borderRadius: 14,
-  },
-  eyePillText: { fontSize: 12, fontWeight: "700", color: "#FFFFFF" },
-  lineTag: { fontSize: 14, fontWeight: "600", color: "#374151" },
-  letterCount: { fontSize: 14, color: "#6B7280", fontWeight: "500" },
-
-  scoreRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 14,
-    gap: 8,
-  },
-  scorePill: {
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 12,
-  },
-  scorePillText: { fontSize: 14, fontWeight: "700" },
-  needText: { fontSize: 12, color: "#6B7280", marginLeft: 4 },
-
-  eDisplay: {
-    alignItems: "center",
-    justifyContent: "center",
+  // The E lives on a pure white canvas that fills the available vertical space
+  eCanvas: {
     flex: 1,
-    minHeight: 200,
-  },
-  eWhiteBox: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 32,
-    alignItems: "center",
     justifyContent: "center",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
+    alignItems: "center",
   },
 
-  askText: {
+  promptText: {
     textAlign: "center",
     fontSize: 15,
-    color: "#374151",
+    color: "#6B7280",
     fontStyle: "italic",
-    marginVertical: 16,
     fontWeight: "500",
-  },
-
-  answerGrid: {
-    flexDirection: "row",
-    gap: 12,
+    paddingHorizontal: 24,
     marginBottom: 12,
   },
-  answerBtn: {
-    flex: 1,
-    paddingVertical: 18,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
+
+  // Arrow buttons — cruciform layout
+  arrowGrid: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: 0,
   },
-  correctBtn: { backgroundColor: "#10B981" },
-  wrongBtn: { backgroundColor: "#EF4444" },
-  answerBtnIcon: { fontSize: 28, color: "#FFFFFF", fontWeight: "700" },
-  answerBtnText: { fontSize: 15, fontWeight: "700", color: "#FFFFFF", marginTop: 4 },
+  arrowRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 12,
+  },
+
+  arrowBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#BFDBFE",
+    backgroundColor: "#EFF6FF",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 4,
+  },
+  arrowBtnLabel: { fontSize: 11, fontWeight: "700", color: "#1565C0" },
 
   cantSeeBtn: {
-    flexDirection: "row",
-    alignItems: "center",
+    width: 80,
+    height: 80,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#F9FAFB",
     justifyContent: "center",
-    paddingVertical: 12,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 10,
-    gap: 8,
-    marginBottom: 12,
+    alignItems: "center",
+    gap: 4,
   },
-  cantSeeBtnText: { fontSize: 14, color: "#6B7280", fontWeight: "500" },
+  cantSeeBtnLabel: { fontSize: 10, fontWeight: "600", color: "#9CA3AF", textAlign: "center" },
 
   earlyFailBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FEF2F2",
-    padding: 10,
-    borderRadius: 8,
-    gap: 6,
-    borderWidth: 1,
-    borderColor: "#FECACA",
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "#FEF2F2", padding: 8, margin: 12, borderRadius: 8,
+    gap: 6, borderWidth: 1, borderColor: "#FECACA",
   },
-  earlyFailText: { flex: 1, fontSize: 13, color: "#DC2626" },
+  earlyFailText: { flex: 1, fontSize: 12, color: "#DC2626" },
 
-  // ── Result phases ─────────────────────────────────────────────────────────
-  resultContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
-
-  resultCard: {
-    borderRadius: 14,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 2,
-  },
+  // ── Result phase ──────────────────────────────────────────────────────────
+  resultCard: { borderRadius: 14, padding: 20, marginBottom: 16, borderWidth: 2 },
   resultPass: { backgroundColor: "#F0FDF4", borderColor: "#10B981" },
   resultFail: { backgroundColor: "#FEF2F2", borderColor: "#EF4444" },
-
   resultEyeLabel: { fontSize: 18, fontWeight: "700", color: "#111827", marginBottom: 16 },
-
   resultLineRow: { marginBottom: 14 },
   resultLineTitle: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 6 },
   resultLetters: { flexDirection: "row", gap: 8, marginBottom: 6 },
-  resultDot: {
-    width: 32, height: 32, borderRadius: 16,
-    justifyContent: "center", alignItems: "center",
-  },
-  dotCorrect: { backgroundColor: "#10B981" },
-  dotWrong: { backgroundColor: "#EF4444" },
+  resultDot: { width: 32, height: 32, borderRadius: 16, justifyContent: "center", alignItems: "center" },
+  dotCorrectBig: { backgroundColor: "#10B981" },
+  dotWrongBig:   { backgroundColor: "#EF4444" },
   resultDotText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
   resultLineSummary: { fontSize: 13, fontWeight: "600" },
   passText: { color: "#10B981" },
@@ -1003,23 +818,15 @@ const styles = StyleSheet.create({
   skippedText: { fontSize: 13, color: "#9CA3AF", fontStyle: "italic" },
 
   actionCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    flexDirection: "row", alignItems: "flex-start",
+    backgroundColor: "#FFFFFF", borderRadius: 12,
+    padding: 16, marginBottom: 20, gap: 12,
+    borderWidth: 1, borderColor: "#E5E7EB",
   },
   actionText: { flex: 1, fontSize: 14, color: "#374151", lineHeight: 20 },
 
   nextBtn: {
-    backgroundColor: "#1565C0",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
+    backgroundColor: "#1565C0", paddingVertical: 16, borderRadius: 12, alignItems: "center",
   },
   nextBtnText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
 });

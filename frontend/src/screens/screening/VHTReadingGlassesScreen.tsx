@@ -48,6 +48,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
+import TumblingE from "../../components/TumblingE";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const POWERS = ["+1.00", "+1.50", "+2.00", "+2.50", "+3.00"] as const;
@@ -72,20 +73,10 @@ const EDUCATION_POINTS = [
 
 // ─── Block E (for N8 reference) ───────────────────────────────────────────────
 type EDir = "right" | "down" | "left" | "up";
-function BlockE({ direction, size }: { direction: EDir; size: number }) {
-  const t = Math.round(size / 5);
-  const deg = direction === "right" ? "0deg" : direction === "down" ? "90deg" : direction === "left" ? "180deg" : "270deg";
-  return (
-    <View style={{ transform: [{ rotate: deg }] }}>
-      <View style={{ width: size, height: size }}>
-        <View style={{ position: "absolute", left: 0, top: 0, width: t, height: size, backgroundColor: "#0A0A0A" }} />
-        <View style={{ position: "absolute", left: 0, top: 0, width: size, height: t, backgroundColor: "#0A0A0A" }} />
-        <View style={{ position: "absolute", left: 0, top: Math.round((size - t) / 2), width: size - t, height: t, backgroundColor: "#0A0A0A" }} />
-        <View style={{ position: "absolute", left: 0, bottom: 0, width: size, height: t, backgroundColor: "#0A0A0A" }} />
-      </View>
-    </View>
-  );
-}
+// Alias so existing JSX (<BlockE>) keeps working without changes
+const BlockE = ({ direction, size }: { direction: EDir; size: number }) => (
+  <TumblingE direction={direction} size={size} />
+);
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 type Step = "power" | "frame" | "education" | "recording" | "referred";
@@ -333,7 +324,8 @@ export default function VHTReadingGlassesScreen() {
                   referralStep: "Step 7 - Reading Glasses",
                   referralUrgency: "normal",
                 });
-                const root = navigation.getParent()?.getParent();
+                // Navigator depth: ScreeningStack → CHWTabs → AppTabs → Root Stack
+                const root = navigation.getParent()?.getParent()?.getParent();
                 const params = {
                   fromScreening: true,
                   clientName: screeningData.clientName || "",
@@ -346,7 +338,7 @@ export default function VHTReadingGlassesScreen() {
                 };
                 if (root) root.navigate("CreateReferralScreen", params);
                 else {
-                  const parent = navigation.getParent();
+                  const parent = navigation.getParent()?.getParent();
                   if (parent) parent.navigate("CreateReferralScreen", params);
                   else navigation.navigate("CreateReferralScreen" as any, params);
                 }
