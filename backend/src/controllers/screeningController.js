@@ -137,31 +137,28 @@ exports.createScreening = async (req, res) => {
     const screening = await sql`
       INSERT INTO screenings (
         health_worker_id, client_name, client_phone, client_age, client_gender, client_village,
-        client_district, client_county, client_sub_county, parish,
-        equipment_checked, consent_obtained, education_provided,
-        has_eye_concerns, follows_movement, has_severe_eye_pain, has_sudden_vision_loss,
-        has_diabetes_hypertension, family_history_blindness, referral_reasons_from_questions,
-        screening_area_prepared, tests_explained_to_client,
-        distance_vision_left, distance_vision_right, distance_vision_both,
-        near_vision_result, pinhole_test_left, pinhole_test_right,
+        district, county, sub_county, parish,
+        distance_vision_left, distance_vision_right, distance_vision_both, distance_vision_result,
+        near_vision_result, near_vision_passed,
+        pinhole_test_left, pinhole_test_right,
         torch_test_passed, torch_test_abnormal_signs,
-        glasses_dispensed, glasses_power, glasses_frame_type, glasses_education_provided,
-        needs_glasses, needs_referral, referral_reason, referral_facility,
+        key_questions_passed, key_questions_referral_reasons,
+        glasses_dispensed, glasses_power, glasses_frame_type,
+        needs_glasses, needs_referral, referral_reason, referral_urgency, referral_step,
         recommended_product_id, recommended_power, selected_frame_type,
         notes, offline_id, is_synced, screening_date
       ) VALUES (
         ${healthWorkerId}, ${clientName || null}, ${clientPhone || null}, ${clientAge || null}, ${clientGender || null}, ${clientVillage || null},
         ${district || null}, ${county || null}, ${subCounty || null}, ${parish || null},
-        ${Boolean(equipmentChecked)}, ${Boolean(consentObtained)}, ${Boolean(educationProvided)},
-        ${nullableBool(hasEyeConcerns)}, ${nullableBool(followsMovement)}, ${nullableBool(hasSevereEyePain)}, ${nullableBool(hasSuddenVisionLoss)},
-        ${nullableBool(hasDiabetesHypertension)}, ${nullableBool(familyHistoryBlindness)}, ${referralReasonsFromQuestions ? JSON.stringify(referralReasonsFromQuestions) : null},
-        ${Boolean(screeningAreaPrepared)}, ${Boolean(testsExplainedToClient)},
-        ${distanceVisionLeft || null}, ${distanceVisionRight || null}, ${distanceVisionBoth || null},
-        ${nearVisionResult || null}, ${pinholeTestLeft || null}, ${pinholeTestRight || null},
+        ${distanceVisionLeft || null}, ${distanceVisionRight || null}, ${distanceVisionBoth || null}, ${distanceVisionResult || null},
+        ${nearVisionResult || null}, ${nearVisionResult === "passed" ? true : nearVisionResult === "failed" ? false : null},
+        ${pinholeTestLeft || null}, ${pinholeTestRight || null},
         ${nullableBool(torchTestPassed)}, ${torchTestAbnormalSigns || null},
-        ${Boolean(glassesDispensed)}, ${glassesPower || null}, ${glassesFrameType || null}, ${Boolean(glassesEducationProvided)},
-        ${Boolean(needsGlasses)}, ${Boolean(needsReferral)}, ${referralReason || null}, ${referralFacility || null},
-        ${recommendedProductId || null}, ${recommendedPower || null}, ${selectedFrameType || null},
+        ${nullableBool(referralReasonsFromQuestions ? false : null)}, ${referralReasonsFromQuestions ? JSON.stringify(referralReasonsFromQuestions) : null},
+        ${Boolean(glassesDispensed)}, ${glassesPower || recommendedPower || null}, ${glassesFrameType || selectedFrameType || null},
+        ${Boolean(needsGlasses)}, ${Boolean(needsReferral)}, ${referralReason || null},
+        ${req.body.referralUrgency || 'normal'}, ${referralStep || null},
+        ${recommendedProductId || null}, ${recommendedPower || glassesPower || null}, ${selectedFrameType || glassesFrameType || null},
         ${fullNotes.trim() || null}, ${offlineId || null}, ${true}, ${new Date().toISOString().split("T")[0]}
       )
       RETURNING *
@@ -172,10 +169,13 @@ exports.createScreening = async (req, res) => {
       await sql`
         INSERT INTO referrals (
           screening_id, health_worker_id, client_name, client_phone,
-          client_age, client_gender, client_district, reason, facility_name, urgency
+          client_age, client_gender, client_district, reason, facility_name, urgency, notes
         ) VALUES (
           ${screening[0].id}, ${healthWorkerId}, ${clientName || null}, ${clientPhone || null},
-          ${clientAge || null}, ${clientGender || null}, ${district || null}, ${referralReason}, ${referralFacility || null}, 'normal'
+          ${clientAge || null}, ${clientGender || null}, ${district || null},
+          ${referralReason}, ${req.body.referralFacility || null},
+          ${req.body.referralUrgency || 'normal'},
+          ${referralStep ? `Referred from: ${referralStep}` : null}
         )
       `;
     }

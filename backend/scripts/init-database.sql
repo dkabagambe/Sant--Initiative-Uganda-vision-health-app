@@ -75,25 +75,54 @@ CREATE TABLE IF NOT EXISTS screenings (
     client_gender VARCHAR(20),
     client_village VARCHAR(100),
     
-    -- Step 2-5: Vision Tests
-    distance_vision_left VARCHAR(20),
-    distance_vision_right VARCHAR(20),
+    -- Step 1: Key Questions
+    key_questions_passed BOOLEAN,
+    key_questions_referral_reasons TEXT,
+
+    -- Step 4: Torch Light Test (all ages)
+    torch_test_passed BOOLEAN,
+    torch_test_abnormal_signs TEXT,
+
+    -- Step 5: Distance Vision Test (ages 6+)
+    distance_vision_right VARCHAR(50),
+    distance_vision_left VARCHAR(50),
     distance_vision_both VARCHAR(20),
+    distance_vision_result VARCHAR(20), -- 'passed', 'failed', 'not_tested'
+
+    -- Step 6: Near Vision Test (ages 6+)
     near_vision_result VARCHAR(20),
+    near_vision_passed BOOLEAN,
+
+    -- Legacy pinhole fields (kept for backwards compat)
     pinhole_test_left VARCHAR(20),
     pinhole_test_right VARCHAR(20),
-    
-    -- Step 6: Results
+
+    -- Step 7: Reading Glasses (ages 40+)
     needs_glasses BOOLEAN DEFAULT false,
+    glasses_dispensed BOOLEAN DEFAULT false,
+    glasses_power VARCHAR(20),
+    glasses_frame_type VARCHAR(50),
+
+    -- Location fields (from client registration)
+    district VARCHAR(100),
+    county VARCHAR(100),
+    sub_county VARCHAR(100),
+    parish VARCHAR(100),
+    household_id VARCHAR(100),
+
+    -- Results / Referral
     needs_referral BOOLEAN DEFAULT false,
     referral_reason TEXT,
+    referral_urgency VARCHAR(20) DEFAULT 'normal',
+    referral_step VARCHAR(100),
     recommended_product_id UUID REFERENCES products(id),
     recommended_power VARCHAR(20),
-    selected_frame_type VARCHAR(50), -- standard, metal, fashion
-    
+    selected_frame_type VARCHAR(50),
+
     notes TEXT,
     screening_date DATE DEFAULT CURRENT_DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_synced BOOLEAN DEFAULT true,
     offline_id VARCHAR(100)
 );

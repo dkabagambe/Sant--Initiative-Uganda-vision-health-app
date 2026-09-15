@@ -12,6 +12,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 
+// Step 8 disinfection checklist (MOH manual Section 5, Step 8)
+const step8Points = [
+  { id: "disinfect-echart",   title: "Disinfect E-chart",           instruction: "Wipe down the E-chart that the client touched" },
+  { id: "disinfect-glasses",  title: "Disinfect Sample Glasses",    instruction: "Disinfect any sample reading glasses the client tried on (if used)" },
+  { id: "disinfect-mirror",   title: "Disinfect Mirror",            instruction: "Disinfect the mirror the client used (if used)" },
+  { id: "wash-hands",         title: "Wash Your Hands",             instruction: "Wash hands with clean water and soap (or disinfectant if no water)" },
+  { id: "new-register-line",  title: "Start New Register Line",     instruction: "Begin a new line in the VHT Community Eye Health Register for the next client" },
+];
+
 const counselingPoints = [
   {
     id: "healthy",
@@ -32,7 +41,7 @@ const counselingPoints = [
   {
     id: "register",
     title: "Record Results in Register",
-    instruction: "Record results in the register",
+    instruction: "Record Y in register: Key Questions Pass, Torch Test Pass, Distance Vision Pass, Near Vision Pass",
   },
   {
     id: "dont-drops",
@@ -55,9 +64,8 @@ const counselingPoints = [
 export default function VHTNormalFindingsScreen() {
   const navigation = useNavigation<any>();
   const { screeningData, updateScreeningData } = useScreening();
-  const [counselingProvided, setCounselingProvided] = useState<Set<string>>(
-    new Set()
-  );
+  const [counselingProvided, setCounselingProvided] = useState<Set<string>>(new Set());
+  const [step8Done, setStep8Done] = useState<Set<string>>(new Set());
 
   const toggleCounseling = (id: string) => {
     const newSet = new Set(counselingProvided);
@@ -69,17 +77,28 @@ export default function VHTNormalFindingsScreen() {
     setCounselingProvided(newSet);
   };
 
-  const allCounselingProvided =
-    counselingProvided.size === counselingPoints.length;
+  const toggleStep8 = (id: string) => {
+    const newSet = new Set(step8Done);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setStep8Done(newSet);
+  };
+
+  const allCounselingProvided = counselingProvided.size === counselingPoints.length;
+  const allStep8Done = step8Done.size === step8Points.length;
+  const canComplete = allCounselingProvided && allStep8Done;
 
   const handleComplete = () => {
-    if (allCounselingProvided) {
+    if (canComplete) {
       updateScreeningData({
         needsReferral: false,
         needsGlasses: false,
         notes:
           (screeningData.notes || "") +
-          "\nStep 7: Normal eye findings — counseling provided and results recorded in register.",
+          "\nAll tests passed — normal findings. Counseling provided. Supplies disinfected. Register updated.",
       });
       navigation.navigate("ScreeningComplete", { glassesDispensed: false });
     }
@@ -93,7 +112,7 @@ export default function VHTNormalFindingsScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={28} color="#10B981" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Step 7: Manage Normal Eyes</Text>
+        <Text style={styles.headerTitle}>Complete: Normal Findings</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -104,12 +123,12 @@ export default function VHTNormalFindingsScreen() {
             Client Vision Assessment: NORMAL
           </Text>
           <Text style={styles.successSubtext}>
-            No referral or glasses needed
+            All tests passed — no referral or glasses needed
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>VHT Actions — Manage Normal Eye Findings</Text>
+          <Text style={styles.sectionTitle}>Step 7: Counsel Client on Normal Findings</Text>
           <Text style={styles.sectionSubtitle}>
             After both near and far distance vision tests, confirm each action:
           </Text>
@@ -177,16 +196,45 @@ export default function VHTNormalFindingsScreen() {
           <View style={styles.infoBox}>
             <Ionicons name="document-text" size={20} color="#7C3AED" />
             <Text style={styles.infoText}>
-              Record the results in your register noting that the client had normal vision findings and counseling was provided.
+              Record Y in register for: Key Questions, Torch Test, Distance Vision, Near Vision. Record N under Referred and Dispensed Glasses.
             </Text>
           </View>
         </View>
 
-        {allCounselingProvided && (
+        {/* ── STEP 8: PREPARE FOR NEXT CLIENT ─────────────────────── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Step 8: Prepare for Next Client</Text>
+          <Text style={styles.sectionSubtitle}>
+            Before welcoming the next household member, complete these actions:
+          </Text>
+
+          {step8Points.map((pt) => {
+            const done = step8Done.has(pt.id);
+            return (
+              <TouchableOpacity
+                key={pt.id}
+                style={[styles.counselingCard, done && styles.counselingCardProvided]}
+                onPress={() => toggleStep8(pt.id)}
+              >
+                <View style={styles.cardLeft}>
+                  <View style={[styles.checkbox, done && styles.checkboxProvided]}>
+                    {done && <Ionicons name="checkmark" size={16} color="#FFF" />}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.pointTitle}>{pt.title}</Text>
+                    <Text style={styles.pointInstruction}>{pt.instruction}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {canComplete && (
           <View style={styles.completionCard}>
             <Ionicons name="checkmark-circle" size={32} color="#10B981" />
             <Text style={styles.completionText}>
-              All counseling provided. Screening is complete.
+              All done! Screening complete and area prepared for next client.
             </Text>
           </View>
         )}
@@ -194,22 +242,15 @@ export default function VHTNormalFindingsScreen() {
 
       <View style={[styles.footer, { paddingBottom: 24 }]}>
         <TouchableOpacity
-          style={[
-            styles.button,
-            !allCounselingProvided && styles.buttonDisabled,
-          ]}
+          style={[styles.button, !canComplete && styles.buttonDisabled]}
           onPress={handleComplete}
-          disabled={!allCounselingProvided}
-          activeOpacity={allCounselingProvided ? 0.7 : 1}
+          disabled={!canComplete}
+          activeOpacity={canComplete ? 0.7 : 1}
         >
-          <Text style={[styles.buttonText, !allCounselingProvided && styles.buttonTextDisabled]}>
-            {allCounselingProvided
-              ? "Complete Screening"
-              : "Provide all counseling first"}
+          <Text style={[styles.buttonText, !canComplete && styles.buttonTextDisabled]}>
+            {canComplete ? "Complete Screening" : "Complete all steps above first"}
           </Text>
-          {allCounselingProvided && (
-            <Ionicons name="arrow-forward" size={20} color="#FFF" />
-          )}
+          {canComplete && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -217,10 +258,7 @@ export default function VHTNormalFindingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFF",
-  },
+  container: { flex: 1, backgroundColor: "#FFF" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -230,18 +268,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1F2937",
-    flex: 1,
-    textAlign: "center",
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
+  headerTitle: { fontSize: 18, fontWeight: "600", color: "#1F2937", flex: 1, textAlign: "center" },
+  content: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
   successCard: {
     backgroundColor: "#DCFCE7",
     borderLeftWidth: 4,

@@ -1,1065 +1,682 @@
-import React, { useState, useEffect } from "react";
+/**
+ * VisionScreen6 — Step 6: Simple Near Vision Test
+ *
+ * MOH Manual spec (Section 5, Step 6):
+ *  - Test BOTH EYES at the same time (no covering)
+ *  - Client holds E-chart at arm's length (~40 cm)
+ *  - Ask client to read row N8 (bottom row of E-chart — smallest E's)
+ *  - The N8 row uses the same Tumbling E chart — 5 letters, one at a time
+ *  - If client wears spectacles for ONLY near (reading), ask them to put on
+ *    the glasses for this test
+ *
+ *  Pass logic:
+ *    - Can correctly identify the N8 E directions → PASS → end visit (normal)
+ *    - Cannot → FAIL
+ *      - Age 6-39: REFER to health facility
+ *      - Age 40+: REFER + proceed to Step 7 (dispense reading glasses)
+ *
+ *  This component calls onComplete(passed: boolean) which is handled by
+ *  VisionScreen6Wrapper (navigation to NormalFindings / VHTReadingGlasses /
+ *  CreateReferralScreen).
+ *
+ *  The N8 row has 5 letters — client must identify ≥4 to pass (same
+ *  standard as Line 2 of the distance test, consistent with manual).
+ */
+
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
   Dimensions,
   Image,
-  Alert,
+  ScrollView,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import CHWHeader from "../../components/CHWHeader";
-import { apiService } from "../../services/api";
-import {
-  moderateScale,
-  fontSize as responsiveFontSize,
-} from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useScreening } from "../../context/ScreeningContext";
+import { apiService } from "../../services/api";
 
 const { width } = Dimensions.get("window");
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+type EDirection = "right" | "down" | "left" | "up";
+type Phase = "instructions" | "testing" | "result";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const N8_COUNT = 5;     // N8 row has 5 letters
+const N8_PASS = 4;      // need ≥4 correct to pass
+
+const DIRECTIONS: EDirection[] = ["right", "down", "left", "up"];
+
+function randomDirection(prev?: EDirection): EDirection {
+  let dir: EDirection;
+  do {
+    dir = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
+  } while (dir === prev);
+  return dir;
+}
+
+function generateSequence(count: number): EDirection[] {
+  const seq: EDirection[] = [];
+  for (let i = 0; i < count; i++) {
+    seq.push(randomDirection(seq[i - 1]));
+  }
+  return seq;
+}
+
+// ─── Block E ─────────────────────────────────────────────────────────────────
+function BlockE({ direction, size }: { direction: EDirection; size: number }) {
+  const t = Math.round(size / 5);
+  const deg =
+    direction === "right" ? "0deg"
+    : direction === "down" ? "90deg"
+    : direction === "left" ? "180deg"
+    : "270deg";
+
+  return (
+    <View style={{ transform: [{ rotate: deg }] }}>
+      <View style={{ width: size, height: size }}>
+        <View style={{ position: "absolute", left: 0, top: 0, width: t, height: size, backgroundColor: "#0A0A0A" }} />
+        <View style={{ position: "absolute", left: 0, top: 0, width: size, height: t, backgroundColor: "#0A0A0A" }} />
+        <View style={{ position: "absolute", left: 0, top: Math.round((size - t) / 2), width: size - t, height: t, backgroundColor: "#0A0A0A" }} />
+        <View style={{ position: "absolute", left: 0, bottom: 0, width: size, height: t, backgroundColor: "#0A0A0A" }} />
+      </View>
+    </View>
+  );
+}
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 interface VisionScreen6Props {
   clientAge: number;
   onComplete: (passed: boolean) => void;
   onRefer?: () => void;
 }
 
-export default function VisionScreen6({
-  clientAge,
-  onComplete,
-  onRefer,
-}: VisionScreen6Props) {
+// ─── Main Component ───────────────────────────────────────────────────────────
+export default function VisionScreen6({ clientAge, onComplete, onRefer }: VisionScreen6Props) {
   const navigation = useNavigation<any>();
-  const [canRead, setCanRead] = useState<boolean | null>(null);
-  const [showRecording, setShowRecording] = useState(false);
+  const { screeningData } = useScreening();
   const [userData, setUserData] = useState<any>(null);
 
-  useEffect(() => {
-    loadUserData();
+  const [phase, setPhase] = useState<Phase>("instructions");
+  const [sequence, setSequence] = useState<EDirection[]>([]);
+  const [letterIndex, setLetterIndex] = useState(0);
+  const [results, setResults] = useState<boolean[]>([]);
+  const [testPassed, setTestPassed] = useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    apiService.getCurrentUser().then((u) => { if (u) setUserData(u); }).catch(() => {});
   }, []);
 
-  const loadUserData = async () => {
-    try {
-      const user = await apiService.getCurrentUser();
-      if (user) setUserData(user);
-    } catch (error) {
-      console.error("Error loading user data:", error);
-    }
-  };
+  const beginTest = useCallback(() => {
+    setSequence(generateSequence(N8_COUNT));
+    setLetterIndex(0);
+    setResults([]);
+    setPhase("testing");
+  }, []);
 
-  const handleTestComplete = (passed: boolean) => {
-    console.log("VisionScreen6 - Test completed:", passed);
-    console.log("VisionScreen6 - Client age:", clientAge);
-    setCanRead(passed);
-    setShowRecording(true);
-    console.log("VisionScreen6 - Should show recording screen now");
-  };
+  const recordAnswer = useCallback(
+    (correct: boolean) => {
+      const newResults = [...results, correct];
+      const isLast = newResults.length === N8_COUNT;
 
-  if (showRecording) {
+      if (!isLast) {
+        setResults(newResults);
+        setLetterIndex((i) => i + 1);
+        return;
+      }
+
+      // All letters done
+      const correctCount = newResults.filter(Boolean).length;
+      const passed = correctCount >= N8_PASS;
+      setResults(newResults);
+      setTestPassed(passed);
+      setPhase("result");
+    },
+    [results]
+  );
+
+  const age = clientAge > 0 ? clientAge : (Number(screeningData?.clientAge) || 0);
+  const correctSoFar = results.filter(Boolean).length;
+  const wrongSoFar = results.filter((r) => !r).length;
+  const eSize = width * 0.28; // N8 is the smallest, so smaller than distance lines
+
+  // ── Instructions phase ───────────────────────────────────────────────────
+  if (phase === "instructions") {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <Header userData={userData} navigation={navigation} />
 
-        {/* Top Header with Logo and Menu - Fixed at top */}
-        <View style={styles.topHeader}>
-          <View style={styles.headerLeft}>
-            <View style={styles.logoBox}>
-              <Image
-                source={require("../../../assets/logo.png")}
-                style={styles.logo}
-                resizeMode="contain"
-              />
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <Text style={styles.stepTitle}>Step 6: Near Vision Test</Text>
+
+          <View style={styles.badge}>
+            <Ionicons name="document-text" size={16} color="#7C3AED" />
+            <Text style={[styles.badgeText, { color: "#7C3AED" }]}>E-Chart • N8 Row • Both Eyes • 40 cm</Text>
+          </View>
+
+          {/* Prerequisites */}
+          <View style={styles.prereqCard}>
+            <Text style={styles.prereqTitle}>✅ Prerequisites confirmed:</Text>
+            <View style={styles.prereqRow}>
+              <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+              <Text style={styles.prereqText}>Torch Light Test — Passed</Text>
             </View>
-          </View>
-
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>
-              {userData?.full_name || "Santé Initiative Uganda"}
-            </Text>
-            <Text style={styles.headerSubtitle}>
-              {userData?.district ? `VHT - ${userData.district} District` : ""}
-            </Text>
-          </View>
-
-          <View style={styles.headerRight}>
-            <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
-              <Ionicons name="menu" size={28} color="#1A4D8F" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.recordingContent}
-        >
-          {/* Result Card */}
-          <View
-            style={[
-              styles.resultCard,
-              canRead ? styles.passedCard : styles.failedCard,
-            ]}
-          >
-            <View style={styles.resultHeader}>
-              <Ionicons
-                name={canRead ? "checkmark-circle" : "alert-circle"}
-                size={32}
-                color={canRead ? "#10B981" : "#F59E0B"}
-              />
-              <View style={styles.resultTextContainer}>
-                <Text style={styles.resultTitle}>
-                  {canRead
-                    ? "✅ Near Vision Test - Passed"
-                    : "⚠️ Near Vision Test - Failed"}
-                </Text>
-                <Text style={styles.resultSubtitle}>
-                  {canRead
-                    ? "Client can read close up clearly"
-                    : "Client has difficulty reading - needs assessment"}
-                </Text>
-              </View>
+            <View style={styles.prereqRow}>
+              <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+              <Text style={styles.prereqText}>Distance Vision Test — Passed</Text>
             </View>
-          </View>
-
-          {/* Recording Card */}
-          <View style={styles.recordingCard}>
-            <Text style={styles.recordingTitle}>
-              📝 Record Result in VHT Register:
-            </Text>
-
-            <View style={styles.recordInfo}>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Test Name:</Text>
-                <Text style={styles.infoValue}>Near Vision (N8 at 40cm)</Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Both Eyes:</Text>
-                <Text style={styles.infoValue}>Tested Together</Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Client Age:</Text>
-                <Text style={styles.infoValue}>
-                  {clientAge > 0 ? `${clientAge} years` : "Not available"}
-                </Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Result:</Text>
-                <Text
-                  style={[
-                    styles.infoValue,
-                    canRead ? styles.passText : styles.failText,
-                  ]}
-                >
-                  {canRead ? "PASS" : "FAIL"}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.divider} />
-
-            {!canRead && clientAge >= 40 && (
-              <View style={styles.presbyopiaNote}>
-                <Ionicons name="information-circle" size={20} color="#2E7D32" />
-                <Text style={styles.presbyopiaText}>
-                  Age 40+ with near vision difficulty = Presbyopia (normal
-                  aging). Will proceed to reading glasses selection.
-                </Text>
-              </View>
-            )}
-
-            {!canRead && clientAge < 40 && clientAge > 0 && (
-              <View style={styles.referralNote}>
-                <Ionicons name="warning" size={20} color="#DC2626" />
-                <Text style={styles.referralText}>
-                  Near vision problem in person under 40 is abnormal. Will
-                  generate referral for eye examination.
-                </Text>
-              </View>
-            )}
-
-            {/* Navigation Button Inside Card */}
-            <TouchableOpacity
-              style={styles.nextButton}
-              onPress={() => {
-                console.log(
-                  "Button pressed - canRead:",
-                  canRead,
-                  "age:",
-                  clientAge,
-                );
-                onComplete(canRead === true);
-              }}
-            >
-              <Text style={styles.nextButtonText}>
-                {canRead === true
-                  ? "✅ Complete Screening"
-                  : clientAge >= 40
-                    ? "👓 Select Reading Glasses"
-                    : "🏥 Create Referral"}
+            <View style={styles.prereqRow}>
+              <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+              <Text style={styles.prereqText}>
+                Client age: {age > 0 ? `${age} years (≥6)` : "Recorded"}
               </Text>
+            </View>
+          </View>
+
+          {/* Instructions */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>📋 Test Instructions:</Text>
+
+            <StepRow n="1" text="Both eyes open — do NOT cover either eye" />
+            <StepRow n="2" text="Hand the E-chart to the client" />
+            <StepRow n="3" text={"Say: \"Hold this chart at arm's length (about 40 cm from your eyes)\""} />
+            <StepRow n="4" text={"Point to the N8 row (bottom row — smallest E's) and say: \"Tell me which way the legs of each E are pointing — Up, Down, Left, or Right\""} />
+            <StepRow n="5" text="Make sure there is good lighting in the room" />
+          </View>
+
+          {/* Spectacles note */}
+          <View style={styles.infoBox}>
+            <Ionicons name="information-circle" size={18} color="#7C3AED" />
+            <Text style={[styles.infoText, { color: "#5B21B6" }]}>
+              If client wears spectacles for ONLY seeing close (reading glasses),
+              ask them to put on their glasses for this test.
+            </Text>
+          </View>
+
+          {/* N8 row preview */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>📊 E-Chart — Near Vision (N8 row — bottom line):</Text>
+            <Text style={styles.cardSubtitle}>
+              These 5 small E's are shown one at a time during the test.
+              Client must get ≥{N8_PASS} correct to pass.
+            </Text>
+            <View style={styles.chartPreview}>
+              {(["right", "up", "left", "down", "right"] as EDirection[]).map((d, i) => (
+                <BlockE key={i} direction={d} size={32} />
+              ))}
+            </View>
+            <Text style={styles.n8Label}>N8 row (smallest — test this row)</Text>
+          </View>
+
+          {/* Pass criteria */}
+          <View style={styles.pathwayContainer}>
+            <View style={[styles.pathwayItem, { backgroundColor: "#F0FDF4", borderColor: "#10B981" }]}>
+              <Text style={styles.pathwayText}>
+                <Text style={styles.boldText}>✅ Pass (≥{N8_PASS} correct):</Text>
+                {" "}Record "Y" in register — End visit. No glasses needed.
+              </Text>
+            </View>
+            <View style={[styles.pathwayItem, { backgroundColor: "#EDE9FE", borderColor: "#7C3AED" }]}>
+              <Text style={styles.pathwayText}>
+                <Text style={styles.boldText}>⚠️ Fail + Age 40+:</Text>
+                {" "}Record "N" — Presbyopia (normal aging). Proceed to dispense reading glasses.
+              </Text>
+            </View>
+            <View style={[styles.pathwayItem, { backgroundColor: "#FEF2F2", borderColor: "#EF4444" }]}>
+              <Text style={styles.pathwayText}>
+                <Text style={styles.boldText}>❌ Fail + Age 6-39:</Text>
+                {" "}Record "N" and "Y" under Referred — REFER to health facility.
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity style={[styles.startBtn, { backgroundColor: "#7C3AED" }]} onPress={beginTest}>
+            <Text style={styles.startBtnText}>Start Near Vision Test →</Text>
+          </TouchableOpacity>
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Testing phase ────────────────────────────────────────────────────────
+  if (phase === "testing") {
+    const currentDirection = sequence[letterIndex];
+    const remainingLetters = N8_COUNT - results.length - 1;
+    const canStillPass = correctSoFar + remainingLetters + 1 >= N8_PASS;
+
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <Header userData={userData} navigation={navigation} />
+
+        <View style={styles.testingContainer}>
+          {/* Progress bar */}
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${(letterIndex / N8_COUNT) * 100}%`, backgroundColor: "#7C3AED" }]} />
+          </View>
+
+          {/* Status row */}
+          <View style={styles.statusRow}>
+            <View style={[styles.eyePill, { backgroundColor: "#7C3AED" }]}>
+              <Text style={styles.eyePillText}>BOTH EYES</Text>
+            </View>
+            <Text style={styles.lineTag}>N8 row (40 cm)</Text>
+            <Text style={styles.letterCount}>{letterIndex + 1} / {N8_COUNT}</Text>
+          </View>
+
+          {/* Score */}
+          <View style={styles.scoreRow}>
+            <View style={styles.scorePill}>
+              <Text style={[styles.scorePillText, { color: "#10B981" }]}>✓ {correctSoFar}</Text>
+            </View>
+            <View style={styles.scorePill}>
+              <Text style={[styles.scorePillText, { color: "#EF4444" }]}>✗ {wrongSoFar}</Text>
+            </View>
+            <Text style={styles.needText}>Need ≥{N8_PASS} correct</Text>
+          </View>
+
+          {/* The E */}
+          <View style={styles.eDisplay}>
+            <View style={styles.eWhiteBox}>
+              <BlockE direction={currentDirection} size={eSize} />
+            </View>
+            <Text style={styles.distanceNote}>
+              📏 Client holds chart at arm's length (~40 cm)
+            </Text>
+          </View>
+
+          <Text style={styles.askText}>
+            Ask: "Which way do the legs of the E point?"
+          </Text>
+
+          {/* Answer buttons */}
+          <View style={styles.answerGrid}>
+            <TouchableOpacity
+              style={[styles.answerBtn, { backgroundColor: "#10B981" }]}
+              onPress={() => recordAnswer(true)}
+              activeOpacity={0.75}
+            >
+              <Text style={styles.answerBtnIcon}>✓</Text>
+              <Text style={styles.answerBtnText}>CORRECT</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.answerBtn, { backgroundColor: "#EF4444" }]}
+              onPress={() => recordAnswer(false)}
+              activeOpacity={0.75}
+            >
+              <Text style={styles.answerBtnIcon}>✗</Text>
+              <Text style={styles.answerBtnText}>WRONG</Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
 
-        {/* Bottom Button - ALWAYS VISIBLE */}
-        <View style={styles.recordingBottomContainer}>
-          <TouchableOpacity
-            style={styles.recordingBottomButton}
-            onPress={() => {
-              console.log(
-                "VisionScreen6 Button pressed - canRead:",
-                canRead,
-                "clientAge:",
-                clientAge,
-              );
-              onComplete(canRead === true);
-            }}
-          >
-            <Text style={styles.recordingBottomButtonText}>
-              {canRead === true
-                ? "✅ Complete Screening"
-                : clientAge >= 40
-                  ? "👓 Select Reading Glasses"
-                  : "🏥 Create Referral"}
-            </Text>
+          <TouchableOpacity style={styles.cantSeeBtn} onPress={() => recordAnswer(false)} activeOpacity={0.75}>
+            <Ionicons name="eye-off" size={18} color="#6B7280" />
+            <Text style={styles.cantSeeBtnText}>Can't See / No Response</Text>
           </TouchableOpacity>
+
+          {!canStillPass && (
+            <View style={styles.earlyFailBanner}>
+              <Ionicons name="alert-circle" size={16} color="#DC2626" />
+              <Text style={styles.earlyFailText}>
+                Cannot reach {N8_PASS} correct — will fail near vision test
+              </Text>
+            </View>
+          )}
         </View>
       </SafeAreaView>
     );
   }
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+  // ── Result phase ─────────────────────────────────────────────────────────
+  if (phase === "result") {
+    const correctCount = results.filter(Boolean).length;
+    const passed = testPassed === true;
 
-      {/* Top Header with Logo and Menu - Fixed at top */}
-      <View style={styles.topHeader}>
-        <View style={styles.headerLeft}>
-          <View style={styles.logoBox}>
-            <Image
-              source={require("../../../assets/logo.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <Header userData={userData} navigation={navigation} />
+
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Result card */}
+          <View style={[styles.resultCard, passed ? styles.resultPass : styles.resultFail]}>
+            <Text style={styles.resultTitle}>
+              {passed ? "✅ Near Vision Test — PASSED" : "❌ Near Vision Test — FAILED"}
+            </Text>
+
+            {/* Letter-by-letter dots */}
+            <View style={styles.resultLetters}>
+              {results.map((ok, i) => (
+                <View key={i} style={[styles.resultDot, ok ? styles.dotCorrect : styles.dotWrong]}>
+                  <Text style={styles.resultDotText}>{ok ? "✓" : "✗"}</Text>
+                </View>
+              ))}
+            </View>
+
+            <Text style={[styles.resultScore, passed ? styles.passText : styles.failText]}>
+              {correctCount}/{N8_COUNT} correct (need ≥{N8_PASS})
+            </Text>
           </View>
-        </View>
 
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>
-            {userData?.fullName || "Santé Initiative Uganda"}
-          </Text>
-          <Text style={styles.headerSubtitle}>
-            {userData?.district ? `VHT - ${userData.district} District` : ""}
-          </Text>
-        </View>
+          {/* Recording instruction */}
+          <View style={styles.registerCard}>
+            <Text style={styles.registerTitle}>📝 Record in VHT Register:</Text>
+            <View style={styles.registerRow}>
+              <Text style={styles.registerField}>Near Vision Test — Pass?</Text>
+              <Text style={[styles.registerValue, passed ? styles.passText : styles.failText]}>
+                {passed ? '"Y"' : '"N"'}
+              </Text>
+            </View>
+            {!passed && (
+              <View style={styles.registerRow}>
+                <Text style={styles.registerField}>Referred?</Text>
+                <Text style={[styles.registerValue, { color: "#EF4444" }]}>"Y"</Text>
+              </View>
+            )}
+          </View>
 
-        <View style={styles.headerRight}>
-          <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
-            <Ionicons name="menu" size={28} color="#1A4D8F" />
+          {/* Pathway action card */}
+          <View style={[styles.actionCard, passed ? styles.actionPass : (age >= 40 ? styles.actionPurple : styles.actionFail)]}>
+            {passed ? (
+              <>
+                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Text style={styles.actionText}>
+                  Client passed near vision test.{"\n"}
+                  Conclude the visit. No glasses needed.{"\n"}
+                  Proceed to record normal findings.
+                </Text>
+              </>
+            ) : age >= 40 ? (
+              <>
+                <Ionicons name="glasses-outline" size={24} color="#7C3AED" />
+                <Text style={styles.actionText}>
+                  Client is {age} years old — near vision failure at 40+ is Presbyopia (normal aging).{"\n"}
+                  Proceed to Step 7: Dispense Reading Glasses.
+                </Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="alert-circle" size={24} color="#DC2626" />
+                <Text style={styles.actionText}>
+                  Near vision problem in client aged {age} (under 40) is abnormal.{"\n"}
+                  STOP and REFER to health facility for eye examination.
+                </Text>
+              </>
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={[styles.startBtn, {
+              backgroundColor: passed ? "#2E7D32" : (age >= 40 ? "#7C3AED" : "#DC2626"),
+            }]}
+            onPress={() => onComplete(passed)}
+          >
+            <Text style={styles.startBtnText}>
+              {passed
+                ? "✅ Complete Screening"
+                : age >= 40
+                ? "👓 Proceed to Reading Glasses"
+                : "🏥 Create Referral"}
+            </Text>
           </TouchableOpacity>
-        </View>
-      </View>
 
-      {/* Main Content Area */}
-      <View style={styles.contentContainer}>
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {/* Step Title Card */}
-          <View style={styles.titleCard}>
-            <View style={styles.titleContent}>
-              <Ionicons name="eye" size={28} color="#9333EA" />
-              <View style={styles.titleTextContainer}>
-                <Text style={styles.stepTitle}>Step 6: Near Vision Test</Text>
-                <Text style={styles.stepSubtitle}>
-                  Reading Test • Ages 6+ Only
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Prerequisites Card */}
-          <View style={styles.prerequisitesCard}>
-            <Text style={styles.prerequisitesTitle}>
-              ⚠️ Prerequisites Confirmed:
-            </Text>
-            <View style={styles.prerequisiteList}>
-              <View style={styles.prerequisiteItem}>
-                <Ionicons name="checkmark-circle" size={18} color="#10B981" />
-                <Text style={styles.prerequisiteText}>
-                  Torch Light Test - Passed
-                </Text>
-              </View>
-              <View style={styles.prerequisiteItem}>
-                <Ionicons name="checkmark-circle" size={18} color="#10B981" />
-                <Text style={styles.prerequisiteText}>
-                  Distance Vision Test - Passed
-                </Text>
-              </View>
-              <View style={styles.prerequisiteItem}>
-                <Ionicons name="checkmark-circle" size={18} color="#10B981" />
-                <Text style={styles.prerequisiteText}>
-                  Client Age - {clientAge} years (≥6)
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Test Instructions Card */}
-          <View style={styles.instructionsCard}>
-            <Text style={styles.instructionsTitle}>📖 Test Instructions:</Text>
-
-            <View style={styles.instructionsList}>
-              <View style={styles.instructionItem}>
-                <View style={styles.instructionNumber}>
-                  <Text style={styles.instructionNumberText}>1</Text>
-                </View>
-                <Text style={styles.instructionText}>
-                  Test <Text style={styles.boldText}>both eyes together</Text>{" "}
-                  (no covering)
-                </Text>
-              </View>
-
-              <View style={styles.instructionItem}>
-                <View style={styles.instructionNumber}>
-                  <Text style={styles.instructionNumberText}>2</Text>
-                </View>
-                <Text style={styles.instructionText}>
-                  Hold chart at <Text style={styles.boldText}>40 cm</Text>{" "}
-                  (about arm's length)
-                </Text>
-              </View>
-
-              <View style={styles.instructionItem}>
-                <View style={styles.instructionNumber}>
-                  <Text style={styles.instructionNumberText}>3</Text>
-                </View>
-                <Text style={styles.instructionText}>
-                  Ask client to read <Text style={styles.boldText}>N8 row</Text>{" "}
-                  (smallest line)
-                </Text>
-              </View>
-
-              <View style={styles.instructionItem}>
-                <View style={styles.instructionNumber}>
-                  <Text style={styles.instructionNumberText}>4</Text>
-                </View>
-                <Text style={styles.instructionText}>
-                  Make sure there is{" "}
-                  <Text style={styles.boldText}>good lighting</Text>
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* N8 Reading Chart */}
-          <View style={styles.chartCard}>
-            <Text style={styles.chartTitle}>Near Vision Chart (40cm)</Text>
-
-            {/* N48 - Largest sentence row */}
-            <View style={styles.chartRow}>
-              <Text style={styles.chartRowLabel}>N48 (Largest)</Text>
-              <Text style={styles.chartRowTextLarge}>The quick brown</Text>
-            </View>
-
-            {/* N24 - Middle sentence row */}
-            <View style={styles.chartRow}>
-              <Text style={styles.chartRowLabel}>N24</Text>
-              <Text style={styles.chartRowTextMedium}>The quick brown fox</Text>
-            </View>
-
-            {/* N12 - Smallest sentence row */}
-            <View style={styles.chartRow}>
-              <Text style={styles.chartRowLabel}>N12</Text>
-              <Text style={styles.chartRowTextSmall}>
-                The quick brown fox jumps
-              </Text>
-            </View>
-
-            {/* N8 - Target sentence row */}
-            <View style={styles.targetRow}>
-              <Text style={styles.targetRowLabel}>⭐ N8 ROW (TEST THIS)</Text>
-              <Text style={styles.targetRowText}>
-                The quick brown fox jumps over the lazy dog
-              </Text>
-            </View>
-          </View>
-
-          {/* Client Instructions */}
-          <View style={styles.clientInstructionsCard}>
-            <Text style={styles.clientInstructionsTitle}>
-              📝 Ask the Client:
-            </Text>
-            <Text style={styles.clientInstructionsText}>
-              "Please read the purple highlighted line (N8 row) out loud."
-            </Text>
-          </View>
-
-          {/* Test Result Buttons */}
-          <View style={styles.testButtonsCard}>
-            <Text style={styles.testButtonsTitle}>
-              Can client read N8 row clearly?
-            </Text>
-            <View style={styles.testButtonsContainer}>
-              <TouchableOpacity
-                style={styles.passButton}
-                onPress={() => handleTestComplete(true)}
-              >
-                <Text style={styles.passButtonIcon}>✓</Text>
-                <Text style={styles.passButtonText}>Yes - Pass</Text>
-                <Text style={styles.passButtonSubtext}>Can read clearly</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.failButton}
-                onPress={() => handleTestComplete(false)}
-              >
-                <Text style={styles.failButtonIcon}>✗</Text>
-                <Text style={styles.failButtonText}>No - Fail</Text>
-                <Text style={styles.failButtonSubtext}>Cannot read</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Pathway Information */}
-          <View style={styles.pathwayContainer}>
-            <View style={styles.pathwayItemGreen}>
-              <Text style={styles.pathwayText}>
-                <Text style={styles.boldText}>If Pass:</Text> End visit - No
-                glasses needed
-              </Text>
-            </View>
-
-            <View style={styles.pathwayItemBlue}>
-              <Text style={styles.pathwayText}>
-                <Text style={styles.boldText}>If Fail & Age 40+:</Text>{" "}
-                Presbyopia - Proceed to reading glasses selection
-              </Text>
-            </View>
-
-            <View style={styles.pathwayItemRed}>
-              <Text style={styles.pathwayText}>
-                <Text style={styles.boldText}>If Fail & Age 6-39:</Text>{" "}
-                Abnormal - Refer to health facility
-              </Text>
-            </View>
-          </View>
-
-          {/* Spacer for bottom button */}
-          <View style={styles.spacer} />
+          <View style={{ height: 40 }} />
         </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  return null;
+}
+
+// ─── Shared sub-components ────────────────────────────────────────────────────
+function Header({ userData, navigation }: any) {
+  return (
+    <View style={styles.header}>
+      <View style={styles.logoBox}>
+        <Image
+          source={require("../../../assets/logo.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
       </View>
-    </SafeAreaView>
+      <View style={styles.headerCenter}>
+        <Text style={styles.headerTitle}>
+          {userData?.fullName || userData?.full_name || "Santé Initiative Uganda"}
+        </Text>
+        <Text style={styles.headerSubtitle}>
+          {userData?.district ? `VHT — ${userData.district} District` : ""}
+        </Text>
+      </View>
+      <TouchableOpacity onPress={() => navigation.navigate("Settings")} style={styles.menuBtn}>
+        <Ionicons name="menu" size={28} color="#1A4D8F" />
+      </TouchableOpacity>
+    </View>
   );
 }
 
+function StepRow({ n, text }: { n: string; text: string }) {
+  return (
+    <View style={styles.stepRow}>
+      <View style={styles.stepNum}>
+        <Text style={styles.stepNumText}>{n}</Text>
+      </View>
+      <Text style={styles.stepText}>{text}</Text>
+    </View>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  contentContainer: {
-    flex: 1,
-  },
-  topHeader: {
+  container: { flex: 1, backgroundColor: "#F9FAFB" },
+
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingTop: 44,
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: "#E5E7EB",
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
-  headerLeft: {
-    flex: 1,
-  },
-  logoBox: {
-    alignSelf: "center",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  logo: {
-    width: 80,
-    height: 80,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A1A1A",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
-  },
-  headerRight: {
-    flex: 1,
-    alignItems: "flex-end",
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 3,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#2E7D32",
-    borderRadius: 3,
-  },
-  scrollView: {
-    flex: 1,
-    marginTop: 150,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 120,
-  },
-  // Step Title Card
-  titleCard: {
-    backgroundColor: "#FAF5FF", // Purple-50 equivalent
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: "#9333EA", // Purple-600
-  },
-  titleContent: {
+  logoBox: { width: 44, height: 44, justifyContent: "center", alignItems: "center" },
+  logo: { width: 40, height: 40 },
+  headerCenter: { flex: 1, alignItems: "center" },
+  headerTitle: { fontSize: 15, fontWeight: "600", color: "#111827" },
+  headerSubtitle: { fontSize: 11, color: "#6B7280", marginTop: 1 },
+  menuBtn: { width: 44, alignItems: "flex-end" },
+
+  scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
+
+  stepTitle: { fontSize: 22, fontWeight: "700", color: "#111827", marginBottom: 8 },
+
+  badge: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#F5F3FF",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+    marginBottom: 16,
   },
-  titleTextContainer: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  stepTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  stepSubtitle: {
-    fontSize: 14,
-    color: "#374151",
-  },
-  // Prerequisites Card
-  prerequisitesCard: {
-    backgroundColor: "#FEF3C7", // Amber-50
+  badgeText: { fontSize: 13, fontWeight: "600", marginLeft: 6 },
+
+  prereqCard: {
+    backgroundColor: "#F0FDF4",
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: "#F59E0B", // Amber-500
-  },
-  prerequisitesTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#92400E", // Amber-900
-    marginBottom: 12,
-  },
-  prerequisiteList: {
-    gap: 8,
-  },
-  prerequisiteItem: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  prerequisiteText: {
-    fontSize: 14,
-    color: "#92400E",
-    marginLeft: 8,
-  },
-  // Instructions Card
-  instructionsCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: "#C084FC", // Purple-400
-  },
-  instructionsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#9333EA", // Purple-600
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  instructionsList: {
-    gap: 16,
-  },
-  instructionItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
-  instructionNumber: {
-    width: 28,
-    height: 28,
-    backgroundColor: "#9333EA", // Purple-600
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  instructionNumberText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
-  instructionText: {
-    fontSize: 16,
-    color: "#374151",
-    flex: 1,
-    lineHeight: 24,
-  },
-  boldText: {
-    fontWeight: "700",
-    color: "#9333EA", // Purple-600
-  },
-  // Chart Card
-  chartCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: "#1F2937",
-  },
-  chartTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6B7280",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  chartRow: {
-    marginBottom: 16,
-  },
-  chartRowLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginBottom: 4,
-  },
-  chartRowTextLarge: {
-    // N48 - biggest and bold
-    fontSize: 26,
-    fontWeight: "700",
-    color: "#111827",
-    lineHeight: 32,
-  },
-  chartRowTextMedium: {
-    // N24 - middle size
-    fontSize: 18,
-    fontWeight: "500",
-    color: "#111827",
-    lineHeight: 28,
-  },
-  chartRowTextSmall: {
-    // N12 - smallest and lighter
-    fontSize: 14,
-    fontWeight: "400",
-    color: "#6B7280",
-    lineHeight: 20,
-  },
-  targetRow: {
-    backgroundColor: "#FAF5FF", // Purple-50
-    borderRadius: 8,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: "#C084FC", // Purple-400
-  },
-  targetRowLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#9333EA", // Purple-600
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  targetRowText: {
-    // N8 should be the smallest line on the chart, but still comfortably readable
-    fontSize: 13,
-    fontWeight: "400",
-    color: "#111827",
-    lineHeight: 20,
-    textAlign: "center",
-  },
-  // Client Instructions
-  clientInstructionsCard: {
-    backgroundColor: "#E0F2FE", // Blue-50
-    borderRadius: 8,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#BAE6FD", // Blue-200
+    borderColor: "#A7F3D0",
   },
-  clientInstructionsTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1E40AF", // Blue-800
-    marginBottom: 8,
-  },
-  clientInstructionsText: {
-    fontSize: 14,
-    fontStyle: "italic",
-    color: "#1E40AF", // Blue-800
-  },
-  // Test Buttons
-  testButtonsCard: {
+  prereqTitle: { fontSize: 14, fontWeight: "700", color: "#065F46", marginBottom: 8 },
+  prereqRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
+  prereqText: { fontSize: 13, color: "#065F46" },
+
+  card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    padding: 20,
+    padding: 18,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: "#E5E7EB",
-  },
-  testButtonsTitle: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#111827",
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  testButtonsContainer: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  passButton: {
-    flex: 1,
-    paddingVertical: 20,
-    borderRadius: 8,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#10B981", // Green-500
-    backgroundColor: "#F0FDF4", // Green-50
-  },
-  passButtonIcon: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#10B981", // Green-600
-    marginBottom: 4,
-  },
-  passButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#10B981", // Green-600
-  },
-  passButtonSubtext: {
-    fontSize: 12,
-    fontWeight: "400",
-    color: "#10B981", // Green-600
-    marginTop: 2,
-  },
-  failButton: {
-    flex: 1,
-    paddingVertical: 20,
-    borderRadius: 8,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#DC2626", // Red-600
-    backgroundColor: "#FEF2F2", // Red-50
-  },
-  failButtonIcon: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#DC2626", // Red-600
-    marginBottom: 4,
-  },
-  failButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#DC2626", // Red-600
-  },
-  failButtonSubtext: {
-    fontSize: 12,
-    fontWeight: "400",
-    color: "#DC2626", // Red-600
-    marginTop: 2,
-  },
-  // Pathway Information
-  pathwayContainer: {
-    gap: 8,
-    marginBottom: 24,
-  },
-  pathwayItemGreen: {
-    backgroundColor: "#F0FDF4", // Green-50
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#BBF7D0", // Green-200
-  },
-  pathwayItemBlue: {
-    backgroundColor: "#E0F2FE", // Blue-50
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#BAE6FD", // Blue-200
-  },
-  pathwayItemRed: {
-    backgroundColor: "#FEF2F2", // Red-50
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#FECACA", // Red-200
-  },
-  pathwayText: {
-    fontSize: 12,
-    color: "#111827",
-  },
-  spacer: {
-    height: 120,
-  },
-  // Bottom Container
-  bottomContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    elevation: 1,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
   },
-  bottomButton: {
-    backgroundColor: "#9333EA", // Purple-600
-    paddingVertical: 16,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  bottomButtonDisabled: {
-    backgroundColor: "#9CA3AF",
-  },
-  bottomButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  // Recording Screen Styles
-  recordingContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 16,
-  },
-  resultCard: {
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-  },
-  passedCard: {
-    backgroundColor: "#F0FDF4", // Green-50
-    borderWidth: 2,
-    borderColor: "#10B981", // Green-500
-  },
-  failedCard: {
-    backgroundColor: "#FEF3C7", // Amber-100
-    borderWidth: 2,
-    borderColor: "#F59E0B", // Amber-500
-  },
-  resultHeader: {
+  cardTitle: { fontSize: 15, fontWeight: "700", color: "#111827", marginBottom: 12 },
+  cardSubtitle: { fontSize: 13, color: "#6B7280", marginBottom: 12 },
+
+  chartPreview: {
     flexDirection: "row",
-    alignItems: "center",
-  },
-  resultTextContainer: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  resultTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: "#374151",
-  },
-  recordingCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  recordingTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  recordInfo: {
-    gap: 12,
-    marginBottom: 20,
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    padding: 12,
+    justifyContent: "space-around",
+    paddingVertical: 12,
+    backgroundColor: "#FAFAFA",
     borderRadius: 8,
+    marginBottom: 6,
   },
-  infoLabel: {
-    fontSize: 14,
-    color: "#6B7280",
+  n8Label: { textAlign: "center", fontSize: 12, color: "#7C3AED", fontWeight: "600" },
+
+  stepRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 12 },
+  stepNum: {
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: "#7C3AED",
+    justifyContent: "center", alignItems: "center",
+    marginRight: 12, marginTop: 1,
   },
-  infoValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#E5E7EB",
-    marginVertical: 20,
-  },
-  recordQuestion: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 16,
-  },
-  recordButtons: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-  recordButton: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#D1D5DB",
-  },
-  recordButtonSelected: {
-    borderColor: "#10B981", // Green-500
-    backgroundColor: "#F0FDF4", // Green-50
-  },
-  recordButtonSelectedRed: {
-    borderColor: "#DC2626", // Red-600
-    backgroundColor: "#FEF2F2", // Red-50
-  },
-  recordButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#374151",
-  },
-  recordButtonTextSelected: {
-    color: "#10B981", // Green-600
-  },
-  recordButtonTextSelectedRed: {
-    color: "#DC2626", // Red-600
-  },
-  passText: {
-    color: "#10B981",
-    fontWeight: "700",
-  },
-  failText: {
-    color: "#DC2626",
-    fontWeight: "700",
-  },
-  presbyopiaNote: {
+  stepNumText: { fontSize: 13, fontWeight: "700", color: "#FFFFFF" },
+  stepText: { flex: 1, fontSize: 14, color: "#374151", lineHeight: 20 },
+
+  infoBox: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: "#E8F5E9",
+    backgroundColor: "#F5F3FF",
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 10,
+    marginBottom: 16,
     gap: 8,
-    marginTop: 12,
   },
-  presbyopiaText: {
-    flex: 1,
-    fontSize: 12,
-    color: "#2E7D32",
-    lineHeight: 18,
+  infoText: { flex: 1, fontSize: 13, lineHeight: 18 },
+
+  pathwayContainer: { marginBottom: 20, gap: 8 },
+  pathwayItem: {
+    padding: 12, borderRadius: 10, borderWidth: 1,
   },
-  referralNote: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: "#FEE2E2",
-    padding: 12,
-    borderRadius: 8,
-    gap: 8,
-    marginTop: 12,
+  pathwayText: { fontSize: 13, color: "#374151", lineHeight: 18 },
+  boldText: { fontWeight: "700" },
+
+  startBtn: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
   },
-  referralText: {
-    flex: 1,
-    fontSize: 12,
-    color: "#DC2626",
-    lineHeight: 18,
-  },
-  referralAlert: {
-    borderRadius: 8,
-    padding: 16,
-    borderWidth: 2,
-  },
-  referralTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  recordingBottomContainer: {
+  startBtnText: { fontSize: 17, fontWeight: "700", color: "#FFFFFF" },
+
+  // ── Testing ──────────────────────────────────────────────────────────────
+  testingContainer: { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
+  progressBar: { height: 6, backgroundColor: "#E5E7EB", borderRadius: 3, overflow: "hidden", marginBottom: 14 },
+  progressFill: { height: "100%", borderRadius: 3 },
+  statusRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
+  eyePill: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 14 },
+  eyePillText: { fontSize: 12, fontWeight: "700", color: "#FFFFFF" },
+  lineTag: { fontSize: 14, fontWeight: "600", color: "#374151" },
+  letterCount: { fontSize: 14, color: "#6B7280", fontWeight: "500" },
+  scoreRow: { flexDirection: "row", alignItems: "center", marginBottom: 14, gap: 8 },
+  scorePill: { backgroundColor: "#F3F4F6", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  scorePillText: { fontSize: 14, fontWeight: "700" },
+  needText: { fontSize: 12, color: "#6B7280", marginLeft: 4 },
+
+  eDisplay: { alignItems: "center", justifyContent: "center", flex: 1, minHeight: 180 },
+  eWhiteBox: {
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    borderRadius: 16, padding: 32,
+    alignItems: "center", justifyContent: "center",
+    elevation: 3, shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08, shadowRadius: 8,
+    borderWidth: 2, borderColor: "#E5E7EB",
   },
-  recordingBottomButton: {
-    backgroundColor: "#2E7D32",
-    paddingVertical: 16,
-    borderRadius: 8,
-    alignItems: "center",
+  distanceNote: {
+    marginTop: 12, fontSize: 13, color: "#7C3AED",
+    fontWeight: "500", textAlign: "center",
   },
-  recordingBottomButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
+
+  askText: {
+    textAlign: "center", fontSize: 15,
+    color: "#374151", fontStyle: "italic",
+    marginVertical: 14, fontWeight: "500",
   },
-  nextButton: {
-    backgroundColor: "#10B981",
-    paddingVertical: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 24,
+
+  answerGrid: { flexDirection: "row", gap: 12, marginBottom: 12 },
+  answerBtn: { flex: 1, paddingVertical: 18, borderRadius: 14, alignItems: "center" },
+  answerBtnIcon: { fontSize: 28, color: "#FFFFFF", fontWeight: "700" },
+  answerBtnText: { fontSize: 15, fontWeight: "700", color: "#FFFFFF", marginTop: 4 },
+
+  cantSeeBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    paddingVertical: 12, backgroundColor: "#F3F4F6",
+    borderRadius: 10, gap: 8, marginBottom: 12,
   },
-  nextButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
+  cantSeeBtnText: { fontSize: 14, color: "#6B7280", fontWeight: "500" },
+
+  earlyFailBanner: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "#FEF2F2", padding: 10, borderRadius: 8,
+    gap: 6, borderWidth: 1, borderColor: "#FECACA",
   },
+  earlyFailText: { flex: 1, fontSize: 13, color: "#DC2626" },
+
+  // ── Result ───────────────────────────────────────────────────────────────
+  resultCard: { borderRadius: 14, padding: 20, marginBottom: 16, borderWidth: 2 },
+  resultPass: { backgroundColor: "#F0FDF4", borderColor: "#10B981" },
+  resultFail: { backgroundColor: "#FEF2F2", borderColor: "#EF4444" },
+  resultTitle: { fontSize: 18, fontWeight: "700", color: "#111827", marginBottom: 14 },
+  resultLetters: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  resultDot: { width: 32, height: 32, borderRadius: 16, justifyContent: "center", alignItems: "center" },
+  dotCorrect: { backgroundColor: "#10B981" },
+  dotWrong: { backgroundColor: "#EF4444" },
+  resultDotText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
+  resultScore: { fontSize: 15, fontWeight: "600" },
+  passText: { color: "#10B981" },
+  failText: { color: "#EF4444" },
+
+  registerCard: {
+    backgroundColor: "#FFFFFF", borderRadius: 12, padding: 16,
+    marginBottom: 14, borderWidth: 1, borderColor: "#E5E7EB",
+  },
+  registerTitle: { fontSize: 14, fontWeight: "700", color: "#111827", marginBottom: 10 },
+  registerRow: {
+    flexDirection: "row", justifyContent: "space-between",
+    alignItems: "center", marginBottom: 6,
+    paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: "#F3F4F6",
+  },
+  registerField: { fontSize: 13, color: "#6B7280" },
+  registerValue: { fontSize: 14, fontWeight: "700" },
+
+  actionCard: {
+    flexDirection: "row", alignItems: "flex-start",
+    borderRadius: 12, padding: 16, marginBottom: 20,
+    gap: 12, borderWidth: 1,
+  },
+  actionPass: { backgroundColor: "#F0FDF4", borderColor: "#A7F3D0" },
+  actionPurple: { backgroundColor: "#F5F3FF", borderColor: "#C4B5FD" },
+  actionFail: { backgroundColor: "#FEF2F2", borderColor: "#FECACA" },
+  actionText: { flex: 1, fontSize: 14, color: "#374151", lineHeight: 20 },
 });
