@@ -201,6 +201,18 @@ export default function ScreeningComplete() {
           </View>
         )}
 
+        {/* Referral reminder — shown when REFER_EDUCATE was triggered in key questions */}
+        {screeningData.needsReferral && !glassesDispensed && screeningData.referralReason && (
+          <View style={styles.referralReminderCard}>
+            <Ionicons name="alert-circle" size={24} color="#D97706" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.referralReminderTitle}>⚠️ Referral Recommended</Text>
+              <Text style={styles.referralReminderText}>{screeningData.referralReason}</Text>
+              <Text style={styles.referralReminderText}>Complete a VHT Referral Form before the client leaves.</Text>
+            </View>
+          </View>
+        )}
+
         {/* Buttons */}
         <View style={styles.buttonContainer}>
           {/* Register & Save Button */}
@@ -295,6 +307,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#4B5563",
     marginTop: 4,
+  },
+  referralReminderCard: {
+    backgroundColor: "#FEF3C7",
+    borderLeftWidth: 4,
+    borderLeftColor: "#D97706",
+    borderRadius: 10,
+    padding: 14,
+    flexDirection: "row",
+    gap: 10,
+    width: "100%",
+    marginBottom: 16,
+  },
+  referralReminderTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#92400E",
+    marginBottom: 4,
+  },
+  referralReminderText: {
+    fontSize: 13,
+    color: "#78350F",
+    lineHeight: 18,
   },
   buttonContainer: {
     width: "100%",

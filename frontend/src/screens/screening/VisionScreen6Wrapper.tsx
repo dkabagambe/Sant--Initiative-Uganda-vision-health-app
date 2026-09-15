@@ -3,7 +3,6 @@ import { Alert, SafeAreaView, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import VisionScreen6 from "./VisionScreen6";
-import ScreeningComplete from "./ScreeningComplete";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
 
@@ -12,68 +11,26 @@ export default function VisionScreen6Wrapper() {
   const { screeningData, updateScreeningData, resetScreeningData } =
     useScreening();
   const [submitting, setSubmitting] = useState(false);
-  const [showComplete, setShowComplete] = useState(false);
-  const [screeningId, setScreeningId] = useState<string | null>(null);
-  const [completedData, setCompletedData] = useState<any>(null);
 
-  // Debug: Log screening data
-  React.useEffect(() => {
-    console.log("VisionScreen6Wrapper - Screening Data:", screeningData);
-    console.log("Client Age:", screeningData.clientAge);
-  }, [screeningData]);
-
-  // Clear completed data when screening context is reset
+  // Clear submitting state when screening context is reset
   React.useEffect(() => {
     if (Object.keys(screeningData).length === 0) {
-      setCompletedData(null);
-      setScreeningId(null);
-      setShowComplete(false);
       setSubmitting(false);
     }
   }, [screeningData]);
 
-  // Torch test and distance vision referrals are now handled directly
+  // Torch test and distance vision referrals are handled directly
   // in VisionScreen4 and VisionScreen5 by navigating to CreateReferralScreen.
 
   const saveOffline = async (data: any) => {
     try {
-      const offlineQueue = await AsyncStorage.getItem("offlineScreenings");
-      const queue = offlineQueue ? JSON.parse(offlineQueue) : [];
-      queue.push({
-        ...data,
-        offlineId: Date.now().toString(),
-        timestamp: new Date().toISOString(),
-      });
-      await AsyncStorage.setItem("offlineScreenings", JSON.stringify(queue));
-      return true;
-    } catch (error) {
-      console.error("Failed to save offline:", error);
-      return false;
-    }
-  };
-
-  const createReferral = async (screeningId: string, referralData: any) => {
-    try {
-      // Get nearest facility based on client's district
-      const facilitiesResponse = await apiService.getHealthFacilities(
-        screeningData.district,
+      const queue = JSON.parse(
+        (await AsyncStorage.getItem("offlineScreenings")) || "[]"
       );
-      const facility = facilitiesResponse.data?.[0]; // Get first/nearest facility
-
-      const referral = await apiService.createReferral({
-        screeningId,
-        clientName: screeningData.clientName,
-        reason: referralData.referralReason,
-        urgency: referralData.referralUrgency || "normal",
-        facilityName: facility?.name || "Nearest Health Facility",
-        facilityLocation: facility?.location || screeningData.district,
-        notes: `Referred from ${referralData.referralStep || "screening"}`,
-      });
-
-      return referral;
-    } catch (error) {
-      console.error("Failed to create referral:", error);
-      return null;
+      queue.push({ ...data, offlineId: Date.now().toString(), timestamp: new Date().toISOString() });
+      await AsyncStorage.setItem("offlineScreenings", JSON.stringify(queue));
+    } catch (e) {
+      console.error("Offline save failed:", e);
     }
   };
 
@@ -146,17 +103,12 @@ export default function VisionScreen6Wrapper() {
         notes: `Referred from Step 6 — Near Vision Test.\nClient age: ${clientAge} (under 40).\nNear vision failed — abnormal for this age group.`,
       };
 
-      // Navigator depth: ScreeningStack → CHWTabs → AppTabs → Root Stack
-      const root = navigation.getParent()?.getParent()?.getParent();
+      // From ScreeningStack: getParent() = CHWTabs, getParent().getParent() = Root Stack
+      const root = navigation.getParent()?.getParent();
       if (root) {
         root.navigate("CreateReferralScreen", referralParams);
       } else {
-        const parent = navigation.getParent()?.getParent();
-        if (parent) {
-          parent.navigate("CreateReferralScreen", referralParams);
-        } else {
-          navigation.navigate("CreateReferralScreen" as any, referralParams);
-        }
+        navigation.navigate("CreateReferralScreen" as any, referralParams);
       }
       return;
     } catch (error) {
@@ -175,106 +127,9 @@ export default function VisionScreen6Wrapper() {
   };
 
   const handleRefer = async () => {
-    setSubmitting(true);
-
-    try {
-      const completeData = {
-        ...screeningData,
-        needsReferral: true,
-        referralReason:
-          screeningData.referralReason ||
-          "Failed vision tests - requires specialist examination",
-        referralUrgency: screeningData.referralUrgency || "normal",
-      };
-
-      try {
-        const result = await apiService.createScreening(completeData);
-
-        if (result.success) {
-          // Create referral with hospital assignment
-          const referralResult = await createReferral(
-            result.data.id,
-            completeData,
-          );
-
-          Alert.alert(
-            "Referral Created",
-            referralResult
-              ? `Client referred to ${referralResult.data?.facilityName || "health facility"}`
-              : "Client has been referred for specialist examination.",
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  resetScreeningData();
-                  navigation.reset({
-                    index: 0,
-                    routes: [{ name: "AppTabs" }],
-                  });
-                },
-              },
-            ],
-          );
-        } else {
-          throw new Error("API returned error");
-        }
-      } catch (apiError) {
-        // Save offline if API fails
-        const saved = await saveOffline(completeData);
-        if (saved) {
-          Alert.alert(
-            "📱 Saved Offline",
-            "Referral saved locally and will sync when online.",
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  resetScreeningData();
-                  navigation.reset({
-                    index: 0,
-                    routes: [{ name: "AppTabs" }],
-                  });
-                },
-              },
-            ],
-          );
-        } else {
-          Alert.alert("Error", "Failed to create referral.");
-        }
-      }
-    } catch (error) {
-      Alert.alert("Error", "An unexpected error occurred.");
-    } finally {
-      setSubmitting(false);
-    }
+    // Legacy path — referrals are now handled directly in handleComplete
+    // keeping this as a no-op prop to satisfy VisionScreen6's onRefer prop
   };
-
-  const handleRegisterAndSave = () => {
-    // Navigate to registration screen instead of showing it
-    navigation.navigate("ClientRegistration", {
-      clientData: completedData,
-      screeningId: screeningId,
-    });
-  };
-
-  const handleReturnHome = () => {
-    resetScreeningData();
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "AppTabs", params: { role: "CHW" } }],
-    });
-  };
-
-  // Navigate to completion screen when showComplete is true
-  React.useEffect(() => {
-    if (showComplete && completedData) {
-      navigation.navigate("ScreeningComplete", {
-        glassesDispensed: completedData?.needsGlasses || false,
-        glassesPower: completedData?.recommendedPower || "",
-      });
-      setShowComplete(false);
-    }
-  }, [showComplete, completedData]);
 
   return (
     <VisionScreen6

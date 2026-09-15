@@ -18,6 +18,7 @@ export default function VHTScreeningStep4() {
   const { screeningData, updateScreeningData } = useScreening();
   const [referralReasons, setReferralReasons] = useState<string[]>([]);
   const [shouldRefer, setShouldRefer] = useState(false);
+  const [hasDangerSign, setHasDangerSign] = useState(false); // STOP-and-refer vs educate-and-refer
   const [questionsAnswered, setQuestionsAnswered] = useState<Set<string>>(
     new Set()
   );
@@ -53,16 +54,23 @@ export default function VHTScreeningStep4() {
       ? [
           {
             id: "severe-pain",
-            question: "Does client have severe eye pain, discomfort or itching?",
+            question: "Does client have severe eye pain or sudden loss of vision?",
             yesAction: "REFER",
-            yesMessage: "Refer to health facility immediately",
+            yesMessage: "Danger sign — refer to health facility immediately",
             section: "Red Flag Assessment",
           },
           {
             id: "vision-loss",
-            question: "Has client experienced sudden loss of vision or severe headache lasting several hours?",
+            question: "Does client have a severe headache lasting several hours with eye problems?",
             yesAction: "REFER",
-            yesMessage: "Refer to health facility immediately",
+            yesMessage: "Danger sign — refer to health facility immediately",
+            section: "Red Flag Assessment",
+          },
+          {
+            id: "eye-symptoms",
+            question: "Does client have eye discharge, redness, or itching?",
+            yesAction: "REFER_EDUCATE",
+            yesMessage: "Note symptoms — proceed with screening, refer after if symptoms persist",
             section: "Red Flag Assessment",
           },
           {
@@ -91,27 +99,31 @@ export default function VHTScreeningStep4() {
     const question = questions.find((q) => q.id === questionId);
     if (!question) return;
 
+    // Allow re-answering — update existing answer
     const newAnswered = new Set(questionsAnswered);
     newAnswered.add(questionId);
     setQuestionsAnswered(newAnswered);
     const newAnswers = { ...answers, [questionId]: answer };
     setAnswers(newAnswers);
 
-    // Rebuild all referral reasons from ALL answers so far
+    // Rebuild referral reasons from ALL answers so far
     const newReasons: string[] = [];
+    let dangerSignFound = false;
     questions.forEach((q) => {
-      const a = q.id === questionId ? answer : newAnswers[q.id];
+      const a = newAnswers[q.id];
       if (!a) return;
       if (a === "yes" && (q.yesAction === "REFER" || q.yesAction === "REFER_EDUCATE")) {
         newReasons.push(q.yesMessage);
+        if (q.yesAction === "REFER") dangerSignFound = true;
       } else if (a === "no" && q.noAction === "REFER") {
         newReasons.push(q.noMessage!);
+        dangerSignFound = true;
       }
     });
 
-    const referralTriggered = newReasons.length > 0;
     setReferralReasons(newReasons);
-    setShouldRefer(referralTriggered);
+    setShouldRefer(newReasons.length > 0);
+    setHasDangerSign(dangerSignFound);
 
     updateScreeningData({
       hasEyeConcerns: newAnswers["eye-concerns"] === "yes",
@@ -125,57 +137,38 @@ export default function VHTScreeningStep4() {
       familyHistoryBlindness: newAnswers["blindness-history"] === "yes",
       referralReasonsFromQuestions: newReasons,
     });
-
-    // Only prompt to navigate on the specific answer that first triggers referral
-    if (
-      referralTriggered &&
-      (
-        (answer === "yes" && (question.yesAction === "REFER" || question.yesAction === "REFER_EDUCATE")) ||
-        (answer === "no" && question.noAction === "REFER")
-      )
-    ) {
-      const reason = answer === "yes" ? question.yesMessage : question.noMessage!;
-      Alert.alert(
-        "Referral Required",
-        reason,
-        [
-          {
-            text: "Continue to Referral",
-            onPress: () => {
-              updateScreeningData({
-                needsReferral: true,
-                referralReason: newReasons.join("; "),
-                referralReasonsFromQuestions: newReasons,
-              });
-              navigation.navigate("VHTReferral");
-            },
-          },
-          {
-            text: "Answer Remaining First",
-            style: "cancel",
-          },
-        ]
-      );
-    }
+    // No mid-flow alert — VHT finishes all questions first, then acts via footer button
   };
 
   const allQuestionsAnswered = questionsAnswered.size === questions.length;
 
   const handleContinue = () => {
-    if (allQuestionsAnswered && !shouldRefer) {
-      updateScreeningData({
-        needsReferral: false,
-        referralReasonsFromQuestions: referralReasons,
-      });
-      navigation.navigate("VHTScreeningStep5");
-    } else if (allQuestionsAnswered && shouldRefer) {
-      // All questions answered and a referral is needed — send to referral screen
+    if (!allQuestionsAnswered) return;
+
+    if (shouldRefer && hasDangerSign) {
+      // Danger sign (REFER only) — stop all tests, go straight to referral
       updateScreeningData({
         needsReferral: true,
         referralReason: referralReasons.join("; "),
         referralReasonsFromQuestions: referralReasons,
       });
       navigation.navigate("VHTReferral");
+    } else if (shouldRefer && !hasDangerSign) {
+      // REFER_EDUCATE — continue screening, referral is noted but NOT blocking
+      // (e.g. diabetes/hypertension, family history — educate and refer, but proceed)
+      updateScreeningData({
+        needsReferral: true,
+        referralReason: referralReasons.join("; "),
+        referralReasonsFromQuestions: referralReasons,
+      });
+      navigation.navigate("VHTScreeningStep5");
+    } else {
+      // No referral needed — all clear
+      updateScreeningData({
+        needsReferral: false,
+        referralReasonsFromQuestions: [],
+      });
+      navigation.navigate("VHTScreeningStep5");
     }
   };
 
@@ -234,19 +227,22 @@ export default function VHTScreeningStep4() {
 
                 <View style={styles.answerButtons}>
                   <TouchableOpacity
-                    style={[styles.answerButton, styles.yesButton]}
+                    style={[
+                      styles.answerButton,
+                      styles.yesButton,
+                      answers[question.id] === "yes" && styles.yesButtonSelected,
+                    ]}
                     onPress={() => handleAnswer(question.id, "yes")}
-                    disabled={isAnswered}
                   >
                     <Ionicons
                       name="checkmark"
                       size={20}
-                      color={isAnswered ? "#999" : "#DC2626"}
+                      color={answers[question.id] === "yes" ? "#fff" : "#DC2626"}
                     />
                     <Text
                       style={[
                         styles.answerButtonText,
-                        isAnswered && styles.answerButtonTextDisabled,
+                        answers[question.id] === "yes" && styles.answerButtonTextSelected,
                       ]}
                     >
                       Yes
@@ -254,19 +250,22 @@ export default function VHTScreeningStep4() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.answerButton, styles.noButton]}
+                    style={[
+                      styles.answerButton,
+                      styles.noButton,
+                      answers[question.id] === "no" && styles.noButtonSelected,
+                    ]}
                     onPress={() => handleAnswer(question.id, "no")}
-                    disabled={isAnswered}
                   >
                     <Ionicons
                       name="close"
                       size={20}
-                      color={isAnswered ? "#999" : "#10B981"}
+                      color={answers[question.id] === "no" ? "#fff" : "#10B981"}
                     />
                     <Text
                       style={[
                         styles.answerButtonText,
-                        isAnswered && styles.answerButtonTextDisabled,
+                        answers[question.id] === "no" && styles.answerButtonTextSelected,
                       ]}
                     >
                       No
@@ -287,48 +286,62 @@ export default function VHTScreeningStep4() {
           </View>
         )}
 
-        {allQuestionsAnswered && shouldRefer && (
+        {allQuestionsAnswered && shouldRefer && hasDangerSign && (
           <View style={[styles.proceedCard, { backgroundColor: "#FEE2E2", borderLeftColor: "#DC2626" }]}>
             <Ionicons name="alert-circle" size={32} color="#DC2626" />
             <Text style={[styles.proceedText, { color: "#7F1D1D" }]}>
-              Referral required based on answers. Complete remaining questions then proceed.
+              ⛔ Danger sign detected. Stop screening and complete referral.
+            </Text>
+          </View>
+        )}
+
+        {allQuestionsAnswered && shouldRefer && !hasDangerSign && (
+          <View style={[styles.proceedCard, { backgroundColor: "#FEF3C7", borderLeftColor: "#D97706" }]}>
+            <Ionicons name="alert-circle" size={32} color="#D97706" />
+            <Text style={[styles.proceedText, { color: "#92400E" }]}>
+              Note: Client needs referral (e.g. diabetes/hypertension risk). Proceed with screening, refer after.
             </Text>
           </View>
         )}
       </ScrollView>
 
-      {!shouldRefer && (
-        <View style={[styles.footer, { paddingBottom: 24 }]}>
-          <TouchableOpacity
-            style={[styles.button, !allQuestionsAnswered && styles.buttonDisabled]}
-            onPress={handleContinue}
-            disabled={!allQuestionsAnswered}
-            activeOpacity={allQuestionsAnswered ? 0.7 : 1}
-          >
-            <Text style={[styles.buttonText, !allQuestionsAnswered && styles.buttonTextDisabled]}>
-              {allQuestionsAnswered
-                ? "Proceed to Setup Screening Area"
-                : `Answer remaining questions (${questions.length - questionsAnswered.size})`}
+      {/* Single unified footer — always visible */}
+      <View style={[styles.footer, { paddingBottom: 24 }]}>
+        {!allQuestionsAnswered ? (
+          <View style={[styles.button, styles.buttonDisabled]}>
+            <Text style={[styles.buttonText, styles.buttonTextDisabled]}>
+              Answer remaining questions ({questions.length - questionsAnswered.size} left)
             </Text>
-            {allQuestionsAnswered && (
-              <Ionicons name="arrow-forward" size={20} color="#FFF" />
-            )}
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {shouldRefer && allQuestionsAnswered && (
-        <View style={[styles.footer, { paddingBottom: 24 }]}>
+          </View>
+        ) : shouldRefer && hasDangerSign ? (
           <TouchableOpacity
             style={[styles.button, { backgroundColor: "#DC2626" }]}
             onPress={handleContinue}
             activeOpacity={0.8}
           >
             <Ionicons name="medical" size={20} color="#FFF" />
-            <Text style={styles.buttonText}>Complete Referral</Text>
+            <Text style={styles.buttonText}>⛔ Danger Sign — Complete Referral</Text>
           </TouchableOpacity>
-        </View>
-      )}
+        ) : shouldRefer && !hasDangerSign ? (
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: "#D97706" }]}
+            onPress={handleContinue}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="arrow-forward" size={20} color="#FFF" />
+            <Text style={styles.buttonText}>Proceed to Screening (+ Refer after)</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleContinue}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.buttonText}>Proceed to Setup Screening Area</Text>
+            <Ionicons name="arrow-forward" size={20} color="#FFF" />
+          </TouchableOpacity>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -453,6 +466,18 @@ const styles = StyleSheet.create({
   },
   answerButtonTextDisabled: {
     color: "#999",
+  },
+  answerButtonTextSelected: {
+    color: "#fff",
+    fontWeight: "700",
+  },
+  yesButtonSelected: {
+    backgroundColor: "#DC2626",
+    borderColor: "#DC2626",
+  },
+  noButtonSelected: {
+    backgroundColor: "#10B981",
+    borderColor: "#10B981",
   },
   proceedCard: {
     backgroundColor: "#DCFCE7",

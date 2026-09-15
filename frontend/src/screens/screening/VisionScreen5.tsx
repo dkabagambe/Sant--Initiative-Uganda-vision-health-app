@@ -224,13 +224,10 @@ export default function DistanceVisionTestScreen() {
       notes: `Referred from Step 5 — Distance Vision Test.\n${eyeLabel} eye failed.\n${failDetail}`,
     };
 
-    const root = navigation.getParent()?.getParent()?.getParent();
+    // From ScreeningStack: getParent() = CHWTabs, getParent().getParent() = Root Stack
+    const root = navigation.getParent()?.getParent();
     if (root) root.navigate("CreateReferralScreen", params);
-    else {
-      const parent = navigation.getParent()?.getParent();
-      if (parent) parent.navigate("CreateReferralScreen", params);
-      else navigation.navigate("CreateReferralScreen" as any, params);
-    }
+    else navigation.navigate("CreateReferralScreen" as any, params);
   };
 
   const handleBothEyesPassed = () => {

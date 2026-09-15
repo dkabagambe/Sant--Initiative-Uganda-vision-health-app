@@ -20,7 +20,7 @@ import CHWHeader from "../../components/CHWHeader";
 
 export default function TorchLightStepScreen() {
   const navigation = useNavigation<any>();
-  const { screeningData, updateScreeningData } = useScreening();
+  const { screeningData, updateScreeningData, resetScreeningData } = useScreening();
   const [userData, setUserData] = useState<any>(null);
   const [currentSubStep, setCurrentSubStep] = useState<1 | 2 | 3 | 4 | 4.5>(1);
   const [abnormalSigns, setAbnormalSigns] = useState<string[]>([]);
@@ -141,7 +141,8 @@ export default function TorchLightStepScreen() {
         await saveOffline(referralData);
       }
 
-      // Navigate to pre-filled referral form (go up to root navigator)
+      // Navigate to pre-filled referral form
+      // From ScreeningStack: getParent() = CHWTabs, getParent().getParent() = Root Stack
       const referralParams = {
         fromScreening: true,
         screeningId: savedScreeningId,
@@ -157,19 +158,11 @@ export default function TorchLightStepScreen() {
         urgency: "high",
         notes: `Referred from Step 4 — Torch Light Test.\nAbnormal signs: ${abnormalLabels.join(", ")}.\nDO NOT proceed with other vision tests.`,
       };
-
-      // Navigator depth: ScreeningStack → CHWTabs → AppTabs → Root Stack
-      // Need 3 levels up to reach Root Stack where CreateReferralScreen lives.
-      const root = navigation.getParent()?.getParent()?.getParent();
+      const root = navigation.getParent()?.getParent();
       if (root) {
         root.navigate("CreateReferralScreen", referralParams);
       } else {
-        const parent = navigation.getParent()?.getParent();
-        if (parent) {
-          parent.navigate("CreateReferralScreen", referralParams);
-        } else {
-          navigation.navigate("CreateReferralScreen" as any, referralParams);
-        }
+        navigation.navigate("CreateReferralScreen" as any, referralParams);
       }
     } else {
       // No abnormal signs - check age
@@ -200,7 +193,7 @@ export default function TorchLightStepScreen() {
               {
                 text: "OK",
                 onPress: () => {
-                  updateScreeningData({});
+                  resetScreeningData();
                   navigation.reset({
                     index: 0,
                     routes: [{ name: "AppTabs" }],
@@ -219,7 +212,7 @@ export default function TorchLightStepScreen() {
               {
                 text: "OK",
                 onPress: () => {
-                  updateScreeningData({});
+                  resetScreeningData();
                   navigation.reset({
                     index: 0,
                     routes: [{ name: "AppTabs" }],

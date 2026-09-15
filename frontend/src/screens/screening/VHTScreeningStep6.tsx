@@ -98,7 +98,8 @@ export default function VHTScreeningStep6() {
   const handleContinue = () => {
     if (canProceed) {
       updateScreeningData({ testsExplainedToClient: true });
-      navigation.navigate("VisionScreen3");
+      // Go directly to the torch light test — safety info is already covered above
+      navigation.navigate("VisionScreen4");
     }
   };
 

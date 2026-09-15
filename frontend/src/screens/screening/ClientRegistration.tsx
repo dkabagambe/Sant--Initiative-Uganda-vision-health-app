@@ -179,8 +179,11 @@ export default function ClientRegistration() {
     }
 
     if (!mobileNumber || mobileNumber.length < 10) {
-      Alert.alert("Error", "Please enter a valid mobile money number");
-      return;
+      if (paymentMethod === "hire-purchase") {
+        Alert.alert("Error", "Please enter a valid mobile money number");
+        return;
+      }
+      // Full/cash payment — mobile number is optional, use placeholder if empty
     }
 
     setLoading(true);
@@ -324,7 +327,9 @@ export default function ClientRegistration() {
           })
         }
         onScreenNext={() => {
-          const parent = (navigation.getParent as any)();
+          // getParent() returns the parent navigator (CHWTabs).
+          // Navigate its "Screen" tab back to Step 1 for the next client.
+          const parent = navigation.getParent();
           if (parent) {
             parent.navigate("Screen", { screen: "VHTScreeningStep1" });
           } else {
@@ -418,7 +423,7 @@ export default function ClientRegistration() {
             <Text style={styles.sectionTitle}>Issue Glasses</Text>
             <Text style={styles.sectionSubtitle}>Select from Inventory</Text>
 
-            {activeProduct && (
+            {activeProduct ? (
               <View style={styles.productCard}>
                 <Text style={styles.productName}>
                   {activeProduct.power} - Frame
@@ -428,6 +433,16 @@ export default function ClientRegistration() {
                 </Text>
                 <Text style={styles.productPrice}>
                   UGX {(activeProduct.price || 0).toLocaleString()}
+                </Text>
+              </View>
+            ) : (
+              <View style={[styles.productCard, { backgroundColor: "#FEF2F2", borderColor: "#FCA5A5" }]}>
+                <Ionicons name="alert-circle" size={20} color="#DC2626" />
+                <Text style={[styles.productName, { color: "#DC2626", marginTop: 4 }]}>
+                  No stock available
+                </Text>
+                <Text style={{ fontSize: 13, color: "#7F1D1D", marginTop: 4 }}>
+                  No glasses in inventory match this client's prescription. You can save the screening record and issue glasses later.
                 </Text>
               </View>
             )}
@@ -599,17 +614,42 @@ export default function ClientRegistration() {
 
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.confirmButton, loading && { opacity: 0.7 }]}
-              onPress={handleConfirmSale}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={styles.confirmButtonText}>Confirm Sale</Text>
-              )}
-            </TouchableOpacity>
+            {activeProduct ? (
+              <TouchableOpacity
+                style={[styles.confirmButton, loading && { opacity: 0.7 }]}
+                onPress={handleConfirmSale}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.confirmButtonText}>Confirm Sale</Text>
+                )}
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.confirmButton, { backgroundColor: "#D97706" }]}
+                onPress={() => {
+                  Alert.alert(
+                    "Save Without Glasses",
+                    "The screening record will be saved. Glasses can be issued later when stock is available.",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Save Record",
+                        onPress: () =>
+                          navigation.reset({
+                            index: 0,
+                            routes: [{ name: "AppTabs" }],
+                          }),
+                      },
+                    ],
+                  );
+                }}
+              >
+                <Text style={styles.confirmButtonText}>Save Record (No Stock)</Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               style={styles.cancelButton}

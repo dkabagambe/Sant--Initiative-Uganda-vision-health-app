@@ -324,8 +324,6 @@ export default function VHTReadingGlassesScreen() {
                   referralStep: "Step 7 - Reading Glasses",
                   referralUrgency: "normal",
                 });
-                // Navigator depth: ScreeningStack → CHWTabs → AppTabs → Root Stack
-                const root = navigation.getParent()?.getParent()?.getParent();
                 const params = {
                   fromScreening: true,
                   clientName: screeningData.clientName || "",
@@ -336,12 +334,10 @@ export default function VHTReadingGlassesScreen() {
                   reason: "None of the 5 reading glass powers (+1.00 to +3.00) corrected near vision. Requires specialist examination.",
                   urgency: "normal",
                 };
+                // From ScreeningStack: getParent() = CHWTabs, getParent().getParent() = Root Stack
+                const root = navigation.getParent()?.getParent();
                 if (root) root.navigate("CreateReferralScreen", params);
-                else {
-                  const parent = navigation.getParent()?.getParent();
-                  if (parent) parent.navigate("CreateReferralScreen", params);
-                  else navigation.navigate("CreateReferralScreen" as any, params);
-                }
+                else navigation.navigate("CreateReferralScreen" as any, params);
               }}
             >
               <Text style={styles.finishBtnText}>Create Referral →</Text>
