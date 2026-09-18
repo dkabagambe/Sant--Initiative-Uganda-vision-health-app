@@ -223,8 +223,11 @@ export default function TorchLightStepScreen() {
           );
         }
       } else {
-        // Age 6+: Mark as passed — the footer button will start the 2-minute wait.
-        // (Do not auto-jump to 4.5 here; the VHT needs to tap "Test Passed" to confirm.)
+        // Age 6+: mark passed and advance directly to the 2-minute wait screen
+        setTestPassed(true);
+        setCurrentSubStep(4.5);
+        setCountdown(120);
+        setIsWaiting(true);
       }
     }
   };
@@ -467,34 +470,34 @@ export default function TorchLightStepScreen() {
           </Text>
 
           <View style={styles.passButtons}>
-            {/* PASS button — only enabled if no abnormal signs */}
+            {/* PASS button — only enabled if "No Abnormal Signs" is selected */}
             <TouchableOpacity
               style={[
                 styles.passButton,
                 styles.passButtonYes,
-                (hasAbnormalSigns || testPassed !== null) && { opacity: 0.4 },
+                hasAbnormalSigns && { opacity: 0.4 },
               ]}
-              onPress={() => testPassed === null && !hasAbnormalSigns && handleTestComplete(true)}
+              onPress={() => !hasAbnormalSigns && eyesNormal && handleTestComplete(true)}
               activeOpacity={0.7}
             >
               <Text style={styles.passButtonEmoji}>✓</Text>
-              <Text style={styles.passButtonText}>
+              <Text style={[styles.passButtonText, { color: "#065F46" }]}>
                 Y — Pass{"\n"}(No signs)
               </Text>
             </TouchableOpacity>
 
-            {/* FAIL / REFER button — only enabled if abnormal signs selected */}
+            {/* FAIL / REFER button — only enabled if abnormal signs are selected */}
             <TouchableOpacity
               style={[
                 styles.passButton,
                 styles.passButtonNo,
-                (!hasAbnormalSigns || testPassed !== null) && { opacity: 0.4 },
+                !hasAbnormalSigns && { opacity: 0.4 },
               ]}
-              onPress={() => testPassed === null && hasAbnormalSigns && handleTestComplete(false)}
+              onPress={() => hasAbnormalSigns && handleTestComplete(false)}
               activeOpacity={0.7}
             >
               <Text style={styles.passButtonEmoji}>✗</Text>
-              <Text style={styles.passButtonText}>
+              <Text style={[styles.passButtonText, { color: "#7F1D1D" }]}>
                 N — Fail{"\n"}(Refer)
               </Text>
             </TouchableOpacity>
@@ -683,32 +686,13 @@ export default function TorchLightStepScreen() {
             </Text>
           </TouchableOpacity>
         ) : currentSubStep === 4 ? (
-          // Only show footer continue button after a PASS is confirmed.
-          // A FAIL auto-navigates to referral via handleTestComplete.
-          // Note: handleTestComplete(true) already sets currentSubStep to 4.5
-          // and starts isWaiting — this button is a fallback for the rare case
-          // the user taps back and needs to re-enter the wait screen.
-          testPassed === true ? (
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={() => {
-                setCountdown(120); // reset countdown in case user navigated back
-                setIsWaiting(true);
-                setCurrentSubStep(4.5);
-              }}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.primaryButtonText}>
-                ✅ Test Passed — Start 2-Minute Wait
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={[styles.primaryButton, styles.disabledButton]}>
-              <Text style={[styles.primaryButtonText, { color: "#9CA3AF" }]}>
-                Select Pass or Fail above to continue
-              </Text>
-            </View>
-          )
+          // The real action is the Y/N buttons inside the card above.
+          // This footer is just a passive indicator — no tappable action needed here.
+          <View style={[styles.primaryButton, styles.disabledButton]}>
+            <Text style={[styles.primaryButtonText, { color: "#9CA3AF" }]}>
+              Tap Y — Pass or N — Fail above to continue
+            </Text>
+          </View>
         ) : (
           /* SubStep 4.5 */
           <TouchableOpacity
