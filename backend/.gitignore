@@ -2,5 +2,18 @@ node_modules/
 .env
 *.log
 .DS_Store
-uploads/
-.vercel
+
+# Uploaded user files (not source code)
+uploads/*
+!uploads/.gitignore
+
+# Local SQLite database
+*.db
+*.sqlite
+
+# Vercel deployment metadata
+.vercel/
+
+# Empty/junk files created by accident
+sante-backend@1.0.0
+nodemon

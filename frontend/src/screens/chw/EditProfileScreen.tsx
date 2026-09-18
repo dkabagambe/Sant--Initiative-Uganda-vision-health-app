@@ -109,14 +109,14 @@ export default function EditProfileScreen() {
       const user = await apiService.getCurrentUser();
       if (user) {
         setFormData({
-          fullName: user.fullName || user.full_name || "",
-          age: "", // Age not in User interface
-          phoneNumber: user.phoneNumber || user.phone_number || "",
-          sex: "", // Gender not in User interface
-          district: user.district || "",
-          county: "", // County not in User interface
-          subCounty: "", // SubCounty not in User interface
-          parish: user.village || "",
+          fullName:   user.full_name  || user.fullName  || "",
+          age:        (user as any).age ? String((user as any).age) : "",
+          phoneNumber: user.phone_number || (user as any).phoneNumber || "",
+          sex:        (user as any).gender || (user as any).sex || "",
+          district:   user.district   || "",
+          county:     (user as any).county     || "",
+          subCounty:  (user as any).sub_county || "",
+          parish:     (user as any).parish     || user.village || "",
         });
       }
     } catch (error) {
@@ -148,10 +148,6 @@ export default function EditProfileScreen() {
       Alert.alert("Validation Error", "Full name is required");
       return;
     }
-    if (!formData.sex) {
-      Alert.alert("Validation Error", "Sex is required");
-      return;
-    }
     if (!formData.district) {
       Alert.alert("Validation Error", "District is required");
       return;
@@ -160,42 +156,33 @@ export default function EditProfileScreen() {
     setSaving(true);
     try {
       const result = await apiService.updateUserProfile({
-        full_name: formData.fullName,
-        age: formData.age ? parseInt(formData.age) : null,
-        sex: formData.sex,
-        district: formData.district,
-        county: formData.county,
+        full_name:  formData.fullName,
+        age:        formData.age ? Number(formData.age) : null,
+        gender:     formData.sex || null,
+        district:   formData.district,
+        county:     formData.county,
         sub_county: formData.subCounty,
-        parish: formData.parish,
+        parish:     formData.parish,
+        village:    formData.parish,
       });
 
       if (result.success) {
-        // Update local storage
-        const user = await apiService.getCurrentUser();
-        if (!user) {
-          throw new Error("User not found");
+        // Persist the fresh user object (returned by PATCH) into AsyncStorage
+        const freshUser = result.user || (await apiService.getCurrentUser());
+        if (freshUser) {
+          const token = await AsyncStorage.getItem("authToken");
+          if (token) await apiService.storeUserData(freshUser as any, token);
         }
 
-        const updatedUser: User = {
-          id: user.id,
-          full_name: formData.fullName,
-          phone_number: user.phoneNumber || user.phone_number,
-          district: formData.district,
-          village: formData.parish,
-          role: user.role,
-          profile_image: user.profile_image,
-        };
-
-        const token = await AsyncStorage.getItem("authToken");
-        if (token) await apiService.storeUserData(updatedUser, token);
-
-        Alert.alert("Success", "Profile updated successfully", [
+        Alert.alert("✅ Profile Updated", "Your profile has been saved successfully.", [
           { text: "OK", onPress: () => navigation.goBack() },
         ]);
+      } else {
+        Alert.alert("Error", result.error || "Failed to update profile");
       }
     } catch (error) {
       console.error("Save error:", error);
-      Alert.alert("Error", "Failed to update profile");
+      Alert.alert("Error", "Failed to update profile. Please try again.");
     } finally {
       setSaving(false);
     }

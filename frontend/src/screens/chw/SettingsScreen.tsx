@@ -14,6 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiService } from "../../services/api";
 import CHWHeader from "../../components/CHWHeader";
 import ApiConfigScreen from "./ApiConfigScreen";
@@ -81,22 +82,28 @@ export default function SettingsScreen() {
 
       if (!result.canceled && result.assets[0]) {
         const imageUri = result.assets[0].uri;
-        setProfileImage(imageUri);
+        setProfileImage(imageUri);   // show immediately (optimistic)
         setUploading(true);
-        
+
         try {
-          const uploadResult = await apiService.uploadFile({
-            uri: imageUri,
-            name: `profile-${Date.now()}.jpg`,
-            type: 'image/jpeg',
-          });
-          
-          if (uploadResult.success) {
-            Alert.alert("Success", "Profile picture updated!");
+          const uploadResult = await apiService.uploadProfilePicture(imageUri);
+
+          if (uploadResult.success && uploadResult.profile_image) {
+            // Refresh cached user so the new URL persists across app restarts
+            const freshUser = await apiService.getCurrentUser();
+            if (freshUser) {
+              const token = await AsyncStorage.getItem("authToken");
+              if (token) await apiService.storeUserData(freshUser as any, token);
+              setProfileImage(uploadResult.profile_image);
+              setUserData(freshUser);
+            }
+            Alert.alert("✅ Success", "Profile picture updated!");
+          } else {
+            Alert.alert("Warning", uploadResult.error || "Upload failed. Please try again.");
           }
         } catch (uploadError) {
           console.error("Upload error:", uploadError);
-          Alert.alert("Warning", "Image selected but upload failed. Will retry later.");
+          Alert.alert("Warning", "Upload failed. Please try again.");
         } finally {
           setUploading(false);
         }

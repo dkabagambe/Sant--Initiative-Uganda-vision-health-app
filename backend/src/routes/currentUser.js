@@ -16,7 +16,11 @@ router.get('/me', async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
         if (decoded?.userId) {
           const userResult = await sql`
-            SELECT id, phone_number, full_name, first_name, last_name, role, village, district, created_at, updated_at
+            SELECT
+              id, phone_number, full_name, first_name, last_name,
+              gender, role,
+              district, county, sub_county, parish, village,
+              profile_image, created_at, updated_at
             FROM users
             WHERE id = ${decoded.userId}
           `;
@@ -32,7 +36,11 @@ router.get('/me', async (req, res) => {
     // --- 2. Phone number query param fallback (used when token is missing) ---
     if (phoneNumber) {
       const userResult = await sql`
-        SELECT id, phone_number, full_name, first_name, last_name, role, village, district, created_at, updated_at
+        SELECT
+          id, phone_number, full_name, first_name, last_name,
+          gender, role,
+          district, county, sub_county, parish, village,
+          profile_image, created_at, updated_at
         FROM users
         WHERE phone_number = ${phoneNumber}
       `;

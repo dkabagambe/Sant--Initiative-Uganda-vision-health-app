@@ -31,6 +31,23 @@ const { sql, db } = require("./db");
 app.locals.sql = sql;
 app.locals.db = db;
 
+// --- Run profile-columns migration on startup (safe: IF NOT EXISTS) ---
+(async () => {
+  try {
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image TEXT`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS county      VARCHAR(100)`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS sub_county  VARCHAR(100)`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS parish      VARCHAR(100)`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS gender      VARCHAR(20)`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS age         INTEGER`;
+  } catch (err) {
+    // SQLite doesn't support IF NOT EXISTS on ALTER — ignore, columns exist from init
+    if (!err.message?.includes("duplicate column")) {
+      console.warn("Profile column migration (non-fatal):", err.message);
+    }
+  }
+})();
+
 // --- Middleware ---
 app.use(
   cors({

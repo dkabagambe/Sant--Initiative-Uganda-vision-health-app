@@ -1,47 +1,113 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# dependencies
+# ===========================
+# Dependencies
+# ===========================
 node_modules/
 
-# Expo
+# ===========================
+# Expo / React Native
+# ===========================
 .expo/
 dist/
 web-build/
 expo-env.d.ts
 
-# Native
-.kotlin/
-*.orig.*
+# ===========================
+# Android Build Artifacts
+# ===========================
+# Ignore the entire native android folder - Expo generates it
+frontend/android/
+android/
+
+# Generated AAB (Android App Bundle) for Play Store
+*.aab
+frontend/sante.aab
+
+*.jsbundle
+
+# Keystore / signing files (keep these SECRET — never commit)
 *.jks
+*.keystore
+# ===========================
+# iOS Build Artifacts
+# ===========================
+/ios
+*.ipa
+*.xcarchive
+
+# ===========================
+# Native / Certificates
+# ===========================
+*.orig.*
 *.p8
 *.p12
 *.key
 *.mobileprovision
+*.pem
 
-# Metro
+# ===========================
+# Metro Bundler
+# ===========================
 .metro-health-check*
 
-# debug
+# ===========================
+# Debug / Logs
+# ===========================
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.log
+backend/backend.log
+backend/server.log
 
-# macOS
+# ===========================
+# OS Files
+# ===========================
 .DS_Store
-*.pem
+Thumbs.db
 
-# local env files
+# ===========================
+# Environment / Secrets
+# ===========================
 .env
 .env*.local
+# Keep .env.example files — they are safe templates
 
-# local SQLite DB (backend uses Postgres in production)
+# ===========================
+# Database files
+# ===========================
+# Local SQLite DB (production uses Postgres)
 backend/sante.db
+*.db
+*.sqlite
 
-# typescript
+# ===========================
+# Uploads (user-generated files, not source code)
+# ===========================
+backend/uploads/*
+# Keep the .gitignore inside uploads/ itself
+!backend/uploads/.gitignore
+
+# ===========================
+# TypeScript
+# ===========================
 *.tsbuildinfo
 
-# generated native folders
-/ios
-/android
-.vercel
+# ===========================
+# Vercel
+# ===========================
+.vercel/
+
+# ===========================
+# Misc / Tools
+# ===========================
 .aider*
+.qodo/
+
+# Temporary / one-off scripts at root level
+test-final.js
+test-screening.js
+test-login.js
+setup-sms.sh
+QUICK_VERCEL_FIX.sql

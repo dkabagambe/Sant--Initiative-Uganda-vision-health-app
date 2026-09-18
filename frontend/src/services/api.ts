@@ -253,6 +253,13 @@ export const apiService = {
           const response = await api.get("/current-user/me", { params });
           if (response.data.success) {
             const userData = response.data.data;
+            // Resolve relative profile_image URL to absolute
+            if (userData.profile_image && userData.profile_image.startsWith("/")) {
+              const baseUrl = api.defaults.baseURL?.replace(/\/api\/?$/, "") || "";
+              if (baseUrl) {
+                userData.profile_image = `${baseUrl}${userData.profile_image}`;
+              }
+            }
             // Update AsyncStorage with fresh data
             await AsyncStorage.setItem("user", JSON.stringify(userData));
             return userData;
@@ -284,8 +291,45 @@ export const apiService = {
   },
 
   async updateUserProfile(data: any) {
-    const response = await api.patch("/auth/profile", data);
-    return response.data;
+    try {
+      const response = await api.patch("/auth/profile", data);
+      return response.data;
+    } catch (error: any) {
+      const msg = error?.response?.data?.error || error?.message || "Failed to update profile";
+      return { success: false, error: msg };
+    }
+  },
+
+  // Upload profile picture → saves file + updates users.profile_image in one call
+  async uploadProfilePicture(imageUri: string): Promise<{ success: boolean; profile_image?: string; error?: string }> {
+    try {
+      const formData = new FormData();
+      formData.append("file", {
+        uri: imageUri,
+        name: `profile-${Date.now()}.jpg`,
+        type: "image/jpeg",
+      } as any);
+
+      const response = await api.post("/auth/profile/picture", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 30000,
+      });
+
+      const data = response.data;
+
+      // Convert relative URL to absolute so Image components can display it
+      if (data.success && data.profile_image) {
+        const baseUrl = api.defaults.baseURL?.replace(/\/api\/?$/, "") || "";
+        if (data.profile_image.startsWith("/") && baseUrl) {
+          data.profile_image = `${baseUrl}${data.profile_image}`;
+        }
+      }
+
+      return data;
+    } catch (error: any) {
+      const msg = error?.response?.data?.error || error?.message || "Upload failed";
+      return { success: false, error: msg };
+    }
   },
 
   // ============ PRODUCTS ============

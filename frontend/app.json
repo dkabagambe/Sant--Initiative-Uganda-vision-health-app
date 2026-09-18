@@ -15,7 +15,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.sante.initiative",
-      "versionCode": 5,
+      "versionCode": 48,
       "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"]
     },
     "web": {

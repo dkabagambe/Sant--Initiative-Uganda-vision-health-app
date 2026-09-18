@@ -390,7 +390,11 @@ exports.checkAuth = async (req, res) => {
     const userId = req.user.userId;
 
     const user = await sql`
-      SELECT id, phone_number, full_name, first_name, last_name, role, village, district
+      SELECT
+        id, phone_number, full_name, first_name, last_name,
+        gender, role,
+        district, county, sub_county, parish, village,
+        profile_image, created_at, updated_at
       FROM users WHERE id = ${userId}
     `;
 
@@ -415,31 +419,44 @@ exports.updateProfile = async (req, res) => {
     const userId = req.user.userId;
     const {
       full_name,
+      gender,
+      sex,           // accept both spellings
       age,
-      sex,
       district,
       county,
       sub_county,
       parish,
       village,
+      profile_image, // URL returned from upload endpoint
     } = req.body;
+
+    // Accept either 'gender' or 'sex' from the frontend
+    const resolvedGender = gender || sex || null;
+    const resolvedAge = age != null ? parseInt(age, 10) || null : null;
 
     await sql`
       UPDATE users SET
-        full_name = ${full_name || null},
-        age = ${age || null},
-        sex = ${sex || null},
-        district = ${district || null},
-        county = ${county || null},
-        sub_county = ${sub_county || null},
-        parish = ${parish || null},
-        village = ${village || parish || null}
+        full_name     = COALESCE(${full_name     || null}, full_name),
+        gender        = COALESCE(${resolvedGender       }, gender),
+        age           = COALESCE(${resolvedAge          }, age),
+        district      = COALESCE(${district      || null}, district),
+        county        = COALESCE(${county        || null}, county),
+        sub_county    = COALESCE(${sub_county    || null}, sub_county),
+        parish        = COALESCE(${parish        || null}, parish),
+        village       = COALESCE(${village || parish || null}, village),
+        profile_image = COALESCE(${profile_image || null}, profile_image),
+        updated_at    = CURRENT_TIMESTAMP
       WHERE id = ${userId}
     `;
 
     const updatedUser = await sql`
-      SELECT id, phone_number, full_name, age, sex, role, district, county, sub_county, parish, village
-      FROM users WHERE id = ${userId}
+      SELECT
+        id, phone_number, full_name, first_name, last_name,
+        gender, age, role,
+        district, county, sub_county, parish, village,
+        profile_image, created_at, updated_at
+      FROM users
+      WHERE id = ${userId}
     `;
 
     res.json({
@@ -449,6 +466,10 @@ exports.updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Update profile error:", error);
-    res.status(500).json({ success: false, error: "Failed to update profile" });
+    res.status(500).json({
+      success: false,
+      error: "Failed to update profile",
+      details: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
