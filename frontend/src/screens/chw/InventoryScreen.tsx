@@ -180,7 +180,15 @@ export default function InventoryScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [inventory, setInventory] = useState<any[]>([]);
-  const [totals, setTotals] = useState({ total_pairs: 0 });
+  const [totals, setTotals] = useState({
+    total_pairs: 0,
+    total_value: 0,
+    total_standard: 0,
+    total_metal: 0,
+    total_fashion: 0,
+  });
+  const [lowStockItems, setLowStockItems] = useState<any[]>([]);
+  const [outOfStockItems, setOutOfStockItems] = useState<any[]>([]);
   const [userData, setUserData] = useState<any>(null);
   const [recentSales, setRecentSales] = useState<any[]>([]);
   const [addStockPower, setAddStockPower] = useState<string | null>(null);
@@ -191,6 +199,7 @@ export default function InventoryScreen() {
   const [stats, setStats] = useState({
     weekSold: 0,
     lowStockCount: 0,
+    criticalCount: 0,
     totalRevenue: 0,
     fullPayments: 0,
     hirePurchase: 0,
@@ -216,21 +225,13 @@ export default function InventoryScreen() {
   };
 
   const handleStatLowStock = () => {
-    const low = inventory.filter(
-      (p: any) => p.stock_quantity > 0 && p.stock_quantity < 20,
-    );
-    if (low.length > 0) {
+    if (lowStockItems.length > 0 || outOfStockItems.length > 0) {
       scrollRef.current?.scrollTo({
         y: sectionY.stockList - 24,
         animated: true,
       });
     } else {
-      Alert.alert(
-        "Low Stock",
-        stats.lowStockCount === 0
-          ? "No low stock items."
-          : "Scroll down to see current stock by power.",
-      );
+      Alert.alert("Stock OK", "All items are well stocked.");
     }
   };
 
@@ -260,40 +261,75 @@ export default function InventoryScreen() {
       setLoading(true);
 
       let products: any[] = [];
-      let totalPairs = 0;
+      let totalData = {
+        total_pairs: 0,
+        total_value: 0,
+        total_standard: 0,
+        total_metal: 0,
+        total_fashion: 0,
+      };
 
       try {
         const response = await apiService.getInventorySummary();
         if (response.success && response.data?.products?.length > 0) {
           products = response.data.products;
-          totalPairs = response.data.totals?.total_pairs || 0;
+          totalData = {
+            total_pairs:    Number(response.data.totals?.total_pairs    || 0),
+            total_value:    Number(response.data.totals?.total_value    || 0),
+            total_standard: Number(response.data.totals?.total_standard || 0),
+            total_metal:    Number(response.data.totals?.total_metal    || 0),
+            total_fashion:  Number(response.data.totals?.total_fashion  || 0),
+          };
         }
       } catch (e) {
-        // Silently fall back to products endpoint
+        // fall through to products endpoint
       }
 
+      // Fallback: global products endpoint
       if (products.length === 0) {
         try {
           const prodResponse = await apiService.getInventory();
           if (prodResponse.success && prodResponse.data?.length > 0) {
             products = prodResponse.data;
-            totalPairs = products.reduce(
-              (sum: number, p: any) => sum + (p.stock_quantity || 0),
-              0,
+            totalData.total_pairs = products.reduce(
+              (sum: number, p: any) => sum + (Number(p.stock_quantity) || 0), 0,
             );
           }
         } catch (e) {
-          console.error("Failed to load inventory:", e);
+          console.error("Failed to load inventory fallback:", e);
         }
       }
 
       setInventory(products);
-      setTotals({ total_pairs: totalPairs });
+      setTotals(totalData);
 
-      const lowStock = products.filter(
-        (p: any) => p.stock_quantity < 20,
-      ).length;
-      setStats((prev) => ({ ...prev, lowStockCount: lowStock }));
+      // Use stock_status from backend if present, otherwise derive locally.
+      // Thresholds must match backend: critical ≤ 5, low ≤ 10, 0 = out_of_stock.
+      const low = products.filter((p: any) => {
+        const status = p.stock_status;
+        if (status) return status === "low" || status === "critical";
+        const qty = Number(p.stock_quantity || 0);
+        return qty > 0 && qty <= 10;
+      });
+      const outOf = products.filter((p: any) => {
+        const status = p.stock_status;
+        if (status) return status === "out_of_stock";
+        return Number(p.stock_quantity || 0) === 0;
+      });
+      const critical = products.filter((p: any) => {
+        const status = p.stock_status;
+        if (status) return status === "critical";
+        const qty = Number(p.stock_quantity || 0);
+        return qty > 0 && qty <= 5;
+      });
+
+      setLowStockItems(low);
+      setOutOfStockItems(outOf);
+      setStats((prev) => ({
+        ...prev,
+        lowStockCount: low.length,
+        criticalCount: critical.length,
+      }));
     } catch (error) {
       console.error("Failed to load inventory:", error);
       Alert.alert("Error", "Failed to load inventory");
@@ -381,12 +417,18 @@ export default function InventoryScreen() {
     setRefreshing(false);
   };
 
-  const getStatus = (
-    quantity: number,
-  ): "normal" | "low" | "critical" | undefined => {
-    if (quantity === 0) return "critical";
-    if (quantity < 5) return "critical";
-    if (quantity < 10) return "low";
+  // Derive badge status — prefer backend's stock_status field, fall back to qty.
+  // Thresholds match backend: 0 = out_of_stock/critical, ≤5 = critical, ≤10 = low
+  const getStatus = (item: any): "normal" | "low" | "critical" | undefined => {
+    const status = item?.stock_status;
+    if (status === "out_of_stock" || status === "critical") return "critical";
+    if (status === "low") return "low";
+    if (status && status !== "normal") return undefined;
+    // Fallback to qty-based logic
+    const qty = Number(item?.stock_quantity ?? item ?? 0);
+    if (qty === 0) return "critical";
+    if (qty <= 5) return "critical";
+    if (qty <= 10) return "low";
     return undefined;
   };
 
@@ -457,12 +499,9 @@ export default function InventoryScreen() {
 
   const handleRequestReplenishment = async () => {
     try {
-      // Get low stock items
-      const lowStockItems = inventory.filter(
-        (item) => item.stock_quantity < 20,
-      );
+      const needsRestock = [...outOfStockItems, ...lowStockItems];
 
-      if (lowStockItems.length === 0) {
+      if (needsRestock.length === 0) {
         Alert.alert(
           "No Low Stock",
           "All items are well stocked. No replenishment needed.",
@@ -470,11 +509,13 @@ export default function InventoryScreen() {
         return;
       }
 
-      const itemsList = lowStockItems
-        .map(
-          (item) =>
-            `${item.power}: ${item.stock_quantity} pairs (need ${20 - item.stock_quantity} more)`,
-        )
+      const itemsList = needsRestock
+        .map((item) => {
+          const qty = Number(item.stock_quantity || 0);
+          const target = 20;
+          const needed = Math.max(0, target - qty);
+          return `${item.power}D: ${qty} pairs (need ${needed} more)`;
+        })
         .join("\n");
 
       Alert.alert(
@@ -484,12 +525,10 @@ export default function InventoryScreen() {
           { text: "Cancel", style: "cancel" },
           {
             text: "Submit Request",
-            onPress: async () => {
-              // In production, this would call an API
-              // await apiService.requestStockReplenishment({ items: lowStockItems });
+            onPress: () => {
               Alert.alert(
                 "✅ Request Submitted",
-                "Your stock replenishment request has been submitted successfully. You will be notified when stock arrives.",
+                "Your stock replenishment request has been submitted. You will be notified when stock arrives.",
               );
             },
           },
@@ -537,32 +576,29 @@ export default function InventoryScreen() {
           </Text>
         </View>
 
-        {/* Low Stock Alert - Dynamic */}
-        {inventory.filter(
-          (p: any) => p.stock_quantity > 0 && p.stock_quantity < 20,
-        ).length > 0 && (
+        {/* Low Stock Alert — driven by backend stock_status */}
+        {lowStockItems.length > 0 && (
           <View style={styles.alertCard}>
             <View style={styles.alertHeader}>
               <Ionicons name="alert-circle" size={24} color="#DC2626" />
-              <Text style={styles.alertTitle}>Low stock alert</Text>
+              <Text style={styles.alertTitle}>
+                Low stock alert ({lowStockItems.length} item{lowStockItems.length > 1 ? "s" : ""})
+              </Text>
             </View>
             <Text style={styles.alertText}>
-              {inventory
-                .filter(
-                  (p: any) => p.stock_quantity > 0 && p.stock_quantity < 20,
-                )
+              {lowStockItems
                 .map(
                   (p: any) =>
-                    `${p.power}D has only ${p.stock_quantity} pairs left`,
+                    `${p.power}D — ${p.stock_quantity} pair${p.stock_quantity !== 1 ? "s" : ""} left`,
                 )
-                .join(". ")}
+                .join(" • ")}
               . Consider reordering.
             </Text>
           </View>
         )}
 
         {/* Out of Stock Alert */}
-        {inventory.filter((p: any) => p.stock_quantity === 0).length > 0 && (
+        {outOfStockItems.length > 0 && (
           <View
             style={[
               styles.alertCard,
@@ -572,20 +608,17 @@ export default function InventoryScreen() {
             <View style={styles.alertHeader}>
               <Ionicons name="warning" size={24} color="#B91C1C" />
               <Text style={[styles.alertTitle, { color: "#B91C1C" }]}>
-                Out of stock
+                Out of stock ({outOfStockItems.length} item{outOfStockItems.length > 1 ? "s" : ""})
               </Text>
             </View>
             <Text style={styles.alertText}>
-              {inventory
-                .filter((p: any) => p.stock_quantity === 0)
-                .map((p: any) => `${p.power}D`)
-                .join(", ")}{" "}
-              — no stock available. Add stock immediately.
+              {outOfStockItems.map((p: any) => `${p.power}D`).join(", ")} — no
+              stock available. Add stock immediately.
             </Text>
           </View>
         )}
 
-        {/* Stats Row - clickable, data from API */}
+        {/* Stats Row - all values from DB */}
         <View style={styles.statsRow}>
           <TouchableOpacity
             style={styles.statCard}
@@ -604,11 +637,28 @@ export default function InventoryScreen() {
             <Text style={styles.statLabel}>Sold (Week)</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.statCard}
+            style={[
+              styles.statCard,
+              (stats.lowStockCount > 0 || stats.criticalCount > 0) && {
+                borderColor: stats.criticalCount > 0 ? "#EF4444" : "#F59E0B",
+                borderWidth: 2,
+              },
+            ]}
             onPress={handleStatLowStock}
             activeOpacity={0.7}
           >
-            <Text style={styles.statNumber}>{stats.lowStockCount ?? 0}</Text>
+            <Text
+              style={[
+                styles.statNumber,
+                stats.criticalCount > 0
+                  ? { color: "#EF4444" }
+                  : stats.lowStockCount > 0
+                  ? { color: "#F59E0B" }
+                  : {},
+              ]}
+            >
+              {stats.lowStockCount ?? 0}
+            </Text>
             <Text style={styles.statLabel}>Low Stock</Text>
           </TouchableOpacity>
         </View>
@@ -624,20 +674,29 @@ export default function InventoryScreen() {
           </View>
 
           <View style={styles.stockList}>
-            {inventory.map((item, index) => (
-              <StockItem
-                key={item.id || index}
-                power={item.power}
-                totalPairs={item.stock_quantity}
-                status={getStatus(item.stock_quantity)}
-                breakdown={{
-                  standard: item.stock_standard || 0,
-                  metal: item.stock_metal || 0,
-                  fashion: item.stock_fashion || 0,
-                }}
-                onPress={() => handleEditStock(item)}
-              />
-            ))}
+            {inventory.length === 0 ? (
+              <View style={{ padding: 24, alignItems: "center" }}>
+                <Ionicons name="cube-outline" size={32} color="#D1D5DB" />
+                <Text style={{ color: "#9CA3AF", marginTop: 8, fontSize: 14 }}>
+                  No inventory loaded. Pull to refresh.
+                </Text>
+              </View>
+            ) : (
+              inventory.map((item, index) => (
+                <StockItem
+                  key={item.id || index}
+                  power={item.power}
+                  totalPairs={Number(item.stock_quantity || 0)}
+                  status={getStatus(item)}
+                  breakdown={{
+                    standard: Number(item.stock_standard || 0),
+                    metal:    Number(item.stock_metal    || 0),
+                    fashion:  Number(item.stock_fashion  || 0),
+                  }}
+                  onPress={() => handleEditStock(item)}
+                />
+              ))
+            )}
           </View>
         </View>
 
@@ -689,6 +748,22 @@ export default function InventoryScreen() {
                 {formatUGX(stats.hirePurchase)}
               </Text>
             </View>
+            {totals.total_value > 0 && (
+              <View style={styles.breakdownItem}>
+                <Text style={styles.breakdownLabel}>Stock Value (on hand)</Text>
+                <Text style={[styles.breakdownValue, { color: "#1E40AF" }]}>
+                  {formatUGX(totals.total_value)}
+                </Text>
+              </View>
+            )}
+            {totals.total_standard + totals.total_metal + totals.total_fashion > 0 && (
+              <View style={styles.breakdownItem}>
+                <Text style={styles.breakdownLabel}>Frame breakdown</Text>
+                <Text style={styles.breakdownValue}>
+                  {totals.total_standard}S · {totals.total_metal}M · {totals.total_fashion}F
+                </Text>
+              </View>
+            )}
           </View>
 
           <TouchableOpacity

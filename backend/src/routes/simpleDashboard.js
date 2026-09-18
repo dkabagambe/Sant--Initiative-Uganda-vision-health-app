@@ -81,39 +81,38 @@ router.get("/stats", authenticate, async (req, res) => {
       // Completed payments
       sql`SELECT COUNT(*) AS total
           FROM payments p
-          JOIN screenings s ON p.screening_id = s.id
-          WHERE s.health_worker_id = ${healthWorkerId}
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.health_worker_id = ${healthWorkerId})
           AND p.status = 'completed'`,
 
       // Pending payments
       sql`SELECT COUNT(*) AS total
           FROM payments p
-          JOIN screenings s ON p.screening_id = s.id
-          WHERE s.health_worker_id = ${healthWorkerId}
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.health_worker_id = ${healthWorkerId})
           AND p.status IN ('pending', 'overdue')`,
 
       // Overdue payments
       sql`SELECT COUNT(*) AS total
           FROM payments p
-          JOIN screenings s ON p.screening_id = s.id
-          WHERE s.health_worker_id = ${healthWorkerId}
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.health_worker_id = ${healthWorkerId})
           AND p.status = 'overdue'`,
 
       // Revenue from completed payments
       sql`SELECT COALESCE(SUM(p.amount), 0) AS total
           FROM payments p
-          JOIN screenings s ON p.screening_id = s.id
-          WHERE s.health_worker_id = ${healthWorkerId}
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.health_worker_id = ${healthWorkerId})
           AND p.status = 'completed'`,
 
-      // Payments due today or overdue
+      // Payments due today, overdue, OR pending with no due_date set
       sql`SELECT COUNT(*) AS total
           FROM payments p
-          JOIN screenings s ON p.screening_id = s.id
-          WHERE s.health_worker_id = ${healthWorkerId}
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.health_worker_id = ${healthWorkerId})
           AND p.status IN ('pending', 'overdue')
-          AND p.due_date IS NOT NULL
-          AND p.due_date::date <= CURRENT_DATE`,
+          AND (p.due_date IS NULL OR p.due_date::date <= CURRENT_DATE)`,
 
       // All referrals by this VHT
       sql`SELECT COUNT(*) AS total FROM referrals WHERE health_worker_id = ${healthWorkerId}`,
@@ -171,8 +170,16 @@ router.get("/stats", authenticate, async (req, res) => {
         inventory: inventoryTotal,
         referrals: pendingReferrals,
         referralsOutstanding: Math.max(0, referralCount - completedRef),
-        paymentsDue: dueToday,
-        expectedAmount: revenue,
+        // paymentsDue = all pending/overdue payments (due today, overdue, or null due_date)
+        paymentsDue: pendingPay + overduePay,
+        // expectedAmount = total UGX outstanding from pending/overdue payments
+        expectedAmount: Number((await sql`
+          SELECT COALESCE(SUM(p.amount), 0) AS total
+          FROM payments p
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.health_worker_id = ${healthWorkerId})
+            AND p.status IN ('pending', 'overdue')
+        `)[0]?.total || 0),
 
         // Fields used by CHWDashboardScreen.tsx (tab dashboard)
         screenings_this_week:     weekScreenings,
@@ -193,9 +200,9 @@ router.get("/stats", authenticate, async (req, res) => {
         pending_amount:           Number((await sql`
           SELECT COALESCE(SUM(p.amount), 0) AS total
           FROM payments p
-          JOIN screenings s ON p.screening_id = s.id
-          WHERE s.health_worker_id = ${healthWorkerId}
-          AND p.status IN ('pending', 'overdue')
+          LEFT JOIN screenings s ON p.screening_id = s.id
+          WHERE (s.health_worker_id = ${healthWorkerId} OR p.health_worker_id = ${healthWorkerId})
+            AND p.status IN ('pending', 'overdue')
         `)[0]?.total || 0),
         outstanding_referrals:    Math.max(0, referralCount - completedRef),
         total_stock:              inventoryTotal,

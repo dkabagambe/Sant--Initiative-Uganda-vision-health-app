@@ -566,7 +566,7 @@ export default function CHWDashboard() {
         <View style={styles.recentActivitySection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Activity</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate("Reports")}>
               <Text style={styles.viewAllText}>View all</Text>
             </TouchableOpacity>
           </View>
