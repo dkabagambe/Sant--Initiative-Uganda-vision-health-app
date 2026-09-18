@@ -185,26 +185,32 @@ export default function TorchLightStepScreen() {
 
         try {
           const result = await apiService.createScreening(screeningComplete);
-          
+          const saved = result?.success === true;
+
           Alert.alert(
-            "✅ Screening Complete",
-            `Child is ${clientAge} years old. Only torch light test is required for children under 6.\n\nNo abnormal signs detected. Screening saved successfully.`,
+            saved ? "✅ Screening Complete" : "✅ Screening Complete (Saved Offline)",
+            saved
+              ? `Child is ${clientAge} years old. Only torch light test is required for children under 6.\n\nNo abnormal signs detected. Screening saved successfully.`
+              : `Child is ${clientAge} years old. Could not reach the server — screening saved locally and will sync when online.`,
             [
               {
                 text: "OK",
                 onPress: () => {
                   resetScreeningData();
-                  navigation.reset({
-                    index: 0,
-                    routes: [{ name: "AppTabs" }],
-                  });
+                  // Navigate back to the CHW dashboard (AppTabs → CHWHome → CHWDashboard)
+                  const root = navigation.getParent()?.getParent();
+                  if (root) {
+                    root.navigate("AppTabs", { role: "CHW" });
+                  } else {
+                    navigation.navigate("AppTabs" as any, { role: "CHW" });
+                  }
                 },
               },
             ],
           );
         } catch (error) {
-          // Save offline if API fails
-          console.error("Failed to save screening:", error);
+          // Save offline if API throws
+          await saveOffline(screeningComplete);
           Alert.alert(
             "✅ Screening Complete (Saved Offline)",
             `Child is ${clientAge} years old. Screening saved locally and will sync when online.`,
@@ -213,10 +219,12 @@ export default function TorchLightStepScreen() {
                 text: "OK",
                 onPress: () => {
                   resetScreeningData();
-                  navigation.reset({
-                    index: 0,
-                    routes: [{ name: "AppTabs" }],
-                  });
+                  const root = navigation.getParent()?.getParent();
+                  if (root) {
+                    root.navigate("AppTabs", { role: "CHW" });
+                  } else {
+                    navigation.navigate("AppTabs" as any, { role: "CHW" });
+                  }
                 },
               },
             ],

@@ -192,13 +192,27 @@ exports.createScreening = async (req, res) => {
 
         // Use explicit column names — avoid sql() identifier interpolation which
         // breaks on Neon/Vercel postgres when mixed with other parameters.
-        if (frameType === "metal" || frameType === "Metal Frame (Durable)" ||
-            frameType === "plastic" || frameType === "Plastic Frame (Comfortable)" ||
-            frameType === "halfrim" || frameType === "Half-Rim Frame (Lightweight)") {
+        if (frameType === "metal" || frameType === "Metal Frame (Durable)") {
           await sql`
             UPDATE vht_stock
             SET stock_quantity = GREATEST(stock_quantity - 1, 0),
                 stock_metal    = GREATEST(stock_metal    - 1, 0)
+            WHERE health_worker_id = ${healthWorkerId}
+              AND product_id       = ${recommendedProductId}
+          `;
+        } else if (frameType === "plastic" || frameType === "Plastic Frame (Comfortable)") {
+          await sql`
+            UPDATE vht_stock
+            SET stock_quantity  = GREATEST(stock_quantity  - 1, 0),
+                stock_standard  = GREATEST(stock_standard  - 1, 0)
+            WHERE health_worker_id = ${healthWorkerId}
+              AND product_id       = ${recommendedProductId}
+          `;
+        } else if (frameType === "halfrim" || frameType === "Half-Rim Frame (Lightweight)") {
+          await sql`
+            UPDATE vht_stock
+            SET stock_quantity = GREATEST(stock_quantity - 1, 0),
+                stock_standard = GREATEST(stock_standard - 1, 0)
             WHERE health_worker_id = ${healthWorkerId}
               AND product_id       = ${recommendedProductId}
           `;

@@ -640,7 +640,7 @@ export default function ClientRegistration() {
                         onPress: () =>
                           navigation.reset({
                             index: 0,
-                            routes: [{ name: "AppTabs" }],
+                            routes: [{ name: "AppTabs", params: { role: "CHW" } }],
                           }),
                       },
                     ],
@@ -656,7 +656,7 @@ export default function ClientRegistration() {
               onPress={() =>
                 navigation.reset({
                   index: 0,
-                  routes: [{ name: "AppTabs" }],
+                  routes: [{ name: "AppTabs", params: { role: "CHW" } }],
                 })
               }
             >

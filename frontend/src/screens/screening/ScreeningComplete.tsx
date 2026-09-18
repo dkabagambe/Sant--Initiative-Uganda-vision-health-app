@@ -134,7 +134,7 @@ export default function ScreeningComplete() {
             text: "OK",
             onPress: () => {
               resetScreeningData();
-              navigation.reset({ index: 0, routes: [{ name: "AppTabs" }] });
+              navigation.reset({ index: 0, routes: [{ name: "AppTabs", params: { role: "CHW" } }] });
             },
           },
         ],
@@ -151,7 +151,7 @@ export default function ScreeningComplete() {
     resetScreeningData();
     navigation.reset({
       index: 0,
-      routes: [{ name: "AppTabs" }],
+      routes: [{ name: "AppTabs", params: { role: "CHW" } }],
     });
   };
 
