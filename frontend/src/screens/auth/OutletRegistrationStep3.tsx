@@ -84,7 +84,7 @@ const OutletRegistrationStep3 = () => {
       return;
     }
 
-    // Navigate directly to Step 4 — no OTP sent (OTP only on login)
+    // Navigate directly to Step 4 - no OTP sent (OTP only on login)
     navigation.navigate("OutletRegistrationStep4", {
       formData: completeFormData,
       phone,

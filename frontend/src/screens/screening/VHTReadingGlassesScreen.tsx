@@ -1,5 +1,5 @@
 /**
- * VHTReadingGlassesScreen — Step 7 of MOH 8-step protocol:
+ * VHTReadingGlassesScreen - Step 7 of MOH 8-step protocol:
  * "Dispensing Reading Glasses"
  *
  * MOH Manual Section 5, Step 7 (pages 37-42):
@@ -7,7 +7,7 @@
  * Eligibility: Age 40+ who PASSED torch test, PASSED distance vision,
  *              and FAILED near vision test.
  *
- * Power testing — SEQUENTIAL, starting at +1.00:
+ * Power testing - SEQUENTIAL, starting at +1.00:
  *   Ask client to hold E-chart at arm's length and try +1.00 sample glasses.
  *   Ask: "Can you see the N8 line clearly?"
  *   YES → that is the correct power → proceed to frame fitting
@@ -64,7 +64,7 @@ const EDUCATION_POINTS = [
   { id: "near-only",     title: "For Near Work Only",         content: "Reading, sewing, counting money, sorting rice, using phone. NOT for walking or looking far." },
   { id: "remove-dist",   title: "Remove for Distance",        content: "Remove glasses when walking, driving, or looking at distant objects." },
   { id: "lighting",      title: "Use Good Lighting",          content: "Use adequate lighting during near work to reduce eye strain." },
-  { id: "no-damage",     title: "Glasses Do NOT Damage Eyes", content: "Reassure client: glasses do not damage the eyes. A common myth — not true." },
+  { id: "no-damage",     title: "Glasses Do NOT Damage Eyes", content: "Reassure client: glasses do not damage the eyes. A common myth - not true." },
   { id: "hold-frame",    title: "Hold by the Frame",          content: "Always hold glasses by the frame, not the lenses, to avoid scratching." },
   { id: "two-hands",     title: "Two Hands When Removing",    content: "Use two hands when putting on or taking off glasses to prevent bending." },
   { id: "clean",         title: "Clean with Water & Cloth",   content: "Clean lenses with water and a clean, soft cloth only. No harsh materials." },
@@ -105,7 +105,7 @@ export default function VHTReadingGlassesScreen() {
     if (powerIndex < POWERS.length - 1) {
       setPowerIndex(powerIndex + 1);
     } else {
-      // All 5 powers tried — none worked → refer
+      // All 5 powers tried - none worked → refer
       setStep("referred");
     }
   };
@@ -232,7 +232,7 @@ export default function VHTReadingGlassesScreen() {
               <Text style={styles.currentPowerLabel}>Now testing:</Text>
               <Text style={styles.currentPowerValue}>{currentPower}</Text>
               <Text style={styles.currentPowerSub}>
-                {powerIndex === 0 ? "Weakest — start here" : powerIndex === POWERS.length - 1 ? "Strongest available" : `Power ${powerIndex + 1} of ${POWERS.length}`}
+                {powerIndex === 0 ? "Weakest - start here" : powerIndex === POWERS.length - 1 ? "Strongest available" : `Power ${powerIndex + 1} of ${POWERS.length}`}
               </Text>
             </View>
 
@@ -272,14 +272,14 @@ export default function VHTReadingGlassesScreen() {
             <View style={styles.powerAnswerRow}>
               <TouchableOpacity style={styles.powerYesBtn} onPress={handlePowerYes} activeOpacity={0.75}>
                 <Text style={styles.powerBtnIcon}>✓</Text>
-                <Text style={styles.powerBtnTitle}>Yes — can see clearly</Text>
+                <Text style={styles.powerBtnTitle}>Yes - can see clearly</Text>
                 <Text style={styles.powerBtnSub}>{currentPower} is the correct power</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.powerNoBtn} onPress={handlePowerNo} activeOpacity={0.75}>
                 <Text style={styles.powerBtnIcon}>✗</Text>
                 <Text style={styles.powerBtnTitle}>
-                  {powerIndex < POWERS.length - 1 ? `No — try ${POWERS[powerIndex + 1]}` : "No — none worked"}
+                  {powerIndex < POWERS.length - 1 ? `No - try ${POWERS[powerIndex + 1]}` : "No - none worked"}
                 </Text>
                 <Text style={styles.powerBtnSub}>
                   {powerIndex < POWERS.length - 1 ? "Move to next power" : "Must refer to facility"}
@@ -354,7 +354,7 @@ export default function VHTReadingGlassesScreen() {
               </View>
               <View style={styles.stepRow}>
                 <Text style={styles.stepNum}>4</Text>
-                <Text style={styles.stepText}>Ask client to move head up and down — do the glasses stay in place?</Text>
+                <Text style={styles.stepText}>Ask client to move head up and down - do the glasses stay in place?</Text>
               </View>
             </View>
 
@@ -459,7 +459,7 @@ export default function VHTReadingGlassesScreen() {
                   <Text style={styles.recordTitle}>VHT Community Eye Health Register</Text>
                   <Text style={styles.recordDetail}>
                     Record "Y" in the register under:{"\n"}
-                    <Text style={{ fontWeight: "700" }}>"Dispensed Glasses — {selectedPower}"</Text>
+                    <Text style={{ fontWeight: "700" }}>"Dispensed Glasses - {selectedPower}"</Text>
                   </Text>
                 </View>
                 <Ionicons name="book-outline" size={22} color={recordingDone.has("register") ? "#0891B2" : "#D1D5DB"} />
@@ -488,10 +488,10 @@ export default function VHTReadingGlassesScreen() {
 
       </ScrollView>
 
-      {/* ── STICKY FOOTER — always visible ──────────────────────────────── */}
+      {/* ── STICKY FOOTER - always visible ──────────────────────────────── */}
       <View style={styles.footer}>
 
-        {/* Power step — no footer button, user taps Yes/No cards above */}
+        {/* Power step - no footer button, user taps Yes/No cards above */}
 
         {/* Referred step */}
         {step === "referred" && (

@@ -103,7 +103,7 @@ export default function PaymentsScreen() {
       if (response?.success) {
         setPayments(response.data || []);
       } else {
-        // API returned success:false — show empty list, not an error crash
+        // API returned success:false - show empty list, not an error crash
         setPayments([]);
         console.warn("Payments API returned success:false", response);
       }
@@ -421,7 +421,7 @@ export default function PaymentsScreen() {
                 {payment.client_name || "Unknown Client"}
               </Text>
               <Text style={styles.phoneNumber}>
-                {payment.client_phone || "—"}
+                {payment.client_phone || "-"}
               </Text>
               {payment.product_name ? (
                 <Text style={styles.productInfo}>
@@ -969,7 +969,7 @@ export default function PaymentsScreen() {
                     {selectedPayment.client_name || "Client"}
                   </Text>
                   <Text style={styles.confirmPhone}>
-                    {selectedPayment.client_phone || "—"}
+                    {selectedPayment.client_phone || "-"}
                   </Text>
                   <View style={styles.confirmAmountBox}>
                     <Text style={styles.confirmAmountLabel}>

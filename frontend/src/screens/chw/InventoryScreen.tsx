@@ -355,7 +355,7 @@ export default function InventoryScreen() {
         return !isNaN(d.getTime()) && d >= weekAgo;
       });
 
-      // Recent sales list — last 4 payments
+      // Recent sales list - last 4 payments
       const recent = allPayments.slice(0, 4).map((p: any) => ({
         clientName: p.client_name || "Unknown",
         power: p.product_power || "N/A",
@@ -365,7 +365,7 @@ export default function InventoryScreen() {
       }));
       setRecentSales(recent);
 
-      // Revenue — completed payments this month
+      // Revenue - completed payments this month
       const monthCompleted = allPayments.filter((p: any) => {
         const d = new Date(p.payment_date || p.created_at);
         return p.status === "completed" && !isNaN(d.getTime()) && d >= monthAgo;
@@ -417,7 +417,7 @@ export default function InventoryScreen() {
     setRefreshing(false);
   };
 
-  // Derive badge status — prefer backend's stock_status field, fall back to qty.
+  // Derive badge status - prefer backend's stock_status field, fall back to qty.
   // Thresholds match backend: 0 = out_of_stock/critical, ≤5 = critical, ≤10 = low
   const getStatus = (item: any): "normal" | "low" | "critical" | undefined => {
     const status = item?.stock_status;
@@ -576,7 +576,7 @@ export default function InventoryScreen() {
           </Text>
         </View>
 
-        {/* Low Stock Alert — driven by backend stock_status */}
+        {/* Low Stock Alert - driven by backend stock_status */}
         {lowStockItems.length > 0 && (
           <View style={styles.alertCard}>
             <View style={styles.alertHeader}>
@@ -589,7 +589,7 @@ export default function InventoryScreen() {
               {lowStockItems
                 .map(
                   (p: any) =>
-                    `${p.power}D — ${p.stock_quantity} pair${p.stock_quantity !== 1 ? "s" : ""} left`,
+                    `${p.power}D - ${p.stock_quantity} pair${p.stock_quantity !== 1 ? "s" : ""} left`,
                 )
                 .join(" • ")}
               . Consider reordering.
@@ -612,7 +612,7 @@ export default function InventoryScreen() {
               </Text>
             </View>
             <Text style={styles.alertText}>
-              {outOfStockItems.map((p: any) => `${p.power}D`).join(", ")} — no
+              {outOfStockItems.map((p: any) => `${p.power}D`).join(", ")} - no
               stock available. Add stock immediately.
             </Text>
           </View>

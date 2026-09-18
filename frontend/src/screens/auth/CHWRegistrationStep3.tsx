@@ -74,7 +74,7 @@ export default function CHWRegistrationStep3() {
       ...formData,
     };
 
-    // Navigate directly to Step 4 — no OTP sent (OTP only on login)
+    // Navigate directly to Step 4 - no OTP sent (OTP only on login)
     const phone = normalizePhoneForApi(step2Data.phoneNumber || "");
     if (!phone) {
       Alert.alert("Invalid Phone", "Please go back and enter a valid 9-digit phone number.");

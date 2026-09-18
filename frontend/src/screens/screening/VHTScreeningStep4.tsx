@@ -56,21 +56,21 @@ export default function VHTScreeningStep4() {
             id: "severe-pain",
             question: "Does client have severe eye pain or sudden loss of vision?",
             yesAction: "REFER",
-            yesMessage: "Danger sign — refer to health facility immediately",
+            yesMessage: "Danger sign - refer to health facility immediately",
             section: "Red Flag Assessment",
           },
           {
             id: "vision-loss",
             question: "Does client have a severe headache lasting several hours with eye problems?",
             yesAction: "REFER",
-            yesMessage: "Danger sign — refer to health facility immediately",
+            yesMessage: "Danger sign - refer to health facility immediately",
             section: "Red Flag Assessment",
           },
           {
             id: "eye-symptoms",
             question: "Does client have eye discharge, redness, or itching?",
             yesAction: "REFER_EDUCATE",
-            yesMessage: "Note symptoms — proceed with screening, refer after if symptoms persist",
+            yesMessage: "Note symptoms - proceed with screening, refer after if symptoms persist",
             section: "Red Flag Assessment",
           },
           {
@@ -99,7 +99,7 @@ export default function VHTScreeningStep4() {
     const question = questions.find((q) => q.id === questionId);
     if (!question) return;
 
-    // Allow re-answering — update existing answer
+    // Allow re-answering - update existing answer
     const newAnswered = new Set(questionsAnswered);
     newAnswered.add(questionId);
     setQuestionsAnswered(newAnswered);
@@ -137,7 +137,7 @@ export default function VHTScreeningStep4() {
       familyHistoryBlindness: newAnswers["blindness-history"] === "yes",
       referralReasonsFromQuestions: newReasons,
     });
-    // No mid-flow alert — VHT finishes all questions first, then acts via footer button
+    // No mid-flow alert - VHT finishes all questions first, then acts via footer button
   };
 
   const allQuestionsAnswered = questionsAnswered.size === questions.length;
@@ -146,7 +146,7 @@ export default function VHTScreeningStep4() {
     if (!allQuestionsAnswered) return;
 
     if (shouldRefer && hasDangerSign) {
-      // Danger sign (REFER only) — stop all tests, go straight to referral
+      // Danger sign (REFER only) - stop all tests, go straight to referral
       updateScreeningData({
         needsReferral: true,
         referralReason: referralReasons.join("; "),
@@ -154,8 +154,8 @@ export default function VHTScreeningStep4() {
       });
       navigation.navigate("VHTReferral");
     } else if (shouldRefer && !hasDangerSign) {
-      // REFER_EDUCATE — continue screening, referral is noted but NOT blocking
-      // (e.g. diabetes/hypertension, family history — educate and refer, but proceed)
+      // REFER_EDUCATE - continue screening, referral is noted but NOT blocking
+      // (e.g. diabetes/hypertension, family history - educate and refer, but proceed)
       updateScreeningData({
         needsReferral: true,
         referralReason: referralReasons.join("; "),
@@ -163,7 +163,7 @@ export default function VHTScreeningStep4() {
       });
       navigation.navigate("VHTScreeningStep5");
     } else {
-      // No referral needed — all clear
+      // No referral needed - all clear
       updateScreeningData({
         needsReferral: false,
         referralReasonsFromQuestions: [],
@@ -305,7 +305,7 @@ export default function VHTScreeningStep4() {
         )}
       </ScrollView>
 
-      {/* Single unified footer — always visible */}
+      {/* Single unified footer - always visible */}
       <View style={[styles.footer, { paddingBottom: 24 }]}>
         {!allQuestionsAnswered ? (
           <View style={[styles.button, styles.buttonDisabled]}>
@@ -320,7 +320,7 @@ export default function VHTScreeningStep4() {
             activeOpacity={0.8}
           >
             <Ionicons name="medical" size={20} color="#FFF" />
-            <Text style={styles.buttonText}>⛔ Danger Sign — Complete Referral</Text>
+            <Text style={styles.buttonText}>⛔ Danger Sign - Complete Referral</Text>
           </TouchableOpacity>
         ) : shouldRefer && !hasDangerSign ? (
           <TouchableOpacity

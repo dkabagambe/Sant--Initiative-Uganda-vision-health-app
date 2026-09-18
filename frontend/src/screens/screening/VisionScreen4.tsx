@@ -112,7 +112,7 @@ export default function TorchLightStepScreen() {
       const abnormalLabels = abnormalSignOptions
         .filter((opt) => abnormalSigns.includes(opt.id))
         .map((opt) => opt.label);
-      const reasonText = `Torch Light Test Failed — Abnormal signs: ${abnormalLabels.join(", ")}`;
+      const reasonText = `Torch Light Test Failed - Abnormal signs: ${abnormalLabels.join(", ")}`;
 
       const referralData = {
         ...screeningData,
@@ -156,7 +156,7 @@ export default function TorchLightStepScreen() {
         parish: screeningData.parish || "",
         reason: reasonText,
         urgency: "high",
-        notes: `Referred from Step 4 — Torch Light Test.\nAbnormal signs: ${abnormalLabels.join(", ")}.\nDO NOT proceed with other vision tests.`,
+        notes: `Referred from Step 4 - Torch Light Test.\nAbnormal signs: ${abnormalLabels.join(", ")}.\nDO NOT proceed with other vision tests.`,
       };
       const root = navigation.getParent()?.getParent();
       if (root) {
@@ -191,7 +191,7 @@ export default function TorchLightStepScreen() {
             saved ? "✅ Screening Complete" : "✅ Screening Complete (Saved Offline)",
             saved
               ? `Child is ${clientAge} years old. Only torch light test is required for children under 6.\n\nNo abnormal signs detected. Screening saved successfully.`
-              : `Child is ${clientAge} years old. Could not reach the server — screening saved locally and will sync when online.`,
+              : `Child is ${clientAge} years old. Could not reach the server - screening saved locally and will sync when online.`,
             [
               {
                 text: "OK",
@@ -433,7 +433,7 @@ export default function TorchLightStepScreen() {
                 ❌ Torch Light Test - Abnormal Signs Detected
               </Text>
               <Text style={styles.resultSubtitle}>
-                Referral required — do NOT proceed with other vision tests
+                Referral required - do NOT proceed with other vision tests
               </Text>
             </>
           ) : (
@@ -456,7 +456,7 @@ export default function TorchLightStepScreen() {
 
           <View style={styles.testInfoBox}>
             <Text style={styles.infoLabel}>Column to record:</Text>
-            <Text style={styles.infoValue}>Eye Exam w/ Torch Light — Pass?</Text>
+            <Text style={styles.infoValue}>Eye Exam w/ Torch Light - Pass?</Text>
           </View>
 
           {hasAbnormalSigns && (
@@ -478,7 +478,7 @@ export default function TorchLightStepScreen() {
           </Text>
 
           <View style={styles.passButtons}>
-            {/* PASS button — only enabled if "No Abnormal Signs" is selected */}
+            {/* PASS button - only enabled if "No Abnormal Signs" is selected */}
             <TouchableOpacity
               style={[
                 styles.passButton,
@@ -490,11 +490,11 @@ export default function TorchLightStepScreen() {
             >
               <Text style={styles.passButtonEmoji}>✓</Text>
               <Text style={[styles.passButtonText, { color: "#065F46" }]}>
-                Y — Pass{"\n"}(No signs)
+                Y - Pass{"\n"}(No signs)
               </Text>
             </TouchableOpacity>
 
-            {/* FAIL / REFER button — only enabled if abnormal signs are selected */}
+            {/* FAIL / REFER button - only enabled if abnormal signs are selected */}
             <TouchableOpacity
               style={[
                 styles.passButton,
@@ -506,7 +506,7 @@ export default function TorchLightStepScreen() {
             >
               <Text style={styles.passButtonEmoji}>✗</Text>
               <Text style={[styles.passButtonText, { color: "#7F1D1D" }]}>
-                N — Fail{"\n"}(Refer)
+                N - Fail{"\n"}(Refer)
               </Text>
             </TouchableOpacity>
           </View>
@@ -517,7 +517,7 @@ export default function TorchLightStepScreen() {
                 ⚠️ Action Required
               </Text>
               <Text style={styles.warningText}>
-                Tap "N — Fail (Refer)" to record the result and open the pre-filled referral form.
+                Tap "N - Fail (Refer)" to record the result and open the pre-filled referral form.
                 Do NOT proceed with distance or near vision tests.
               </Text>
             </View>
@@ -529,7 +529,7 @@ export default function TorchLightStepScreen() {
                 ✅ Eyes Normal
               </Text>
               <Text style={[styles.warningText, { color: "#065F46" }]}>
-                Tap "Y — Pass" to record the result and start the 2-minute wait before distance vision testing.
+                Tap "Y - Pass" to record the result and start the 2-minute wait before distance vision testing.
               </Text>
             </View>
           )}
@@ -695,10 +695,10 @@ export default function TorchLightStepScreen() {
           </TouchableOpacity>
         ) : currentSubStep === 4 ? (
           // The real action is the Y/N buttons inside the card above.
-          // This footer is just a passive indicator — no tappable action needed here.
+          // This footer is just a passive indicator - no tappable action needed here.
           <View style={[styles.primaryButton, styles.disabledButton]}>
             <Text style={[styles.primaryButtonText, { color: "#9CA3AF" }]}>
-              Tap Y — Pass or N — Fail above to continue
+              Tap Y - Pass or N - Fail above to continue
             </Text>
           </View>
         ) : (

@@ -100,7 +100,7 @@ export default function VisionScreen6Wrapper() {
         parish: screeningData.parish || "",
         reason: failedData.referralReason,
         urgency: "high",
-        notes: `Referred from Step 6 — Near Vision Test.\nClient age: ${clientAge} (under 40).\nNear vision failed — abnormal for this age group.`,
+        notes: `Referred from Step 6 - Near Vision Test.\nClient age: ${clientAge} (under 40).\nNear vision failed - abnormal for this age group.`,
       };
 
       // From ScreeningStack: getParent() = CHWTabs, getParent().getParent() = Root Stack
@@ -127,7 +127,7 @@ export default function VisionScreen6Wrapper() {
   };
 
   const handleRefer = async () => {
-    // Legacy path — referrals are now handled directly in handleComplete
+    // Legacy path - referrals are now handled directly in handleComplete
     // keeping this as a no-op prop to satisfy VisionScreen6's onRefer prop
   };
 

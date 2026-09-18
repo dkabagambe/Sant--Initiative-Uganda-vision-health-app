@@ -192,7 +192,7 @@ export default function ReferralsScreen() {
     }
   };
 
-  // Deduplicate by client identity — keep only the most recent record per client.
+  // Deduplicate by client identity - keep only the most recent record per client.
   // This prevents the same person appearing twice when both a screening auto-
   // created a referral AND a manual referral was created for them.
   const deduplicateByClient = (list: ReferralItem[]): ReferralItem[] => {
@@ -220,9 +220,9 @@ export default function ReferralsScreen() {
         : deduplicateByClient(referrals);
 
   const formatDate = (dateStr: string | null | undefined): string => {
-    if (!dateStr) return "—";
+    if (!dateStr) return "-";
     const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "—";
+    if (isNaN(d.getTime())) return "-";
     return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
   };
 
@@ -338,14 +338,14 @@ export default function ReferralsScreen() {
         {/* Referral Details */}
         <View style={styles.detailSection}>
           <Text style={styles.detailLabel}>Reason for referral</Text>
-          <Text style={styles.detailValue}>{referral.reason || "—"}</Text>
+          <Text style={styles.detailValue}>{referral.reason || "-"}</Text>
         </View>
 
         <View style={styles.detailSection}>
           <Text style={styles.detailLabel}>Referred to</Text>
           <Text style={styles.detailValue}>
             {referral.facility_name || "Not specified"}
-            {referral.facility_location ? ` — ${referral.facility_location}` : ""}
+            {referral.facility_location ? ` - ${referral.facility_location}` : ""}
           </Text>
         </View>
 
@@ -370,7 +370,7 @@ export default function ReferralsScreen() {
           </View>
         ) : null}
 
-        {/* Action Button — only for pending */}
+        {/* Action Button - only for pending */}
         {!isCompleted && (
           <TouchableOpacity
             style={styles.markCompleteButton}

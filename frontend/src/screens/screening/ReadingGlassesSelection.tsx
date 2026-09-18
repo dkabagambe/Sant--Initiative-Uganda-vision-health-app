@@ -191,7 +191,7 @@ export default function ReadingGlassesSelection() {
         return;
       }
 
-      // Update inventory (dispense — subtract 1)
+      // Update inventory (dispense - subtract 1)
       const dispenseResult = await apiService.addStock(product.id, -1, "standard");
 
       if (!dispenseResult.success) {

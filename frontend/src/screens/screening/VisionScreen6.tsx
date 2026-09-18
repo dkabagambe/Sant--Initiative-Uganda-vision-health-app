@@ -1,10 +1,10 @@
 /**
- * VisionScreen6 — Step 6: Simple Near Vision Test
+ * VisionScreen6 - Step 6: Simple Near Vision Test
  *
  * MOH Manual spec (Section 5, Step 6):
  *  - Test BOTH EYES at the same time (no covering)
  *  - Client holds E-chart at arm's length (~40 cm)
- *  - Ask client to read row N8 (bottom row — smallest E's)
+ *  - Ask client to read row N8 (bottom row - smallest E's)
  *  - 5 letters shown one at a time
  *  - Pass: ≥4 correct (consistent with Line 2 of distance test)
  *  - If client wears reading glasses ONLY, put them on for this test
@@ -39,7 +39,7 @@ const { width } = Dimensions.get("window");
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const N8_COUNT = 5;
-const N8_PASS  = 4;   // ≥4/5 correct — consistent with Line 2 of distance test
+const N8_PASS  = 4;   // ≥4/5 correct - consistent with Line 2 of distance test
 
 const DIRECTIONS: EDirection[] = ["right", "down", "left", "up"];
 
@@ -114,7 +114,7 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
 
   // MOH-accurate physical size:
   //   N8 row at 40cm arm's length: letter height must be physically ~3.2mm on screen
-  //   (client holds the phone — the phone IS the near vision chart)
+  //   (client holds the phone - the phone IS the near vision chart)
   const eSize = eSizeN8();
 
   // ── Instructions ─────────────────────────────────────────────────────────
@@ -136,8 +136,8 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
           <View style={styles.prereqCard}>
             <Text style={styles.prereqTitle}>✅ Prerequisites:</Text>
             {[
-              "Torch Light Test — Passed",
-              "Distance Vision Test — Passed",
+              "Torch Light Test - Passed",
+              "Distance Vision Test - Passed",
               `Client age: ${age > 0 ? `${age} years (≥6)` : "Recorded"}`,
             ].map((t) => (
               <View key={t} style={styles.prereqRow}>
@@ -150,10 +150,10 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
           {/* Instructions */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>📋 Test Instructions:</Text>
-            <StepRow n="1" text="Both eyes open — do NOT cover either eye" />
+            <StepRow n="1" text="Both eyes open - do NOT cover either eye" />
             <StepRow n="2" text="Hand the E-chart to the client" />
             <StepRow n="3" text={'Say: "Hold this at arm\'s length (~40 cm from your eyes)"'} />
-            <StepRow n="4" text="Point to the N8 row (bottom row — smallest E's)" />
+            <StepRow n="4" text="Point to the N8 row (bottom row - smallest E's)" />
             <StepRow n="5" text="Make sure there is good lighting" />
           </View>
 
@@ -167,26 +167,26 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
 
           {/* N8 preview */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>📊 N8 Row (near vision — bottom line):</Text>
+            <Text style={styles.cardTitle}>📊 N8 Row (near vision - bottom line):</Text>
             <Text style={styles.cardSubtitle}>5 E's shown one at a time. Client must get ≥{N8_PASS} correct.</Text>
             <View style={styles.n8Preview}>
               {(["right", "up", "left", "down", "right"] as EDirection[]).map((d, i) => (
                 <TumblingE key={i} direction={d} size={32} />
               ))}
             </View>
-            <Text style={styles.n8Label}>N8 row (smallest — test this row at 40 cm)</Text>
+            <Text style={styles.n8Label}>N8 row (smallest - test this row at 40 cm)</Text>
           </View>
 
           {/* Pathway */}
           <View style={styles.pathwayContainer}>
             <View style={[styles.pathwayItem, { backgroundColor: "#F0FDF4", borderColor: "#10B981" }]}>
-              <Text style={styles.pathwayText}><Text style={styles.bold}>✅ Pass (≥{N8_PASS}/5):</Text> Record "Y" — End visit normally.</Text>
+              <Text style={styles.pathwayText}><Text style={styles.bold}>✅ Pass (≥{N8_PASS}/5):</Text> Record "Y" - End visit normally.</Text>
             </View>
             <View style={[styles.pathwayItem, { backgroundColor: "#EDE9FE", borderColor: "#7C3AED" }]}>
-              <Text style={styles.pathwayText}><Text style={styles.bold}>⚠️ Fail + Age 40+:</Text> Presbyopia (normal aging) — proceed to Step 7: Dispense reading glasses.</Text>
+              <Text style={styles.pathwayText}><Text style={styles.bold}>⚠️ Fail + Age 40+:</Text> Presbyopia (normal aging) - proceed to Step 7: Dispense reading glasses.</Text>
             </View>
             <View style={[styles.pathwayItem, { backgroundColor: "#FEF2F2", borderColor: "#EF4444" }]}>
-              <Text style={styles.pathwayText}><Text style={styles.bold}>❌ Fail + Age 6–39:</Text> Record "N" and "Y" under Referred — REFER to health facility.</Text>
+              <Text style={styles.pathwayText}><Text style={styles.bold}>❌ Fail + Age 6–39:</Text> Record "N" and "Y" under Referred - REFER to health facility.</Text>
             </View>
           </View>
 
@@ -200,7 +200,7 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
     );
   }
 
-  // ── Testing — full screen ─────────────────────────────────────────────────
+  // ── Testing - full screen ─────────────────────────────────────────────────
   if (phase === "testing") {
     const currentDirection = sequence[letterIndex];
     const remainingLetters = N8_COUNT - results.length - 1;
@@ -279,7 +279,7 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
         {!canStillPass && (
           <View style={styles.earlyFailBanner}>
             <Ionicons name="alert-circle" size={15} color="#DC2626" />
-            <Text style={styles.earlyFailText}>Cannot reach {N8_PASS} correct — will fail near vision</Text>
+            <Text style={styles.earlyFailText}>Cannot reach {N8_PASS} correct - will fail near vision</Text>
           </View>
         )}
       </SafeAreaView>
@@ -299,7 +299,7 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={[styles.resultCard, passed ? styles.resultPass : styles.resultFail]}>
             <Text style={styles.resultTitle}>
-              {passed ? "✅ Near Vision Test — PASSED" : "❌ Near Vision Test — FAILED"}
+              {passed ? "✅ Near Vision Test - PASSED" : "❌ Near Vision Test - FAILED"}
             </Text>
 
             <View style={styles.resultLetters}>
@@ -319,7 +319,7 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
           <View style={styles.registerCard}>
             <Text style={styles.registerTitle}>📝 Record in VHT Register:</Text>
             <View style={styles.registerRow}>
-              <Text style={styles.registerField}>Near Vision Test — Pass?</Text>
+              <Text style={styles.registerField}>Near Vision Test - Pass?</Text>
               <Text style={[styles.registerValue, passed ? styles.passText : styles.failText]}>
                 {passed ? '"Y"' : '"N"'}
               </Text>
@@ -342,7 +342,7 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
                 <Text style={styles.actionText}>Client passed. Conclude the visit. No glasses needed.</Text></>
             ) : age >= 40 ? (
               <><Ionicons name="glasses-outline" size={24} color="#7C3AED" />
-                <Text style={styles.actionText}>Client is {age} — near vision failure at 40+ is Presbyopia (normal aging).{"\n"}Proceed to Step 7: Dispense Reading Glasses.</Text></>
+                <Text style={styles.actionText}>Client is {age} - near vision failure at 40+ is Presbyopia (normal aging).{"\n"}Proceed to Step 7: Dispense Reading Glasses.</Text></>
             ) : (
               <><Ionicons name="alert-circle" size={24} color="#DC2626" />
                 <Text style={styles.actionText}>Near vision problem in client aged {age} (under 40) is abnormal.{"\n"}STOP and REFER to health facility.</Text></>
@@ -411,7 +411,7 @@ function Header({ userData, navigation }: any) {
       </View>
       <View style={styles.headerCenter}>
         <Text style={styles.headerTitle}>{userData?.fullName || userData?.full_name || "Santé Initiative Uganda"}</Text>
-        <Text style={styles.headerSubtitle}>{userData?.district ? `VHT — ${userData.district} District` : ""}</Text>
+        <Text style={styles.headerSubtitle}>{userData?.district ? `VHT - ${userData.district} District` : ""}</Text>
       </View>
       <TouchableOpacity onPress={() => navigation.navigate("Settings")} style={styles.menuBtn}>
         <Ionicons name="menu" size={28} color="#1A4D8F" />

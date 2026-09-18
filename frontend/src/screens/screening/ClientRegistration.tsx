@@ -183,7 +183,7 @@ export default function ClientRegistration() {
         Alert.alert("Error", "Please enter a valid mobile money number");
         return;
       }
-      // Full/cash payment — mobile number is optional, use placeholder if empty
+      // Full/cash payment - mobile number is optional, use placeholder if empty
     }
 
     setLoading(true);

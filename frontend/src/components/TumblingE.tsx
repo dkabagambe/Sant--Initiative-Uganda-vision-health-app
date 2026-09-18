@@ -1,5 +1,5 @@
 /**
- * TumblingE — Pixel-perfect MOH Uganda E-chart letter.
+ * TumblingE - Pixel-perfect MOH Uganda E-chart letter.
  *
  * Shape proportions (5×5 grid, measured from physical MOH chart):
  *   Spine  : left column, width = 1/5 of bounding box
@@ -64,7 +64,7 @@ interface TumblingEProps {
    *  or pass an arbitrary number for UI previews / demonstrations. */
   size: number;
   direction: EDirection;
-  /** Ink colour — defaults to pure black */
+  /** Ink colour - defaults to pure black */
   color?: string;
 }
 
@@ -83,13 +83,13 @@ export default function TumblingE({ size, direction, color = "#000000" }: Tumbli
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <G rotation={deg} origin={`${cx}, ${cy}`}>
-        {/* Spine — left column, full height */}
+        {/* Spine - left column, full height */}
         <Rect x={0}     y={0}     width={u}    height={size} fill={color} />
-        {/* Top arm — full width, band 0 */}
+        {/* Top arm - full width, band 0 */}
         <Rect x={0}     y={0}     width={size} height={u}    fill={color} />
-        {/* Middle arm — full width, band 2 */}
+        {/* Middle arm - full width, band 2 */}
         <Rect x={0}     y={u * 2} width={size} height={u}    fill={color} />
-        {/* Bottom arm — full width, band 4 */}
+        {/* Bottom arm - full width, band 4 */}
         <Rect x={0}     y={u * 4} width={size} height={u}    fill={color} />
       </G>
     </Svg>

@@ -1,14 +1,14 @@
 /**
- * VisionScreen5 — Step 5: Simple Distance Vision Test
+ * VisionScreen5 - Step 5: Simple Distance Vision Test
  *
  * MOH Manual spec (Section 5, Step 5):
  *  - E-chart top two lines only for distance vision
  *  - Client must be 3 metres from chart
  *  - Test one eye at a time (cover the other eye)
- *  - Line 1 (6/60): 3 letters — show one at a time, random direction
+ *  - Line 1 (6/60): 3 letters - show one at a time, random direction
  *      Pass: ≥2 correct  → proceed to Line 2
  *      Fail: ≤1 correct  → STOP and REFER
- *  - Line 2 (6/12): 5 letters — show one at a time, random direction
+ *  - Line 2 (6/12): 5 letters - show one at a time, random direction
  *      Pass: ≥4 correct  → Eye passes, test other eye / complete
  *      Fail: ≤3 correct  → STOP and REFER
  *  - Repeat for both RIGHT and LEFT eye
@@ -18,7 +18,7 @@
  *  - Full-screen pure-white background
  *  - SVG Tumbling E occupies ~65% of screen width
  *  - Large arrow direction buttons at the bottom
- *  - Minimal chrome during the test — the E is the only focus
+ *  - Minimal chrome during the test - the E is the only focus
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -221,7 +221,7 @@ export default function DistanceVisionTestScreen() {
       parish: screeningData.parish || "",
       reason: reasonText,
       urgency: "normal",
-      notes: `Referred from Step 5 — Distance Vision Test.\n${eyeLabel} eye failed.\n${failDetail}`,
+      notes: `Referred from Step 5 - Distance Vision Test.\n${eyeLabel} eye failed.\n${failDetail}`,
     };
 
     // From ScreeningStack: getParent() = CHWTabs, getParent().getParent() = Root Stack
@@ -271,7 +271,7 @@ export default function DistanceVisionTestScreen() {
             <StepRow n="1" text="Stand exactly 3 metres away from the client" />
             <StepRow n="2" text={`Ask client to cover their ${coverEye} eye gently with palm`} />
             <StepRow n="3" text="Hold E-chart at client's eye level" />
-            <StepRow n="4" text='"Tell me which way the legs of the E are pointing — Up, Down, Left, or Right."' />
+            <StepRow n="4" text='"Tell me which way the legs of the E are pointing - Up, Down, Left, or Right."' />
           </View>
 
           {/* Direction key preview using SVG TumblingE */}
@@ -293,7 +293,7 @@ export default function DistanceVisionTestScreen() {
 
           {/* Chart preview */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>📊 E-Chart — top 2 lines:</Text>
+            <Text style={styles.cardTitle}>📊 E-Chart - top 2 lines:</Text>
             <View style={styles.chartPreviewRow}>
               <Text style={styles.chartLineLabel}>Line 1{"\n"}6/60</Text>
               <View style={styles.chartEs}>
@@ -334,7 +334,7 @@ export default function DistanceVisionTestScreen() {
     );
   }
 
-  // ── Phase: Testing — Full-screen Peek-style ──────────────────────────────
+  // ── Phase: Testing - Full-screen Peek-style ──────────────────────────────
   if (phase === "testing") {
     const totalLetters = currentLine === 1 ? LINE1_COUNT : LINE2_COUNT;
     const passThreshold = currentLine === 1 ? LINE1_PASS : LINE2_PASS;
@@ -357,7 +357,7 @@ export default function DistanceVisionTestScreen() {
       <SafeAreaView style={styles.testContainer}>
         <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
-        {/* ── Top strip — minimal info ─────────────────────────────────── */}
+        {/* ── Top strip - minimal info ─────────────────────────────────── */}
         <View style={styles.testTopBar}>
           <View style={[styles.eyePill, { backgroundColor: currentEye === "right" ? "#1565C0" : "#6A1B9A" }]}>
             <Text style={styles.eyePillText}>{eyeLabel} EYE</Text>
@@ -397,7 +397,7 @@ export default function DistanceVisionTestScreen() {
           <Text style={styles.scoreWrong}>✗ {wrongSoFar} wrong</Text>
         </View>
 
-        {/* ── THE E — full white canvas ─────────────────────────────── */}
+        {/* ── THE E - full white canvas ─────────────────────────────── */}
         <View style={styles.eCanvas}>
           <TumblingE direction={currentDirection} size={eSize} color="#111111" />
         </View>
@@ -430,7 +430,7 @@ export default function DistanceVisionTestScreen() {
           <View style={styles.earlyFailBanner}>
             <Ionicons name="alert-circle" size={15} color="#DC2626" />
             <Text style={styles.earlyFailText}>
-              Cannot reach {passThreshold} correct — eye will fail this line
+              Cannot reach {passThreshold} correct - eye will fail this line
             </Text>
           </View>
         )}
@@ -456,10 +456,10 @@ export default function DistanceVisionTestScreen() {
 
         <ScrollView contentContainerStyle={styles.resultContent}>
           <View style={[styles.resultCard, eyePassed ? styles.resultPass : styles.resultFail]}>
-            <Text style={styles.resultEyeLabel}>{eyeLabel} EYE — {eyePassed ? "✅ PASSED" : "❌ FAILED"}</Text>
+            <Text style={styles.resultEyeLabel}>{eyeLabel} EYE - {eyePassed ? "✅ PASSED" : "❌ FAILED"}</Text>
 
             <View style={styles.resultLineRow}>
-              <Text style={styles.resultLineTitle}>Line 1 (6/60) — 3 letters</Text>
+              <Text style={styles.resultLineTitle}>Line 1 (6/60) - 3 letters</Text>
               <View style={styles.resultLetters}>
                 {result?.line1.map((ok, i) => (
                   <View key={i} style={[styles.resultDot, ok ? styles.dotCorrectBig : styles.dotWrongBig]}>
@@ -468,13 +468,13 @@ export default function DistanceVisionTestScreen() {
                 ))}
               </View>
               <Text style={[styles.resultLineSummary, line1Passed ? styles.passText : styles.failText]}>
-                {line1Correct}/{LINE1_COUNT} correct — {line1Passed ? `PASS (≥${LINE1_PASS})` : `FAIL (<${LINE1_PASS})`}
+                {line1Correct}/{LINE1_COUNT} correct - {line1Passed ? `PASS (≥${LINE1_PASS})` : `FAIL (<${LINE1_PASS})`}
               </Text>
             </View>
 
             {line2Done ? (
               <View style={styles.resultLineRow}>
-                <Text style={styles.resultLineTitle}>Line 2 (6/12) — 5 letters</Text>
+                <Text style={styles.resultLineTitle}>Line 2 (6/12) - 5 letters</Text>
                 <View style={styles.resultLetters}>
                   {result?.line2.map((ok, i) => (
                     <View key={i} style={[styles.resultDot, ok ? styles.dotCorrectBig : styles.dotWrongBig]}>
@@ -483,7 +483,7 @@ export default function DistanceVisionTestScreen() {
                   ))}
                 </View>
                 <Text style={[styles.resultLineSummary, line2Passed ? styles.passText : styles.failText]}>
-                  {line2Correct}/{LINE2_COUNT} correct — {line2Passed ? `PASS (≥${LINE2_PASS})` : `FAIL (<${LINE2_PASS})`}
+                  {line2Correct}/{LINE2_COUNT} correct - {line2Passed ? `PASS (≥${LINE2_PASS})` : `FAIL (<${LINE2_PASS})`}
                 </Text>
               </View>
             ) : (
@@ -500,7 +500,7 @@ export default function DistanceVisionTestScreen() {
             ) : eyePassed && currentEye === "left" ? (
               <><Ionicons name="checkmark-circle" size={24} color="#10B981" /><Text style={styles.actionText}>Both eyes passed! Proceed to Near Vision Test.</Text></>
             ) : (
-              <><Ionicons name="alert-circle" size={24} color="#DC2626" /><Text style={styles.actionText}>{eyeLabel} eye failed. STOP and REFER.{"\n"}Record "N" under "Distance Vision Test — Pass?" and "Y" under "Referred?".</Text></>
+              <><Ionicons name="alert-circle" size={24} color="#DC2626" /><Text style={styles.actionText}>{eyeLabel} eye failed. STOP and REFER.{"\n"}Record "N" under "Distance Vision Test - Pass?" and "Y" under "Referred?".</Text></>
             )}
           </View>
 
@@ -530,7 +530,7 @@ export default function DistanceVisionTestScreen() {
 
         <ScrollView contentContainerStyle={styles.resultContent}>
           <View style={[styles.resultCard, styles.resultPass]}>
-            <Text style={styles.resultEyeLabel}>✅ DISTANCE VISION — BOTH EYES PASSED</Text>
+            <Text style={styles.resultEyeLabel}>✅ DISTANCE VISION - BOTH EYES PASSED</Text>
             <View style={styles.resultLineRow}>
               <Text style={styles.resultLineTitle}>RIGHT EYE</Text>
               <Text style={[styles.resultLineSummary, styles.passText]}>
@@ -548,7 +548,7 @@ export default function DistanceVisionTestScreen() {
           <View style={styles.actionCard}>
             <Ionicons name="checkmark-circle" size={24} color="#10B981" />
             <Text style={styles.actionText}>
-              Record "Y" under "Distance Vision Test — Pass?".{"\n"}Proceed to Step 6: Near Vision Test.
+              Record "Y" under "Distance Vision Test - Pass?".{"\n"}Proceed to Step 6: Near Vision Test.
             </Text>
           </View>
 
@@ -600,7 +600,7 @@ function Header({ userData, navigation }: any) {
       </View>
       <View style={styles.headerCenter}>
         <Text style={styles.headerTitle}>{userData?.fullName || userData?.full_name || "Santé Initiative Uganda"}</Text>
-        <Text style={styles.headerSubtitle}>{userData?.district ? `VHT — ${userData.district} District` : ""}</Text>
+        <Text style={styles.headerSubtitle}>{userData?.district ? `VHT - ${userData.district} District` : ""}</Text>
       </View>
       <TouchableOpacity onPress={() => navigation.navigate("Settings")} style={styles.menuBtn}>
         <Ionicons name="menu" size={28} color="#1A4D8F" />
@@ -695,7 +695,7 @@ const styles = StyleSheet.create({
   stepNumText: { fontSize: 13, fontWeight: "700", color: "#FFFFFF" },
   stepText: { flex: 1, fontSize: 14, color: "#374151", lineHeight: 20 },
 
-  // ── TESTING PHASE — full screen white ─────────────────────────────────────
+  // ── TESTING PHASE - full screen white ─────────────────────────────────────
   testContainer: {
     flex: 1,
     backgroundColor: "#FFFFFF",
@@ -753,7 +753,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // Arrow buttons — cruciform layout
+  // Arrow buttons - cruciform layout
   arrowGrid: {
     paddingHorizontal: 16,
     paddingBottom: 16,

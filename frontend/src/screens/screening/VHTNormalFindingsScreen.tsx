@@ -95,8 +95,8 @@ export default function VHTNormalFindingsScreen() {
     if (canComplete) {
       const finalNotes =
         (screeningData.notes || "") +
-        "\nAll tests passed — normal findings. Counseling provided. Supplies disinfected. Register updated.";
-      // Update context AND pass notes as param — context flush is async so
+        "\nAll tests passed - normal findings. Counseling provided. Supplies disinfected. Register updated.";
+      // Update context AND pass notes as param - context flush is async so
       // ScreeningComplete might read stale notes if we rely on context alone.
       updateScreeningData({
         needsReferral: false,
@@ -129,7 +129,7 @@ export default function VHTNormalFindingsScreen() {
             Client Vision Assessment: NORMAL
           </Text>
           <Text style={styles.successSubtext}>
-            All tests passed — no referral or glasses needed
+            All tests passed - no referral or glasses needed
           </Text>
         </View>
 

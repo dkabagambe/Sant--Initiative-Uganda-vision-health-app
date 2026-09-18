@@ -53,7 +53,7 @@ const SaleItem = ({
       <View style={styles.saleDetails}>
         <Text style={styles.saleClientName}>{clientName}</Text>
         <Text style={styles.saleDescription}>
-          {power !== "N/A" ? `${power}D` : "—"} • {frameType}
+          {power !== "N/A" ? `${power}D` : "-"} • {frameType}
         </Text>
         <Text style={styles.saleTime}>{time}</Text>
         <View style={styles.badgeRow}>
@@ -100,9 +100,9 @@ export default function SalesDetailsScreen() {
   }, [sales, filterType, customStartDate, customEndDate]);
 
   const formatTimeAgo = (dateStr: string): string => {
-    if (!dateStr) return "—";
+    if (!dateStr) return "-";
     const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "—";
+    if (isNaN(d.getTime())) return "-";
     const diffMs = Date.now() - d.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     if (diffDays === 0) return `Today, ${d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`;

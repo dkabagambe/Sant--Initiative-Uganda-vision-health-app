@@ -111,7 +111,7 @@ export default function VHTScreeningStep5() {
         )}
       </ScrollView>
 
-      {/* Single footer button — no duplicate inside scroll */}
+      {/* Single footer button - no duplicate inside scroll */}
       <View style={[styles.footer, { paddingBottom: 24 }]}>
         <TouchableOpacity
           style={[styles.button, !allStepsCompleted && styles.buttonDisabled]}

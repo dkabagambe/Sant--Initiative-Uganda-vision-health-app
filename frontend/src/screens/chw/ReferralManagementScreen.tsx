@@ -254,7 +254,7 @@ export default function ReferralManagementScreen() {
     navigation.navigate("CreateReferralScreen");
   };
 
-  // Deduplicate by client — keep only the most recent record per client phone/name.
+  // Deduplicate by client - keep only the most recent record per client phone/name.
   const deduplicateByClient = (list: Referral[]): Referral[] => {
     const seen = new Map<string, Referral>();
     for (const r of list) {
@@ -464,7 +464,7 @@ export default function ReferralManagementScreen() {
                     <Text style={styles.infoValue}>
                       {referral.facility_name || "Not specified"}
                       {referral.facility_location
-                        ? ` — ${referral.facility_location}`
+                        ? ` - ${referral.facility_location}`
                         : ""}
                     </Text>
 
@@ -520,7 +520,7 @@ export default function ReferralManagementScreen() {
                     <Text style={styles.cardValue}>
                       {referral.facility_name || "Not specified"}
                       {referral.facility_location
-                        ? ` — ${referral.facility_location}`
+                        ? ` - ${referral.facility_location}`
                         : ""}
                     </Text>
 

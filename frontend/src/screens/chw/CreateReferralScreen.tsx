@@ -117,7 +117,7 @@ export default function CreateReferralScreen() {
         Alert.alert(
           "Success",
           fromScreening
-            ? "Referral created successfully. Screening ended — client must visit the health facility."
+            ? "Referral created successfully. Screening ended - client must visit the health facility."
             : "Referral created successfully",
           [
             {

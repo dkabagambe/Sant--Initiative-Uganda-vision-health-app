@@ -343,7 +343,7 @@ const OutletRegistrationStep4 = () => {
         {/* Shop Front Photo */}
         <Text style={styles.documentLabel}>Shop Front Photo *</Text>
         <Text style={styles.documentHint}>
-          Take or choose a photo showing the full shop front (signboard and entrance). You will then crop to a wide frame—include as much of the shop as possible so the crop area is clear.
+          Take or choose a photo showing the full shop front (signboard and entrance). You will then crop to a wide frame-include as much of the shop as possible so the crop area is clear.
         </Text>
         <View style={styles.documentCard}>
           {selectedFiles.shopFront ? (

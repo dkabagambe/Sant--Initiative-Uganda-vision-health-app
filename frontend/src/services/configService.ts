@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const CONFIG_KEY = "app_config";
 
-// Production API (used when __DEV__ is false — release/store builds)
+// Production API (used when __DEV__ is false - release/store builds)
 // Use the live backend that is currently serving the app API.
 export const RENDER_API_URL = "https://backend-tau-sepia-43.vercel.app/api";
 // Local backend should match the same app backend used in development.
@@ -15,7 +15,7 @@ export interface AppConfig {
   environment: "development" | "production";
 }
 
-// Env override: EXPO_PUBLIC_API_URL in .env — physical device: http://YOUR_IP:5000/api
+// Env override: EXPO_PUBLIC_API_URL in .env - physical device: http://YOUR_IP:5000/api
 // Use static property access for Expo to inline the value
 const envApiUrl =
   typeof process !== "undefined" ? (process.env.EXPO_PUBLIC_API_URL ?? "") : "";

@@ -67,7 +67,7 @@ export default function RoleLoginScreen() {
     try {
       const result = await apiService.login(fullPhone);
       if (result.success) {
-        // Navigate immediately — no Alert needed, OTP screen shows the phone number
+        // Navigate immediately - no Alert needed, OTP screen shows the phone number
         navigation.navigate("OTP", { phone: fullPhone, role });
       } else {
         const errorMsg = result.error || "Failed to send OTP";
@@ -84,7 +84,7 @@ export default function RoleLoginScreen() {
         ) {
           Alert.alert(
             "Not Registered",
-            "This phone number is not registered. Please register first as a CHW, Outlet, or VSLA — then you can log in with OTP.",
+            "This phone number is not registered. Please register first as a CHW, Outlet, or VSLA - then you can log in with OTP.",
             [
               { text: "Stay Here" },
               {
@@ -98,7 +98,7 @@ export default function RoleLoginScreen() {
         }
       }
     } catch (error: any) {
-      // Fallback safety net — apiService.login() should not throw, but just in case
+      // Fallback safety net - apiService.login() should not throw, but just in case
       Alert.alert("Error", "Failed to connect to server. Please check your internet connection and try again.");
     } finally {
       setIsLoading(false);

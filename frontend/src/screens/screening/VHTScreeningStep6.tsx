@@ -1,12 +1,12 @@
 /**
- * VHTScreeningStep6 — Step 3 of the MOH 8-step protocol:
+ * VHTScreeningStep6 - Step 3 of the MOH 8-step protocol:
  * "Explaining and Demonstrating Screening & Use Of Charts"
  *
  * MOH Manual Section 5, Step 3 (page 29):
  * - Explain the 3 lines of the E-chart:
- *     Line 1 (6/60)  — Distance vision (top)
- *     Line 2 (6/12)  — Distance vision (second)
- *     N8 row         — Near vision (bottom)
+ *     Line 1 (6/60)  - Distance vision (top)
+ *     Line 2 (6/12)  - Distance vision (second)
+ *     N8 row         - Near vision (bottom)
  * - Demonstrate E direction key: Up / Down / Left / Right
  * - Distance test: one eye at a time, cover other eye with palm
  * - Near test: both eyes open, hold chart at arm's length (~40 cm)
@@ -39,7 +39,7 @@ const BlockE = ({ direction, size }: { direction: EDir; size: number }) => (
 );
 
 // Proportionally-scaled preview sizes for the demonstration card.
-// These are NOT the test sizes — they are scaled down to fit on a reference card
+// These are NOT the test sizes - they are scaled down to fit on a reference card
 // that the VHT shows to the client before the test.
 // Ratio preserved from MOH chart: 6/60 : 6/12 : N8 ≈ 5 : 1 : 0.37
 // We cap the largest at 48dp so 3 Es fit in a row comfortably.
@@ -108,7 +108,7 @@ export default function VHTScreeningStep6() {
   const handleContinue = () => {
     if (canProceed) {
       updateScreeningData({ testsExplainedToClient: true });
-      // Go directly to the torch light test — safety info is already covered above
+      // Go directly to the torch light test - safety info is already covered above
       navigation.navigate("VisionScreen4");
     }
   };
@@ -145,7 +145,7 @@ export default function VHTScreeningStep6() {
           </Text>
 
           <View style={styles.chartCard}>
-            {/* Line 1 — 6/60 */}
+            {/* Line 1 - 6/60 */}
             <View style={styles.chartRow}>
               <View style={styles.chartLabel}>
                 <Text style={styles.chartCode}>6/60</Text>
@@ -164,7 +164,7 @@ export default function VHTScreeningStep6() {
 
             <View style={styles.chartDivider} />
 
-            {/* Line 2 — 6/12 */}
+            {/* Line 2 - 6/12 */}
             <View style={styles.chartRow}>
               <View style={styles.chartLabel}>
                 <Text style={styles.chartCode}>6/12</Text>
@@ -185,7 +185,7 @@ export default function VHTScreeningStep6() {
 
             <View style={styles.chartDivider} />
 
-            {/* N8 — Near Vision */}
+            {/* N8 - Near Vision */}
             <View style={[styles.chartRow, { backgroundColor: "#FFFBEB" }]}>
               <View style={styles.chartLabel}>
                 <Text style={[styles.chartCode, { color: "#B45309" }]}>N8</Text>
@@ -299,7 +299,7 @@ export default function VHTScreeningStep6() {
                 color={clientUnderstands === false ? "#DC2626" : "#D1D5DB"}
               />
               <Text style={[styles.confirmBtnText, clientUnderstands === false && { color: "#DC2626" }]}>
-                Not yet — demonstrate again
+                Not yet - demonstrate again
               </Text>
             </TouchableOpacity>
 
@@ -313,7 +313,7 @@ export default function VHTScreeningStep6() {
                 color={clientUnderstands === true ? "#10B981" : "#D1D5DB"}
               />
               <Text style={[styles.confirmBtnText, clientUnderstands === true && { color: "#065F46" }]}>
-                Yes — client understands
+                Yes - client understands
               </Text>
             </TouchableOpacity>
           </View>

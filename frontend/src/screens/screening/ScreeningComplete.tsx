@@ -27,7 +27,7 @@ export default function ScreeningComplete() {
   const { resetScreeningData, screeningData } = useScreening();
   const [saving, setSaving] = useState(false);
 
-  // Route params are the source of truth for glasses data — context may not
+  // Route params are the source of truth for glasses data - context may not
   // have flushed yet when this screen first mounts (React state is async).
   const glassesDispensed: boolean = route.params?.glassesDispensed || false;
   const glassesPower: string      = route.params?.glassesPower      || "";
@@ -50,7 +50,7 @@ export default function ScreeningComplete() {
     const clientPhone  = screeningData.clientPhone  || "";
     const clientGender = screeningData.clientGender || "";
 
-    // Build the complete payload — prefer route params over context for glasses fields
+    // Build the complete payload - prefer route params over context for glasses fields
     const completeData = {
       ...screeningData,
       clientName,
@@ -84,12 +84,12 @@ export default function ScreeningComplete() {
           savedSuccessfully  = true;
           savedScreeningId   = result.screeningId || result.data?.id || "";
         } else {
-          // Server returned a non-success response — fall through to offline
+          // Server returned a non-success response - fall through to offline
           throw new Error(result?.error || "Server returned failure");
         }
       } catch (apiError: any) {
         console.warn("API save failed, falling back to offline queue:", apiError?.message);
-        // Always queue offline on any API failure — never silently discard
+        // Always queue offline on any API failure - never silently discard
         try {
           savedScreeningId  = await saveOffline(completeData);
           savedSuccessfully = true;
@@ -125,7 +125,7 @@ export default function ScreeningComplete() {
         return;
       }
 
-      // 3. No glasses — saved, just confirm and go home
+      // 3. No glasses - saved, just confirm and go home
       Alert.alert(
         "✅ Record Saved",
         `Screening for ${clientName || "client"} has been saved successfully.`,
@@ -183,7 +183,7 @@ export default function ScreeningComplete() {
           </View>
         )}
 
-        {/* Referral reminder — shown when REFER_EDUCATE was triggered in key questions */}
+        {/* Referral reminder - shown when REFER_EDUCATE was triggered in key questions */}
         {screeningData.needsReferral && !glassesDispensed && screeningData.referralReason && (
           <View style={styles.referralReminderCard}>
             <Ionicons name="alert-circle" size={24} color="#D97706" />
@@ -219,7 +219,7 @@ export default function ScreeningComplete() {
             style={styles.followUpButton}
             onPress={() => {
               resetScreeningData();
-              // CommunityFollowUp is registered in ScreeningStack — navigate directly
+              // CommunityFollowUp is registered in ScreeningStack - navigate directly
               navigation.navigate("CommunityFollowUp" as any);
             }}
             activeOpacity={0.8}

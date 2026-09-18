@@ -53,7 +53,7 @@ export default function VHTReferralScreen() {
 
     updateScreeningData({
       needsReferral: true,
-      needsGlasses: false,       // referral path — no glasses dispensed
+      needsGlasses: false,       // referral path - no glasses dispensed
       referralReason: referralReason,
       referralFacility: finalFacility,
       referralStep: "pending",
