@@ -254,10 +254,22 @@ export default function ReferralManagementScreen() {
     navigation.navigate("CreateReferralScreen");
   };
 
-  const activeReferrals = referrals.filter(
-    (r) => r.status === "active" || r.status === "pending",
+  // Deduplicate by client — keep only the most recent record per client phone/name.
+  const deduplicateByClient = (list: Referral[]): Referral[] => {
+    const seen = new Map<string, Referral>();
+    for (const r of list) {
+      const key = (r.client_phone || r.client_name || r.id).trim().toLowerCase();
+      if (!seen.has(key)) seen.set(key, r);
+    }
+    return Array.from(seen.values());
+  };
+
+  const activeReferrals = deduplicateByClient(
+    referrals.filter((r) => r.status === "active" || r.status === "pending")
   );
-  const completedReferrals = referrals.filter((r) => r.status === "completed");
+  const completedReferrals = deduplicateByClient(
+    referrals.filter((r) => r.status === "completed")
+  );
   const urgentCount = activeReferrals.filter(
     (r) => r.urgency === "urgent" || r.urgency === "high",
   ).length;

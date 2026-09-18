@@ -192,15 +192,32 @@ export default function ReferralsScreen() {
     }
   };
 
-  const pendingReferrals = referrals.filter((r) => r.status === "pending" || !r.status);
-  const completedReferrals = referrals.filter((r) => r.status === "completed");
+  // Deduplicate by client identity — keep only the most recent record per client.
+  // This prevents the same person appearing twice when both a screening auto-
+  // created a referral AND a manual referral was created for them.
+  const deduplicateByClient = (list: ReferralItem[]): ReferralItem[] => {
+    const seen = new Map<string, ReferralItem>();
+    // list is already newest-first from the backend (ORDER BY created_at DESC)
+    for (const r of list) {
+      const key = (r.client_phone || r.client_name || r.id).trim().toLowerCase();
+      if (!seen.has(key)) seen.set(key, r);
+    }
+    return Array.from(seen.values());
+  };
+
+  const pendingReferrals  = deduplicateByClient(
+    referrals.filter((r) => r.status === "pending" || !r.status)
+  );
+  const completedReferrals = deduplicateByClient(
+    referrals.filter((r) => r.status === "completed")
+  );
 
   const currentReferrals =
     activeTab === "pending"
       ? pendingReferrals
       : activeTab === "completed"
         ? completedReferrals
-        : referrals;
+        : deduplicateByClient(referrals);
 
   const formatDate = (dateStr: string | null | undefined): string => {
     if (!dateStr) return "—";

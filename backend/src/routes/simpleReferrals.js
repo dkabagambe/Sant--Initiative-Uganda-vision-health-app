@@ -189,17 +189,19 @@ router.patch("/:id/status", authenticate, async (req, res) => {
     const sql = req.app.locals.sql;
     const { id } = req.params;
     const { status, notes } = req.body;
+    const healthWorkerId = req.user?.userId;
     const completedDate = status === "completed"
       ? new Date().toISOString().split("T")[0]
       : null;
 
+    // Update the target referral
     const referral = await sql`
       UPDATE referrals
       SET
         status         = ${status},
         completed_date = CASE WHEN ${status} = 'completed' THEN ${completedDate}::date ELSE completed_date END,
         notes          = COALESCE(${notes ?? null}, notes)
-      WHERE id = ${id} AND health_worker_id = ${req.user?.userId}
+      WHERE id = ${id} AND health_worker_id = ${healthWorkerId}
       RETURNING *
     `;
 
@@ -207,8 +209,39 @@ router.patch("/:id/status", authenticate, async (req, res) => {
       return res.status(404).json({ success: false, error: "Referral not found" });
     }
 
-    if (status === "completed" && referral[0].screening_id) {
-      await sql`UPDATE screenings SET needs_referral = false WHERE id = ${referral[0].screening_id}`;
+    // When marking complete, also complete any other open referrals for the
+    // same client (same phone or same name) by this VHT — prevents duplicates
+    // appearing in the pending list after a second referral record was created.
+    if (status === "completed") {
+      const { client_phone, client_name, screening_id } = referral[0];
+
+      // Mark all sibling referrals complete (by phone if available, else by name)
+      if (client_phone) {
+        await sql`
+          UPDATE referrals
+          SET status = 'completed',
+              completed_date = COALESCE(completed_date, ${completedDate}::date)
+          WHERE health_worker_id = ${healthWorkerId}
+            AND client_phone = ${client_phone}
+            AND status != 'completed'
+            AND id != ${id}
+        `;
+      } else if (client_name) {
+        await sql`
+          UPDATE referrals
+          SET status = 'completed',
+              completed_date = COALESCE(completed_date, ${completedDate}::date)
+          WHERE health_worker_id = ${healthWorkerId}
+            AND client_name = ${client_name}
+            AND status != 'completed'
+            AND id != ${id}
+        `;
+      }
+
+      // Also clear needs_referral on the linked screening (if any)
+      if (screening_id) {
+        await sql`UPDATE screenings SET needs_referral = false WHERE id = ${screening_id}`;
+      }
     }
 
     res.json({ success: true, message: "Referral status updated successfully", data: referral[0] });
