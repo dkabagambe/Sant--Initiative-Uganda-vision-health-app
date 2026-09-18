@@ -38,7 +38,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import TumblingE, { EDirection } from "../../components/TumblingE";
+import TumblingE, { EDirection, eSize6_60, eSize6_12 } from "../../components/TumblingE";
 
 const { width, height } = Dimensions.get("window");
 
@@ -342,11 +342,13 @@ export default function DistanceVisionTestScreen() {
     const correctSoFar = lineResults.filter(Boolean).length;
     const wrongSoFar = lineResults.filter((r) => !r).length;
 
-    // Line 1 (6/60) → large E (~65% screen width)
-    // Line 2 (6/12) → smaller E (~42% screen width)
+    // MOH-accurate physical sizes:
+    //   Line 1 (6/60): letter must be physically ~44mm tall on screen
+    //   Line 2 (6/12): letter must be physically ~8.7mm tall on screen
+    // These convert mm → dp using the device's pixel density at runtime.
     const eSize = currentLine === 1
-      ? Math.round(width * 0.65)
-      : Math.round(width * 0.42);
+      ? eSize6_60()
+      : eSize6_12();
 
     const remainingLetters = totalLetters - lineResults.length - 1;
     const canStillPass = correctSoFar + remainingLetters + 1 >= passThreshold;

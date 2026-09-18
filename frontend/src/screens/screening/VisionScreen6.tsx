@@ -33,7 +33,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
-import TumblingE, { EDirection } from "../../components/TumblingE";
+import TumblingE, { EDirection, eSizeN8 } from "../../components/TumblingE";
 
 const { width } = Dimensions.get("window");
 
@@ -112,8 +112,10 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
   const correctSoFar = results.filter(Boolean).length;
   const wrongSoFar   = results.filter((r) => !r).length;
 
-  // N8 (near vision, held at 40 cm) → medium E, ~45% of screen width
-  const eSize = Math.round(width * 0.45);
+  // MOH-accurate physical size:
+  //   N8 row at 40cm arm's length: letter height must be physically ~3.2mm on screen
+  //   (client holds the phone — the phone IS the near vision chart)
+  const eSize = eSizeN8();
 
   // ── Instructions ─────────────────────────────────────────────────────────
   if (phase === "instructions") {

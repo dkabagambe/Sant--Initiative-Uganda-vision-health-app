@@ -30,13 +30,23 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { useLanguage } from "../../context/LanguageContext";
-import TumblingE from "../../components/TumblingE";
+import TumblingE, { eSize6_60, eSize6_12, eSizeN8 } from "../../components/TumblingE";
 
 type EDir = "right" | "down" | "left" | "up";
 // Alias so existing JSX (<BlockE>) keeps working without changes
 const BlockE = ({ direction, size }: { direction: EDir; size: number }) => (
   <TumblingE direction={direction} size={size} />
 );
+
+// Proportionally-scaled preview sizes for the demonstration card.
+// These are NOT the test sizes — they are scaled down to fit on a reference card
+// that the VHT shows to the client before the test.
+// Ratio preserved from MOH chart: 6/60 : 6/12 : N8 ≈ 5 : 1 : 0.37
+// We cap the largest at 48dp so 3 Es fit in a row comfortably.
+const DEMO_6_60 = 48;
+const DEMO_6_12 = Math.round(DEMO_6_60 / 5);        // ~10dp
+const DEMO_N8   = Math.round(DEMO_6_60 * 0.37 / 5); // ~4dp  (too small to render well, use 8dp min)
+const DEMO_N8_DISPLAY = Math.max(8, DEMO_N8);        // 8dp minimum so it's visible
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function VHTScreeningStep6() {
@@ -142,9 +152,9 @@ export default function VHTScreeningStep6() {
                 <Text style={styles.chartNote}>Distance{"\n"}Line 1</Text>
               </View>
               <View style={styles.chartEs}>
-                <BlockE direction="right" size={52} />
-                <BlockE direction="down"  size={52} />
-                <BlockE direction="left"  size={52} />
+                <BlockE direction="right" size={DEMO_6_60} />
+                <BlockE direction="down"  size={DEMO_6_60} />
+                <BlockE direction="left"  size={DEMO_6_60} />
               </View>
               <View style={styles.chartMeta}>
                 <Text style={styles.chartMetaText}>3 letters</Text>
@@ -161,11 +171,11 @@ export default function VHTScreeningStep6() {
                 <Text style={styles.chartNote}>Distance{"\n"}Line 2</Text>
               </View>
               <View style={styles.chartEs}>
-                <BlockE direction="right" size={32} />
-                <BlockE direction="up"    size={32} />
-                <BlockE direction="down"  size={32} />
-                <BlockE direction="left"  size={32} />
-                <BlockE direction="right" size={32} />
+                <BlockE direction="right" size={DEMO_6_12} />
+                <BlockE direction="up"    size={DEMO_6_12} />
+                <BlockE direction="down"  size={DEMO_6_12} />
+                <BlockE direction="left"  size={DEMO_6_12} />
+                <BlockE direction="right" size={DEMO_6_12} />
               </View>
               <View style={styles.chartMeta}>
                 <Text style={styles.chartMetaText}>5 letters</Text>
@@ -182,11 +192,11 @@ export default function VHTScreeningStep6() {
                 <Text style={[styles.chartNote, { color: "#92400E" }]}>Near{"\n"}Vision</Text>
               </View>
               <View style={styles.chartEs}>
-                <BlockE direction="left"  size={20} />
-                <BlockE direction="right" size={20} />
-                <BlockE direction="up"    size={20} />
-                <BlockE direction="down"  size={20} />
-                <BlockE direction="left"  size={20} />
+                <BlockE direction="left"  size={DEMO_N8_DISPLAY} />
+                <BlockE direction="right" size={DEMO_N8_DISPLAY} />
+                <BlockE direction="up"    size={DEMO_N8_DISPLAY} />
+                <BlockE direction="down"  size={DEMO_N8_DISPLAY} />
+                <BlockE direction="left"  size={DEMO_N8_DISPLAY} />
               </View>
               <View style={styles.chartMeta}>
                 <Text style={styles.chartMetaText}>5 letters</Text>
