@@ -116,56 +116,100 @@ export default function CHWDashboard() {
         apiService.getReferrals().catch(() => ({ data: [] })),
       ]);
 
-      const activities: any[] = [];
+      // Build a map keyed by client identity (phone preferred, name fallback).
+      // Each entry tracks ALL events for that client so we can deduplicate.
+      const clientMap = new Map<
+        string,
+        { name: string; events: Array<{ summary: string; time: string; type: string }> }
+      >();
 
-      // Add recent screenings (up to 3)
-      if (screenings.data) {
-        screenings.data.slice(0, 3).forEach((s: any) => {
-          // glasses_power is the actual dispensed power; recommended_power is fallback
-          const power = s.glasses_power || s.recommended_power || null;
-          const action = s.glasses_dispensed
-            ? `Glasses dispensed${power ? ` • ${power}` : ""}`
-            : s.needs_referral
-            ? "Referred to health facility"
-            : "Screening completed";
-          activities.push({
-            name: s.client_name || "Unknown client",
-            action,
-            time: s.created_at,
-            type: "screening",
-          });
-        });
-      }
+      const upsert = (
+        key: string,
+        name: string,
+        summary: string,
+        time: string,
+        type: string,
+      ) => {
+        if (!key) return;
+        if (!clientMap.has(key)) {
+          clientMap.set(key, { name: name || "Unknown client", events: [] });
+        }
+        clientMap.get(key)!.events.push({ summary, time, type });
+      };
 
-      // Add recent payments (up to 3)
-      if (payments.data) {
-        payments.data.slice(0, 3).forEach((p: any) => {
-          activities.push({
-            name: p.client_name || "Unknown client",
-            action: `Payment received • UGX ${Number(p.amount || 0).toLocaleString()}`,
-            time: p.created_at,
-            type: "payment",
-          });
-        });
-      }
+      // --- screenings ---
+      (screenings.data || []).forEach((s: any) => {
+        const key = (s.client_phone || s.client_name || "").trim().toLowerCase();
+        const power = s.glasses_power || s.recommended_power || null;
+        let summary: string;
+        if (s.glasses_dispensed) {
+          summary = `Glasses dispensed${power ? ` • ${power}` : ""}`;
+        } else if (s.needs_referral) {
+          summary = "Referred to health facility";
+        } else {
+          const vision = s.distance_vision_result
+            ? ` • Vision: ${s.distance_vision_result}`
+            : "";
+          summary = `Screening completed${vision}`;
+        }
+        upsert(key, s.client_name, summary, s.created_at, "screening");
+      });
 
-      // Add recent referrals (up to 3)
-      if (referrals.data) {
-        referrals.data.slice(0, 3).forEach((r: any) => {
-          activities.push({
-            name: r.client_name || "Unknown client",
-            action: `Referred to ${r.facility_name || "health facility"}`,
-            time: r.created_at,
-            type: "referral",
-          });
-        });
-      }
+      // --- payments ---
+      (payments.data || []).forEach((p: any) => {
+        const key = (p.client_phone || p.client_name || "").trim().toLowerCase();
+        const summary = `Payment received • UGX ${Number(p.amount || 0).toLocaleString()}`;
+        upsert(key, p.client_name, summary, p.created_at, "payment");
+      });
 
-      // Sort all by most recent first, keep top 5
-      activities.sort(
-        (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()
+      // --- referrals ---
+      (referrals.data || []).forEach((r: any) => {
+        const key = (r.client_phone || r.client_name || "").trim().toLowerCase();
+        const facility = r.facility_name || "health facility";
+        const summary = `Referred to ${facility}`;
+        upsert(key, r.client_name, summary, r.created_at, "referral");
+      });
+
+      // Collapse each client entry into a single display row
+      const grouped = Array.from(clientMap.values()).map((client) => {
+        // Sort events newest-first
+        const sorted = [...client.events].sort(
+          (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime(),
+        );
+        const latest = sorted[0];
+        const count = sorted.length;
+
+        // Build summary text
+        let action: string;
+        if (count === 1) {
+          action = latest.summary;
+        } else {
+          // Check if all events happened today
+          const today = new Date().toDateString();
+          const allToday = sorted.every(
+            (e) => new Date(e.time).toDateString() === today,
+          );
+          const prefix = allToday
+            ? `${count} activities today`
+            : `${count} activities`;
+          action = `${prefix} • Last: ${latest.summary}`;
+        }
+
+        return {
+          name: client.name,
+          action,
+          time: latest.time,
+          count,
+          type: latest.type,
+        };
+      });
+
+      // Sort by most recent activity, keep top 5
+      grouped.sort(
+        (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime(),
       );
-      const top5 = activities.slice(0, 5).map((a) => ({
+
+      const top5 = grouped.slice(0, 5).map((a) => ({
         ...a,
         time: getTimeAgo(a.time),
       }));
@@ -538,7 +582,14 @@ export default function CHWDashboard() {
               recentActivities.map((activity, index) => (
                 <View key={index} style={styles.activityItem}>
                   <View style={styles.activityContent}>
-                    <Text style={styles.activityName}>{activity.name}</Text>
+                    <View style={styles.activityNameRow}>
+                      <Text style={styles.activityName}>{activity.name}</Text>
+                      {activity.count > 1 && (
+                        <View style={styles.activityBadge}>
+                          <Text style={styles.activityBadgeText}>{activity.count}</Text>
+                        </View>
+                      )}
+                    </View>
                     <Text style={styles.activityAction}>{activity.action}</Text>
                   </View>
                   <Text style={styles.activityTime}>{activity.time}</Text>
@@ -927,11 +978,29 @@ const styles = StyleSheet.create({
   activityContent: {
     flex: 1,
   },
+  activityNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 4,
+  },
   activityName: {
     fontSize: 16,
     fontWeight: "600",
     color: "#1A1A1A",
-    marginBottom: 4,
+  },
+  activityBadge: {
+    backgroundColor: "#1A4D8F",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    minWidth: 20,
+    alignItems: "center",
+  },
+  activityBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   activityAction: {
     fontSize: 14,
