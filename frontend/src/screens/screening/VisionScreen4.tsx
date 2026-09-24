@@ -165,22 +165,25 @@ export default function TorchLightStepScreen() {
         navigation.navigate("CreateReferralScreen" as any, referralParams);
       }
     } else {
-      // No abnormal signs - check age
+      // No abnormal signs - build the complete data object first, then update + save
+      const passedData = {
+        ...screeningData,
+        torchTestPassed: true,
+        torchTestAbnormalSigns: "none",
+      };
+
       updateScreeningData({
         torchTestPassed: true,
-        torchTestAbnormalSigns: "none"
+        torchTestAbnormalSigns: "none",
       });
 
       if (clientAge < 6) {
         // Children under 6: END screening after torch test
-        // Save screening data first
         const screeningComplete = {
-          ...screeningData,
-          torchTestPassed: true,
-          torchTestAbnormalSigns: "none",
+          ...passedData,
           needsReferral: false,
           needsGlasses: false,
-          notes: `Child under 6 years old - only torch test performed. No abnormal signs detected.`
+          notes: `Child under 6 years old - only torch test performed. No abnormal signs detected.`,
         };
 
         try {
@@ -197,7 +200,6 @@ export default function TorchLightStepScreen() {
                 text: "OK",
                 onPress: () => {
                   resetScreeningData();
-                  // Navigate back to the CHW dashboard (AppTabs → CHWHome → CHWDashboard)
                   const root = navigation.getParent()?.getParent();
                   if (root) {
                     root.navigate("AppTabs", { role: "CHW" });
@@ -209,7 +211,6 @@ export default function TorchLightStepScreen() {
             ],
           );
         } catch (error) {
-          // Save offline if API throws
           await saveOffline(screeningComplete);
           Alert.alert(
             "✅ Screening Complete (Saved Offline)",
@@ -231,7 +232,7 @@ export default function TorchLightStepScreen() {
           );
         }
       } else {
-        // Age 6+: mark passed and advance directly to the 2-minute wait screen
+        // Age 6+: advance to 2-minute wait screen, no save yet (save happens at end of full screening)
         setTestPassed(true);
         setCurrentSubStep(4.5);
         setCountdown(120);
