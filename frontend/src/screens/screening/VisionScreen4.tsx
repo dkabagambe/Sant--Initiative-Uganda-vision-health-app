@@ -478,14 +478,15 @@ export default function TorchLightStepScreen() {
           </Text>
 
           <View style={styles.passButtons}>
-            {/* PASS button - only enabled if "No Abnormal Signs" is selected */}
+            {/* PASS button - enabled when no abnormal signs (either "none" selected or nothing selected) */}
             <TouchableOpacity
               style={[
                 styles.passButton,
                 styles.passButtonYes,
                 hasAbnormalSigns && { opacity: 0.4 },
               ]}
-              onPress={() => !hasAbnormalSigns && eyesNormal && handleTestComplete(true)}
+              onPress={() => !hasAbnormalSigns && handleTestComplete(true)}
+              disabled={hasAbnormalSigns}
               activeOpacity={0.7}
             >
               <Text style={styles.passButtonEmoji}>✓</Text>
@@ -502,6 +503,7 @@ export default function TorchLightStepScreen() {
                 !hasAbnormalSigns && { opacity: 0.4 },
               ]}
               onPress={() => hasAbnormalSigns && handleTestComplete(false)}
+              disabled={!hasAbnormalSigns}
               activeOpacity={0.7}
             >
               <Text style={styles.passButtonEmoji}>✗</Text>
@@ -527,6 +529,17 @@ export default function TorchLightStepScreen() {
             <View style={[styles.referralWarning, { backgroundColor: "#D1FAE5", borderColor: "#A7F3D0" }]}>
               <Text style={[styles.warningTitle, { color: "#065F46" }]}>
                 ✅ Eyes Normal
+              </Text>
+              <Text style={[styles.warningText, { color: "#065F46" }]}>
+                Tap "Y - Pass" to record the result and start the 2-minute wait before distance vision testing.
+              </Text>
+            </View>
+          )}
+
+          {!eyesNormal && !hasAbnormalSigns && testPassed === null && (
+            <View style={[styles.referralWarning, { backgroundColor: "#D1FAE5", borderColor: "#A7F3D0" }]}>
+              <Text style={[styles.warningTitle, { color: "#065F46" }]}>
+                ✅ No Abnormal Signs
               </Text>
               <Text style={[styles.warningText, { color: "#065F46" }]}>
                 Tap "Y - Pass" to record the result and start the 2-minute wait before distance vision testing.
@@ -695,10 +708,11 @@ export default function TorchLightStepScreen() {
           </TouchableOpacity>
         ) : currentSubStep === 4 ? (
           // The real action is the Y/N buttons inside the card above.
-          // This footer is just a passive indicator - no tappable action needed here.
-          <View style={[styles.primaryButton, styles.disabledButton]}>
+          // This footer is a passive reminder label.
+          <View style={[styles.primaryButton, styles.disabledButton, { flexDirection: "row", justifyContent: "center", alignItems: "center" }]}>
+            <Ionicons name="hand-left-outline" size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
             <Text style={[styles.primaryButtonText, { color: "#9CA3AF" }]}>
-              Tap Y - Pass or N - Fail above to continue
+              Use Y - Pass or N - Fail above
             </Text>
           </View>
         ) : (
