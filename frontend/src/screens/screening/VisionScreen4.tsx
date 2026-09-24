@@ -697,23 +697,27 @@ export default function TorchLightStepScreen() {
               abnormalSigns.length === 0 && styles.disabledButton,
             ]}
             onPress={() => {
-              setTestPassed(null); // reset any previous answer when revisiting
+              if (abnormalSigns.length === 0) {
+                // Nothing selected yet — auto-select "none" (no abnormal signs) and proceed
+                setAbnormalSigns(["none"]);
+              }
+              setTestPassed(null);
               setCurrentSubStep(4);
             }}
-            disabled={abnormalSigns.length === 0}
             activeOpacity={0.8}
           >
             <Text style={styles.primaryButtonText}>
-              Continue to Record Result
+              {abnormalSigns.length === 0
+                ? "No Signs Seen — Continue to Record"
+                : "Continue to Record Result"}
             </Text>
           </TouchableOpacity>
         ) : currentSubStep === 4 ? (
-          // The real action is the Y/N buttons inside the card above.
-          // This footer is a passive reminder label.
-          <View style={[styles.primaryButton, styles.disabledButton, { flexDirection: "row", justifyContent: "center", alignItems: "center" }]}>
-            <Ionicons name="hand-left-outline" size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
-            <Text style={[styles.primaryButtonText, { color: "#9CA3AF" }]}>
-              Use Y - Pass or N - Fail above
+          // Y/N buttons are inside the card above — footer shows a clear hint
+          <View style={styles.step4FooterHint}>
+            <Ionicons name="arrow-up" size={18} color="#6B7280" />
+            <Text style={styles.step4FooterHintText}>
+              Tap  ✓ Y - Pass  or  ✗ N - Fail  above to continue
             </Text>
           </View>
         ) : (
@@ -1380,6 +1384,24 @@ const styles = StyleSheet.create({
   },
   skipButtonText: {
     fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+  },
+  step4FooterHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    backgroundColor: "#F3F4F6",
+  },
+  step4FooterHintText: {
+    fontSize: 14,
+    fontWeight: "600",
     color: "#6B7280",
     textAlign: "center",
   },
