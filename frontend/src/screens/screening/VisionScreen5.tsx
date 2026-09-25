@@ -1,7 +1,8 @@
 /**
- * VisionScreen5 – Step 5: Peek Acuity–style Distance Vision Test
- * ───────────────────────────────────────────────────────────────
- * Mirrors org.peekvision.public.android:
+ * VisionScreen5 – Step 5: SANTÉ INITIATIVE Distance Vision Test
+ * ──────────────────────────────────────────────────────────────
+ * Protocol reference: org.peekvision.public.android (package name only,
+ * not affiliated with or endorsed by Peek Vision Ltd).
  *
  *  DISPLAY   : WHITE background (#FFFFFF), BLACK tumbling-E (#000000).
  *  DISTANCE  : 2 metres. Calibration screen sets brightness to max first.
@@ -357,7 +358,7 @@ export default function VisionScreen5() {
       distanceVisionResult: anyRef ? "failed" : "passed",
       needsReferral:  anyRef,
       referralReason: anyRef
-        ? `Failed distance vision (Step 5 Peek). R: ${rightStr}  L: ${leftStr}`
+        ? `Failed distance vision (Step 5 SANTÉ INITIATIVE). R: ${rightStr}  L: ${leftStr}`
         : "",
       referralUrgency: "normal",
       referralStep:    "Step 5 - Distance Vision Test",
@@ -399,7 +400,7 @@ export default function VisionScreen5() {
       parish:        screeningData.parish       || "",
       reason:        updates.referralReason,
       urgency:       "normal",
-      notes:         `Step 5 Peek Vision. R: ${rightStr}  L: ${leftStr}`,
+      notes:         `Step 5 SANTÉ INITIATIVE Vision. R: ${rightStr}  L: ${leftStr}`,
     };
     const root = navigation.getParent()?.getParent();
     if (root) root.navigate("CreateReferralScreen", params);
@@ -428,10 +429,10 @@ export default function VisionScreen5() {
         <Header userData={userData} navigation={navigation} />
         <ScrollView contentContainerStyle={s.scrollPad} showsVerticalScrollIndicator={false}>
 
-          <Text style={s.pageTitle}>Step 5: Distance Vision</Text>
+          <Text style={s.pageTitle}>Distance Vision Test — SANTÉ INITIATIVE</Text>
 
           <View style={s.calCard}>
-            <Text style={s.calTitle}>📱 Calibrate Before Testing</Text>
+            <Text style={s.calTitle}>📱 SANTÉ INITIATIVE Calibration</Text>
             <CalRow icon="sunny"        color="#F59E0B" title="Max Brightness">
               Screen brightness has been set to maximum automatically.{"\n"}
               On iOS, also check Control Centre brightness is full.
@@ -556,6 +557,14 @@ export default function VisionScreen5() {
       <GestureHandlerRootView style={s.testRoot}>
         <SafeAreaView style={s.testRoot}>
           <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+
+          {/* Testing banner — always visible at top */}
+          <View style={[s.testingBanner, { backgroundColor: currentEye === "right" ? "#1565C0" : "#7C3AED" }]}>
+            <Ionicons name="eye" size={15} color="#FFF" />
+            <Text style={s.testingBannerTxt}>
+              TESTING {eyeLabel} EYE — Cover {coverEye} EYE
+            </Text>
+          </View>
 
           {/* Top bar */}
           <View style={s.testBar}>
@@ -886,9 +895,9 @@ export default function VisionScreen5() {
         <Header userData={userData} navigation={navigation} />
         <ScrollView contentContainerStyle={s.scrollPad} showsVerticalScrollIndicator={false}>
 
-          <Text style={s.pageTitle}>Distance Vision Results</Text>
+          <Text style={s.pageTitle}>SANTÉ INITIATIVE — Distance Vision Results</Text>
 
-          {/* Peek-style table */}
+          {/* Results table */}
           <View style={s.tableCard}>
             <View style={s.tableHead}>
               {["Eye","Snellen","LogMAR","Result"].map(h => (
@@ -1117,6 +1126,12 @@ const s = StyleSheet.create({
 
   // ── Testing ───────────────────────────────────────────────────────────────
   testRoot: { flex: 1, backgroundColor: "#FFFFFF" },
+
+  testingBanner: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 8, paddingVertical: 10, paddingHorizontal: 16,
+  },
+  testingBannerTxt: { fontSize: 14, fontWeight: "800", color: "#FFF", letterSpacing: 0.4 },
 
   testBar: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
