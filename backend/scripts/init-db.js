@@ -67,6 +67,24 @@ async function initDB() {
       "   Safe: only creates missing tables and seeds products when empty. Existing data is never deleted.\n",
     );
 
+    // Neon HTTP client needs ~1-2s after process start before fetch works.
+    // Retry the first query a few times with a short delay before giving up.
+    let connected = false;
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      try {
+        await sql`SELECT 1`;
+        connected = true;
+        break;
+      } catch (e) {
+        if (attempt < 5) {
+          await new Promise(r => setTimeout(r, 800));
+        }
+      }
+    }
+    if (!connected) {
+      throw new Error("Could not connect to Neon database after 5 attempts");
+    }
+
     // Enable UUID extension
     await sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
     console.log("✓ UUID extension enabled");

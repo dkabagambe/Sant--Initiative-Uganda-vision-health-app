@@ -34,11 +34,8 @@ if (hasPostgresUrl && !useSqliteEnv) {
   try {
     const { neon } = require("@neondatabase/serverless");
 
-    // Create Neon client with custom configuration for corporate networks
-    const neonSql = neon(rawUrl, {
-      connectionTimeoutMillis: 10000,
-      queryTimeoutMillis: 30000,
-    });
+    // Create Neon HTTP client — no pg-style timeout options (they break fetch)
+    const neonSql = neon(rawUrl);
 
     // Test connection immediately
     const testConnection = async () => {
@@ -52,7 +49,9 @@ if (hasPostgresUrl && !useSqliteEnv) {
       }
     };
 
-    // Wrap with retry mechanism
+    // sql wrapper: neonSql is a tagged-template function — must be called as
+    // a tag, not as a plain function. Re-applying the tag preserves the
+    // parameterised-query semantics that @neondatabase/serverless expects.
     sql = async function (strings, ...values) {
       const maxRetries = 3;
       const baseDelay = 1000;
@@ -76,10 +75,11 @@ if (hasPostgresUrl && !useSqliteEnv) {
       }
     };
 
-    // Test connection on startup. In production (Vercel) a failed connection is fatal.
-    // In local dev we warn but allow the server to start so routes are still reachable
-    // once the Neon project wakes up or network is restored.
-    testConnection()
+    // Test connection on startup. Delay by 1.5 s so the Node HTTP stack is
+    // fully initialised before the first fetch (avoids a spurious "fetch failed"
+    // error that occurs when neon() is called too early in the process lifecycle).
+    // In production (Vercel) a failed connection is fatal; locally we warn only.
+    setTimeout(() => testConnection()
       .then((success) => {
         if (success) {
           console.log("🔗 Using Neon database (same as Vercel production)");
@@ -102,7 +102,7 @@ if (hasPostgresUrl && !useSqliteEnv) {
           throw err;
         }
         console.warn("⚠️ Server continuing in degraded mode — DB requests will fail until Neon is reachable.");
-      });
+      }), 1500);
 
     // Export immediately for synchronous access
     module.exports = { sql, db };
