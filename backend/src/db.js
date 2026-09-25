@@ -76,17 +76,21 @@ if (hasPostgresUrl && !useSqliteEnv) {
       }
     };
 
-    // Test connection on startup and fail loudly when the shared Postgres URL is unavailable.
-    // Local dev should match the same DB used by the Play Store build unless SQLite is intentionally chosen.
+    // Test connection on startup. In production (Vercel) a failed connection is fatal.
+    // In local dev we warn but allow the server to start so routes are still reachable
+    // once the Neon project wakes up or network is restored.
     testConnection()
       .then((success) => {
         if (success) {
           console.log("🔗 Using Neon database (same as Vercel production)");
         } else {
           const message =
-            "⚠️ Postgres connection check failed. Local development must use the same DATABASE_URL as production; set USE_SQLITE=true only for explicit SQLite testing.";
-          console.error(message);
-          throw new Error(message);
+            "⚠️ Postgres connection check failed. Check DATABASE_URL and network access to Neon.";
+          console.warn(message);
+          if (process.env.VERCEL) {
+            throw new Error(message);
+          }
+          console.warn("⚠️ Server starting anyway — DB requests will fail until Neon is reachable.");
         }
       })
       .catch((err) => {
@@ -94,7 +98,10 @@ if (hasPostgresUrl && !useSqliteEnv) {
           "❌ Neon connection failed while starting app:",
           err.message,
         );
-        throw err;
+        if (process.env.VERCEL) {
+          throw err;
+        }
+        console.warn("⚠️ Server continuing in degraded mode — DB requests will fail until Neon is reachable.");
       });
 
     // Export immediately for synchronous access
