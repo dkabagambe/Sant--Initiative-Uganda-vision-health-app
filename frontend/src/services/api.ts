@@ -366,27 +366,45 @@ export const apiService = {
     quantityChange: number,
     frameType?: string,
   ) {
-    const response = await api.patch(`/products/${productId}/stock`, {
-      quantityChange,
-      frameType,
-    });
-    return response.data;
+    try {
+      const response = await api.patch(`/products/${productId}/stock`, {
+        quantityChange,
+        frameType,
+      });
+      return response.data;
+    } catch (error: any) {
+      const msg = error?.response?.data?.error || error?.message || "Failed to update stock";
+      return { success: false, error: msg };
+    }
   },
 
   // ============ SCREENINGS ============
   async createScreening(screeningData: any) {
-    const response = await api.post("/screenings", screeningData);
-    return response.data;
+    try {
+      const response = await api.post("/screenings", screeningData);
+      return response.data;
+    } catch (error: any) {
+      const msg = error?.response?.data?.error || error?.message || "Failed to save screening";
+      return { success: false, error: msg };
+    }
   },
 
   async getScreenings() {
-    const response = await api.get("/screenings");
-    return response.data;
+    try {
+      const response = await api.get("/screenings");
+      return response.data;
+    } catch (error: any) {
+      return { success: false, data: [], error: error?.message };
+    }
   },
 
   async getScreeningStats() {
-    const response = await api.get("/screenings/stats");
-    return response.data;
+    try {
+      const response = await api.get("/screenings/stats");
+      return response.data;
+    } catch (error: any) {
+      return { success: false, data: {}, error: error?.message };
+    }
   },
 
   // ============ PAYMENTS ============
@@ -547,9 +565,6 @@ export const apiService = {
   // ============ FILE UPLOAD ============
   async uploadFile(file: { uri: string; name: string; type: string }) {
     try {
-      console.log("Starting single file upload...");
-      console.log("File to upload:", file);
-
       const uploadFormData = new FormData();
       uploadFormData.append("file", {
         uri: file.uri,
@@ -557,34 +572,22 @@ export const apiService = {
         type: file.type,
       } as any);
 
-      console.log("FormData created for single file upload...");
-
       const uploadResponse = await api.post(
         "/simple-upload/single",
         uploadFormData,
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          timeout: 30000, // 30 second timeout
+          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 30000,
         },
       );
 
-      console.log("Single file upload response:", uploadResponse.data);
       return uploadResponse.data;
     } catch (error: any) {
-      console.error("Single file upload error:", error);
-      console.error("Error response:", error.response?.data);
-      console.error("Error status:", error.response?.status);
-      console.error("Error message:", error.message);
-
-      // Better error message for user
+      console.error("Single file upload error:", error.message);
       if (error.response?.data?.error) {
         throw new Error(error.response.data.error);
       } else if (error.code === "ECONNABORTED") {
-        throw new Error(
-          "Upload timed out. Please check your connection and try again.",
-        );
+        throw new Error("Upload timed out. Please check your connection and try again.");
       } else {
         throw new Error(error.message || "Failed to upload file");
       }
@@ -595,18 +598,8 @@ export const apiService = {
     files: Array<{ uri: string; name: string; type: string }>,
   ) {
     try {
-      console.log("Starting VSLA documents upload...");
-      console.log("Files to upload:", files);
-
       const vslFormData = new FormData();
-
-      files.forEach((file: any, index: number) => {
-        console.log(`Appending file ${index + 1}:`, {
-          uri: file.uri,
-          name: file.name,
-          type: file.type,
-        });
-
+      files.forEach((file: any) => {
         vslFormData.append("files", {
           uri: file.uri,
           name: file.name,
@@ -614,34 +607,22 @@ export const apiService = {
         } as any);
       });
 
-      console.log("FormData created, sending to backend...");
-
       const vslResponse = await api.post(
         "/vsla-upload/documents",
         vslFormData,
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          timeout: 60000, // 60 second timeout for multiple files
+          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 60000,
         },
       );
 
-      console.log("VSLA upload response:", vslResponse.data);
       return vslResponse.data;
     } catch (error: any) {
-      console.error("VSLA documents upload error:", error);
-      console.error("Error response:", error.response?.data);
-      console.error("Error status:", error.response?.status);
-      console.error("Error message:", error.message);
-
-      // Better error message for user
+      console.error("VSLA documents upload error:", error.message);
       if (error.response?.data?.error) {
         throw new Error(error.response.data.error);
       } else if (error.code === "ECONNABORTED") {
-        throw new Error(
-          "Upload timed out. Please check your connection and try again.",
-        );
+        throw new Error("Upload timed out. Please check your connection and try again.");
       } else {
         throw new Error(error.message || "Failed to upload documents");
       }

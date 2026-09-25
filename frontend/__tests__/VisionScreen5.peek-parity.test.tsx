@@ -139,18 +139,20 @@ describe("1. Unit — Acuity Ladder", () => {
 });
 
 describe("1. Unit — Physical Size at 2 metres", () => {
-  // At standard Android PR=2, 160 dpi baseline:
-  // dp = mm × (160×2) / 25.4
-  test("6/60 height at 2m ≈ 29.1 mm → physicalDp ≈ 184 dp (PR=2)", () => {
+  // Formula: dp = mm × (160 × PR) / 25.4
+  // At PR=2: dp = mm × 12.598
+  // physicalDp(29.1, 2) = 29.1 × 12.598 ≈ 367 dp
+  // physicalDp(2.9, 2)  = 2.9  × 12.598 ≈  37 dp
+  test("6/60 height at 2m ≈ 29.1 mm → physicalDp ≈ 367 dp (PR=2)", () => {
     const dp = physicalDp(29.1, 2);
-    expect(dp).toBeGreaterThan(150);
-    expect(dp).toBeLessThan(220);
+    expect(dp).toBeGreaterThan(300);
+    expect(dp).toBeLessThan(430);
   });
 
-  test("6/6 height at 2m ≈ 2.9 mm → physicalDp ≈ 18 dp (PR=2)", () => {
+  test("6/6 height at 2m ≈ 2.9 mm → physicalDp ≈ 37 dp (PR=2)", () => {
     const dp = physicalDp(2.9, 2);
-    expect(dp).toBeGreaterThan(10);
-    expect(dp).toBeLessThan(30);
+    expect(dp).toBeGreaterThan(25);
+    expect(dp).toBeLessThan(50);
   });
 
   test("sizes decrease as acuity improves (6/60 > 6/36 > ... > 6/6)", () => {

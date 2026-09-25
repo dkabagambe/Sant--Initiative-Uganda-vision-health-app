@@ -44,8 +44,8 @@ export type EDirection = "right" | "down" | "left" | "up";
  * For clinical use a one-time screen calibration would be ideal, but for
  * the VHT workflow this estimate is accurate enough.
  */
-export function physicalDp(targetMM: number): number {
-  const pr = PixelRatio.get();
+export function physicalDp(targetMM: number, pixelRatioOverride?: number): number {
+  const pr = pixelRatioOverride ?? PixelRatio.get();
   // Clamp PR to a sane range so we don't produce absurd values on unusual devices
   const clampedPr = Math.max(1.5, Math.min(pr, 4));
   return Math.round(targetMM * (160 * clampedPr) / 25.4);

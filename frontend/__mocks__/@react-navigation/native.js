@@ -1,9 +1,9 @@
 // Mock @react-navigation/native and native-stack
 const React = require("react");
 
-const mockNavigate = jest.fn();
-const mockGoBack   = jest.fn();
-const mockGetParent = jest.fn(() => ({ getParent: jest.fn(() => ({ navigate: mockNavigate })) }));
+const mockNavigate   = jest.fn();
+const mockGoBack     = jest.fn();
+const mockGetParent  = jest.fn(() => ({ getParent: jest.fn(() => ({ navigate: mockNavigate })) }));
 
 module.exports = {
   useNavigation: () => ({
@@ -12,9 +12,9 @@ module.exports = {
     getParent:  mockGetParent,
   }),
   useRoute: () => ({ params: {} }),
-  NavigationContainer: ({ children }: any) => children,
+  NavigationContainer: (props) => props.children,
   createNativeStackNavigator: () => ({
-    Navigator: ({ children }: any) => children,
-    Screen:    ({ children }: any) => children,
+    Navigator: (props) => props.children,
+    Screen:    (props) => props.children,
   }),
 };

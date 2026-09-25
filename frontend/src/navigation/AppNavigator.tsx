@@ -138,6 +138,9 @@ function ScreeningStack() {
     </Stack.Navigator>
   );
 }
+
+// CHW Home Stack (Dashboard + CHW feature screens)
+function CHWHomeStack() {
   return (
     <Stack.Navigator
       screenOptions={{

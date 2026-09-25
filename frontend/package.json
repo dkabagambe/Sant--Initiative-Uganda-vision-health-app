@@ -10,27 +10,6 @@
     "test": "jest --forceExit",
     "test:watch": "jest --watch"
   },
-  "jest": {
-    "preset": "jest-expo",
-    "testMatch": [
-      "**/__tests__/**/*.test.ts",
-      "**/__tests__/**/*.test.tsx"
-    ],
-    "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|lucide-react-native)"
-    ],
-    "moduleNameMapper": {
-      "\\.(png|jpg|jpeg|gif|webp|mp3|wav|mp4|ttf|otf)$": "<rootDir>/__mocks__/fileMock.js",
-      "^expo-av$": "<rootDir>/__mocks__/expo-av.js",
-      "^expo-brightness$": "<rootDir>/__mocks__/expo-brightness.js",
-      "^expo-haptics$": "<rootDir>/__mocks__/expo-haptics.js",
-      "^expo-speech$": "<rootDir>/__mocks__/expo-speech.js",
-      "^@react-navigation/native$": "<rootDir>/__mocks__/@react-navigation/native.js",
-      "^@react-navigation/native-stack$": "<rootDir>/__mocks__/@react-navigation/native.js"
-    },
-    "setupFilesAfterFramework": [],
-    "testEnvironment": "node"
-  },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -69,7 +48,9 @@
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.2.4",
+    "babel-jest": "^29.7.0",
     "expo-module-scripts": "^55.0.2",
+    "jest": "^29.7.0",
     "typescript": "~6.0.3"
   },
   "private": true

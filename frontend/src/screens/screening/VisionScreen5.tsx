@@ -173,12 +173,24 @@ export default function VisionScreen5() {
     };
   }, []);
 
-  // ── Max brightness on calibration entry ──────────────────────────────────
+  // ── Max brightness on calibration entry; restore on unmount ─────────────
   useEffect(() => {
+    let originalBrightness = 0.5;
     if (phase !== "calibration") return;
     Brightness.requestPermissionsAsync()
-      .then(({ granted }) => { if (granted) Brightness.setBrightnessAsync(1.0).catch(() => {}); })
+      .then(({ granted }) => {
+        if (!granted) return;
+        // Save original before overriding
+        Brightness.getBrightnessAsync()
+          .then(b => { originalBrightness = b; })
+          .catch(() => {});
+        Brightness.setBrightnessAsync(1.0).catch(() => {});
+      })
       .catch(() => {});
+    return () => {
+      // Restore brightness when leaving calibration or unmounting
+      Brightness.setBrightnessAsync(originalBrightness).catch(() => {});
+    };
   }, [phase]);
 
   // ── Animate E transition ─────────────────────────────────────────────────
