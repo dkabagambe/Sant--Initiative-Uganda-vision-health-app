@@ -74,6 +74,7 @@ import VHTReferralScreen from "../screens/screening/VHTReferralScreen";
 import VHTNormalFindingsScreen from "../screens/screening/VHTNormalFindingsScreen";
 import VHTReadingGlassesScreen from "../screens/screening/VHTReadingGlassesScreen";
 import VHTCommunityFollowUpScreen from "../screens/chw/VHTCommunityFollowUpScreen";
+import PeekStyleVisionTestScreen from "../screens/screening/PeekStyleVisionTestScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -94,6 +95,7 @@ export type ScreeningStackParamList = {
   VisionScreen3: undefined;
   VisionScreen4: undefined;
   VisionScreen5: undefined;
+  PeekVisionTest: undefined;
   VisionScreen6: undefined;
   ReadingGlassesSelection: undefined;
   ScreeningComplete: { glassesDispensed?: boolean; glassesPower?: string };
@@ -128,6 +130,7 @@ function ScreeningStack() {
       <Stack.Screen name="VisionScreen3" component={VisionScreen3} />
       <Stack.Screen name="VisionScreen4" component={VisionScreen4} />
       <Stack.Screen name="VisionScreen5" component={VisionScreen5} />
+      <Stack.Screen name="PeekVisionTest" component={PeekStyleVisionTestScreen} />
       <Stack.Screen name="VisionScreen6" component={VisionScreen6Wrapper} />
       <Stack.Screen name="ReadingGlassesSelection" component={ReadingGlassesSelection} />
       <Stack.Screen name="ScreeningComplete" component={ScreeningComplete} />
@@ -135,9 +138,6 @@ function ScreeningStack() {
     </Stack.Navigator>
   );
 }
-
-// Create a stack for CHW Home tab with all feature screens
-function CHWHomeStack() {
   return (
     <Stack.Navigator
       screenOptions={{

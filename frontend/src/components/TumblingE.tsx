@@ -64,11 +64,21 @@ interface TumblingEProps {
    *  or pass an arbitrary number for UI previews / demonstrations. */
   size: number;
   direction: EDirection;
-  /** Ink colour - defaults to pure black */
+  /** Ink colour - defaults to pure black.
+   *  For the vision test screen use "#FFFFFF" (white on black background). */
   color?: string;
+  /** Background colour for the SVG canvas.
+   *  Defaults to "transparent".
+   *  For the vision test screen pass "#000000" so the E is always visible. */
+  backgroundColor?: string;
 }
 
-export default function TumblingE({ size, direction, color = "#000000" }: TumblingEProps) {
+export default function TumblingE({
+  size,
+  direction,
+  color = "#000000",
+  backgroundColor = "transparent",
+}: TumblingEProps) {
   const u = size / 5; // one grid unit
 
   const cx = size / 2;
@@ -82,6 +92,10 @@ export default function TumblingE({ size, direction, color = "#000000" }: Tumbli
 
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {/* Explicit background rect - guarantees colour even if parent clips */}
+      {backgroundColor !== "transparent" && (
+        <Rect x={0} y={0} width={size} height={size} fill={backgroundColor} />
+      )}
       <G rotation={deg} origin={`${cx}, ${cy}`}>
         {/* Spine - left column, full height */}
         <Rect x={0}     y={0}     width={u}    height={size} fill={color} />
