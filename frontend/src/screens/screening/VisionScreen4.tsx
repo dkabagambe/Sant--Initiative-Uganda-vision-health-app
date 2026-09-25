@@ -22,11 +22,9 @@ export default function TorchLightStepScreen() {
   const navigation = useNavigation<any>();
   const { screeningData, updateScreeningData, resetScreeningData } = useScreening();
   const [userData, setUserData] = useState<any>(null);
-  const [currentSubStep, setCurrentSubStep] = useState<1 | 2 | 3 | 4 | 4.5>(1);
+  const [currentSubStep, setCurrentSubStep] = useState<1 | 2 | 3 | 4>(1);
   const [abnormalSigns, setAbnormalSigns] = useState<string[]>([]);
   const [testPassed, setTestPassed] = useState<boolean | null>(null);
-  const [countdown, setCountdown] = useState(120); // 2 minutes = 120 seconds
-  const [isWaiting, setIsWaiting] = useState(false);
 
   const clientAge = Number(screeningData.clientAge) || 0;
 
@@ -59,19 +57,6 @@ export default function TorchLightStepScreen() {
       return false;
     }
   };
-
-  // Countdown timer effect
-  useEffect(() => {
-    if (isWaiting && countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (isWaiting && countdown === 0) {
-      // Auto-proceed to distance vision after 2 minutes
-      handleContinueToDistanceVision();
-    }
-  }, [isWaiting, countdown]);
 
   // Abnormal signs options from Figma
   const abnormalSignOptions = [
@@ -232,19 +217,12 @@ export default function TorchLightStepScreen() {
           );
         }
       } else {
-        // Age 6+: advance to 2-minute wait screen, no save yet (save happens at end of full screening)
-        setTestPassed(true);
-        setCurrentSubStep(4.5);
-        setCountdown(120);
-        setIsWaiting(true);
+        // Age 6+: torch test passed — proceed directly to distance vision test
+        navigation.navigate("VisionScreen5");
       }
     }
   };
 
-  const handleContinueToDistanceVision = () => {
-    // Navigate to Step 5 (Distance Vision Test)
-    navigation.navigate("VisionScreen5");
-  };
   const handleGoBack = () => {
     if (currentSubStep === 2) {
       setCurrentSubStep(1);
@@ -252,8 +230,6 @@ export default function TorchLightStepScreen() {
       setCurrentSubStep(2);
     } else if (currentSubStep === 4) {
       setCurrentSubStep(3);
-    } else if (currentSubStep === 4.5) {
-      setCurrentSubStep(4);
     } else {
       navigation.goBack();
     }
@@ -532,7 +508,7 @@ export default function TorchLightStepScreen() {
                 ✅ Eyes Normal
               </Text>
               <Text style={[styles.warningText, { color: "#065F46" }]}>
-                Tap "Y - Pass" to record the result and start the 2-minute wait before distance vision testing.
+                Tap "Y - Pass" to record the result and continue to the distance vision test.
               </Text>
             </View>
           )}
@@ -543,54 +519,9 @@ export default function TorchLightStepScreen() {
                 ✅ No Abnormal Signs
               </Text>
               <Text style={[styles.warningText, { color: "#065F46" }]}>
-                Tap "Y - Pass" to record the result and start the 2-minute wait before distance vision testing.
+                Tap "Y - Pass" to record the result and continue to the distance vision test.
               </Text>
             </View>
-          )}
-        </View>
-      </View>
-    );
-  };
-
-  const renderSubStep4_5 = () => {
-    const minutes = Math.floor(countdown / 60);
-    const seconds = countdown % 60;
-    
-    return (
-      <View style={styles.contentContainer}>
-        <View style={styles.passedCard}>
-          <View style={styles.passedIcon}>
-            <Ionicons name="checkmark-circle" size={40} color="#10B981" />
-          </View>
-          <Text style={styles.passedTitle}>Torch Test Passed ✅</Text>
-          <Text style={styles.passedSubtitle}>No abnormal signs detected</Text>
-        </View>
-
-        <View style={styles.waitCard}>
-          <Text style={styles.waitTitle}>⏱️ 2-Minute Wait Required</Text>
-          <Text style={styles.waitSubtitle}>Allowing eyes to adjust before distance vision test</Text>
-          
-          <View style={styles.countdownContainer}>
-            <Text style={styles.countdownText}>
-              {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-            </Text>
-            <Text style={styles.countdownLabel}>Time Remaining</Text>
-          </View>
-
-          <View style={styles.waitInfo}>
-            <Ionicons name="information-circle" size={20} color="#2E7D32" />
-            <Text style={styles.waitNote}>
-              The test will automatically continue when the timer reaches 0:00
-            </Text>
-          </View>
-
-          {countdown > 0 && (
-            <TouchableOpacity 
-              style={styles.skipButton}
-              onPress={handleContinueToDistanceVision}
-            >
-              <Text style={styles.skipButtonText}>Skip Wait (Not Recommended)</Text>
-            </TouchableOpacity>
           )}
         </View>
       </View>
@@ -636,13 +567,13 @@ export default function TorchLightStepScreen() {
         {/* Progress Section */}
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
-            {currentSubStep === 4.5 ? "Step 4.5 of 6" : "Step 4 of 6"}
+            Step 4 of 6
           </Text>
           <View style={styles.progressBar}>
             <View
               style={[
                 styles.progressFill,
-                { width: currentSubStep === 4.5 ? "75%" : "66.67%" },
+                { width: "66.67%" },
               ]}
             />
           </View>
@@ -655,7 +586,6 @@ export default function TorchLightStepScreen() {
         {currentSubStep === 2 && renderSubStep2()}
         {currentSubStep === 3 && renderSubStep3()}
         {currentSubStep === 4 && renderSubStep4()}
-        {currentSubStep === 4.5 && renderSubStep4_5()}
 
         {/* Bottom Action Buttons */}
         <View style={styles.bottomActions}>
@@ -712,31 +642,14 @@ export default function TorchLightStepScreen() {
                 : "Continue to Record Result"}
             </Text>
           </TouchableOpacity>
-        ) : currentSubStep === 4 ? (
-          // Y/N buttons are inside the card above — footer shows a clear hint
+        ) : (
+          // SubStep 4 — Y/N buttons are inside the card above; footer shows a hint
           <View style={styles.step4FooterHint}>
             <Ionicons name="arrow-up" size={18} color="#6B7280" />
             <Text style={styles.step4FooterHintText}>
               Tap  ✓ Y - Pass  or  ✗ N - Fail  above to continue
             </Text>
           </View>
-        ) : (
-          /* SubStep 4.5 */
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={handleContinueToDistanceVision}
-            activeOpacity={0.8}
-          >
-            <Ionicons
-              name="arrow-forward"
-              size={20}
-              color="#FFFFFF"
-              style={styles.buttonIcon}
-            />
-            <Text style={styles.primaryButtonText}>
-              Continue to Distance Vision Test
-            </Text>
-          </TouchableOpacity>
         )}
         </View>
         <View style={{ height: 190 }} />
@@ -1229,73 +1142,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
-  /* SubStep 4.5 Styles */
-  passedCard: {
-    backgroundColor: "#D1FAE5",
-    borderRadius: 16,
-    padding: 32,
-    alignItems: "center",
-    marginBottom: 24,
-    borderWidth: 2,
-    borderColor: "#A7F3D0",
-  },
-  passedIcon: {
-    marginBottom: 16,
-  },
-  passedTitle: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: "#065F46",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  passedSubtitle: {
-    fontSize: 18,
-    color: "#065F46",
-    fontWeight: "500",
-    textAlign: "center",
-  },
-  waitCard: {
-    backgroundColor: "#DBEAFE",
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#60A5FA",
-    padding: 24,
-  },
-  waitTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1A4D8F",
-    marginBottom: 16,
-  },
-  waitInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#E0F2FE",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#7DD3FC",
-  },
-  waitText: {
-    fontSize: 17,
-    color: "#1A4D8F",
-    fontWeight: "600",
-    marginLeft: 12,
-    flex: 1,
-  },
-  waitHighlight: {
-    color: "#1A4D8F",
-    fontWeight: "700",
-  },
-  waitNote: {
-    fontSize: 15,
-    color: "#1A4D8F",
-    lineHeight: 22,
-    fontWeight: "500",
-  },
-
   /* Bottom Actions */
   bottomActions: {
     paddingHorizontal: 20,
@@ -1343,49 +1189,6 @@ const styles = StyleSheet.create({
   },
   spacer: {
     height: 20,
-  },
-
-  countdownContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F0F9FF",
-    borderRadius: 16,
-    padding: 32,
-    marginVertical: 24,
-    borderWidth: 2,
-    borderColor: "#BFDBFE",
-  },
-  countdownText: {
-    fontSize: 56,
-    fontWeight: "700",
-    color: "#1E40AF",
-    fontFamily: "monospace",
-  },
-  countdownLabel: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginTop: 8,
-    fontWeight: "500",
-  },
-  waitSubtitle: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    marginTop: 8,
-  },
-  skipButton: {
-    marginTop: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    backgroundColor: "#F9FAFB",
-  },
-  skipButtonText: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
   },
   step4FooterHint: {
     flexDirection: "row",
