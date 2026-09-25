@@ -76,43 +76,20 @@ import VHTReadingGlassesScreen from "../screens/screening/VHTReadingGlassesScree
 import VHTCommunityFollowUpScreen from "../screens/chw/VHTCommunityFollowUpScreen";
 import PeekStyleVisionTestScreen from "../screens/screening/PeekStyleVisionTestScreen";
 
+import ApiConfigScreen from "../screens/chw/ApiConfigScreen";
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Define types for Screening Stack
-export type ScreeningStackParamList = {
-  VHTScreeningStep1: undefined;
-  VHTScreeningStep2: undefined;
-  VHTScreeningStep3: undefined;
-  VHTScreeningStep4: undefined;
-  VHTScreeningStep5: undefined;
-  VHTScreeningStep6: undefined;
-  VHTReferral: undefined;
-  VHTNormalFindings: undefined;
-  VHTReadingGlasses: undefined;
-  VisionScreen1: undefined;
-  VisionScreen2: undefined;
-  VisionScreen3: undefined;
-  VisionScreen4: undefined;
-  VisionScreen5: undefined;
-  PeekVisionTest: undefined;
-  VisionScreen6: undefined;
-  ReadingGlassesSelection: undefined;
-  ScreeningComplete: { glassesDispensed?: boolean; glassesPower?: string };
-  ClientRegistration: undefined;
-};
-
-// Create a separate stack for NEW Screening Flow (within the Screen tab)
+// ─── Screening Stack ──────────────────────────────────────────────────────────
+// Lives inside the "Screen" tab of CHWTabs.
+// All screening screen names are unique within this navigator.
 function ScreeningStack() {
   return (
     <Stack.Navigator
       initialRouteName="VHTScreeningStep1"
-      screenOptions={{
-        headerShown: false,
-        animation: "slide_from_right",
-      }}
+      screenOptions={{ headerShown: false, animation: "slide_from_right" }}
     >
-      {/* VHT Workflow - Steps 1-6 with embedded instructions */}
       <Stack.Screen name="VHTScreeningStep1" component={VHTScreeningStep1} />
       <Stack.Screen name="VHTScreeningStep2" component={VHTScreeningStep2} />
       <Stack.Screen name="VHTScreeningStep3" component={VHTScreeningStep3} />
@@ -122,9 +99,7 @@ function ScreeningStack() {
       <Stack.Screen name="VHTReferral" component={VHTReferralScreen} />
       <Stack.Screen name="VHTNormalFindings" component={VHTNormalFindingsScreen} />
       <Stack.Screen name="VHTReadingGlasses" component={VHTReadingGlassesScreen} />
-      <Stack.Screen name="ScreeningCommunityFollowUp" component={VHTCommunityFollowUpScreen} />
-
-      {/* Vision Tests */}
+      <Stack.Screen name="CommunityFollowUp" component={VHTCommunityFollowUpScreen} />
       <Stack.Screen name="VisionScreen1" component={VisionScreen1} />
       <Stack.Screen name="VisionScreen2" component={VisionScreen2} />
       <Stack.Screen name="VisionScreen3" component={VisionScreen3} />
@@ -135,35 +110,47 @@ function ScreeningStack() {
       <Stack.Screen name="ReadingGlassesSelection" component={ReadingGlassesSelection} />
       <Stack.Screen name="ScreeningComplete" component={ScreeningComplete} />
       <Stack.Screen name="ClientRegistration" component={ClientRegistration} />
+      <Stack.Screen name="CreateReferralScreen" component={CreateReferralScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
     </Stack.Navigator>
   );
 }
 
-// CHW Home Stack (Dashboard + CHW feature screens)
+// ─── CHW Home Stack ───────────────────────────────────────────────────────────
 function CHWHomeStack() {
   return (
     <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-        animation: "slide_from_right",
-      }}
+      screenOptions={{ headerShown: false, animation: "slide_from_right" }}
     >
       <Stack.Screen name="CHWDashboard" component={CHWDashboard} />
       <Stack.Screen name="MyClients" component={MyClientsScreen} />
-      <Stack.Screen name="CHWInventory" component={InventoryScreen} />
-      <Stack.Screen name="CHWReferrals" component={ReferralsScreen} />
+      <Stack.Screen name="Inventory" component={InventoryScreen} />
+      <Stack.Screen name="InventoryDetailsScreen" component={InventoryDetailsScreen} />
+      <Stack.Screen name="SalesDetailsScreen" component={SalesDetailsScreen} />
+      <Stack.Screen name="Referrals" component={ReferralsScreen} />
       <Stack.Screen name="ReferralManagement" component={ReferralManagementScreen} />
-      <Stack.Screen name="CHWPayments" component={PaymentsScreen} />
+      <Stack.Screen name="ReferralManagementScreen" component={ReferralManagementScreen} />
+      <Stack.Screen name="CreateReferralScreen" component={CreateReferralScreen} />
+      <Stack.Screen name="Payments" component={PaymentsScreen} />
+      <Stack.Screen name="InventoryScreen" component={InventoryScreen} />
+      <Stack.Screen name="ReferralsScreen" component={ReferralsScreen} />
+      <Stack.Screen name="PaymentsScreen" component={PaymentsScreen} />
       <Stack.Screen name="UserDirectoryScreen" component={UserDirectoryScreen} />
       <Stack.Screen name="UserDetailScreen" component={UserDetailScreen} />
-      <Stack.Screen name="CHWReports" component={ReportsScreen} />
+      <Stack.Screen name="Reports" component={ReportsScreen} />
       <Stack.Screen name="StartScreening" component={StartScreeningScreen} />
       <Stack.Screen name="CommunityFollowUp" component={VHTCommunityFollowUpScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+      <Stack.Screen name="Accessibility" component={AccessibilityScreen} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+      <Stack.Screen name="ApiConfigScreen" component={ApiConfigScreen} />
     </Stack.Navigator>
   );
 }
 
-// CHW Tab Navigator (Green theme #2E7D32)
+// ─── CHW Tab Navigator (Green #2E7D32) ───────────────────────────────────────
 function CHWTabs() {
   return (
     <Tab.Navigator
@@ -180,11 +167,7 @@ function CHWTabs() {
         component={CHWHomeStack}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "home" : "home-outline"}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? "home" : "home-outline"} size={size} color={color} />
           ),
           tabBarLabel: "Home",
         }}
@@ -194,30 +177,21 @@ function CHWTabs() {
         component={ScreeningStack}
         options={({ route }) => {
           const focusedRoute = getFocusedRouteNameFromRoute(route) ?? "VHTScreeningStep1";
-
           return {
             tabBarStyle: focusedRoute ? styles.hiddenTabBar : styles.chwTabBar,
             tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons
-                name={focused ? "eye" : "eye-outline"}
-                size={size}
-                color={color}
-              />
+              <Ionicons name={focused ? "eye" : "eye-outline"} size={size} color={color} />
             ),
             tabBarLabel: "Screen",
           };
         }}
       />
       <Tab.Screen
-        name="CHWStock"
+        name="Stock"
         component={InventoryScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "cube" : "cube-outline"}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? "cube" : "cube-outline"} size={size} color={color} />
           ),
           tabBarLabel: "Stock",
         }}
@@ -227,11 +201,7 @@ function CHWTabs() {
         component={PaymentsScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "cash" : "cash-outline"}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? "cash" : "cash-outline"} size={size} color={color} />
           ),
           tabBarLabel: "Payments",
         }}
@@ -241,11 +211,7 @@ function CHWTabs() {
         component={ReferralsScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "people" : "people-outline"}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? "people" : "people-outline"} size={size} color={color} />
           ),
           tabBarLabel: "Referrals",
         }}
@@ -254,7 +220,7 @@ function CHWTabs() {
   );
 }
 
-// Outlet Tab Navigator (Blue theme #1565C0)
+// ─── Outlet Tab Navigator (Blue #1565C0) ─────────────────────────────────────
 function OutletTabs() {
   return (
     <Tab.Navigator
@@ -271,11 +237,7 @@ function OutletTabs() {
         component={OutletDashboard}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "home" : "home-outline"}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? "home" : "home-outline"} size={size} color={color} />
           ),
           tabBarLabel: "Home",
         }}
@@ -285,11 +247,7 @@ function OutletTabs() {
         component={OutletDashboard}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "cube" : "cube-outline"}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? "cube" : "cube-outline"} size={size} color={color} />
           ),
           tabBarLabel: "Inventory",
         }}
@@ -299,11 +257,7 @@ function OutletTabs() {
         component={OutletDashboard}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "cash" : "cash-outline"}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? "cash" : "cash-outline"} size={size} color={color} />
           ),
           tabBarLabel: "Sales",
         }}
@@ -313,11 +267,7 @@ function OutletTabs() {
         component={OutletDashboard}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "bar-chart" : "bar-chart-outline"}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? "bar-chart" : "bar-chart-outline"} size={size} color={color} />
           ),
           tabBarLabel: "Reports",
         }}
@@ -328,9 +278,7 @@ function OutletTabs() {
         options={{
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={
-                focused ? "ellipsis-horizontal" : "ellipsis-horizontal-outline"
-              }
+              name={focused ? "ellipsis-horizontal" : "ellipsis-horizontal-outline"}
               size={size}
               color={color}
             />
@@ -342,7 +290,7 @@ function OutletTabs() {
   );
 }
 
-// VSLA Tab Navigator (Orange theme #FF9800)
+// ─── VSLA Tab Navigator (Orange #FF9800) ─────────────────────────────────────
 function VSLATabs() {
   return (
     <Tab.Navigator
@@ -359,11 +307,7 @@ function VSLATabs() {
         component={VSLADashboardScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "home" : "home-outline"}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? "home" : "home-outline"} size={size} color={color} />
           ),
           tabBarLabel: "Home",
         }}
@@ -373,11 +317,7 @@ function VSLATabs() {
         component={VSLADashboardScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "cube" : "cube-outline"}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? "cube" : "cube-outline"} size={size} color={color} />
           ),
           tabBarLabel: "Stock",
         }}
@@ -387,11 +327,7 @@ function VSLATabs() {
         component={VSLADashboardScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "cash" : "cash-outline"}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? "cash" : "cash-outline"} size={size} color={color} />
           ),
           tabBarLabel: "Payments",
         }}
@@ -401,11 +337,7 @@ function VSLATabs() {
         component={VSLADashboardScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "bar-chart" : "bar-chart-outline"}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? "bar-chart" : "bar-chart-outline"} size={size} color={color} />
           ),
           tabBarLabel: "Reports",
         }}
@@ -416,9 +348,7 @@ function VSLATabs() {
         options={{
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={
-                focused ? "ellipsis-horizontal" : "ellipsis-horizontal-outline"
-              }
+              name={focused ? "ellipsis-horizontal" : "ellipsis-horizontal-outline"}
               size={size}
               color={color}
             />
@@ -430,10 +360,9 @@ function VSLATabs() {
   );
 }
 
-// AppTabs component - Shows the appropriate dashboard based on role
+// ─── AppTabs: picks the right tab set based on role ───────────────────────────
 function AppTabs({ route }: any) {
   const role = route.params?.role || "CHW";
-
   return (
     <>
       {role === "CHW" && <CHWTabs />}
@@ -443,111 +372,50 @@ function AppTabs({ route }: any) {
   );
 }
 
-// Main AppNavigator
+// ─── Root Stack Navigator ─────────────────────────────────────────────────────
+// Only auth, registration, and AppTabs live here.
+// All feature screens live inside CHWHomeStack or ScreeningStack.
 export default function AppNavigator() {
   return (
     <Stack.Navigator
       initialRouteName="Login"
-      screenOptions={{
-        headerShown: false,
-        animation: "slide_from_right",
-      }}
+      screenOptions={{ headerShown: false, animation: "slide_from_right" }}
     >
-      {/* Auth Screens */}
+      {/* Auth */}
       <Stack.Screen name="Login" component={RoleLoginScreen} />
       <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
       <Stack.Screen name="OTP" component={OTPScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
 
-      {/* Registration Screens */}
-      <Stack.Screen
-        name="CHWRegistrationStep1"
-        component={CHWRegistrationStep1}
-      />
-      <Stack.Screen
-        name="CHWRegistrationStep2"
-        component={CHWRegistrationStep2}
-      />
-      <Stack.Screen
-        name="CHWRegistrationStep3"
-        component={CHWRegistrationStep3}
-      />
-      <Stack.Screen
-        name="CHWRegistrationStep4"
-        component={CHWRegistrationStep4}
-      />
+      {/* CHW Registration */}
+      <Stack.Screen name="CHWRegistrationStep1" component={CHWRegistrationStep1} />
+      <Stack.Screen name="CHWRegistrationStep2" component={CHWRegistrationStep2} />
+      <Stack.Screen name="CHWRegistrationStep3" component={CHWRegistrationStep3} />
+      <Stack.Screen name="CHWRegistrationStep4" component={CHWRegistrationStep4} />
 
-      <Stack.Screen
-        name="OutletRegistrationStep1"
-        component={OutletRegistrationStep1}
-      />
-      <Stack.Screen
-        name="OutletRegistrationStep2"
-        component={OutletRegistrationStep2}
-      />
-      <Stack.Screen
-        name="OutletRegistrationStep3"
-        component={OutletRegistrationStep3}
-      />
-      <Stack.Screen
-        name="OutletRegistrationStep4"
-        component={OutletRegistrationStep4}
-      />
+      {/* Outlet Registration */}
+      <Stack.Screen name="OutletRegistrationStep1" component={OutletRegistrationStep1} />
+      <Stack.Screen name="OutletRegistrationStep2" component={OutletRegistrationStep2} />
+      <Stack.Screen name="OutletRegistrationStep3" component={OutletRegistrationStep3} />
+      <Stack.Screen name="OutletRegistrationStep4" component={OutletRegistrationStep4} />
 
-      <Stack.Screen
-        name="VSLARegistrationStep1"
-        component={VSLARegistrationStep1}
-      />
-      <Stack.Screen
-        name="VSLARegistrationStep2"
-        component={VSLARegistrationStep2}
-      />
-      <Stack.Screen
-        name="VSLARegistrationStep3"
-        component={VSLARegistrationStep3}
-      />
-      <Stack.Screen
-        name="VSLARegistrationStep4"
-        component={VSLARegistrationStep4}
-      />
+      {/* VSLA Registration */}
+      <Stack.Screen name="VSLARegistrationStep1" component={VSLARegistrationStep1} />
+      <Stack.Screen name="VSLARegistrationStep2" component={VSLARegistrationStep2} />
+      <Stack.Screen name="VSLARegistrationStep3" component={VSLARegistrationStep3} />
+      <Stack.Screen name="VSLARegistrationStep4" component={VSLARegistrationStep4} />
 
-      {/* Main App Tabs - Different dashboards based on role */}
-      <Stack.Screen
-        name="AppTabs"
-        component={AppTabs}
-        options={{ headerShown: false }}
-      />
+      {/* Main app (tabs + all feature screens are nested inside) */}
+      <Stack.Screen name="AppTabs" component={AppTabs} options={{ headerShown: false }} />
 
-      {/* Root-level CHW Feature Screens (navigated from outside tabs) */}
-      <Stack.Screen name="ReferralManagementScreen" component={ReferralManagementScreen} />
-      <Stack.Screen name="CreateReferralScreen" component={CreateReferralScreen} />
-      <Stack.Screen name="InventoryDetailsScreen" component={InventoryDetailsScreen} />
-      <Stack.Screen name="SalesDetailsScreen" component={SalesDetailsScreen} />
-
-      {/* Settings screens */}
-      <Stack.Screen name="Settings" component={SettingsScreen} />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-      <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
-      <Stack.Screen name="Accessibility" component={AccessibilityScreen} />
-      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-
-      {/* Old screens for backward compatibility */}
-      <Stack.Screen
-        name="VisionScreeningStep1"
-        component={VisionScreeningStep1}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="VisionScreeningStep2"
-        component={VisionScreeningStep2}
-        options={{ headerShown: false }}
-      />
+      {/* Old backward-compat screens for any deep links */}
+      <Stack.Screen name="VisionScreeningStep1" component={VisionScreeningStep1} options={{ headerShown: false }} />
+      <Stack.Screen name="VisionScreeningStep2" component={VisionScreeningStep2} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
 
 const styles = StyleSheet.create({
-  // CHW Tab Bar (Green theme)
   chwTabBar: {
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
@@ -563,7 +431,6 @@ const styles = StyleSheet.create({
   hiddenTabBar: {
     display: "none",
   },
-  // Outlet Tab Bar (Blue theme)
   outletTabBar: {
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
@@ -576,7 +443,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
-  // VSLA Tab Bar (Orange theme)
   vslaTabBar: {
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
