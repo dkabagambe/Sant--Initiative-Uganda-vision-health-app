@@ -122,7 +122,7 @@ function ScreeningStack() {
       <Stack.Screen name="VHTReferral" component={VHTReferralScreen} />
       <Stack.Screen name="VHTNormalFindings" component={VHTNormalFindingsScreen} />
       <Stack.Screen name="VHTReadingGlasses" component={VHTReadingGlassesScreen} />
-      <Stack.Screen name="CommunityFollowUp" component={VHTCommunityFollowUpScreen} />
+      <Stack.Screen name="ScreeningCommunityFollowUp" component={VHTCommunityFollowUpScreen} />
 
       {/* Vision Tests */}
       <Stack.Screen name="VisionScreen1" component={VisionScreen1} />
@@ -150,13 +150,13 @@ function CHWHomeStack() {
     >
       <Stack.Screen name="CHWDashboard" component={CHWDashboard} />
       <Stack.Screen name="MyClients" component={MyClientsScreen} />
-      <Stack.Screen name="Inventory" component={InventoryScreen} />
-      <Stack.Screen name="Referrals" component={ReferralsScreen} />
+      <Stack.Screen name="CHWInventory" component={InventoryScreen} />
+      <Stack.Screen name="CHWReferrals" component={ReferralsScreen} />
       <Stack.Screen name="ReferralManagement" component={ReferralManagementScreen} />
-      <Stack.Screen name="Payments" component={PaymentsScreen} />
+      <Stack.Screen name="CHWPayments" component={PaymentsScreen} />
       <Stack.Screen name="UserDirectoryScreen" component={UserDirectoryScreen} />
       <Stack.Screen name="UserDetailScreen" component={UserDetailScreen} />
-      <Stack.Screen name="Reports" component={ReportsScreen} />
+      <Stack.Screen name="CHWReports" component={ReportsScreen} />
       <Stack.Screen name="StartScreening" component={StartScreeningScreen} />
       <Stack.Screen name="CommunityFollowUp" component={VHTCommunityFollowUpScreen} />
     </Stack.Navigator>
@@ -209,7 +209,7 @@ function CHWTabs() {
         }}
       />
       <Tab.Screen
-        name="Stock"
+        name="CHWStock"
         component={InventoryScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
@@ -223,7 +223,7 @@ function CHWTabs() {
         }}
       />
       <Tab.Screen
-        name="Payments"
+        name="CHWPaymentsTab"
         component={PaymentsScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
@@ -237,7 +237,7 @@ function CHWTabs() {
         }}
       />
       <Tab.Screen
-        name="Referrals"
+        name="CHWReferralsTab"
         component={ReferralsScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
@@ -281,7 +281,7 @@ function OutletTabs() {
         }}
       />
       <Tab.Screen
-        name="Inventory"
+        name="OutletInventory"
         component={OutletDashboard}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
@@ -295,7 +295,7 @@ function OutletTabs() {
         }}
       />
       <Tab.Screen
-        name="Sales"
+        name="OutletSales"
         component={OutletDashboard}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
@@ -309,7 +309,7 @@ function OutletTabs() {
         }}
       />
       <Tab.Screen
-        name="Reports"
+        name="OutletReports"
         component={OutletDashboard}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
@@ -323,7 +323,7 @@ function OutletTabs() {
         }}
       />
       <Tab.Screen
-        name="More"
+        name="OutletMore"
         component={OutletDashboard}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
@@ -369,7 +369,7 @@ function VSLATabs() {
         }}
       />
       <Tab.Screen
-        name="Stock"
+        name="VSLAStock"
         component={VSLADashboardScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
@@ -383,7 +383,7 @@ function VSLATabs() {
         }}
       />
       <Tab.Screen
-        name="Payments"
+        name="VSLAPayments"
         component={VSLADashboardScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
@@ -397,7 +397,7 @@ function VSLATabs() {
         }}
       />
       <Tab.Screen
-        name="Reports"
+        name="VSLAReports"
         component={VSLADashboardScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
@@ -411,7 +411,7 @@ function VSLATabs() {
         }}
       />
       <Tab.Screen
-        name="More"
+        name="VSLAMore"
         component={VSLADashboardScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
@@ -518,32 +518,18 @@ export default function AppNavigator() {
         options={{ headerShown: false }}
       />
 
-      {/* CHW Feature Screens */}
+      {/* Root-level CHW Feature Screens (navigated from outside tabs) */}
       <Stack.Screen name="ReferralManagementScreen" component={ReferralManagementScreen} />
       <Stack.Screen name="CreateReferralScreen" component={CreateReferralScreen} />
-      <Stack.Screen name="InventoryScreen" component={InventoryScreen} />
       <Stack.Screen name="InventoryDetailsScreen" component={InventoryDetailsScreen} />
       <Stack.Screen name="SalesDetailsScreen" component={SalesDetailsScreen} />
-      <Stack.Screen name="PaymentsScreen" component={PaymentsScreen} />
-      <Stack.Screen name="VHTScreeningStep1" component={VHTScreeningStep1} />
-      <Stack.Screen name="VHTScreeningStep2" component={VHTScreeningStep2} />
-      <Stack.Screen name="VHTScreeningStep3" component={VHTScreeningStep3} />
-      <Stack.Screen name="VHTScreeningStep4" component={VHTScreeningStep4} />
-      <Stack.Screen name="VHTScreeningStep5" component={VHTScreeningStep5} />
-      <Stack.Screen name="VHTScreeningStep6" component={VHTScreeningStep6} />
-      <Stack.Screen name="VHTReferral" component={VHTReferralScreen} />
-      <Stack.Screen name="VHTNormalFindings" component={VHTNormalFindingsScreen} />
-      <Stack.Screen name="VHTReadingGlasses" component={VHTReadingGlassesScreen} />
-      <Stack.Screen name="CommunityFollowUp" component={VHTCommunityFollowUpScreen} />
-      <Stack.Screen name="VisionScreen1" component={VisionScreen1} />
-      <Stack.Screen name="VisionScreen2" component={VisionScreen2} />
-      <Stack.Screen name="VisionScreen3" component={VisionScreen3} />
-      <Stack.Screen name="VisionScreen4" component={VisionScreen4} />
-      <Stack.Screen name="VisionScreen5" component={VisionScreen5} />
-      <Stack.Screen name="VisionScreen6" component={VisionScreen6Wrapper} />
-      <Stack.Screen name="ReadingGlassesSelection" component={ReadingGlassesSelection} />
-      <Stack.Screen name="ScreeningComplete" component={ScreeningComplete} />
-      <Stack.Screen name="ClientRegistration" component={ClientRegistration} />
+
+      {/* Settings screens */}
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+      <Stack.Screen name="Accessibility" component={AccessibilityScreen} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
 
       {/* Old screens for backward compatibility */}
       <Stack.Screen
@@ -556,11 +542,6 @@ export default function AppNavigator() {
         component={VisionScreeningStep2}
         options={{ headerShown: false }}
       />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-      <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
-      <Stack.Screen name="Accessibility" component={AccessibilityScreen} />
-      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
     </Stack.Navigator>
   );
 }
