@@ -164,7 +164,7 @@ export default function VSLADashboardScreen() {
 
             <TouchableOpacity
               style={styles.card}
-              onPress={() => navigation.navigate("Members")}
+              onPress={() => navigation.navigate("VSLAHome")}
               activeOpacity={0.7}
             >
               <View style={styles.cardHeader}>
@@ -192,7 +192,7 @@ export default function VSLADashboardScreen() {
             {/* Row 2 */}
             <TouchableOpacity
               style={styles.card}
-              onPress={() => navigation.navigate("Stock")}
+              onPress={() => navigation.navigate("VSLAStock")}
               activeOpacity={0.7}
             >
               <View style={styles.cardHeader}>
@@ -218,7 +218,7 @@ export default function VSLADashboardScreen() {
 
             <TouchableOpacity
               style={styles.card}
-              onPress={() => navigation.navigate("Loans")}
+              onPress={() => navigation.navigate("VSLAPayments")}
               activeOpacity={0.7}
             >
               <View style={styles.cardHeader}>
@@ -376,7 +376,7 @@ export default function VSLADashboardScreen() {
 
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate("Stock")}
+          onPress={() => navigation.navigate("VSLAStock")}
         >
           <Ionicons name="cube-outline" size={24} color="#6B7280" />
           <Text style={styles.navText}>Stock</Text>
