@@ -143,12 +143,8 @@ export default function TorchLightStepScreen() {
         urgency: "high",
         notes: `Referred from Step 4 - Torch Light Test.\nAbnormal signs: ${abnormalLabels.join(", ")}.\nDO NOT proceed with other vision tests.`,
       };
-      const root = navigation.getParent()?.getParent();
-      if (root) {
-        root.navigate("CreateReferralScreen", referralParams);
-      } else {
-        navigation.navigate("CreateReferralScreen" as any, referralParams);
-      }
+      // CreateReferralScreen is registered in ScreeningStack — navigate directly
+      navigation.navigate("CreateReferralScreen", referralParams);
     } else {
       // No abnormal signs - build the complete data object first, then update + save
       const passedData = {
@@ -185,12 +181,7 @@ export default function TorchLightStepScreen() {
                 text: "OK",
                 onPress: () => {
                   resetScreeningData();
-                  const root = navigation.getParent()?.getParent();
-                  if (root) {
-                    root.navigate("AppTabs", { role: "CHW" });
-                  } else {
-                    navigation.navigate("AppTabs" as any, { role: "CHW" });
-                  }
+                  navigation.reset({ index: 0, routes: [{ name: "AppTabs", params: { role: "CHW" } }] });
                 },
               },
             ],
@@ -205,12 +196,7 @@ export default function TorchLightStepScreen() {
                 text: "OK",
                 onPress: () => {
                   resetScreeningData();
-                  const root = navigation.getParent()?.getParent();
-                  if (root) {
-                    root.navigate("AppTabs", { role: "CHW" });
-                  } else {
-                    navigation.navigate("AppTabs" as any, { role: "CHW" });
-                  }
+                  navigation.reset({ index: 0, routes: [{ name: "AppTabs", params: { role: "CHW" } }] });
                 },
               },
             ],

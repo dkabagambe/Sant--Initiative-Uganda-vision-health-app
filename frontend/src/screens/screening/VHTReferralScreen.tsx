@@ -8,19 +8,23 @@ import {
   StatusBar,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
+import { apiService } from "../../services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function VHTReferralScreen() {
   const navigation = useNavigation<any>();
-  const { screeningData, updateScreeningData } = useScreening();
+  const { screeningData, updateScreeningData, resetScreeningData } = useScreening();
   const [referralFacility, setReferralFacility] = useState("");
   const [otherFacilityName, setOtherFacilityName] = useState("");
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [facilitySelected, setFacilitySelected] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const referralReason =
     screeningData.referralReason ||
@@ -40,7 +44,13 @@ export default function VHTReferralScreen() {
     setFacilitySelected(true);
   };
 
-  const handleCompleteReferral = () => {
+  const isButtonDisabled =
+    !facilitySelected ||
+    !referralFacility ||
+    (referralFacility === "Other (specify below)" && !otherFacilityName.trim()) ||
+    saving;
+
+  const handleCompleteReferral = async () => {
     if (!referralFacility) {
       Alert.alert("Required", "Please select or specify a health facility");
       return;
@@ -51,27 +61,74 @@ export default function VHTReferralScreen() {
         ? otherFacilityName.trim() || "Other"
         : referralFacility;
 
-    updateScreeningData({
+    const updatedData = {
       needsReferral: true,
-      needsGlasses: false,       // referral path - no glasses dispensed
+      needsGlasses: false,
       referralReason: referralReason,
       referralFacility: finalFacility,
-      referralStep: "pending",
-      notes: additionalNotes,
-    });
+      referralStep: "VHT Key Questions (Step 4)",
+      notes: additionalNotes || screeningData.notes || "",
+    };
 
-    Alert.alert(
-      "Referral Completed",
-      `Client has been referred to: ${finalFacility}\n\nVHT Actions:\n• Explain why referral is necessary\n• Encourage prompt attendance\n• Record in register\n• Follow up on attendance during next visits`,
-      [
-        {
-          text: "OK",
-          onPress: () => {
-            navigation.navigate("ScreeningComplete");
-          },
-        },
-      ]
-    );
+    updateScreeningData(updatedData);
+
+    setSaving(true);
+    try {
+      // 1. Save the screening record
+      const screeningPayload = {
+        ...screeningData,
+        ...updatedData,
+      };
+
+      let savedScreeningId: string | null = null;
+      try {
+        const res = await apiService.createScreening(screeningPayload);
+        if (res?.success) {
+          savedScreeningId = res.screeningId || res.data?.id || null;
+        } else {
+          throw new Error(res?.error || "Server returned failure");
+        }
+      } catch {
+        // Offline fallback
+        try {
+          const q = await AsyncStorage.getItem("offlineScreenings");
+          const queue = q ? JSON.parse(q) : [];
+          const offlineId = Date.now().toString();
+          queue.push({
+            ...screeningPayload,
+            offlineId,
+            timestamp: new Date().toISOString(),
+          });
+          await AsyncStorage.setItem("offlineScreenings", JSON.stringify(queue));
+          savedScreeningId = offlineId;
+        } catch {}
+      }
+
+      // 2. Navigate to CreateReferralScreen with all pre-filled data
+      const referralParams = {
+        fromScreening: true,
+        screeningId: savedScreeningId,
+        clientName: screeningData.clientName || "",
+        clientPhone: screeningData.clientPhone || "",
+        clientAge: String(screeningData.clientAge || ""),
+        clientSex: screeningData.clientGender || "",
+        district: screeningData.district || "",
+        county: screeningData.county || "",
+        subCounty: screeningData.subCounty || "",
+        parish: screeningData.parish || "",
+        reason: referralReason,
+        urgency: "normal",
+        facilityName: finalFacility,
+        notes: additionalNotes || "",
+      };
+
+      setSaving(false);
+      resetScreeningData();
+      navigation.navigate("CreateReferralScreen", referralParams);
+    } catch (error) {
+      setSaving(false);
+      Alert.alert("Error", "Failed to save screening. Please try again.");
+    }
   };
 
   return (
@@ -86,7 +143,11 @@ export default function VHTReferralScreen() {
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.warningCard}>
           <Ionicons name="alert-circle" size={32} color="#DC2626" />
           <View style={{ flex: 1 }}>
@@ -98,36 +159,18 @@ export default function VHTReferralScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>VHT Actions</Text>
           <View style={styles.actionsList}>
-            <View style={styles.actionItem}>
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-              <Text style={styles.actionText}>
-                Explain why referral is necessary
-              </Text>
-            </View>
-            <View style={styles.actionItem}>
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-              <Text style={styles.actionText}>
-                Tell client where to go
-              </Text>
-            </View>
-            <View style={styles.actionItem}>
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-              <Text style={styles.actionText}>
-                Encourage prompt attendance
-              </Text>
-            </View>
-            <View style={styles.actionItem}>
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-              <Text style={styles.actionText}>
-                Record referral in register
-              </Text>
-            </View>
-            <View style={styles.actionItem}>
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-              <Text style={styles.actionText}>
-                Follow up on attendance
-              </Text>
-            </View>
+            {[
+              "Explain why referral is necessary",
+              "Tell client where to go",
+              "Encourage prompt attendance",
+              "Record referral in register",
+              "Follow up on attendance",
+            ].map((action, i) => (
+              <View key={i} style={styles.actionItem}>
+                <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                <Text style={styles.actionText}>{action}</Text>
+              </View>
+            ))}
           </View>
         </View>
 
@@ -144,21 +187,14 @@ export default function VHTReferralScreen() {
                 onPress={() => handleFacilitySelect(facility)}
               >
                 <Ionicons
-                  name={
-                    referralFacility === facility
-                      ? "radio-button-on"
-                      : "radio-button-off"
-                  }
+                  name={referralFacility === facility ? "radio-button-on" : "radio-button-off"}
                   size={20}
-                  color={
-                    referralFacility === facility ? "#DC2626" : "#D1D5DB"
-                  }
+                  color={referralFacility === facility ? "#DC2626" : "#D1D5DB"}
                 />
                 <Text
                   style={[
                     styles.facilityButtonText,
-                    referralFacility === facility &&
-                      styles.facilityButtonTextSelected,
+                    referralFacility === facility && styles.facilityButtonTextSelected,
                   ]}
                 >
                   {facility}
@@ -185,7 +221,7 @@ export default function VHTReferralScreen() {
           <Text style={styles.sectionTitle}>Additional Notes (Optional)</Text>
           <TextInput
             style={styles.notesInput}
-            placeholder="Add any additional information for the referral (e.g., urgent, specific symptoms, etc.)"
+            placeholder="Add any additional information for the referral"
             placeholderTextColor="#9CA3AF"
             value={additionalNotes}
             onChangeText={setAdditionalNotes}
@@ -199,7 +235,8 @@ export default function VHTReferralScreen() {
           <View style={styles.reminderBox}>
             <Ionicons name="calendar" size={20} color="#7C3AED" />
             <Text style={styles.reminderText}>
-              Visit this client during your next household visits to check if they attended the health facility
+              Visit this client during your next household visits to check if they
+              attended the health facility
             </Text>
           </View>
         </View>
@@ -207,21 +244,18 @@ export default function VHTReferralScreen() {
 
       <View style={[styles.footer, { paddingBottom: 24 }]}>
         <TouchableOpacity
-          style={[
-            styles.button,
-            (!facilitySelected || !referralFacility ||
-              (referralFacility === "Other (specify below)" && !otherFacilityName.trim())) &&
-              styles.buttonDisabled,
-          ]}
+          style={[styles.button, isButtonDisabled && styles.buttonDisabled]}
           onPress={handleCompleteReferral}
-          disabled={
-            !facilitySelected ||
-            !referralFacility ||
-            (referralFacility === "Other (specify below)" && !otherFacilityName.trim())
-          }
+          disabled={isButtonDisabled}
         >
-          <Text style={styles.buttonText}>Complete Referral</Text>
-          <Ionicons name="arrow-forward" size={20} color="#FFF" />
+          {saving ? (
+            <ActivityIndicator color="#FFF" size="small" />
+          ) : (
+            <>
+              <Text style={styles.buttonText}>Save & Complete Referral</Text>
+              <Ionicons name="arrow-forward" size={20} color="#FFF" />
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -229,10 +263,7 @@ export default function VHTReferralScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFF",
-  },
+  container: { flex: 1, backgroundColor: "#FFF" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -249,11 +280,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
+  content: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
   warningCard: {
     backgroundColor: "#FEE2E2",
     borderLeftWidth: 4,
@@ -264,44 +291,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
   },
-  warningTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#7F1D1D",
-    marginBottom: 4,
-  },
-  warningText: {
-    fontSize: 14,
-    color: "#9F1239",
-    lineHeight: 20,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1F2937",
-    marginBottom: 12,
-  },
-  actionsList: {
-    gap: 10,
-  },
-  actionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 8,
-  },
-  actionText: {
-    fontSize: 14,
-    color: "#4B5563",
-    flex: 1,
-    lineHeight: 20,
-  },
-  facilitiesList: {
-    gap: 10,
-  },
+  warningTitle: { fontSize: 16, fontWeight: "700", color: "#7F1D1D", marginBottom: 4 },
+  warningText: { fontSize: 14, color: "#9F1239", lineHeight: 20 },
+  section: { marginBottom: 24 },
+  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#1F2937", marginBottom: 12 },
+  actionsList: { gap: 10 },
+  actionItem: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 },
+  actionText: { fontSize: 14, color: "#4B5563", flex: 1, lineHeight: 20 },
+  facilitiesList: { gap: 10 },
   facilityButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -313,19 +310,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#F9FAFB",
     gap: 12,
   },
-  facilityButtonSelected: {
-    borderColor: "#DC2626",
-    backgroundColor: "#FEF2F2",
-  },
-  facilityButtonText: {
-    fontSize: 15,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
-  facilityButtonTextSelected: {
-    color: "#DC2626",
-    fontWeight: "600",
-  },
+  facilityButtonSelected: { borderColor: "#DC2626", backgroundColor: "#FEF2F2" },
+  facilityButtonText: { fontSize: 15, color: "#6B7280", fontWeight: "500" },
+  facilityButtonTextSelected: { color: "#DC2626", fontWeight: "600" },
   input: {
     borderWidth: 1,
     borderColor: "#E5E7EB",
@@ -356,12 +343,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
   },
-  reminderText: {
-    fontSize: 13,
-    color: "#5B21B6",
-    flex: 1,
-    lineHeight: 20,
-  },
+  reminderText: { fontSize: 13, color: "#5B21B6", flex: 1, lineHeight: 20 },
   footer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -377,15 +359,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  buttonDisabled: {
-    backgroundColor: "#D1D5DB",
-  },
-  buttonText: {
-    color: "#FFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  buttonTextDisabled: {
-    color: "#9CA3AF",
-  },
+  buttonDisabled: { backgroundColor: "#D1D5DB" },
+  buttonText: { color: "#FFF", fontSize: 15, fontWeight: "600" },
 });

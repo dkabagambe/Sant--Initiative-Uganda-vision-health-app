@@ -103,13 +103,8 @@ export default function VisionScreen6Wrapper() {
         notes: `Referred from Step 6 - Near Vision Test.\nClient age: ${clientAge} (under 40).\nNear vision failed - abnormal for this age group.`,
       };
 
-      // From ScreeningStack: getParent() = CHWTabs, getParent().getParent() = Root Stack
-      const root = navigation.getParent()?.getParent();
-      if (root) {
-        root.navigate("CreateReferralScreen", referralParams);
-      } else {
-        navigation.navigate("CreateReferralScreen" as any, referralParams);
-      }
+      // CreateReferralScreen is registered in ScreeningStack — navigate directly
+      navigation.navigate("CreateReferralScreen", referralParams);
       return;
     } catch (error) {
       console.error("Screening submission error:", error);

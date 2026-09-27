@@ -515,9 +515,8 @@ export default function VHTReadingGlassesScreen() {
                 reason: "None of the 5 reading glass powers (+1.00 to +3.00) corrected near vision. Requires specialist examination.",
                 urgency: "normal",
               };
-              const root = navigation.getParent()?.getParent();
-              if (root) root.navigate("CreateReferralScreen", params);
-              else navigation.navigate("CreateReferralScreen" as any, params);
+              // CreateReferralScreen is in the same ScreeningStack — navigate directly
+              navigation.navigate("CreateReferralScreen", params);
             }}
           >
             <Ionicons name="medical" size={20} color="#FFF" />

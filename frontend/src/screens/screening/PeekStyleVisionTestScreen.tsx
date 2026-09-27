@@ -412,7 +412,6 @@ export default function PeekStyleVisionTestScreen() {
         } catch {}
       }
 
-      const root = navigation.getParent()?.getParent();
       const params = {
         fromScreening: true,
         screeningId:   savedId,
@@ -428,8 +427,8 @@ export default function PeekStyleVisionTestScreen() {
         urgency:       "normal",
         notes:         `Step 5 Peek Vision Test — R: ${rightStr}  L: ${leftStr}`,
       };
-      if (root) root.navigate("CreateReferralScreen", params);
-      else navigation.navigate("CreateReferralScreen" as any, params);
+      // CreateReferralScreen is in the same ScreeningStack — navigate directly
+      navigation.navigate("CreateReferralScreen", params);
     },
     [eyeRecords, screeningData, updateScreeningData, navigation]
   );

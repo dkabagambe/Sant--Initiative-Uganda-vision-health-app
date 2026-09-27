@@ -406,9 +406,8 @@ export default function VisionScreen5() {
       urgency:       "normal",
       notes:         `Step 5 SANTÉ INITIATIVE Vision. R: ${rightStr}  L: ${leftStr}`,
     };
-    const root = navigation.getParent()?.getParent();
-    if (root) root.navigate("CreateReferralScreen", params);
-    else navigation.navigate("CreateReferralScreen" as any, params);
+    // CreateReferralScreen is in the same ScreeningStack — navigate directly
+    navigation.navigate("CreateReferralScreen", params);
   }, [eyeResults, screeningData, updateScreeningData, navigation]);
 
   // ─────────────────────────────────────────────────────────────────────────

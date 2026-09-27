@@ -51,7 +51,7 @@ export default function CreateReferralScreen() {
     clientSex: route.params?.clientSex || "",
     clientDistrict: route.params?.district || "",
     reason: route.params?.reason || "",
-    facilityName: "",
+    facilityName: route.params?.facilityName || "",
     facilityDistrict: "",
     urgency: route.params?.urgency || "normal",
     notes: route.params?.notes || "",
