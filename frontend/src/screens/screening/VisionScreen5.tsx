@@ -31,7 +31,7 @@ import {
 } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { Audio }        from "expo-av";
+import { createAudioPlayer } from "expo-audio";
 import * as Brightness  from "expo-brightness";
 import * as Haptics     from "expo-haptics";
 import * as Speech      from "expo-speech";
@@ -99,21 +99,18 @@ function needsReferral(r: EyeResult | null): boolean {
   return r.levelIdx < 3;  // worse than 6/18 → refer
 }
 
-// ─── Sound helpers ────────────────────────────────────────────────────────────
-async function loadSound(
-  asset: number,
-  ref: React.MutableRefObject<Audio.Sound | null>
-): Promise<void> {
-  try {
-    const { sound } = await Audio.Sound.createAsync(asset);
-    ref.current = sound;
-  } catch (_) {}
+// ─── Sound helpers (expo-audio) ───────────────────────────────────────────────
+// expo-audio players are created once and reused. seekTo(0) + play() replays.
+type AudioPlayer = ReturnType<typeof createAudioPlayer>;
+
+function makePlayer(asset: number): AudioPlayer | null {
+  try { return createAudioPlayer(asset); } catch (_) { return null; }
 }
-async function playSound(ref: React.MutableRefObject<Audio.Sound | null>) {
+async function playSound(player: AudioPlayer | null) {
   try {
-    if (!ref.current) return;
-    await ref.current.setPositionAsync(0);
-    await ref.current.playAsync();
+    if (!player) return;
+    await player.seekTo(0);
+    player.play();
   } catch (_) {}
 }
 
@@ -149,8 +146,8 @@ export default function VisionScreen5() {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   // ── Sounds ───────────────────────────────────────────────────────────────
-  const correctSnd = useRef<Audio.Sound | null>(null);
-  const wrongSnd   = useRef<Audio.Sound | null>(null);
+  const correctSnd = useRef<AudioPlayer | null>(null);
+  const wrongSnd   = useRef<AudioPlayer | null>(null);
 
   // ── Swipe debounce ────────────────────────────────────────────────────────
   const swipeLock = useRef(false);
@@ -159,17 +156,12 @@ export default function VisionScreen5() {
   useEffect(() => {
     apiService.getCurrentUser().then(u => { if (u) setUserData(u); }).catch(() => {});
 
-    loadSound(require("../../../assets/sounds/correct.wav"), correctSnd);
-    loadSound(require("../../../assets/sounds/wrong.wav"),   wrongSnd);
-
-    Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-    }).catch(() => {});
+    correctSnd.current = makePlayer(require("../../../assets/sounds/correct.wav"));
+    wrongSnd.current   = makePlayer(require("../../../assets/sounds/wrong.wav"));
 
     return () => {
-      correctSnd.current?.unloadAsync().catch(() => {});
-      wrongSnd.current?.unloadAsync().catch(() => {});
+      correctSnd.current?.remove();
+      wrongSnd.current?.remove();
     };
   }, []);
 
@@ -223,7 +215,7 @@ export default function VisionScreen5() {
         ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
         : Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error));
     } catch (_) {}
-    await playSound(correct ? correctSnd : wrongSnd);
+    await playSound(correct ? correctSnd.current : wrongSnd.current);
     setFeedback(correct ? "correct" : "wrong");
     setTimeout(() => setFeedback(null), 500);
   }, []);

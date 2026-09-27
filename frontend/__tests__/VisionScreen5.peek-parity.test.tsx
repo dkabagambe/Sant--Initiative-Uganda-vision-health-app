@@ -330,8 +330,8 @@ describe("3. Source Parity — Colours (WHITE background, BLACK E)", () => {
 });
 
 describe("3. Source Parity — Imports", () => {
-  test("imports expo-av", () => {
-    expect(src).toContain('from "expo-av"');
+  test("imports expo-audio (replaces expo-av)", () => {
+    expect(src).toContain('from "expo-audio"');
   });
 
   test("imports expo-brightness", () => {
