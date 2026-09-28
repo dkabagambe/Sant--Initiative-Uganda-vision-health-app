@@ -166,19 +166,15 @@ export default function VisionScreen5() {
   }, []);
 
   // ── Max brightness on calibration entry; restore on unmount ─────────────
+  // Uses window (screen-level) brightness only — no WRITE_SETTINGS permission needed.
   useEffect(() => {
-    let originalBrightness = 0.5;
     if (phase !== "calibration") return;
-    Brightness.requestPermissionsAsync()
-      .then(({ granted }) => {
-        if (!granted) return;
-        // Save original before overriding
-        Brightness.getBrightnessAsync()
-          .then(b => { originalBrightness = b; })
-          .catch(() => {});
-        Brightness.setBrightnessAsync(1.0).catch(() => {});
-      })
+    let originalBrightness = 0.5;
+    Brightness.getBrightnessAsync()
+      .then(b => { originalBrightness = b; })
       .catch(() => {});
+    Brightness.setSystemBrightnessModeAsync(Brightness.BrightnessMode.MANUAL).catch(() => {});
+    Brightness.setBrightnessAsync(1.0).catch(() => {});
     return () => {
       // Restore brightness when leaving calibration or unmounting
       Brightness.setBrightnessAsync(originalBrightness).catch(() => {});
@@ -432,7 +428,7 @@ export default function VisionScreen5() {
         <Header userData={userData} navigation={navigation} />
         <ScrollView contentContainerStyle={s.scrollPad} showsVerticalScrollIndicator={false}>
 
-          <Text style={s.pageTitle}>Distance Vision Test — SANTÉ INITIATIVE</Text>
+          <Text style={s.pageTitle}>Distance Vision Test - SANTE INITIATIVE</Text>
 
           <View style={s.calCard}>
             <Text style={s.calTitle}>📱 SANTÉ INITIATIVE Calibration</Text>
@@ -440,12 +436,12 @@ export default function VisionScreen5() {
               Screen brightness has been set to maximum automatically.{"\n"}
               On iOS, also check Control Centre brightness is full.
             </CalRow>
-            <CalRow icon="expand"       color="#3B82F6" title="2 Metres Distance">
-              Mark 2 metres on the floor with your foot.{"\n"}
+            <CalRow icon="expand"       color="#3B82F6" title="3 Metres Distance">
+              Mark 3 metres on the floor with your foot.{"\n"}
               Client stands at the mark; you hold the phone facing them.
             </CalRow>
             <CalRow icon="eye-off"      color="#EF4444" title="Cover Fellow Eye">
-              Cover the eye NOT being tested with the palm — gently.
+              Cover the eye NOT being tested with the palm - gently.
             </CalRow>
             <CalRow icon="partly-sunny" color="#10B981" title="Lighting">
               Avoid direct sunlight on screen. Indoor light or shade is ideal.
@@ -454,7 +450,7 @@ export default function VisionScreen5() {
 
           {/* Black-E-on-white preview to confirm rendering */}
           <View style={s.previewCard}>
-            <Text style={s.previewLabel}>E preview — confirm it is black and sharp</Text>
+            <Text style={s.previewLabel}>E preview - confirm it is black and sharp</Text>
             <View style={s.previewEWrap}>
               <TumblingE
                 direction="right"
