@@ -350,7 +350,7 @@ export default function ClientRegistration() {
 
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         <ScrollView
@@ -612,58 +612,6 @@ export default function ClientRegistration() {
             </View>
           )}
 
-          {/* Action Buttons */}
-          <View style={styles.buttonContainer}>
-            {activeProduct ? (
-              <TouchableOpacity
-                style={[styles.confirmButton, loading && { opacity: 0.7 }]}
-                onPress={handleConfirmSale}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text style={styles.confirmButtonText}>Confirm Sale</Text>
-                )}
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={[styles.confirmButton, { backgroundColor: "#D97706" }]}
-                onPress={() => {
-                  Alert.alert(
-                    "Save Without Glasses",
-                    "The screening record will be saved. Glasses can be issued later when stock is available.",
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Save Record",
-                        onPress: () =>
-                          navigation.reset({
-                            index: 0,
-                            routes: [{ name: "AppTabs", params: { role: "CHW" } }],
-                          }),
-                      },
-                    ],
-                  );
-                }}
-              >
-                <Text style={styles.confirmButtonText}>Save Record (No Stock)</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() =>
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: "AppTabs", params: { role: "CHW" } }],
-                })
-              }
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-
           <View style={styles.bottomSpacer} />
         </ScrollView>
 
@@ -726,6 +674,58 @@ export default function ClientRegistration() {
           </View>
         </Modal>
       </KeyboardAvoidingView>
+
+      {/* Action Buttons — OUTSIDE KeyboardAvoidingView so keyboard never pushes them up */}
+      <View style={styles.buttonContainer}>
+        {activeProduct ? (
+          <TouchableOpacity
+            style={[styles.confirmButton, loading && { opacity: 0.7 }]}
+            onPress={handleConfirmSale}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <Text style={styles.confirmButtonText}>Confirm Sale</Text>
+            )}
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[styles.confirmButton, { backgroundColor: "#D97706" }]}
+            onPress={() => {
+              Alert.alert(
+                "Save Without Glasses",
+                "The screening record will be saved. Glasses can be issued later when stock is available.",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Save Record",
+                    onPress: () =>
+                      navigation.reset({
+                        index: 0,
+                        routes: [{ name: "AppTabs", params: { role: "CHW" } }],
+                      }),
+                  },
+                ],
+              );
+            }}
+          >
+            <Text style={styles.confirmButtonText}>Save Record (No Stock)</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={() =>
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "AppTabs", params: { role: "CHW" } }],
+            })
+          }
+        >
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: verticalScale(120),
+    paddingBottom: verticalScale(24),
   },
   card: {
     backgroundColor: "#FFFFFF",
@@ -960,8 +960,12 @@ const styles = StyleSheet.create({
     color: "#92400E",
   },
   buttonContainer: {
-    marginHorizontal: scale(16),
-    marginBottom: verticalScale(24),
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(12),
+    paddingBottom: verticalScale(24),
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
     gap: verticalScale(12),
   },
   confirmButton: {

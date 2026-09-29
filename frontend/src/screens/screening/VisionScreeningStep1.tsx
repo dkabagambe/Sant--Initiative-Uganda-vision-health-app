@@ -1177,7 +1177,7 @@ export default function VisionScreeningFlow() {
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
         style={styles.keyboardAvoid}
       >
         <ScrollView
@@ -1257,10 +1257,9 @@ export default function VisionScreeningFlow() {
             )}
           </View>
 
-          {/* Form Container */}
+          {/* Form Container — NO buttons here */}
           <View style={styles.formContainer}>
             {renderStepContent()}
-            {renderStepButtons()}
           </View>
 
           {/* Bottom Navigation */}
@@ -1292,6 +1291,9 @@ export default function VisionScreeningFlow() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Step buttons live OUTSIDE KeyboardAvoidingView — keyboard never pushes them up */}
+      {renderStepButtons()}
     </SafeAreaView>
   );
 }
@@ -1308,7 +1310,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 24,
   },
   header: {
     paddingHorizontal: 20,
@@ -1979,11 +1981,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#0C4A6E",
   },
-  // Buttons styles
+  // Buttons styles — now rendered OUTSIDE the ScrollView as a sticky footer
   stepButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
   },
   backButton: {
     flexDirection: "row",
@@ -2023,7 +2030,12 @@ const styles = StyleSheet.create({
   registrationButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
     gap: 12,
   },
   cancelButton: {

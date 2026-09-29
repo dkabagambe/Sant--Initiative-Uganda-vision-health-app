@@ -2,13 +2,21 @@
  * KeyboardAwareFormLayout
  *
  * Shared layout for all multi-step registration and screening forms.
- * Solves two problems in one component:
+ * Solves the "Next button floats up over inputs when keyboard opens" bug.
  *
- *  1. Keyboard covering inputs — KeyboardAvoidingView pushes content up
- *     so the active field is never hidden behind the soft keyboard.
+ * Architecture:
+ *   [outer flex column]
+ *     ├── KeyboardAvoidingView (flex: 1) — only wraps the scroll area
+ *     │     └── ScrollView — form fields scroll, keyboard pushes content up
+ *     └── sticky footer — lives OUTSIDE KeyboardAvoidingView so the keyboard
+ *           NEVER moves it; it stays pinned at the bottom, above the keyboard,
+ *           not on top of inputs.
  *
- *  2. Bottom nav-bar buttons hidden — the sticky footer sits outside the
- *     ScrollView and uses useSafeAreaInsets so it clears gesture-nav bars.
+ * On Android, KeyboardAvoidingView behavior="padding" shrinks the scroll area
+ * upward when the keyboard opens, so the focused input scrolls into view.
+ * The footer is outside and unaffected — it stays at the bottom edge ABOVE
+ * the keyboard (Android's windowSoftInputMode handles that automatically when
+ * the footer is outside the KAV).
  *
  * Usage:
  *
@@ -23,15 +31,12 @@
  *     {/* your form fields here *\/}
  *   </KeyboardAwareFormLayout>
  *
- * The `footer` prop is optional — omit it for screens with a single "Next"
- * button placed as the last item inside the scroll content.
  * Pass `scrollRef` if you need to programmatically scroll (e.g., on focus).
  */
 
 import React, { useRef } from "react";
 import {
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   View,
@@ -40,7 +45,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface KeyboardAwareFormLayoutProps {
   children: React.ReactNode;
-  /** Sticky button row rendered below the scroll area, above the home indicator */
+  /** Sticky button row rendered BELOW the scroll area, pinned above system nav */
   footer?: React.ReactNode;
   /** Extra bottom padding added to the scroll content (default 24) */
   extraScrollPadding?: number;
@@ -55,30 +60,37 @@ export const KeyboardAwareFormLayout: React.FC<
   const internalRef = useRef<ScrollView>(null);
   const ref = scrollRef ?? internalRef;
 
-  /**
-   * Footer height estimate used as scroll bottom padding so the last field
-   * is never hidden under the sticky footer. 80px covers a typical two-button
-   * row; add extra if your footer is taller.
-   */
+  // Add generous bottom padding so the last field is never hidden under the footer.
+  // 80px covers a typical two-button row; insets.bottom clears the gesture bar.
   const footerHeight = footer ? 80 : 0;
   const bottomPad = footerHeight + Math.max(insets.bottom, 16) + extraScrollPadding;
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-    >
-      <ScrollView
-        ref={ref}
+    // Outer column: scroll area grows, footer sticks at bottom
+    <View style={styles.flex}>
+      {/*
+        KeyboardAvoidingView only wraps the ScrollView.
+        On iOS "padding" adds bottom padding equal to keyboard height.
+        On Android "padding" shrinks the view so content scrolls up into view.
+        The footer is outside this view so the keyboard NEVER pushes it up.
+      */}
+      <KeyboardAvoidingView
         style={styles.flex}
-        contentContainerStyle={{ paddingBottom: bottomPad }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+        behavior="padding"
+        keyboardVerticalOffset={0}
       >
-        {children}
-      </ScrollView>
+        <ScrollView
+          ref={ref}
+          style={styles.flex}
+          contentContainerStyle={{ paddingBottom: bottomPad }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {children}
+        </ScrollView>
+      </KeyboardAvoidingView>
 
+      {/* Footer lives OUTSIDE KeyboardAvoidingView — keyboard never moves it */}
       {footer && (
         <View
           style={[
@@ -89,7 +101,7 @@ export const KeyboardAwareFormLayout: React.FC<
           {footer}
         </View>
       )}
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 

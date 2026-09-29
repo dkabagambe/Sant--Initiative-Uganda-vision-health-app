@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
-  ScrollView,
   TouchableOpacity,
   StyleSheet,
   Modal,
@@ -13,13 +11,13 @@ import {
   Platform,
   StatusBar,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
 import { apiService } from "../../services/api";
 import { normalizePhoneForApi } from "../../utils/phoneUtils";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 type RootStackParamList = {
   OutletRegistrationStep2: { step1Data: any };
@@ -47,7 +45,6 @@ const OutletRegistrationStep3 = () => {
   const navigation = useNavigation<OutletRegistrationStep3NavigationProp>();
   const route = useRoute<OutletRegistrationStep3RouteProp>();
   const { step1Data, step2Data } = route.params || {};
-  const insets = useSafeAreaInsets();
 
   const [formData, setFormData] = useState<FormData>({
     operatingHours: "",
@@ -134,11 +131,25 @@ const OutletRegistrationStep3 = () => {
         <Text style={styles.headerTitle}>Outlet Registration</Text>
       </View>
 
-      <ScrollView
-        style={styles.container}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.contentContainer}
+      <KeyboardAwareFormLayout
+        footer={
+          <>
+            <TouchableOpacity style={styles.previousButton} onPress={handleBack}>
+              <Text style={styles.previousButtonText}>Previous</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+              <Text style={styles.nextButtonText}>Next</Text>
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color="#FFFFFF"
+                style={styles.nextIcon}
+              />
+            </TouchableOpacity>
+          </>
+        }
       >
+        <View style={styles.container}>
         {/* Step Indicator */}
         <View style={styles.stepIndicator}>
           <Text style={styles.stepText}>Step 3 of 4</Text>
@@ -302,31 +313,9 @@ const OutletRegistrationStep3 = () => {
           </Text>
         </View>
 
-        {/* Navigation Buttons */}
-        <View style={styles.buttonContainerSpacer} />
-      </ScrollView>
-
-      {/* Navigation Buttons — outside ScrollView so they are never hidden behind system navigation */}
-      <View
-        style={[
-          styles.buttonContainer,
-          { paddingBottom: Math.max(insets.bottom, 16) },
-        ]}
-      >
-        <TouchableOpacity style={styles.previousButton} onPress={handleBack}>
-          <Text style={styles.previousButtonText}>Previous</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>Next</Text>
-          <Ionicons
-            name="arrow-forward"
-            size={20}
-            color="#FFFFFF"
-            style={styles.nextIcon}
-          />
-        </TouchableOpacity>
-      </View>
+        {/* Navigation Buttons are in the sticky footer via KeyboardAwareFormLayout */}
+        </View>
+      </KeyboardAwareFormLayout>
 
       {/* Operating Hours Modal */}
       <Modal
@@ -385,9 +374,6 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingTop: 20,
-  },
-  contentContainer: {
-    paddingBottom: 16,
   },
   stepIndicator: {
     marginBottom: 24,
@@ -545,18 +531,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: "#E0E0E0",
-  },
-  buttonContainerSpacer: {
-    height: 16,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingTop: 12,
-    paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
   },
   previousButton: {
     flex: 1,
