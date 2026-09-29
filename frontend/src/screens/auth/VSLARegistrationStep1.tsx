@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   SafeAreaView,
@@ -14,6 +13,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 // Define navigation types
 type RootStackParamList = {
@@ -207,11 +207,22 @@ const VSLARegistrationStep1Screen = () => {
         <ProgressBar currentStep={1} totalSteps={4} />
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAwareFormLayout
+        footer={
+          <TouchableOpacity
+            style={[
+              styles.nextButton,
+              (!groupName || !groupType || !yearFormed) && styles.nextButtonDisabled,
+            ]}
+            onPress={handleNext}
+            activeOpacity={0.8}
+            disabled={!groupName || !groupType || !yearFormed}
+          >
+            <Text style={styles.nextButtonText}>Next</Text>
+          </TouchableOpacity>
+        }
       >
+        <View style={styles.scrollContent}>
         {/* Group Information Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Group Information</Text>
@@ -397,21 +408,9 @@ const VSLARegistrationStep1Screen = () => {
 
         {/* Spacer */}
         <View style={styles.spacer} />
-
-        {/* Next Button */}
-        <TouchableOpacity
-          style={[
-            styles.nextButton,
-            (!groupName || !groupType || !yearFormed) &&
-              styles.nextButtonDisabled,
-          ]}
-          onPress={handleNext}
-          activeOpacity={0.8}
-          disabled={!groupName || !groupType || !yearFormed}
-        >
-          <Text style={styles.nextButtonText}>Next</Text>
-        </TouchableOpacity>
-      </ScrollView>
+        {/* Next button is in sticky footer */}
+        </View>
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 };

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   SafeAreaView,
@@ -17,6 +16,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { apiService } from "../../services/api";
 import { normalizePhoneForApi } from "../../utils/phoneUtils";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 // Define navigation types
 type RootStackParamList = {
@@ -182,7 +182,19 @@ const VSLARegistrationStep3 = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <KeyboardAwareFormLayout
+        footer={
+          <>
+            <TouchableOpacity style={[styles.button, styles.previousButton]} onPress={handlePrevious}>
+              <Text style={styles.previousButtonText}>Previous</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.button, styles.nextButton]} onPress={handleNext}>
+              <Text style={styles.nextButtonText}>Next</Text>
+            </TouchableOpacity>
+          </>
+        }
+      >
+        <View style={{ paddingHorizontal: 20 }}>
         {/* Header with exact style */}
         <View style={styles.headerTop}>
           <View style={styles.headerContent}>
@@ -282,21 +294,9 @@ const VSLARegistrationStep3 = () => {
           ))}
         </View>
 
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[styles.button, styles.previousButton]}
-            onPress={handlePrevious}
-          >
-            <Text style={styles.previousButtonText}>Previous</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.nextButton]}
-            onPress={handleNext}
-          >
-            <Text style={styles.nextButtonText}>Next</Text>
-          </TouchableOpacity>
+        {/* Navigation buttons in sticky footer */}
         </View>
-      </ScrollView>
+      </KeyboardAwareFormLayout>
 
       {/* Meeting Frequency Dropdown Modal */}
       <Modal
@@ -432,6 +432,7 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     backgroundColor: "#FFF",
+    color: "#333333",
   },
   genderRow: {
     flexDirection: "row",

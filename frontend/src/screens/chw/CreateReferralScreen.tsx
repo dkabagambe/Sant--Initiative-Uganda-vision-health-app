@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   SafeAreaView,
@@ -21,6 +20,7 @@ import {
   normalizeLocationText,
 } from "../../data/ugandaLocations";
 import CHWHeader from "../../components/CHWHeader";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 export default function CreateReferralScreen() {
   const navigation = useNavigation<any>();
@@ -173,7 +173,25 @@ export default function CreateReferralScreen() {
 
       <CHWHeader />
 
-      <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareFormLayout
+        footer={
+          <>
+            <TouchableOpacity style={styles.cancelButton} onPress={handleBack}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              <Ionicons name="send" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <Text style={styles.submitButtonText}>
+                {loading ? "Creating..." : "Create Referral"}
+              </Text>
+            </TouchableOpacity>
+          </>
+        }
+      >
         <View style={styles.titleSection}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#1E40AF" />
@@ -439,33 +457,9 @@ export default function CreateReferralScreen() {
             />
           </View>
 
-          {/* Buttons */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.cancelButton} onPress={handleBack}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.submitButton,
-                loading && styles.submitButtonDisabled,
-              ]}
-              onPress={handleSubmit}
-              disabled={loading}
-            >
-              <Ionicons
-                name="send"
-                size={18}
-                color="#FFFFFF"
-                style={{ marginRight: 6 }}
-              />
-              <Text style={styles.submitButtonText}>
-                {loading ? "Creating..." : "Create Referral"}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          {/* Buttons are in the sticky footer */}
         </View>
-      </ScrollView>
+      </KeyboardAwareFormLayout>
 
       {/* Sex Selection Modal */}
       <Modal visible={showSexModal} animationType="fade" transparent>

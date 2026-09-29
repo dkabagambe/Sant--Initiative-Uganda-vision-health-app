@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   SafeAreaView,
   Alert,
@@ -18,6 +17,7 @@ import * as ImagePicker from "expo-image-picker";
 import { apiService } from "../../services/api";
 import { normalizePhoneForApi } from "../../utils/phoneUtils";
 import { Ionicons } from "@expo/vector-icons";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 // Define navigation types
 type RootStackParamList = {
@@ -408,7 +408,29 @@ const VSLARegistrationStep4 = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <KeyboardAwareFormLayout
+        footer={
+          <>
+            <TouchableOpacity
+              style={[styles.button, styles.previousButton]}
+              onPress={handlePrevious}
+              disabled={isSubmitting}
+            >
+              <Text style={styles.previousButtonText}>Previous</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+              onPress={handleSubmit}
+              disabled={isSubmitting}
+            >
+              <Text style={styles.submitButtonText}>
+                {isSubmitting ? "Uploading & Submitting..." : "Submit Registration"}
+              </Text>
+            </TouchableOpacity>
+          </>
+        }
+      >
+        <View style={{ paddingHorizontal: 20 }}>
         {/* Header with exact style */}
         <View style={styles.headerTop}>
           <View style={styles.headerContent}>
@@ -649,25 +671,9 @@ const VSLARegistrationStep4 = () => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[styles.button, styles.previousButton]}
-            onPress={handlePrevious}
-            disabled={isSubmitting}
-          >
-            <Text style={styles.previousButtonText}>Previous</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={isSubmitting}
-          >
-            <Text style={styles.submitButtonText}>
-              {isSubmitting ? "Uploading & Submitting..." : "Submit Registration"}
-            </Text>
-          </TouchableOpacity>
+        {/* Navigation buttons in sticky footer */}
         </View>
-      </ScrollView>
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 };

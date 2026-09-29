@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
@@ -26,6 +25,7 @@ import {
   normalizeLocationText,
 } from "../../data/ugandaLocations";
 import { apiService } from "../../services/api";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 export default function VisionScreen1() {
   const navigation = useNavigation<any>();
@@ -215,11 +215,12 @@ export default function VisionScreen1() {
         </View>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAwareFormLayout
+        footer={
+          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+            <Text style={styles.nextButtonText}>{t("next")}</Text>
+          </TouchableOpacity>
+        }
       >
         {/* Progress Indicator */}
         <View style={styles.progressSection}>
@@ -473,14 +474,9 @@ export default function VisionScreen1() {
           </View>
         </View>
 
-        {/* Next Button */}
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>{t("next")}</Text>
-        </TouchableOpacity>
-
         {/* Spacer for bottom tab bar */}
         <View style={styles.spacer} />
-      </ScrollView>
+      </KeyboardAwareFormLayout>
 
       {/* District Dropdown Modal */}
       <Modal visible={showDistrictModal} animationType="slide" transparent>

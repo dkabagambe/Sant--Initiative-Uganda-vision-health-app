@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
   StyleSheet,
   Image,
@@ -19,6 +18,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { apiService } from "../../services/api";
 import { normalizePhoneForApi } from "../../utils/phoneUtils";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 type RootStackParamList = {
   OutletRegistrationStep3: { step1Data: any; step2Data: any };
@@ -321,11 +321,46 @@ const OutletRegistrationStep4 = () => {
         <Text style={styles.headerTitle}>Outlet Registration</Text>
       </View>
 
-      <ScrollView
-        style={styles.container}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.contentContainer}
+      <KeyboardAwareFormLayout
+        footer={
+          <>
+            <TouchableOpacity
+              style={styles.previousButton}
+              onPress={handlePreviousPress}
+              disabled={isSubmitting}
+            >
+              <Text style={styles.previousButtonText}>Previous</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.submitButton,
+                (!allAgreementsChecked || isSubmitting) &&
+                  styles.submitButtonDisabled,
+              ]}
+              onPress={handleSubmitPress}
+              disabled={!allAgreementsChecked || isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Ionicons name="time-outline" size={20} color="#FFFFFF" />
+                  <Text style={styles.submitButtonText}>Submitting...</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={20}
+                    color="#FFFFFF"
+                    style={styles.submitIcon}
+                  />
+                  <Text style={styles.submitButtonText}>Submit Registration</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </>
+        }
       >
+        <View style={styles.container}>
         {/* Step Indicator */}
         <View style={styles.stepIndicator}>
           <Text style={styles.stepText}>Step 4 of 4</Text>
@@ -621,44 +656,9 @@ const OutletRegistrationStep4 = () => {
           </View>
         </View>
 
-        {/* Navigation Buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.previousButton}
-            onPress={handlePreviousPress}
-            disabled={isSubmitting}
-          >
-            <Text style={styles.previousButtonText}>Previous</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.submitButton,
-              (!allAgreementsChecked || isSubmitting) &&
-                styles.submitButtonDisabled,
-            ]}
-            onPress={handleSubmitPress}
-            disabled={!allAgreementsChecked || isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Ionicons name="time-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.submitButtonText}>Submitting...</Text>
-              </>
-            ) : (
-              <>
-                <Ionicons
-                  name="checkmark-circle-outline"
-                  size={20}
-                  color="#FFFFFF"
-                  style={styles.submitIcon}
-                />
-                <Text style={styles.submitButtonText}>Submit Registration</Text>
-              </>
-            )}
-          </TouchableOpacity>
+        {/* Navigation Buttons are in the sticky footer via KeyboardAwareFormLayout */}
         </View>
-      </ScrollView>
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 };

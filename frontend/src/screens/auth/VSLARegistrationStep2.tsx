@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   SafeAreaView,
@@ -23,6 +22,7 @@ import {
   getParishesForSubCounty,
   normalizeLocationText,
 } from "../../data/ugandaLocations";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 // Define navigation types
 type RootStackParamList = {
@@ -296,11 +296,27 @@ const VSLARegistrationStep2 = () => {
         <ProgressBar currentStep={2} totalSteps={4} />
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAwareFormLayout
+        footer={
+          <>
+            <TouchableOpacity
+              style={[styles.button, styles.previousButton]}
+              onPress={handlePrevious}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.previousButtonText}>Previous</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.nextButton]}
+              onPress={handleNext}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.nextButtonText}>Next</Text>
+            </TouchableOpacity>
+          </>
+        }
       >
+        <View style={styles.scrollContent}>
         {/* Leadership Information Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Leadership Information</Text>
@@ -473,25 +489,9 @@ const VSLARegistrationStep2 = () => {
 
         {/* Spacer */}
         <View style={styles.spacer} />
-
-        {/* Previous and Next Buttons */}
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[styles.button, styles.previousButton]}
-            onPress={handlePrevious}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.previousButtonText}>Previous</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.nextButton]}
-            onPress={handleNext}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.nextButtonText}>Next</Text>
-          </TouchableOpacity>
+        {/* Navigation buttons are in sticky footer */}
         </View>
-      </ScrollView>
+      </KeyboardAwareFormLayout>
 
       {/* District Modal */}
       <Modal visible={showDistrictModal} animationType="slide" transparent>

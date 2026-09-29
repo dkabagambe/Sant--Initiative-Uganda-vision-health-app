@@ -6,12 +6,12 @@ import {
   TextInput,
   TouchableOpacity,
   SafeAreaView,
-  ScrollView,
   Alert,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 export default function ChangePasswordScreen() {
   const navigation = useNavigation<any>();
@@ -62,7 +62,21 @@ export default function ChangePasswordScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <KeyboardAwareFormLayout
+        footer={
+          <TouchableOpacity
+            style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+            onPress={handleChangePassword}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveButtonText}>Change Password</Text>
+            )}
+          </TouchableOpacity>
+        }
+      >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="#1E40AF" />
@@ -152,19 +166,9 @@ export default function ChangePasswordScreen() {
             </Text>
           </View>
 
-          <TouchableOpacity
-            style={[styles.saveButton, loading && styles.saveButtonDisabled]}
-            onPress={handleChangePassword}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.saveButtonText}>Change Password</Text>
-            )}
-          </TouchableOpacity>
+          {/* Save button is in the sticky footer */}
         </View>
-      </ScrollView>
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 }

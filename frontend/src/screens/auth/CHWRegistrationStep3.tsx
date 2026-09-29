@@ -2,7 +2,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   Modal,
@@ -19,6 +18,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
 import { apiService } from "../../services/api";
 import { normalizePhoneForApi } from "../../utils/phoneUtils";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 type RootStackParamList = {
   Login: undefined;
@@ -53,7 +53,6 @@ export default function CHWRegistrationStep3() {
     languages: [] as string[],
   });
 
-  // Dropdown state
   const [experienceModalVisible, setExperienceModalVisible] = useState(false);
 
   const handleBackPress = () => {
@@ -67,14 +66,12 @@ export default function CHWRegistrationStep3() {
   const handleNextPress = async () => {
     if (!isFormValid()) return;
 
-    // Combine all form data
     const completeFormData = {
       ...step1Data,
       ...step2Data,
       ...formData,
     };
 
-    // Navigate directly to Step 4 - no OTP sent (OTP only on login)
     const phone = normalizePhoneForApi(step2Data.phoneNumber || "");
     if (!phone) {
       Alert.alert("Invalid Phone", "Please go back and enter a valid 9-digit phone number.");
@@ -87,26 +84,17 @@ export default function CHWRegistrationStep3() {
   };
 
   const updateFormData = (field: string, value: string) => {
-    setFormData({
-      ...formData,
-      [field]: value,
-    });
+    setFormData({ ...formData, [field]: value });
   };
 
   const toggleLanguage = (language: string) => {
     const currentLanguages = [...formData.languages];
     if (currentLanguages.includes(language)) {
-      // Remove language if already selected
-      const index = currentLanguages.indexOf(language);
-      currentLanguages.splice(index, 1);
+      currentLanguages.splice(currentLanguages.indexOf(language), 1);
     } else {
-      // Add language if not selected
       currentLanguages.push(language);
     }
-    setFormData({
-      ...formData,
-      languages: currentLanguages,
-    });
+    setFormData({ ...formData, languages: currentLanguages });
   };
 
   const selectExperience = (experience: string) => {
@@ -114,9 +102,7 @@ export default function CHWRegistrationStep3() {
     setExperienceModalVisible(false);
   };
 
-  const isFormValid = () => {
-    return formData.languages.length > 0; // At least one language required
-  };
+  const isFormValid = () => formData.languages.length > 0;
 
   const experienceOptions = [
     "Less than 1 year",
@@ -147,8 +133,7 @@ export default function CHWRegistrationStep3() {
       <Text
         style={[
           styles.experienceItemText,
-          formData.yearsExperience === item &&
-            styles.experienceItemTextSelected,
+          formData.yearsExperience === item && styles.experienceItemTextSelected,
         ]}
       >
         {item}
@@ -160,8 +145,8 @@ export default function CHWRegistrationStep3() {
   );
 
   return (
-    <View style={styles.screenContainer}>
-      {/* Header with Back Button */}
+    <SafeAreaView style={styles.screenContainer}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000" />
@@ -169,124 +154,126 @@ export default function CHWRegistrationStep3() {
         <Text style={styles.headerTitle}>CHW Registration</Text>
       </View>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Step Indicator */}
-        <View style={styles.stepIndicator}>
-          <Text style={styles.stepText}>Step 3 of 4</Text>
-          <View style={styles.stepProgress}>
-            <View style={styles.stepCompleted} />
-            <View style={styles.stepCompleted} />
-            <View style={styles.stepActive} />
-            <View style={styles.stepInactive} />
-          </View>
-        </View>
-
-        {/* Form Title */}
-        <Text style={styles.sectionTitle}>Professional Information</Text>
-
-        {/* Associated Health Facility */}
-        <Text style={styles.label}>Associated Health Facility</Text>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g., Luweero Health Center IV"
-            value={formData.healthFacility}
-            onChangeText={(text) => updateFormData("healthFacility", text)}
-          />
-        </View>
-
-        {/* Years of CHW Experience */}
-        <Text style={styles.label}>Years of CHW Experience</Text>
-        <TouchableOpacity
-          style={styles.dropdownContainer}
-          onPress={() => setExperienceModalVisible(true)}
-        >
-          <Text
-            style={
-              formData.yearsExperience
-                ? styles.dropdownText
-                : styles.dropdownPlaceholder
-            }
-          >
-            {formData.yearsExperience || "Select experience"}
-          </Text>
-          <Ionicons
-            name={experienceModalVisible ? "chevron-up" : "chevron-down"}
-            size={20}
-            color="#666"
-          />
-        </TouchableOpacity>
-
-        {/* Languages Spoken */}
-        <Text style={styles.label}>
-          Languages Spoken <Text style={styles.requiredAsterisk}>*</Text>
-        </Text>
-        <Text style={styles.helperText}>
-          Select all languages you can communicate in
-        </Text>
-
-        <View style={styles.languageContainer}>
-          {languageOptions.map((language) => (
+      <KeyboardAwareFormLayout
+        footer={
+          <>
             <TouchableOpacity
-              key={language}
-              style={[
-                styles.languageButton,
-                formData.languages.includes(language) &&
-                  styles.languageButtonSelected,
-              ]}
-              onPress={() => toggleLanguage(language)}
+              style={styles.previousButton}
+              onPress={handlePreviousPress}
             >
-              <Text
-                style={[
-                  styles.languageText,
-                  formData.languages.includes(language) &&
-                    styles.languageTextSelected,
-                ]}
-              >
-                {language}
-              </Text>
-              {formData.languages.includes(language) && (
-                <Ionicons
-                  name="checkmark"
-                  size={16}
-                  color={colors.primary}
-                  style={styles.checkIcon}
-                />
-              )}
+              <Text style={styles.previousButtonText}>Previous</Text>
             </TouchableOpacity>
-          ))}
-        </View>
+            <TouchableOpacity
+              style={[
+                styles.nextButton,
+                !isFormValid() && styles.nextButtonDisabled,
+              ]}
+              onPress={handleNextPress}
+              disabled={!isFormValid()}
+            >
+              <Text style={styles.nextButtonText}>Next</Text>
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color="#FFFFFF"
+                style={styles.nextIcon}
+              />
+            </TouchableOpacity>
+          </>
+        }
+      >
+        <View style={styles.container}>
+          {/* Step Indicator */}
+          <View style={styles.stepIndicator}>
+            <Text style={styles.stepText}>Step 3 of 4</Text>
+            <View style={styles.stepProgress}>
+              <View style={styles.stepCompleted} />
+              <View style={styles.stepCompleted} />
+              <View style={styles.stepActive} />
+              <View style={styles.stepInactive} />
+            </View>
+          </View>
 
-        {/* Navigation Buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.previousButton}
-            onPress={handlePreviousPress}
-          >
-            <Text style={styles.previousButtonText}>Previous</Text>
-          </TouchableOpacity>
+          {/* Form Title */}
+          <Text style={styles.sectionTitle}>Professional Information</Text>
 
+          {/* Associated Health Facility */}
+          <Text style={styles.label}>Associated Health Facility</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Luweero Health Center IV"
+              value={formData.healthFacility}
+              onChangeText={(text) => updateFormData("healthFacility", text)}
+            />
+          </View>
+
+          {/* Years of CHW Experience */}
+          <Text style={styles.label}>Years of CHW Experience</Text>
           <TouchableOpacity
-            style={[
-              styles.nextButton,
-              !isFormValid() && styles.nextButtonDisabled,
-            ]}
-            onPress={handleNextPress}
-            disabled={!isFormValid()}
+            style={styles.dropdownContainer}
+            onPress={() => setExperienceModalVisible(true)}
           >
-            <Text style={styles.nextButtonText}>Next</Text>
+            <Text
+              style={
+                formData.yearsExperience
+                  ? styles.dropdownText
+                  : styles.dropdownPlaceholder
+              }
+            >
+              {formData.yearsExperience || "Select experience"}
+            </Text>
             <Ionicons
-              name="arrow-forward"
+              name={experienceModalVisible ? "chevron-up" : "chevron-down"}
               size={20}
-              color="#FFFFFF"
-              style={styles.nextIcon}
+              color="#666"
             />
           </TouchableOpacity>
-        </View>
 
-        {/* Footer Note */}
-        <Text style={styles.footerNote}>Fields marked with * are required</Text>
-      </ScrollView>
+          {/* Languages Spoken */}
+          <Text style={styles.label}>
+            Languages Spoken <Text style={styles.requiredAsterisk}>*</Text>
+          </Text>
+          <Text style={styles.helperText}>
+            Select all languages you can communicate in
+          </Text>
+
+          <View style={styles.languageContainer}>
+            {languageOptions.map((language) => (
+              <TouchableOpacity
+                key={language}
+                style={[
+                  styles.languageButton,
+                  formData.languages.includes(language) &&
+                    styles.languageButtonSelected,
+                ]}
+                onPress={() => toggleLanguage(language)}
+              >
+                <Text
+                  style={[
+                    styles.languageText,
+                    formData.languages.includes(language) &&
+                      styles.languageTextSelected,
+                  ]}
+                >
+                  {language}
+                </Text>
+                {formData.languages.includes(language) && (
+                  <Ionicons
+                    name="checkmark"
+                    size={16}
+                    color={colors.primary}
+                    style={styles.checkIcon}
+                  />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Footer Note */}
+          <Text style={styles.footerNote}>Fields marked with * are required</Text>
+        </View>
+      </KeyboardAwareFormLayout>
 
       {/* Experience Selection Modal */}
       <Modal
@@ -297,7 +284,6 @@ export default function CHWRegistrationStep3() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            {/* Modal Header */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Experience</Text>
               <TouchableOpacity
@@ -307,8 +293,6 @@ export default function CHWRegistrationStep3() {
                 <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
-
-            {/* Experience List */}
             <FlatList
               data={experienceOptions}
               renderItem={renderExperienceItem}
@@ -319,7 +303,7 @@ export default function CHWRegistrationStep3() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -461,11 +445,6 @@ const styles = StyleSheet.create({
   checkIcon: {
     marginLeft: 8,
   },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
-  },
   previousButton: {
     flex: 1,
     backgroundColor: "#FFFFFF",
@@ -509,7 +488,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 32,
   },
-  // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",

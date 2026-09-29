@@ -2,7 +2,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   Platform,
@@ -14,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 type RootStackParamList = {
   Login: undefined;
@@ -77,7 +77,27 @@ export default function CHWRegistrationStep1() {
         <Text style={styles.headerTitle}>CHW Registration</Text>
       </View>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <KeyboardAwareFormLayout
+        footer={
+          <TouchableOpacity
+            style={[
+              styles.nextButton,
+              !isFormValid() && styles.nextButtonDisabled,
+            ]}
+            onPress={handleNextPress}
+            disabled={!isFormValid()}
+          >
+            <Text style={styles.nextButtonText}>Next</Text>
+            <Ionicons
+              name="arrow-forward"
+              size={20}
+              color="#FFFFFF"
+              style={styles.nextIcon}
+            />
+          </TouchableOpacity>
+        }
+      >
+        <View style={styles.container}>
         {/* Step Indicator */}
         <View style={styles.stepIndicator}>
           <Text style={styles.stepText}>Step 1 of 4</Text>
@@ -196,27 +216,11 @@ export default function CHWRegistrationStep1() {
           />
         </View>
 
-        {/* Next Button - FIXED: Green color and "Next" text */}
-        <TouchableOpacity
-          style={[
-            styles.nextButton,
-            !isFormValid() && styles.nextButtonDisabled,
-          ]}
-          onPress={handleNextPress}
-          disabled={!isFormValid()}
-        >
-          <Text style={styles.nextButtonText}>Next</Text>
-          <Ionicons
-            name="arrow-forward"
-            size={20}
-            color="#FFFFFF"
-            style={styles.nextIcon}
-          />
-        </TouchableOpacity>
-
         {/* Footer Note */}
         <Text style={styles.footerNote}>Fields marked with * are required</Text>
-      </ScrollView>
+        {/* Next button is in the sticky footer */}
+        </View>
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 }

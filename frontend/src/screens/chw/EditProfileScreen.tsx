@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   SafeAreaView,
-  ScrollView,
   Alert,
   ActivityIndicator,
   Modal,
@@ -23,6 +22,7 @@ import {
   getParishesForSubCounty,
   normalizeLocationText,
 } from "../../data/ugandaLocations";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 import CHWHeader from "../../components/CHWHeader";
 
 export default function EditProfileScreen() {
@@ -202,9 +202,22 @@ export default function EditProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <KeyboardAwareFormLayout
+        footer={
+          <TouchableOpacity
+            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+            onPress={handleSave}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveButtonText}>Save Changes</Text>
+            )}
+          </TouchableOpacity>
+        }
+      >
         <CHWHeader />
-
         <View style={styles.form}>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Full Name *</Text>
@@ -382,17 +395,7 @@ export default function EditProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-            onPress={handleSave}
-            disabled={saving}
-          >
-            {saving ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.saveButtonText}>Save Changes</Text>
-            )}
-          </TouchableOpacity>
+          {/* Save button is in the sticky footer */}
         </View>
 
         {/* District Modal */}
@@ -538,7 +541,7 @@ export default function EditProfileScreen() {
             </View>
           </View>
         </Modal>
-      </ScrollView>
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 }
@@ -691,6 +694,7 @@ const styles = StyleSheet.create({
     borderColor: "#D1D5DB",
     borderRadius: 8,
     fontSize: 16,
+    color: "#1F2937",
   },
   modalItem: {
     padding: 16,

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  ScrollView,
   TouchableOpacity,
   StyleSheet,
   Modal,
@@ -23,6 +22,7 @@ import {
   getParishesForSubCounty,
   normalizeLocationText,
 } from "../../data/ugandaLocations";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 type RootStackParamList = {
   OutletRegistrationStep1: undefined;
@@ -178,11 +178,32 @@ const OutletRegistrationStep2 = () => {
         <Text style={styles.headerTitle}>Outlet Registration</Text>
       </View>
 
-      <ScrollView
-        style={styles.container}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.contentContainer}
+      <KeyboardAwareFormLayout
+        footer={
+          <>
+            <TouchableOpacity style={styles.previousButton} onPress={handleBack}>
+              <Text style={styles.previousButtonText}>Previous</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.nextButton,
+                !isFormValid() && styles.nextButtonDisabled,
+              ]}
+              onPress={handleNext}
+              disabled={!isFormValid()}
+            >
+              <Text style={styles.nextButtonText}>Next</Text>
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color="#FFFFFF"
+                style={styles.nextIcon}
+              />
+            </TouchableOpacity>
+          </>
+        }
       >
+        <View style={styles.container}>
         {/* Step Indicator */}
         <View style={styles.stepIndicator}>
           <Text style={styles.stepText}>Step 2 of 4</Text>
@@ -403,30 +424,9 @@ const OutletRegistrationStep2 = () => {
           />
         </View>
 
-        {/* Navigation Buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.previousButton} onPress={handleBack}>
-            <Text style={styles.previousButtonText}>Previous</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.nextButton,
-              !isFormValid() && styles.nextButtonDisabled,
-            ]}
-            onPress={handleNext}
-            disabled={!isFormValid()}
-          >
-            <Text style={styles.nextButtonText}>Next</Text>
-            <Ionicons
-              name="arrow-forward"
-              size={20}
-              color="#FFFFFF"
-              style={styles.nextIcon}
-            />
-          </TouchableOpacity>
+        {/* Navigation Buttons are in the sticky footer via KeyboardAwareFormLayout */}
         </View>
-      </ScrollView>
+      </KeyboardAwareFormLayout>
 
       {/* District Selection Modal */}
       <Modal

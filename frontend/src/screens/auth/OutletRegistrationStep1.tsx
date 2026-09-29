@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  ScrollView,
   TouchableOpacity,
   StyleSheet,
   Modal,
@@ -16,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 type RootStackParamList = {
   OutletRegistrationStep1: undefined;
@@ -162,11 +162,27 @@ const OutletRegistrationStep1 = () => {
         <Text style={styles.headerTitle}>Outlet Registration</Text>
       </View>
 
-      <ScrollView
-        style={styles.container}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.contentContainer}
+      <KeyboardAwareFormLayout
+        footer={
+          <TouchableOpacity
+            style={[
+              styles.nextButton,
+              !isFormValid() && styles.nextButtonDisabled,
+            ]}
+            onPress={handleNext}
+            disabled={!isFormValid()}
+          >
+            <Text style={styles.nextButtonText}>Next</Text>
+            <Ionicons
+              name="arrow-forward"
+              size={20}
+              color="#FFFFFF"
+              style={styles.nextIcon}
+            />
+          </TouchableOpacity>
+        }
       >
+        <View style={styles.container}>
         {/* Step Indicator */}
         <View style={styles.stepIndicator}>
           <Text style={styles.stepText}>Step 1 of 4</Text>
@@ -298,24 +314,9 @@ const OutletRegistrationStep1 = () => {
           <Text style={styles.hintText}>Format: CM followed by 14 digits</Text>
         </View>
 
-        {/* Next Button */}
-        <TouchableOpacity
-          style={[
-            styles.nextButton,
-            !isFormValid() && styles.nextButtonDisabled,
-          ]}
-          onPress={handleNext}
-          disabled={!isFormValid()}
-        >
-          <Text style={styles.nextButtonText}>Next</Text>
-          <Ionicons
-            name="arrow-forward"
-            size={20}
-            color="#FFFFFF"
-            style={styles.nextIcon}
-          />
-        </TouchableOpacity>
-      </ScrollView>
+        {/* Next button is in the sticky footer via KeyboardAwareFormLayout */}
+        </View>
+      </KeyboardAwareFormLayout>
 
       {/* Business Type Modal */}
       <Modal

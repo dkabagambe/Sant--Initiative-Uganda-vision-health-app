@@ -2,7 +2,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   Modal,
@@ -23,6 +22,7 @@ import {
   getParishesForSubCounty,
   normalizeLocationText,
 } from "../../data/ugandaLocations";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 type RootStackParamList = {
   Login: undefined;
@@ -166,7 +166,35 @@ export default function CHWRegistrationStep2() {
         <Text style={styles.headerTitle}>CHW Registration</Text>
       </View>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <KeyboardAwareFormLayout
+        footer={
+          <>
+            <TouchableOpacity
+              style={styles.previousButton}
+              onPress={handlePreviousPress}
+            >
+              <Text style={styles.previousButtonText}>Previous</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.nextButton,
+                !isFormValid() && styles.nextButtonDisabled,
+              ]}
+              onPress={handleNextPress}
+              disabled={!isFormValid()}
+            >
+              <Text style={styles.nextButtonText}>Next</Text>
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color="#FFFFFF"
+                style={styles.nextIcon}
+              />
+            </TouchableOpacity>
+          </>
+        }
+      >
+        <View style={styles.container}>
         {/* Step Indicator */}
         <View style={styles.stepIndicator}>
           <Text style={styles.stepText}>Step 2 of 4</Text>
@@ -351,36 +379,11 @@ export default function CHWRegistrationStep2() {
           />
         </View>
 
-        {/* Navigation Buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.previousButton}
-            onPress={handlePreviousPress}
-          >
-            <Text style={styles.previousButtonText}>Previous</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.nextButton,
-              !isFormValid() && styles.nextButtonDisabled,
-            ]}
-            onPress={handleNextPress}
-            disabled={!isFormValid()}
-          >
-            <Text style={styles.nextButtonText}>Next</Text>
-            <Ionicons
-              name="arrow-forward"
-              size={20}
-              color="#FFFFFF"
-              style={styles.nextIcon}
-            />
-          </TouchableOpacity>
-        </View>
-
+        {/* Navigation Buttons are in the sticky footer via KeyboardAwareFormLayout */}
         {/* Footer Note */}
         <Text style={styles.footerNote}>Fields marked with * are required</Text>
-      </ScrollView>
+        </View>
+      </KeyboardAwareFormLayout>
 
       {/* District Selection Modal */}
       <Modal
