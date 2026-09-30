@@ -292,20 +292,21 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#333333",
+    color: "#111827",
     marginBottom: 8,
   },
   inputContainer: {
     borderWidth: 1,
-    borderColor: "#DDDDDD",
-    borderRadius: 8,
+    borderColor: "#D1D5DB",
+    borderRadius: 12,
     backgroundColor: "#FFFFFF",
     marginBottom: 20,
   },
   input: {
-    padding: 16,
-    fontSize: 16,
-    color: "#333333",
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: "#111827",
   },
   genderContainer: {
     flexDirection: "row",
@@ -317,12 +318,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#DDDDDD",
-    borderRadius: 8,
+    borderColor: "#D1D5DB",
+    borderRadius: 12,
     padding: 12,
   },
   genderOptionSelected: {
-    borderColor: colors.primary, // Green from your theme
+    borderColor: colors.primary,
     backgroundColor: "#F0F9F0",
   },
   genderRadio: {
