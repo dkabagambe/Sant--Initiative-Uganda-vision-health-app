@@ -217,9 +217,9 @@ export default function VisionScreen1() {
 
       <KeyboardAwareFormLayout
         footer={
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-            <Text style={styles.nextButtonText}>{t("next")}</Text>
-          </TouchableOpacity>
+          <FormNavBar
+            onNext={handleNext}
+          />
         }
       >
         {/* Progress Indicator */}

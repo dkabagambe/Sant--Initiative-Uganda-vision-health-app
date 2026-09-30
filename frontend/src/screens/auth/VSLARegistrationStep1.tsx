@@ -209,17 +209,10 @@ const VSLARegistrationStep1Screen = () => {
 
       <KeyboardAwareFormLayout
         footer={
-          <TouchableOpacity
-            style={[
-              styles.nextButton,
-              (!groupName || !groupType || !yearFormed) && styles.nextButtonDisabled,
-            ]}
-            onPress={handleNext}
-            activeOpacity={0.8}
-            disabled={!groupName || !groupType || !yearFormed}
-          >
-            <Text style={styles.nextButtonText}>Next</Text>
-          </TouchableOpacity>
+          <FormNavBar
+            onNext={handleNext}
+            nextDisabled={!groupName || !groupType || !yearFormed}
+          />
         }
       >
         <View style={styles.scrollContent}>

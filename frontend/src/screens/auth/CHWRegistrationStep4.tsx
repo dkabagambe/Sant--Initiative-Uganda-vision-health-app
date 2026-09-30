@@ -256,35 +256,14 @@ export default function CHWRegistrationStep4() {
 
       <KeyboardAwareFormLayout
         footer={
-          <>
-            <TouchableOpacity
-              style={styles.previousButton}
-              onPress={handlePreviousPress}
-              disabled={isSubmitting}
-            >
-              <Text style={styles.previousButtonText}>Previous</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.submitButton,
-                (!allAgreementsChecked || isSubmitting) && styles.submitButtonDisabled,
-              ]}
-              onPress={handleSubmitPress}
-              disabled={!allAgreementsChecked || isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Ionicons name="time-outline" size={20} color="#FFFFFF" />
-                  <Text style={styles.submitButtonText}>Submitting...</Text>
-                </>
-              ) : (
-                <>
-                  <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" style={styles.submitIcon} />
-                  <Text style={styles.submitButtonText}>Submit Registration</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </>
+          <FormNavBar
+            onNext={handleSubmitPress}
+            onPrev={handlePreviousPress}
+            nextLabel="Submit Registration"
+            nextDisabled={!allAgreementsChecked || isSubmitting}
+            nextLoading={isSubmitting}
+            prevDisabled={isSubmitting}
+          />
         }
       >
         <View style={styles.container}>

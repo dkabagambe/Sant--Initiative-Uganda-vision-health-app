@@ -298,22 +298,10 @@ const VSLARegistrationStep2 = () => {
 
       <KeyboardAwareFormLayout
         footer={
-          <>
-            <TouchableOpacity
-              style={[styles.button, styles.previousButton]}
-              onPress={handlePrevious}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.previousButtonText}>Previous</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.nextButton]}
-              onPress={handleNext}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.nextButtonText}>Next</Text>
-            </TouchableOpacity>
-          </>
+          <FormNavBar
+            onNext={handleNext}
+            onPrev={handlePrevious}
+          />
         }
       >
         <View style={styles.scrollContent}>

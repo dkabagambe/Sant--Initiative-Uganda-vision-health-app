@@ -184,14 +184,10 @@ const VSLARegistrationStep3 = () => {
     <SafeAreaView style={styles.container}>
       <KeyboardAwareFormLayout
         footer={
-          <>
-            <TouchableOpacity style={[styles.button, styles.previousButton]} onPress={handlePrevious}>
-              <Text style={styles.previousButtonText}>Previous</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, styles.nextButton]} onPress={handleNext}>
-              <Text style={styles.nextButtonText}>Next</Text>
-            </TouchableOpacity>
-          </>
+          <FormNavBar
+            onNext={handleNext}
+            onPrev={handlePrevious}
+          />
         }
       >
         <View style={{ paddingHorizontal: 20 }}>

@@ -156,30 +156,11 @@ export default function CHWRegistrationStep3() {
 
       <KeyboardAwareFormLayout
         footer={
-          <>
-            <TouchableOpacity
-              style={styles.previousButton}
-              onPress={handlePreviousPress}
-            >
-              <Text style={styles.previousButtonText}>Previous</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.nextButton,
-                !isFormValid() && styles.nextButtonDisabled,
-              ]}
-              onPress={handleNextPress}
-              disabled={!isFormValid()}
-            >
-              <Text style={styles.nextButtonText}>Next</Text>
-              <Ionicons
-                name="arrow-forward"
-                size={20}
-                color="#FFFFFF"
-                style={styles.nextIcon}
-              />
-            </TouchableOpacity>
-          </>
+          <FormNavBar
+            onNext={handleNextPress}
+            onPrev={handlePreviousPress}
+            nextDisabled={!isFormValid()}
+          />
         }
       >
         <View style={styles.container}>

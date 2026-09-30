@@ -164,22 +164,10 @@ const OutletRegistrationStep1 = () => {
 
       <KeyboardAwareFormLayout
         footer={
-          <TouchableOpacity
-            style={[
-              styles.nextButton,
-              !isFormValid() && styles.nextButtonDisabled,
-            ]}
-            onPress={handleNext}
-            disabled={!isFormValid()}
-          >
-            <Text style={styles.nextButtonText}>Next</Text>
-            <Ionicons
-              name="arrow-forward"
-              size={20}
-              color="#FFFFFF"
-              style={styles.nextIcon}
-            />
-          </TouchableOpacity>
+          <FormNavBar
+            onNext={handleNext}
+            nextDisabled={!isFormValid()}
+          />
         }
       >
         <View style={styles.container}>

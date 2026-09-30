@@ -461,14 +461,14 @@ const styles = StyleSheet.create({
   readyText: { fontSize: 14, color: "#065F46", fontWeight: "500", flex: 1, lineHeight: 20 },
 
   footer: {
-    paddingHorizontal: 16, paddingVertical: 12, paddingBottom: 24,
+    paddingHorizontal: 16, paddingVertical: 14, paddingBottom: 24,
     borderTopWidth: 1, borderTopColor: "#E5E7EB",
   },
   button: {
-    backgroundColor: "#8B5CF6", paddingVertical: 14, borderRadius: 8,
+    backgroundColor: "#8B5CF6", paddingVertical: 14, borderRadius: 12,
     flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8,
   },
   buttonDisabled: { backgroundColor: "#D1D5DB" },
-  buttonText: { color: "#FFF", fontSize: 15, fontWeight: "600" },
+  buttonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
   buttonTextDisabled: { color: "#9CA3AF" },
 });

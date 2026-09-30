@@ -14,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { colors } from "../../theme/colors";
 import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
+import { FormNavBar } from "../../components/FormNavBar";
 
 type RootStackParamList = {
   Login: undefined;
@@ -79,22 +80,10 @@ export default function CHWRegistrationStep1() {
 
       <KeyboardAwareFormLayout
         footer={
-          <TouchableOpacity
-            style={[
-              styles.nextButton,
-              !isFormValid() && styles.nextButtonDisabled,
-            ]}
-            onPress={handleNextPress}
-            disabled={!isFormValid()}
-          >
-            <Text style={styles.nextButtonText}>Next</Text>
-            <Ionicons
-              name="arrow-forward"
-              size={20}
-              color="#FFFFFF"
-              style={styles.nextIcon}
-            />
-          </TouchableOpacity>
+          <FormNavBar
+            onNext={handleNextPress}
+            nextDisabled={!isFormValid()}
+          />
         }
       >
         <View style={styles.container}>

@@ -255,20 +255,20 @@ const styles = StyleSheet.create({
   completionText: { fontSize: 14, color: "#065F46", fontWeight: "500", textAlign: "center", lineHeight: 20 },
   footer: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
   },
   button: {
     backgroundColor: "#16A34A",
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 12,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
   },
   buttonDisabled: { backgroundColor: "#D1D5DB" },
-  buttonText: { color: "#FFF", fontSize: 15, fontWeight: "600" },
+  buttonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
   buttonTextDisabled: { color: "#9CA3AF" },
 });

@@ -410,24 +410,14 @@ const VSLARegistrationStep4 = () => {
     <SafeAreaView style={styles.container}>
       <KeyboardAwareFormLayout
         footer={
-          <>
-            <TouchableOpacity
-              style={[styles.button, styles.previousButton]}
-              onPress={handlePrevious}
-              disabled={isSubmitting}
-            >
-              <Text style={styles.previousButtonText}>Previous</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-              onPress={handleSubmit}
-              disabled={isSubmitting}
-            >
-              <Text style={styles.submitButtonText}>
-                {isSubmitting ? "Uploading & Submitting..." : "Submit Registration"}
-              </Text>
-            </TouchableOpacity>
-          </>
+          <FormNavBar
+            onNext={handleSubmit}
+            onPrev={handlePrevious}
+            nextLabel="Submit Registration"
+            nextDisabled={isSubmitting}
+            nextLoading={isSubmitting}
+            prevDisabled={isSubmitting}
+          />
         }
       >
         <View style={{ paddingHorizontal: 20 }}>
