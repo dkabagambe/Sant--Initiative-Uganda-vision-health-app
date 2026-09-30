@@ -17,6 +17,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { apiService } from "../../services/api";
 import { normalizePhoneForApi } from "../../utils/phoneUtils";
 import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
+import { FormNavBar } from "../../components/FormNavBar";
 
 // Define navigation types
 type RootStackParamList = {

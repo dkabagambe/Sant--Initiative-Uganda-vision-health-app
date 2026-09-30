@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { FormNavBar } from "../../components/FormNavBar";
 
 export default function VHTScreeningStep5() {
   const navigation = useNavigation<any>();
@@ -112,20 +113,17 @@ export default function VHTScreeningStep5() {
       </ScrollView>
 
       {/* Single footer button - no duplicate inside scroll */}
-      <View style={[styles.footer, { paddingBottom: 24 }]}>
-        <TouchableOpacity
-          style={[styles.button, !allStepsCompleted && styles.buttonDisabled]}
-          onPress={handleContinue}
-          disabled={!allStepsCompleted}
-          activeOpacity={allStepsCompleted ? 0.7 : 1}
-        >
-          <Text style={[styles.buttonText, !allStepsCompleted && styles.buttonTextDisabled]}>
-            {allStepsCompleted
+      <View style={styles.footer}>
+        <FormNavBar
+          onPrev={() => navigation.goBack()}
+          onNext={handleContinue}
+          nextDisabled={!allStepsCompleted}
+          nextLabel={
+            allStepsCompleted
               ? t("continueToDemo")
-              : `${completedSteps.size}/${preparationSteps.length} ${t("itemsChecked")}`}
-          </Text>
-          {allStepsCompleted && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
-        </TouchableOpacity>
+              : `${completedSteps.size}/${preparationSteps.length} ${t("itemsChecked")}`
+          }
+        />
       </View>
     </SafeAreaView>
   );
@@ -204,20 +202,11 @@ const styles = StyleSheet.create({
   readyText: { fontSize: 14, color: "#065F46", fontWeight: "500", textAlign: "center", lineHeight: 20 },
   footer: {
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingTop: 12,
+    paddingBottom: 32,
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
+    elevation: 8,
   },
-  button: {
-    backgroundColor: "#16A34A",
-    paddingVertical: 14,
-    borderRadius: 12,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  buttonDisabled: { backgroundColor: "#D1D5DB" },
-  buttonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
-  buttonTextDisabled: { color: "#9CA3AF" },
 });

@@ -250,7 +250,7 @@ export default function VHTReferralScreen() {
       </ScrollView>
       </KeyboardAvoidingView>
 
-      <View style={[styles.footer, { paddingBottom: 24 }]}>
+      <View style={styles.footer}>
         <TouchableOpacity
           style={[styles.button, isButtonDisabled && styles.buttonDisabled]}
           onPress={handleCompleteReferral}
@@ -355,19 +355,24 @@ const styles = StyleSheet.create({
   reminderText: { fontSize: 13, color: "#5B21B6", flex: 1, lineHeight: 20 },
   footer: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 12,
+    paddingBottom: 32,
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
+    elevation: 8,
   },
   button: {
+    flex: 1,
     backgroundColor: "#DC2626",
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 12,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
+    minHeight: 48,
   },
   buttonDisabled: { backgroundColor: "#D1D5DB" },
-  buttonText: { color: "#FFF", fontSize: 15, fontWeight: "600" },
+  buttonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
 });

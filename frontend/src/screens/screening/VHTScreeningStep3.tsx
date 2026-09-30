@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   StatusBar,
 } from "react-native";
@@ -12,6 +11,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
+import { FormNavBar } from "../../components/FormNavBar";
 
 export default function VHTScreeningStep3() {
   const navigation = useNavigation<any>();
@@ -56,10 +57,15 @@ export default function VHTScreeningStep3() {
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={{ paddingBottom: 24 }}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAwareFormLayout
+        footer={
+          <FormNavBar
+            onPrev={() => navigation.goBack()}
+            onNext={handleContinue}
+            nextLabel={allDiscussed ? t("continueToAssessment") : t("coverAllTopics")}
+            nextDisabled={!allDiscussed}
+          />
+        }
       >
         <View style={styles.instructionCard}>
           <Ionicons name="school" size={24} color="#7C3AED" />
@@ -136,22 +142,7 @@ export default function VHTScreeningStep3() {
             <Text style={styles.completionText}>{t("allTopicsCovered")}</Text>
           </View>
         )}
-      </ScrollView>
-
-      {/* Single footer button - no duplicate inside scroll */}
-      <View style={[styles.footer, { paddingBottom: 24 }]}>
-        <TouchableOpacity
-          style={[styles.button, !allDiscussed && styles.buttonDisabled]}
-          onPress={handleContinue}
-          disabled={!allDiscussed}
-          activeOpacity={allDiscussed ? 0.7 : 1}
-        >
-          <Text style={[styles.buttonText, !allDiscussed && styles.buttonTextDisabled]}>
-            {allDiscussed ? t("continueToAssessment") : t("coverAllTopics")}
-          </Text>
-          {allDiscussed && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
-        </TouchableOpacity>
-      </View>
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 }
@@ -168,7 +159,6 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E5E7EB",
   },
   headerTitle: { fontSize: 18, fontWeight: "600", color: "#1F2937", flex: 1, textAlign: "center" },
-  content: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
   instructionCard: {
     backgroundColor: "#F3E8FF",
     borderLeftWidth: 4,
@@ -253,22 +243,4 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   completionText: { fontSize: 14, color: "#065F46", fontWeight: "500", textAlign: "center", lineHeight: 20 },
-  footer: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-  },
-  button: {
-    backgroundColor: "#16A34A",
-    paddingVertical: 14,
-    borderRadius: 12,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  buttonDisabled: { backgroundColor: "#D1D5DB" },
-  buttonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
-  buttonTextDisabled: { color: "#9CA3AF" },
 });

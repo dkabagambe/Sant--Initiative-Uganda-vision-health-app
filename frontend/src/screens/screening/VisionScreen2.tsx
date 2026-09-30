@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useLanguage } from "../../context/LanguageContext";
 import { apiService } from "../../services/api";
+import { FormNavBar } from "../../components/FormNavBar";
 
 export default function PreScreeningQuestionsScreen() {
   const navigation = useNavigation<any>();
@@ -54,14 +55,15 @@ export default function PreScreeningQuestionsScreen() {
   };
 
   const handleNext = () => {
-    // Check if all questions are answered
+    // Require all questions answered before proceeding
     if (answers.some(answer => answer === null)) {
       alert(t("answerAllQuestions"));
       return;
     }
-    // Navigate to next screen
     navigation.navigate("VisionScreen3");
   };
+
+  const allAnswered = answers.every(a => a !== null);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -192,31 +194,19 @@ export default function PreScreeningQuestionsScreen() {
             ))}
           </View>
         </View>
-        {/* Bottom Navigation Buttons */}
-        <View style={styles.bottomNav}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.backButtonText}>{t("back")}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.nextButton,
-              // Enable this to require all answers before proceeding:
-              // answers.every(a => a !== null) ? {} : styles.nextButtonDisabled
-            ]}
-            onPress={handleNext}
-            activeOpacity={0.8}
-            // disabled={!answers.every(a => a !== null)}
-          >
-            <Text style={styles.nextButtonText}>{t("next")}</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={{ height: 190 }} />
+        {/* Spacer so content isn't hidden behind fixed bottom nav */}
+        <View style={{ height: 80 }} />
       </ScrollView>
+
+      {/* Fixed bottom navigation - Prev + Next, Next disabled until all questions answered */}
+      <View style={styles.bottomNav}>
+        <FormNavBar
+          onPrev={() => navigation.goBack()}
+          onNext={handleNext}
+          nextDisabled={!allAnswered}
+          nextLabel={allAnswered ? "Next →" : `Answer all (${answers.filter(a => a !== null).length}/${answers.length})`}
+        />
+      </View>
 
     </SafeAreaView>
   );
@@ -398,38 +388,16 @@ const styles = StyleSheet.create({
     color: "#1A4D8F",
   },
   bottomNav: {
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    gap: 12,
-  },
-  backButton: {
-    flex: 1,
-    backgroundColor: "#F3F4F6",
-    paddingVertical: 16,
-    borderRadius: 10,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  backButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#666666",
-  },
-  nextButton: {
-    flex: 1,
-    backgroundColor: "#2E7D32",
-    paddingVertical: 16,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  nextButtonDisabled: {
-    backgroundColor: "#9CA3AF",
-  },
-  nextButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FFFFFF",
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 32,
+    elevation: 8,
   },
 });

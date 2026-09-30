@@ -128,6 +128,9 @@ const styles = StyleSheet.create({
   rowEnd: {
     justifyContent: "flex-end",
   },
+  // NOTE: The wrapping View (KeyboardAwareFormLayout footer or custom bottomNav)
+  // must supply: paddingHorizontal 16, paddingTop 12, paddingBottom 32,
+  // backgroundColor white, borderTopWidth 1, borderTopColor #E5E7EB, elevation 8.
 
   /* ── Prev (outline) ── */
   prevButton: {

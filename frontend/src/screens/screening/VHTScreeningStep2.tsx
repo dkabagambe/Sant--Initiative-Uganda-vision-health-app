@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   StatusBar,
 } from "react-native";
@@ -12,6 +11,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
+import { FormNavBar } from "../../components/FormNavBar";
 
 export default function VHTScreeningStep2() {
   const navigation = useNavigation<any>();
@@ -59,10 +60,15 @@ export default function VHTScreeningStep2() {
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={{ paddingBottom: 24 }}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAwareFormLayout
+        footer={
+          <FormNavBar
+            onPrev={() => navigation.goBack()}
+            onNext={handleContinue}
+            nextLabel={canProceed ? t("continueToEducation") : t("completeActionsConsent")}
+            nextDisabled={!canProceed}
+          />
+        }
       >
         <View style={styles.instructionCard}>
           <Ionicons name="information-circle" size={24} color="#10B981" />
@@ -155,21 +161,7 @@ export default function VHTScreeningStep2() {
             </View>
           </View>
         )}
-      </ScrollView>
-
-      <View style={[styles.footer, { paddingBottom: 24 }]}>
-        <TouchableOpacity
-          style={[styles.button, !canProceed && styles.buttonDisabled]}
-          onPress={handleContinue}
-          disabled={!canProceed}
-          activeOpacity={canProceed ? 0.7 : 1}
-        >
-          <Text style={[styles.buttonText, !canProceed && styles.buttonTextDisabled]}>
-            {canProceed ? t("continueToEducation") : t("completeActionsConsent")}
-          </Text>
-          {canProceed && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
-        </TouchableOpacity>
-      </View>
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 }
@@ -186,7 +178,6 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E5E7EB",
   },
   headerTitle: { fontSize: 18, fontWeight: "600", color: "#1F2937", flex: 1, textAlign: "center" },
-  content: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
   instructionCard: {
     backgroundColor: "#DCFCE7",
     borderLeftWidth: 4,
@@ -268,22 +259,4 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   declinedText: { fontSize: 14, color: "#7F1D1D", flex: 1, lineHeight: 20, fontWeight: "500" },
-  footer: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-  },
-  button: {
-    backgroundColor: "#16A34A",
-    paddingVertical: 14,
-    borderRadius: 12,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  buttonDisabled: { backgroundColor: "#D1D5DB" },
-  buttonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
-  buttonTextDisabled: { color: "#9CA3AF" },
 });

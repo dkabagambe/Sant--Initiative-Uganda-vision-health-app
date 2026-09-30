@@ -26,6 +26,7 @@ import {
 } from "../../data/ugandaLocations";
 import { apiService } from "../../services/api";
 import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
+import { FormNavBar } from "../../components/FormNavBar";
 
 export default function VisionScreen1() {
   const navigation = useNavigation<any>();
@@ -182,8 +183,6 @@ export default function VisionScreen1() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
-
-      {/* Top Header with Logo and Menu - Fixed at top */}
 
       {/* Top Header with Logo and Menu - Fixed at top */}
       <View style={styles.topHeader}>

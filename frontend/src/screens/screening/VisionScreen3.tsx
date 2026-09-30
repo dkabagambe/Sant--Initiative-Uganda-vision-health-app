@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { apiService } from "../../services/api";
+import { FormNavBar } from "../../components/FormNavBar";
 
 export default function SafetyInformationScreen() {
   const navigation = useNavigation<any>();
@@ -159,29 +160,17 @@ export default function SafetyInformationScreen() {
           </View>
         </View>
 
-        {/* Bottom Navigation Buttons */}
-        <View style={styles.bottomNav}>
-          <TouchableOpacity
-            style={styles.backButtonNav}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.backButtonText}>👈 Back</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.startButton}
-            onPress={handleStartTest}
-            activeOpacity={0.8}
-          >
-            <View style={styles.startButtonContent}>
-              <Text style={styles.startButtonEmoji}>🔦</Text>
-              <Text style={styles.startButtonText}>Start Torch Light Test</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-        <View style={{ height: 190 }} />
+        <View style={{ height: 140 }} />
       </ScrollView>
+
+      {/* Fixed bottom navigation - outside ScrollView so it doesn't scroll */}
+      <View style={styles.bottomNav}>
+        <FormNavBar
+          onPrev={() => navigation.goBack()}
+          onNext={handleStartTest}
+          nextLabel="🔦 Start Torch Light Test"
+        />
+      </View>
 
     </SafeAreaView>
   );
@@ -259,8 +248,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 150,
     paddingBottom: 140,
-  },
-  progressContainer: {
+  },  progressContainer: {
     marginBottom: 28,
   },
   progressText: {
@@ -402,54 +390,16 @@ const styles = StyleSheet.create({
     height: 20,
   },
   bottomNav: {
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    gap: 12,
-  },
-  backButtonNav: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginRight: 12,
-    borderWidth: 1.5,
-    borderColor: "#E8EAED",
-  },
-  backButtonText: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#666666",
-  },
-  startButton: {
-    flex: 2,
-    backgroundColor: "#2E7D32",
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    alignItems: "center",
-    marginLeft: 12,
-    shadowColor: "#1A4D8F",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: "#0D3A6F",
-  },
-  startButtonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  startButtonEmoji: {
-    fontSize: 18,
-    marginRight: 10,
-  },
-  startButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 32,
+    elevation: 8,
   },
 });

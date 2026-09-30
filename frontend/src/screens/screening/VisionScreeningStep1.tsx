@@ -22,6 +22,7 @@ import {
   getSubCountiesForCounty,
   getParishesForSubCounty,
 } from "../../data/ugandaLocations";
+import { FormNavBar } from "../../components/FormNavBar";
 
 const { width } = Dimensions.get("window");
 
@@ -1128,48 +1129,28 @@ export default function VisionScreeningFlow() {
 
   const renderStepButtons = () => {
     if (currentStep === 6) {
+      // Registration/sale step: Prev (cancel) left, Confirm Sale right
       return (
-        <View style={styles.registrationButtons}>
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={handlePreviousStep}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.confirmButton}
-            onPress={handleConfirmSale}
-          >
-            <Text style={styles.confirmButtonText}>Confirm Sale</Text>
-          </TouchableOpacity>
+        <View style={styles.stepButtons}>
+          <FormNavBar
+            onPrev={handlePreviousStep}
+            prevLabel="← Cancel"
+            onNext={handleConfirmSale}
+            nextLabel="Confirm Sale"
+          />
         </View>
       );
     }
 
+    // Steps 1–5: always show Prev on left, Next on right
+    // On step 1 hide Prev (first screen)
     return (
       <View style={styles.stepButtons}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handlePreviousStep}
-        >
-          <Ionicons name="arrow-back" size={20} color="#1E40AF" />
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.nextButton,
-            currentStep === 5 && styles.completeButton,
-          ]}
-          onPress={handleNextStep}
-        >
-          <Text style={styles.nextButtonText}>
-            {currentStep === 5 ? "Complete & Register Client" : "Next"}
-          </Text>
-          {currentStep !== 5 && (
-            <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-          )}
-        </TouchableOpacity>
+        <FormNavBar
+          onPrev={currentStep > 1 ? handlePreviousStep : undefined}
+          onNext={handleNextStep}
+          nextLabel={currentStep === 5 ? "Complete & Register Client" : "Next →"}
+        />
       </View>
     );
   };
@@ -1984,86 +1965,13 @@ const styles = StyleSheet.create({
   // Buttons styles — now rendered OUTSIDE the ScrollView as a sticky footer
   stepButtons: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
+    paddingTop: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 32,
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1E40AF",
-    marginLeft: 8,
-  },
-  nextButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    backgroundColor: "#1E40AF",
-    flex: 1,
-    marginLeft: 12,
-  },
-  completeButton: {
-    backgroundColor: "#10B981",
-  },
-  nextButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-    marginRight: 8,
-  },
-  registrationButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    gap: 12,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-    alignItems: "center",
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#6B7280",
-  },
-  confirmButton: {
-    flex: 1,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    backgroundColor: "#10B981",
-    alignItems: "center",
-  },
-  confirmButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FFFFFF",
+    elevation: 8,
   },
   // Bottom Navigation
   bottomNav: {

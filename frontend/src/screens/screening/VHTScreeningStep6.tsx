@@ -31,6 +31,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { useLanguage } from "../../context/LanguageContext";
 import TumblingE, { eSize6_60, eSize6_12, eSizeN8 } from "../../components/TumblingE";
+import { FormNavBar } from "../../components/FormNavBar";
 
 type EDir = "right" | "down" | "left" | "up";
 // Alias so existing JSX (<BlockE>) keeps working without changes
@@ -339,17 +340,12 @@ export default function VHTScreeningStep6() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.button, !canProceed && styles.buttonDisabled]}
-          onPress={handleContinue}
-          disabled={!canProceed}
-          activeOpacity={canProceed ? 0.7 : 1}
-        >
-          <Text style={[styles.buttonText, !canProceed && styles.buttonTextDisabled]}>
-            {canProceed ? "Continue → Torch Light Test" : "Complete all steps above first"}
-          </Text>
-          {canProceed && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
-        </TouchableOpacity>
+        <FormNavBar
+          onPrev={() => navigation.goBack()}
+          onNext={handleContinue}
+          nextDisabled={!canProceed}
+          nextLabel={canProceed ? "Continue → Torch Light Test" : "Complete all steps above first"}
+        />
       </View>
     </SafeAreaView>
   );
@@ -461,14 +457,12 @@ const styles = StyleSheet.create({
   readyText: { fontSize: 14, color: "#065F46", fontWeight: "500", flex: 1, lineHeight: 20 },
 
   footer: {
-    paddingHorizontal: 16, paddingVertical: 14, paddingBottom: 24,
-    borderTopWidth: 1, borderTopColor: "#E5E7EB",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 32,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
+    elevation: 8,
   },
-  button: {
-    backgroundColor: "#8B5CF6", paddingVertical: 14, borderRadius: 12,
-    flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8,
-  },
-  buttonDisabled: { backgroundColor: "#D1D5DB" },
-  buttonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
-  buttonTextDisabled: { color: "#9CA3AF" },
 });

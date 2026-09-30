@@ -107,7 +107,7 @@ export const KeyboardAwareFormLayout: React.FC<
         <View
           style={[
             styles.footer,
-            { paddingBottom: Math.max(insets.bottom, 16) },
+            { paddingBottom: Math.max(insets.bottom + 16, 32) },
           ]}
         >
           {footer}
@@ -127,6 +127,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
+    borderTopColor: "#E5E7EB",
+    elevation: 8,
   },
 });

@@ -19,6 +19,7 @@ import { colors } from "../../theme/colors";
 import { apiService } from "../../services/api";
 import { normalizePhoneForApi } from "../../utils/phoneUtils";
 import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
+import { FormNavBar } from "../../components/FormNavBar";
 
 type RootStackParamList = {
   Login: undefined;

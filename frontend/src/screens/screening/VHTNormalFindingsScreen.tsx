@@ -246,7 +246,7 @@ export default function VHTNormalFindingsScreen() {
         )}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: 24 }]}>
+      <View style={[styles.footer, { paddingBottom: 32 }]}>
         <TouchableOpacity
           style={[styles.button, !canComplete && styles.buttonDisabled]}
           onPress={handleComplete}
@@ -398,26 +398,31 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 12,
+    paddingBottom: 32,
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
+    elevation: 8,
   },
   button: {
-    backgroundColor: "#10B981",
+    flex: 1,
+    backgroundColor: "#15803D",
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 12,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
+    minHeight: 48,
   },
   buttonDisabled: {
     backgroundColor: "#D1D5DB",
   },
   buttonText: {
     color: "#FFF",
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
   },
   buttonTextDisabled: {
     color: "#9CA3AF",

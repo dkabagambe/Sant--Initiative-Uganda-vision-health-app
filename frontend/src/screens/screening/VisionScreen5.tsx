@@ -106,6 +106,13 @@ type AudioPlayer = ReturnType<typeof createAudioPlayer>;
 function makePlayer(asset: number): AudioPlayer | null {
   try { return createAudioPlayer(asset); } catch (_) { return null; }
 }
+async function stopSound(player: AudioPlayer | null) {
+  try {
+    if (!player) return;
+    player.pause();
+    await player.seekTo(0);
+  } catch (_) {}
+}
 async function playSound(player: AudioPlayer | null) {
   try {
     if (!player) return;
@@ -149,6 +156,9 @@ export default function VisionScreen5() {
   const correctSnd = useRef<AudioPlayer | null>(null);
   const wrongSnd   = useRef<AudioPlayer | null>(null);
 
+  // ── Sound delay timer ─────────────────────────────────────────────────────
+  const soundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // ── Swipe debounce ────────────────────────────────────────────────────────
   const swipeLock = useRef(false);
 
@@ -160,6 +170,7 @@ export default function VisionScreen5() {
     wrongSnd.current   = makePlayer(require("../../../assets/sounds/wrong.wav"));
 
     return () => {
+      if (soundTimerRef.current !== null) clearTimeout(soundTimerRef.current);
       correctSnd.current?.remove();
       wrongSnd.current?.remove();
     };
@@ -206,12 +217,26 @@ export default function VisionScreen5() {
 
   // ── Haptic + sound + flash ────────────────────────────────────────────────
   const triggerFeedback = useCallback(async (correct: boolean) => {
+    // Stop any currently playing sound immediately
+    await stopSound(correctSnd.current);
+    await stopSound(wrongSnd.current);
+
+    // Cancel any pending sound timer
+    if (soundTimerRef.current !== null) clearTimeout(soundTimerRef.current);
+
     try {
       await (correct
         ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
         : Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error));
     } catch (_) {}
-    await playSound(correct ? correctSnd.current : wrongSnd.current);
+
+    // Play feedback sound after 5-second delay
+    const player = correct ? correctSnd.current : wrongSnd.current;
+    soundTimerRef.current = setTimeout(() => {
+      soundTimerRef.current = null;
+      playSound(player);
+    }, 5000);
+
     setFeedback(correct ? "correct" : "wrong");
     setTimeout(() => setFeedback(null), 500);
   }, []);

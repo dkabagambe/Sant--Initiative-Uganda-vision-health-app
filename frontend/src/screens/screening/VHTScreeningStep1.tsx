@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   StatusBar,
 } from "react-native";
@@ -12,6 +11,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
+import { FormNavBar } from "../../components/FormNavBar";
 
 export default function VHTScreeningStep1() {
   const navigation = useNavigation<any>();
@@ -64,10 +65,18 @@ export default function VHTScreeningStep1() {
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={{ paddingBottom: 24 }}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAwareFormLayout
+        footer={
+          <FormNavBar
+            onNext={handleContinue}
+            nextLabel={
+              allChecked
+                ? t("continueToScreening")
+                : `${checkedItems.size}/${equipmentChecklist.length} ${t("itemsChecked")}`
+            }
+            nextDisabled={!allChecked}
+          />
+        }
       >
         <View style={styles.instructionCard}>
           <Ionicons name="information-circle" size={24} color="#1E40AF" />
@@ -122,32 +131,7 @@ export default function VHTScreeningStep1() {
             <Text style={styles.infoText}>{t("reviewReferralPathways")}</Text>
           </View>
         </View>
-      </ScrollView>
-
-      <View style={[styles.footer, { paddingBottom: 24 }]}>
-        <Text style={styles.footerHint}>
-          {allChecked ? t("equipmentReady") : t("completeChecklist")}
-        </Text>
-        <TouchableOpacity
-          style={[styles.button, !allChecked && styles.buttonDisabled]}
-          onPress={handleContinue}
-          disabled={!allChecked}
-          activeOpacity={allChecked ? 0.7 : 1}
-        >
-          <Text
-            style={[styles.buttonText, !allChecked && styles.buttonTextDisabled]}
-          >
-            {allChecked
-              ? t("continueToScreening")
-              : `${checkedItems.size}/${equipmentChecklist.length} ${t("itemsChecked")}`}
-          </Text>
-          <Ionicons
-            name="arrow-forward"
-            size={20}
-            color={allChecked ? "#FFF" : "#9CA3AF"}
-          />
-        </TouchableOpacity>
-      </View>
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 }
@@ -170,7 +154,6 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
   },
-  content: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
   instructionCard: {
     backgroundColor: "#DBEAFE",
     borderLeftWidth: 4,
@@ -212,24 +195,4 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   infoText: { fontSize: 14, color: "#4B5563", flex: 1, lineHeight: 20 },
-  footer: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    backgroundColor: "#FFF",
-  },
-  footerHint: { fontSize: 13, color: "#4B5563", marginBottom: 8, textAlign: "center" },
-  button: {
-    backgroundColor: "#16A34A",
-    paddingVertical: 14,
-    borderRadius: 12,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  buttonDisabled: { backgroundColor: "#D1D5DB" },
-  buttonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
-  buttonTextDisabled: { color: "#9CA3AF" },
 });

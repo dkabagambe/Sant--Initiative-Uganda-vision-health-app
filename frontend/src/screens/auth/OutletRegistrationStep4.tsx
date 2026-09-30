@@ -19,6 +19,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { apiService } from "../../services/api";
 import { normalizePhoneForApi } from "../../utils/phoneUtils";
 import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
+import { FormNavBar } from "../../components/FormNavBar";
 
 type RootStackParamList = {
   OutletRegistrationStep3: { step1Data: any; step2Data: any };

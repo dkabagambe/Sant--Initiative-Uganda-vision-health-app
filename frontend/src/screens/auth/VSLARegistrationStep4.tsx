@@ -18,6 +18,7 @@ import { apiService } from "../../services/api";
 import { normalizePhoneForApi } from "../../utils/phoneUtils";
 import { Ionicons } from "@expo/vector-icons";
 import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
+import { FormNavBar } from "../../components/FormNavBar";
 
 // Define navigation types
 type RootStackParamList = {

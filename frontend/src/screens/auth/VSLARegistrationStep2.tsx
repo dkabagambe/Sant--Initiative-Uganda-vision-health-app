@@ -23,6 +23,7 @@ import {
   normalizeLocationText,
 } from "../../data/ugandaLocations";
 import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
+import { FormNavBar } from "../../components/FormNavBar";
 
 // Define navigation types
 type RootStackParamList = {

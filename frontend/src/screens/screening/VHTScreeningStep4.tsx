@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
+import { FormNavBar } from "../../components/FormNavBar";
 
 export default function VHTScreeningStep4() {
   const navigation = useNavigation<any>();
@@ -306,41 +307,21 @@ export default function VHTScreeningStep4() {
       </ScrollView>
 
       {/* Single unified footer - always visible */}
-      <View style={[styles.footer, { paddingBottom: 24 }]}>
-        {!allQuestionsAnswered ? (
-          <View style={[styles.button, styles.buttonDisabled]}>
-            <Text style={[styles.buttonText, styles.buttonTextDisabled]}>
-              Answer remaining questions ({questions.length - questionsAnswered.size} left)
-            </Text>
-          </View>
-        ) : shouldRefer && hasDangerSign ? (
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: "#DC2626" }]}
-            onPress={handleContinue}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="medical" size={20} color="#FFF" />
-            <Text style={styles.buttonText}>⛔ Danger Sign - Complete Referral</Text>
-          </TouchableOpacity>
-        ) : shouldRefer && !hasDangerSign ? (
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: "#D97706" }]}
-            onPress={handleContinue}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="arrow-forward" size={20} color="#FFF" />
-            <Text style={styles.buttonText}>Proceed to Screening (+ Refer after)</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleContinue}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.buttonText}>Proceed to Setup Screening Area</Text>
-            <Ionicons name="arrow-forward" size={20} color="#FFF" />
-          </TouchableOpacity>
-        )}
+      <View style={styles.footer}>
+        <FormNavBar
+          onPrev={() => navigation.goBack()}
+          onNext={handleContinue}
+          nextDisabled={!allQuestionsAnswered}
+          nextLabel={
+            !allQuestionsAnswered
+              ? `Answer remaining (${questions.length - questionsAnswered.size} left)`
+              : shouldRefer && hasDangerSign
+              ? "⛔ Danger Sign — Complete Referral"
+              : shouldRefer && !hasDangerSign
+              ? "Proceed to Screening (+ Refer after)"
+              : "Proceed to Setup Screening Area"
+          }
+        />
       </View>
     </SafeAreaView>
   );
@@ -499,43 +480,11 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingTop: 12,
+    paddingBottom: 32,
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
-  },
-  button: {
-    backgroundColor: "#16A34A",
-    paddingVertical: 14,
-    borderRadius: 12,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  buttonDisabled: {
-    backgroundColor: "#D1D5DB",
-  },
-  buttonText: {
-    color: "#FFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  buttonTextDisabled: {
-    color: "#9CA3AF",
-  },
-  continueButton: {
-    backgroundColor: "#16A34A",
-    paddingVertical: 16,
-    borderRadius: 10,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 8,
-  },
-  continueButtonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "700",
+    backgroundColor: "#FFFFFF",
+    elevation: 8,
   },
 });
