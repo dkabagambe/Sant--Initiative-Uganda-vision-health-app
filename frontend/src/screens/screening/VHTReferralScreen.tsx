@@ -147,7 +147,7 @@ export default function VHTReferralScreen() {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
       <ScrollView
         style={styles.content}

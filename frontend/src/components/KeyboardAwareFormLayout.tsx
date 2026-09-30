@@ -5,18 +5,27 @@
  * Solves the "Next button floats up over inputs when keyboard opens" bug.
  *
  * Architecture:
- *   [outer flex column]
- *     ├── KeyboardAvoidingView (flex: 1) — only wraps the scroll area
- *     │     └── ScrollView — form fields scroll, keyboard pushes content up
- *     └── sticky footer — lives OUTSIDE KeyboardAvoidingView so the keyboard
- *           NEVER moves it; it stays pinned at the bottom, above the keyboard,
- *           not on top of inputs.
+ *   <SafeAreaView>               ← caller owns this
+ *     <Header />                 ← caller owns this
+ *     <KeyboardAwareFormLayout>
+ *       [outer flex column]
+ *         ├── KeyboardAvoidingView (flex: 1)
+ *         │     └── ScrollView — form fields, keyboard pushes content up
+ *         └── sticky footer — OUTSIDE KeyboardAvoidingView
+ *               keyboard NEVER moves the footer; it stays docked at the
+ *               bottom of the screen, above the system gesture bar.
  *
- * On Android, KeyboardAvoidingView behavior="padding" shrinks the scroll area
- * upward when the keyboard opens, so the focused input scrolls into view.
- * The footer is outside and unaffected — it stays at the bottom edge ABOVE
- * the keyboard (Android's windowSoftInputMode handles that automatically when
- * the footer is outside the KAV).
+ * Platform strategy:
+ *   iOS     → behavior="padding": KAV adds bottom padding equal to keyboard
+ *              height, so the ScrollView shrinks upward and the focused input
+ *              stays visible.
+ *   Android → behavior="height": KAV shrinks its own height when the keyboard
+ *              appears. This is more reliable than "padding" on Android because
+ *              "padding" requires an accurate keyboardVerticalOffset (= header
+ *              height), which varies per screen. "height" avoids that entirely.
+ *
+ * The footer is outside the KAV on both platforms, so the keyboard never
+ * pushes it up over the inputs.
  *
  * Usage:
  *
@@ -37,6 +46,7 @@
 import React, { useRef } from "react";
 import {
   KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   View,
@@ -69,15 +79,17 @@ export const KeyboardAwareFormLayout: React.FC<
     // Outer column: scroll area grows, footer sticks at bottom
     <View style={styles.flex}>
       {/*
-        KeyboardAvoidingView only wraps the ScrollView.
-        On iOS "padding" adds bottom padding equal to keyboard height.
-        On Android "padding" shrinks the view so content scrolls up into view.
-        The footer is outside this view so the keyboard NEVER pushes it up.
+        iOS:     behavior="padding" — adds bottom padding equal to keyboard height.
+        Android: behavior="height" — shrinks the KAV itself when keyboard appears.
+                 "height" is more reliable on Android because it does not require
+                 knowing the exact header height (keyboardVerticalOffset).
+
+        The footer is OUTSIDE this KAV on both platforms, so the keyboard
+        never pushes it upward over the input fields.
       */}
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior="padding"
-        keyboardVerticalOffset={0}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
           ref={ref}

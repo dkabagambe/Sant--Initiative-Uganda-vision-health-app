@@ -52,7 +52,7 @@ export default function OTPScreen() {
   const formattedPhone = safePhone
     ? `+256 ${safePhone.substring(1, 4)} ${safePhone.substring(4, 7)} ${safePhone.substring(7)}`
     : "Invalid phone";
-  const isDevNumber = safePhone === "0705686573";
+
 
   useEffect(() => {
     if (!isValidPhone) {
@@ -229,7 +229,7 @@ export default function OTPScreen() {
             </Text>
           </View>
 
-          {isDevNumber && (
+          {__DEV__ && (
             <View style={styles.devHintBox}>
               <Text style={styles.devHintText}>
                 Developer login: enter code 123456
