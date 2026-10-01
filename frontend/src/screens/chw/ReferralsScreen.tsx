@@ -178,16 +178,13 @@ export default function ReferralsScreen() {
   };
 
   const handleCommunityFollowUp = () => {
-    const root = navigation.getParent()?.getParent();
-    if (root) {
-      root.navigate("CommunityFollowUp" as any);
+    const tabNav = navigation.getParent();
+    if (tabNav) {
+      tabNav.navigate("CHWHome", {
+        screen: "CommunityFollowUp",
+      });
     } else {
-      const parent = navigation.getParent();
-      if (parent) {
-        parent.navigate("CommunityFollowUp" as any);
-      } else {
-        (navigation as any).navigate("CommunityFollowUp");
-      }
+      (navigation as any).navigate("CommunityFollowUp");
     }
   };
 
@@ -412,7 +409,7 @@ export default function ReferralsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: 40 + insets.bottom },
+          { paddingBottom: 120 + insets.bottom },
         ]}
         refreshControl={
           <RefreshControl

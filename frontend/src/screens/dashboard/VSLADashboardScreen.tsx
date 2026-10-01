@@ -24,6 +24,12 @@ type RootStackParamList = {
   Reports: undefined;
   Settings: undefined;
   VisionScreen1: undefined;
+  // VSLA tab names
+  VSLAHome: undefined;
+  VSLAStock: undefined;
+  VSLAPayments: undefined;
+  VSLAReports: undefined;
+  VSLAMore: undefined;
 };
 
 type DashboardScreenNavigationProp = NativeStackNavigationProp<
@@ -97,7 +103,11 @@ export default function VSLADashboardScreen() {
             <Text style={styles.groupName}>Bombo Women's VSLA</Text>
             <Text style={styles.location}>VSLA - Luweero District</Text>
           </View>
-          <TouchableOpacity style={styles.profileButton}>
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={() => navigation.navigate("VSLAMore")}
+            activeOpacity={0.7}
+          >
             <Ionicons name="person-circle-outline" size={44} color="#1E40AF" />
           </TouchableOpacity>
         </View>
@@ -146,7 +156,7 @@ export default function VSLADashboardScreen() {
             {/* Row 1 */}
             <TouchableOpacity
               style={styles.card}
-              onPress={() => navigation.navigate("Payments")}
+              onPress={() => navigation.navigate("VSLAPayments")}
               activeOpacity={0.7}
             >
               <View style={styles.cardHeader}>
@@ -164,7 +174,7 @@ export default function VSLADashboardScreen() {
 
             <TouchableOpacity
               style={styles.card}
-              onPress={() => navigation.navigate("VSLAHome")}
+              onPress={() => navigation.navigate("VSLAMore")}
               activeOpacity={0.7}
             >
               <View style={styles.cardHeader}>
@@ -238,7 +248,11 @@ export default function VSLADashboardScreen() {
         </View>
 
         {/* Payments Due Card */}
-        <TouchableOpacity style={styles.paymentsDueCard} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.paymentsDueCard}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate("VSLAPayments")}
+        >
           <View style={styles.paymentsDueHeader}>
             <View>
               <Text style={styles.paymentsDueTitle}>Payments Due</Text>
@@ -254,6 +268,7 @@ export default function VSLADashboardScreen() {
           <TouchableOpacity
             style={styles.paymentsDueButton}
             activeOpacity={0.7}
+            onPress={() => navigation.navigate("VSLAPayments")}
           >
             <Text style={styles.paymentsDueButtonText}>View Due Payments</Text>
           </TouchableOpacity>
@@ -263,7 +278,10 @@ export default function VSLADashboardScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Activity</Text>
-            <TouchableOpacity activeOpacity={0.6}>
+            <TouchableOpacity
+              activeOpacity={0.6}
+              onPress={() => navigation.navigate("VSLAReports")}
+            >
               <Text style={styles.viewAllText}>View all</Text>
             </TouchableOpacity>
           </View>
@@ -339,7 +357,7 @@ export default function VSLADashboardScreen() {
         {/* View Reports Card */}
         <TouchableOpacity
           style={styles.reportsCard}
-          onPress={() => navigation.navigate("Reports")}
+          onPress={() => navigation.navigate("VSLAReports")}
           activeOpacity={0.7}
         >
           <View style={styles.reportsCardContent}>
@@ -360,18 +378,9 @@ export default function VSLADashboardScreen() {
 
       {/* Bottom Navigation - Now with "Screen" tab next to "Home" */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItemActive}>
+        <TouchableOpacity style={styles.navItemActive} onPress={() => navigation.navigate("VSLAHome")}>
           <Ionicons name="home" size={24} color="#1E40AF" />
           <Text style={styles.navTextActive}>Home</Text>
-        </TouchableOpacity>
-
-        {/* NEW: Screen Tab - according to Figma design */}
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate("VisionScreen1")}
-        >
-          <Ionicons name="eye-outline" size={24} color="#6B7280" />
-          <Text style={styles.navText}>Screen</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -384,7 +393,7 @@ export default function VSLADashboardScreen() {
 
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate("Payments")}
+          onPress={() => navigation.navigate("VSLAPayments")}
         >
           <Ionicons name="cash-outline" size={24} color="#6B7280" />
           <Text style={styles.navText}>Payments</Text>
@@ -392,10 +401,18 @@ export default function VSLADashboardScreen() {
 
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate("Settings")}
+          onPress={() => navigation.navigate("VSLAReports")}
         >
-          <Ionicons name="document-text-outline" size={24} color="#6B7280" />
-          <Text style={styles.navText}>Referrals</Text>
+          <Ionicons name="bar-chart-outline" size={24} color="#6B7280" />
+          <Text style={styles.navText}>Reports</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => navigation.navigate("VSLAMore")}
+        >
+          <Ionicons name="ellipsis-horizontal-outline" size={24} color="#6B7280" />
+          <Text style={styles.navText}>More</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

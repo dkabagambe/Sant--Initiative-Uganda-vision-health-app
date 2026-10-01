@@ -23,6 +23,7 @@ type RootStackParamList = {
   Referrals: undefined;
   Payments: undefined;
   Reports: undefined;
+  Settings: undefined;
 };
 
 type DashboardScreenNavigationProp = NativeStackNavigationProp<
@@ -192,7 +193,7 @@ export default function CHWDashboardScreen() {
                 {user.fullName || user.full_name}
               </Text>
             </View>
-            <TouchableOpacity style={styles.profileButton}>
+            <TouchableOpacity style={styles.profileButton} onPress={() => navigation.navigate("Settings")} activeOpacity={0.7}>
               <Ionicons name="person-circle" size={40} color="#1E40AF" />
             </TouchableOpacity>
           </View>
@@ -324,7 +325,7 @@ export default function CHWDashboardScreen() {
         <View style={styles.recentActivityContainer}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Activity</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate("Reports")}>
               <Text style={styles.viewAllText}>View all</Text>
             </TouchableOpacity>
           </View>
