@@ -44,13 +44,35 @@ export async function initDb(): Promise<void> {
       full_name     TEXT,
       role          TEXT,
       district      TEXT,
+      county        TEXT,
+      sub_county    TEXT,
+      parish        TEXT,
       village       TEXT,
+      gender        TEXT,
+      age           INTEGER,
       profile_image TEXT,
       pin_hash      TEXT,
       token         TEXT,
       updated_at    TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  // Add columns that may be missing in older installs (ALTER TABLE IF NOT EXISTS
+  // is not supported in SQLite; use the PRAGMA approach instead)
+  const profileCols = (db.getAllSync("PRAGMA table_info(profiles)") as any[]).map(
+    (c: any) => c.name as string
+  );
+  for (const col of [
+    { name: "county",     def: "TEXT" },
+    { name: "sub_county", def: "TEXT" },
+    { name: "parish",     def: "TEXT" },
+    { name: "gender",     def: "TEXT" },
+    { name: "age",        def: "INTEGER" },
+  ]) {
+    if (!profileCols.includes(col.name)) {
+      db.execSync(`ALTER TABLE profiles ADD COLUMN ${col.name} ${col.def};`);
+    }
+  }
 
   db.execSync(`
     CREATE TABLE IF NOT EXISTS screenings (
@@ -180,32 +202,49 @@ export function upsertProfile(profile: {
   full_name?: string;
   role?: string;
   district?: string;
+  county?: string;
+  sub_county?: string;
+  parish?: string;
   village?: string;
+  gender?: string;
+  age?: number;
   profile_image?: string;
   token?: string;
 }): void {
   const db = getDb();
   db.runSync(
-    `INSERT INTO profiles (id, phone_number, full_name, role, district, village, profile_image, token, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `INSERT INTO profiles
+       (id, phone_number, full_name, role, district, county, sub_county, parish,
+        village, gender, age, profile_image, token, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
      ON CONFLICT(id) DO UPDATE SET
        phone_number  = excluded.phone_number,
        full_name     = excluded.full_name,
        role          = excluded.role,
        district      = excluded.district,
+       county        = excluded.county,
+       sub_county    = excluded.sub_county,
+       parish        = excluded.parish,
        village       = excluded.village,
+       gender        = excluded.gender,
+       age           = excluded.age,
        profile_image = excluded.profile_image,
        token         = excluded.token,
        updated_at    = datetime('now')`,
     [
       profile.id,
       profile.phone_number,
-      profile.full_name ?? null,
-      profile.role ?? null,
-      profile.district ?? null,
-      profile.village ?? null,
-      profile.profile_image ?? null,
-      profile.token ?? null,
+      profile.full_name        ?? null,
+      profile.role             ?? null,
+      profile.district         ?? null,
+      profile.county           ?? null,
+      profile.sub_county       ?? null,
+      profile.parish           ?? null,
+      profile.village          ?? null,
+      profile.gender           ?? null,
+      profile.age              ?? null,
+      profile.profile_image    ?? null,
+      profile.token            ?? null,
     ]
   );
 }
@@ -526,6 +565,74 @@ export function clearQueue(): void {
 }
 
 // ─── Stats helpers used by dashboard ─────────────────────────────────────────
+
+/**
+ * Returns the ISO datetime string for the most recent Monday 00:00:00
+ * in the Africa/Kampala timezone (UTC+3).
+ * Uses a pure-JS calculation (no Intl needed, works offline).
+ */
+export function getMondayStartISO(): string {
+  // Current time in Africa/Kampala = UTC + 3 hours
+  const nowUtcMs  = Date.now();
+  const kampalaMs = nowUtcMs + 3 * 60 * 60 * 1000;
+  const kampalaDate = new Date(kampalaMs);
+
+  // Day of week: 0=Sun, 1=Mon, …, 6=Sat
+  const dow = kampalaDate.getUTCDay();
+  // Days since last Monday (Sunday counts as 6 days back)
+  const daysSinceMonday = dow === 0 ? 6 : dow - 1;
+
+  // Midnight Monday in Kampala time
+  const mondayMidnightKampalaMs =
+    kampalaMs - daysSinceMonday * 86400000 -
+    (kampalaDate.getUTCHours() * 3600000 +
+     kampalaDate.getUTCMinutes() * 60000 +
+     kampalaDate.getUTCSeconds() * 1000 +
+     kampalaDate.getUTCMilliseconds());
+
+  // Convert back to UTC for SQLite comparison (SQLite stores ISO UTC strings)
+  const mondayMidnightUtcMs = mondayMidnightKampalaMs - 3 * 60 * 60 * 1000;
+  return new Date(mondayMidnightUtcMs).toISOString();
+}
+
+export function getScreeningsThisWeek(healthWorkerId?: string): number {
+  const db = getDb();
+  const since = getMondayStartISO();
+  if (healthWorkerId) {
+    return (
+      db.getFirstSync(
+        "SELECT COUNT(*) as c FROM screenings WHERE health_worker_id=? AND created_at>=?",
+        [healthWorkerId, since]
+      ) as any
+    )?.c ?? 0;
+  }
+  return (
+    db.getFirstSync(
+      "SELECT COUNT(*) as c FROM screenings WHERE created_at>=?",
+      [since]
+    ) as any
+  )?.c ?? 0;
+}
+
+export function getGlassesGivenThisWeek(healthWorkerId?: string): number {
+  const db = getDb();
+  const since = getMondayStartISO();
+  if (healthWorkerId) {
+    return (
+      db.getFirstSync(
+        "SELECT COUNT(*) as c FROM screenings WHERE health_worker_id=? AND glasses_dispensed=1 AND created_at>=?",
+        [healthWorkerId, since]
+      ) as any
+    )?.c ?? 0;
+  }
+  return (
+    db.getFirstSync(
+      "SELECT COUNT(*) as c FROM screenings WHERE glasses_dispensed=1 AND created_at>=?",
+      [since]
+    ) as any
+  )?.c ?? 0;
+}
+
 export function getLocalStats() {
   const db = getDb();
   const screeningCount = (
@@ -547,9 +654,13 @@ export function getLocalStats() {
   const queueLength = (
     db.getFirstSync("SELECT COUNT(*) as c FROM sync_queue WHERE retries < 3") as any
   )?.c ?? 0;
+  const screeningsThisWeek = getScreeningsThisWeek();
+  const glassesThisWeek    = getGlassesGivenThisWeek();
 
   return {
     screeningCount,
+    screeningsThisWeek,
+    glassesThisWeek,
     pendingReferrals,
     pendingPayments,
     stockTotal,

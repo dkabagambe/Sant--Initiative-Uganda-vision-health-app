@@ -320,12 +320,19 @@ export default function ClientRegistration() {
         paymentMethod={saleData.paymentMethod}
         installmentAmount={saleData.installmentAmount}
         nextPaymentDate={saleData.nextPaymentDate}
-        onBackToHome={() =>
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "AppTabs" }],
-          })
-        }
+        onBackToHome={() => {
+          // Navigate to CHW Home tab — triggers useFocusEffect on dashboard
+          // ClientRegistration is inside ScreeningStack → getParent() = CHWTabs
+          const tabNav = navigation.getParent();
+          if (tabNav) {
+            tabNav.navigate("CHWHome", { screen: "CHWDashboard" });
+          } else {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "AppTabs" }],
+            });
+          }
+        }}
         onScreenNext={() => {
           // getParent() returns the parent navigator (CHWTabs).
           // Navigate its "Screen" tab back to Step 1 for the next client.

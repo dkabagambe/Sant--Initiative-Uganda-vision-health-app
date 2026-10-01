@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -34,6 +35,7 @@ type DashboardScreenNavigationProp = NativeStackNavigationProp<
 export default function CHWDashboardScreen() {
   const navigation = useNavigation<DashboardScreenNavigationProp>();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
     screenings_this_week: 0,
     clients_needing_glasses: 0,
@@ -70,9 +72,13 @@ export default function CHWDashboardScreen() {
     return "Just now";
   };
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       const [
         dashboardData,
         userData,
@@ -164,6 +170,7 @@ export default function CHWDashboardScreen() {
       console.error("Failed to load dashboard:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -183,6 +190,14 @@ export default function CHWDashboardScreen() {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => loadDashboardData(true)}
+            colors={["#1E40AF"]}
+            tintColor="#1E40AF"
+          />
+        }
       >
         {/* Header */}
         <View style={styles.header}>

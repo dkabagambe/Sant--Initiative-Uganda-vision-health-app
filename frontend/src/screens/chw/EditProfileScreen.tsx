@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiService, User } from "../../services/api";
+import { upsertProfile } from "../../services/db";
 import {
   getDistrictNames,
   getCountiesForDistrict,
@@ -155,47 +156,97 @@ export default function EditProfileScreen() {
 
     setSaving(true);
     try {
-      const result = await apiService.updateUserProfile({
+      // ── 1. Read stored user so we have id / phone ──────────────────────
+      const userStr = await AsyncStorage.getItem("user");
+      const storedUser = userStr ? JSON.parse(userStr) : null;
+      const userId = storedUser?.id ?? storedUser?.userId ?? "";
+      const phone  = storedUser?.phone_number ?? storedUser?.phoneNumber ?? formData.phoneNumber;
+
+      // ── 2. Persist to SQLite immediately (offline-safe) ────────────────
+      if (userId) {
+        try {
+          upsertProfile({
+            id:         userId,
+            phone_number: phone,
+            full_name:  formData.fullName,
+            district:   formData.district,
+            county:     formData.county,
+            sub_county: formData.subCounty,
+            parish:     formData.parish,
+            village:    formData.parish,
+            gender:     formData.sex || undefined,
+            age:        formData.age ? Number(formData.age) : undefined,
+          });
+        } catch (dbErr) {
+          console.warn("[EditProfile] SQLite upsert failed:", dbErr);
+        }
+      }
+
+      // ── 3. Persist to AsyncStorage "user" key immediately ─────────────
+      //       so getCurrentUser() fallback returns updated data offline.
+      const updatedUser = {
+        ...(storedUser ?? {}),
         full_name:  formData.fullName,
-        age:        formData.age ? Number(formData.age) : null,
+        fullName:   formData.fullName,
         gender:     formData.sex || null,
+        age:        formData.age ? Number(formData.age) : null,
         district:   formData.district,
         county:     formData.county,
         sub_county: formData.subCounty,
         parish:     formData.parish,
         village:    formData.parish,
-      });
+      };
+      await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
 
-      if (result.success) {
-        // Persist the fresh user object (returned by PATCH) into AsyncStorage
-        const freshUser = result.user || (await apiService.getCurrentUser());
-        if (freshUser) {
-          const token = await AsyncStorage.getItem("authToken");
-          if (token) await apiService.storeUserData(freshUser as any, token);
+      // ── 4. Also update the "user_profile" key used by SettingsScreen ──
+      try {
+        const rawLocal = await AsyncStorage.getItem("user_profile");
+        const localProfile = rawLocal ? JSON.parse(rawLocal) : {};
+        await AsyncStorage.setItem(
+          "user_profile",
+          JSON.stringify({
+            ...localProfile,
+            name:     formData.fullName,
+            district: formData.district,
+            phone:    formData.phoneNumber,
+          }),
+        );
+      } catch (_) { /* non-fatal */ }
+
+      // ── 5. Try pushing to Neon (non-blocking if offline) ──────────────
+      let serverUpdated = false;
+      try {
+        const result = await apiService.updateUserProfile({
+          full_name:  formData.fullName,
+          age:        formData.age ? Number(formData.age) : null,
+          gender:     formData.sex || null,
+          district:   formData.district,
+          county:     formData.county,
+          sub_county: formData.subCounty,
+          parish:     formData.parish,
+          village:    formData.parish,
+        });
+
+        if (result.success) {
+          serverUpdated = true;
+          // Refresh AsyncStorage with server's canonical version
+          const freshUser = result.user || await apiService.getCurrentUser();
+          if (freshUser) {
+            const token = await AsyncStorage.getItem("authToken");
+            if (token) await apiService.storeUserData(freshUser as any, token);
+          }
         }
-
-        // ── Also update the local profile store so SettingsScreen shows
-        //    the new name / district immediately after the user comes back.
-        try {
-          const rawLocal = await AsyncStorage.getItem("user_profile");
-          const localProfile = rawLocal ? JSON.parse(rawLocal) : {};
-          await AsyncStorage.setItem(
-            "user_profile",
-            JSON.stringify({
-              ...localProfile,
-              name:     formData.fullName,
-              district: formData.district,
-              phone:    formData.phoneNumber,
-            }),
-          );
-        } catch (_) { /* non-fatal */ }
-
-        Alert.alert("✅ Profile Updated", "Your profile has been saved successfully.", [
-          { text: "OK", onPress: () => navigation.goBack() },
-        ]);
-      } else {
-        Alert.alert("Error", result.error || "Failed to update profile");
+      } catch (_) {
+        // Offline – local save already done, silently continue
       }
+
+      const msg = serverUpdated
+        ? "Your profile has been saved successfully."
+        : "Saved locally. Changes will sync when you're back online.";
+
+      Alert.alert("✅ Profile Updated", msg, [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
     } catch (error) {
       console.error("Save error:", error);
       Alert.alert("Error", "Failed to update profile. Please try again.");

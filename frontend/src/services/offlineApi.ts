@@ -325,8 +325,8 @@ export function readDashboardStatsLocal() {
     success: true,
     data: {
       total_screenings:        stats.screeningCount,
-      screenings_this_week:    stats.screeningCount, // fallback
-      clients_needing_glasses: 0,                    // needs vision data cross-ref
+      screenings_this_week:    stats.screeningsThisWeek,
+      clients_needing_glasses: stats.glassesThisWeek,
       clients_referred:        stats.pendingReferrals,
       pending_referrals:       stats.pendingReferrals,
       paymentsDue:             stats.pendingPayments,

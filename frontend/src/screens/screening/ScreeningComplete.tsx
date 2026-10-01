@@ -134,7 +134,15 @@ export default function ScreeningComplete() {
             text: "OK",
             onPress: () => {
               resetScreeningData();
-              navigation.reset({ index: 0, routes: [{ name: "AppTabs", params: { role: "CHW" } }] });
+              // Navigate back to the CHW Home tab — this triggers useFocusEffect
+              // on CHWDashboardScreen so the "This Week" stats update immediately.
+              // getParent() from inside ScreeningStack gives us CHWTabs.
+              const tabNav = navigation.getParent();
+              if (tabNav) {
+                tabNav.navigate("CHWHome", { screen: "CHWDashboard" });
+              } else {
+                navigation.reset({ index: 0, routes: [{ name: "AppTabs", params: { role: "CHW" } }] });
+              }
             },
           },
         ],
@@ -149,10 +157,16 @@ export default function ScreeningComplete() {
 
   const handleReturnHome = () => {
     resetScreeningData();
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "AppTabs", params: { role: "CHW" } }],
-    });
+    // Navigate to CHW Home tab — triggers useFocusEffect on dashboard
+    const tabNav = navigation.getParent();
+    if (tabNav) {
+      tabNav.navigate("CHWHome", { screen: "CHWDashboard" });
+    } else {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "AppTabs", params: { role: "CHW" } }],
+      });
+    }
   };
 
   return (

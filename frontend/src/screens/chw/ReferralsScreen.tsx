@@ -164,16 +164,16 @@ export default function ReferralsScreen() {
   };
 
   const handleCreateReferral = () => {
-    // CHWReferralsTab is a tab in CHWTabs.
-    // SelectClientForReferralScreen lives in CHWHomeStack (the CHWHome tab).
-    // Navigate via the tab navigator's parent OR switch to CHWHome tab first.
+    // Open CreateReferralScreen with blank form (manual referral, no prior screening).
+    // Navigate via the CHWHome tab stack where CreateReferralScreen is registered.
     const tabNav = navigation.getParent();
     if (tabNav) {
       tabNav.navigate("CHWHome", {
-        screen: "SelectClientForReferralScreen",
+        screen: "CreateReferralScreen",
+        params: { fromScreening: false },
       });
     } else {
-      (navigation as any).navigate("SelectClientForReferralScreen");
+      (navigation as any).navigate("CreateReferralScreen", { fromScreening: false });
     }
   };
 
