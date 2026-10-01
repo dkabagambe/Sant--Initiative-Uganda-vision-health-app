@@ -164,17 +164,16 @@ export default function ReferralsScreen() {
   };
 
   const handleCreateReferral = () => {
-    // Navigate to root-level CreateReferralScreen (ReferralsTab -> CHWTabs -> Root)
-    const root = navigation.getParent()?.getParent();
-    if (root) {
-      root.navigate("CreateReferralScreen" as any);
+    // CHWReferralsTab is a tab in CHWTabs.
+    // SelectClientForReferralScreen lives in CHWHomeStack (the CHWHome tab).
+    // Navigate via the tab navigator's parent OR switch to CHWHome tab first.
+    const tabNav = navigation.getParent();
+    if (tabNav) {
+      tabNav.navigate("CHWHome", {
+        screen: "SelectClientForReferralScreen",
+      });
     } else {
-      const parent = navigation.getParent();
-      if (parent) {
-        parent.navigate("CreateReferralScreen" as any);
-      } else {
-        (navigation as any).navigate("CreateReferralScreen");
-      }
+      (navigation as any).navigate("SelectClientForReferralScreen");
     }
   };
 

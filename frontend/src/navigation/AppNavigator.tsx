@@ -41,6 +41,7 @@ import SalesDetailsScreen from "../screens/chw/SalesDetailsScreen";
 import ReferralsScreen from "../screens/chw/ReferralsScreen";
 import ReferralManagementScreen from "../screens/chw/ReferralManagementScreen";
 import CreateReferralScreen from "../screens/chw/CreateReferralScreen";
+import SelectClientForReferralScreen from "../screens/chw/SelectClientForReferralScreen";
 import PaymentsScreen from "../screens/chw/PaymentsScreen";
 import ReportsScreen from "../screens/chw/ReportsScreen";
 import StartScreeningScreen from "../screens/chw/StartScreeningScreen";
@@ -131,6 +132,7 @@ function CHWHomeStack() {
       <Stack.Screen name="ReferralManagement" component={ReferralManagementScreen} />
       <Stack.Screen name="ReferralManagementScreen" component={ReferralManagementScreen} />
       <Stack.Screen name="CreateReferralScreen" component={CreateReferralScreen} />
+      <Stack.Screen name="SelectClientForReferralScreen" component={SelectClientForReferralScreen} />
       <Stack.Screen name="Payments" component={PaymentsScreen} />
       <Stack.Screen name="InventoryScreen" component={InventoryScreen} />
       <Stack.Screen name="ReferralsScreen" component={ReferralsScreen} />
