@@ -171,6 +171,9 @@ export default function VisionScreen5() {
     wrongSnd.current   = makePlayer(require("../../../assets/sounds/wrong.wav"));
 
     return () => {
+      // Stop speech and clear any pending timer when leaving the screen
+      if (speechTimerRef.current !== null) clearTimeout(speechTimerRef.current);
+      try { Speech.stop(); } catch (_) {}
       if (soundTimerRef.current !== null) clearTimeout(soundTimerRef.current);
       correctSnd.current?.remove();
       wrongSnd.current?.remove();
@@ -208,39 +211,66 @@ export default function VisionScreen5() {
   }, [fadeAnim, scaleAnim]);
 
   // ── Speech ────────────────────────────────────────────────────────────────
-  const speakPrompt = useCallback(() => {
-    Speech.speak("Which way do the legs point?", {
-      language: "en-UG",
-      rate: 0.9,
-      onError: () => {},
-    });
+  // speechTimerRef: holds the pending setTimeout id for the post-tap voice prompt.
+  const speechTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Stop any in-progress speech and cancel any pending speak timer. */
+  const stopSpeech = useCallback(() => {
+    if (speechTimerRef.current !== null) {
+      clearTimeout(speechTimerRef.current);
+      speechTimerRef.current = null;
+    }
+    try { Speech.stop(); } catch (_) {}
   }, []);
+
+  /**
+   * Stop current speech immediately, then queue the prompt with a short gap.
+   * The gap (default 300 ms) lets the UI settle before the voice starts so
+   * the new E is already visible before the question plays.
+   */
+  const speakPrompt = useCallback((delayMs = 300) => {
+    stopSpeech();
+    speechTimerRef.current = setTimeout(() => {
+      speechTimerRef.current = null;
+      try {
+        Speech.speak("Which way do the legs point?", {
+          language: "en-UG",
+          rate: 0.9,
+          onError: () => {},
+        });
+      } catch (_) {}
+    }, delayMs);
+  }, [stopSpeech]);
 
   // ── Haptic + sound + flash ────────────────────────────────────────────────
   const triggerFeedback = useCallback(async (correct: boolean) => {
-    // Stop any currently playing sound immediately
+    // 1. Stop voice immediately — no more "which way do the legs point?" mid-tap
+    stopSpeech();
+
+    // 2. Stop any currently playing beep
     await stopSound(correctSnd.current);
     await stopSound(wrongSnd.current);
 
-    // Cancel any pending sound timer
-    if (soundTimerRef.current !== null) clearTimeout(soundTimerRef.current);
+    // 3. Cancel any pending beep timer
+    if (soundTimerRef.current !== null) {
+      clearTimeout(soundTimerRef.current);
+      soundTimerRef.current = null;
+    }
 
+    // 4. Haptic immediately
     try {
       await (correct
         ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
         : Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error));
     } catch (_) {}
 
-    // Play feedback sound after 5-second delay
-    const player = correct ? correctSnd.current : wrongSnd.current;
-    soundTimerRef.current = setTimeout(() => {
-      soundTimerRef.current = null;
-      playSound(player);
-    }, 5000);
+    // 5. Play beep immediately (no delay — the 5 s wait was the cause of the lag)
+    playSound(correct ? correctSnd.current : wrongSnd.current);
 
+    // 6. Flash overlay for 500 ms
     setFeedback(correct ? "correct" : "wrong");
     setTimeout(() => setFeedback(null), 500);
-  }, []);
+  }, [stopSpeech]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // finishEye — saves result and goes to eye_result phase
@@ -261,27 +291,35 @@ export default function VisionScreen5() {
   // recordAnswer — main input handler (swipe or tap)
   // ─────────────────────────────────────────────────────────────────────────
   const recordAnswer = useCallback(
-    async (answered: EDirection) => {
+    (answered: EDirection) => {
       if (swipeLock.current) return;
       swipeLock.current = true;
       setTimeout(() => { swipeLock.current = false; }, 600);
 
+      // Stop voice immediately on every tap/swipe — do this synchronously first
+      stopSpeech();
+
       const correct    = answered === direction;
       const newAnswers = [...answers, correct];
 
-      await triggerFeedback(correct);
+      // Fire-and-forget feedback (haptic + beep + flash) — never awaited so
+      // the E render is not blocked by async haptic calls.
+      triggerFeedback(correct);
 
       if (newAnswers.length < LETTERS_PER_LEVEL) {
         const nextDir = nextRandom(direction);
+        // Render new E immediately via animateChange (100 ms fade-out + 170 ms fade-in)
         animateChange(() => {
           setAnswers(newAnswers);
           setDirection(nextDir);
         });
-        setTimeout(speakPrompt, 250);
+        // Queue the voice prompt AFTER the animation settle — E is already visible
+        speakPrompt(300);
         return;
       }
 
-      // Level complete
+      // Level complete — stop voice, no new prompt needed
+      stopSpeech();
       const nCorrect = newAnswers.filter(Boolean).length;
       const passed   = nCorrect >= PASS_THRESHOLD;
 
@@ -295,7 +333,7 @@ export default function VisionScreen5() {
             setAnswers([]);
             setDirection(nextRandom());
           });
-          setTimeout(speakPrompt, 250);
+          speakPrompt(300);
         }
       } else {
         if (levelIdx === 0) {
@@ -309,26 +347,31 @@ export default function VisionScreen5() {
         }
       }
     },
-    [answers, direction, levelIdx, currentEye, triggerFeedback, animateChange, speakPrompt, finishEye]
+    [answers, direction, levelIdx, currentEye, triggerFeedback, animateChange, speakPrompt, stopSpeech, finishEye]
   );
 
   // ─────────────────────────────────────────────────────────────────────────
   // record1mAnswer — used in low_vision retest_1m
   // ─────────────────────────────────────────────────────────────────────────
   const record1mAnswer = useCallback(
-    async (answered: EDirection) => {
+    (answered: EDirection) => {
       if (swipeLock.current) return;
       swipeLock.current = true;
       setTimeout(() => { swipeLock.current = false; }, 600);
+
+      stopSpeech();
 
       const dir     = lv1mDirs.current[lv1mAnswers.length] ?? "right";
       const correct = answered === dir;
       const updated = [...lv1mAnswers, correct];
 
-      await triggerFeedback(correct);
+      triggerFeedback(correct);
       setLv1mAnswers(updated);
 
-      if (updated.length < LETTERS_PER_LEVEL) return;
+      if (updated.length < LETTERS_PER_LEVEL) {
+        speakPrompt(300);
+        return;
+      }
 
       if (updated.filter(Boolean).length >= PASS_THRESHOLD) {
         finishEye(currentEye, 0);
@@ -336,16 +379,17 @@ export default function VisionScreen5() {
         setLvStep("count_fingers");
       }
     },
-    [lv1mAnswers, currentEye, triggerFeedback, finishEye]
+    [lv1mAnswers, currentEye, triggerFeedback, finishEye, stopSpeech, speakPrompt]
   );
 
   // ─────────────────────────────────────────────────────────────────────────
   // Navigation helpers
   // ─────────────────────────────────────────────────────────────────────────
   const handleEyeResultNext = useCallback(() => {
+    stopSpeech();
     if (currentEye === "right") setPhase("switch_eye");
     else setPhase("final_result");
-  }, [currentEye]);
+  }, [currentEye, stopSpeech]);
 
   const beginLeftEye = useCallback(() => {
     setCurrentEye("left");
@@ -363,7 +407,7 @@ export default function VisionScreen5() {
     setAnswers([]);
     setDirection(nextRandom());
     setPhase("testing");
-    setTimeout(speakPrompt, 400);
+    speakPrompt(400);
   }, [speakPrompt]);
 
   // ─────────────────────────────────────────────────────────────────────────
