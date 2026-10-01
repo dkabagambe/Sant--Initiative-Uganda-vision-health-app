@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { LanguageProvider } from "./src/context/LanguageContext";
 import { ScreeningProvider } from "./src/context/ScreeningContext";
+import AppBootstrap from "./src/AppBootstrap";
 
 export default function App() {
   return (
@@ -13,9 +14,12 @@ export default function App() {
         <LanguageProvider>
           <ScreeningProvider>
             <PaperProvider>
-              <NavigationContainer>
-                <AppNavigator />
-              </NavigationContainer>
+              {/* Initialises SQLite, sync listener, initial Neon pull */}
+              <AppBootstrap>
+                <NavigationContainer>
+                  <AppNavigator />
+                </NavigationContainer>
+              </AppBootstrap>
             </PaperProvider>
           </ScreeningProvider>
         </LanguageProvider>

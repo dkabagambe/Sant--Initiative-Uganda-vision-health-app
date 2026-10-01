@@ -17,7 +17,10 @@
       },
       "package": "com.sante.initiative",
       "versionCode": 64,
-      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"]
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -27,6 +30,11 @@
         "projectId": "e54a32b7-8b48-4cfd-8f85-0043c56373b9"
       }
     },
-    "plugins": ["expo-sharing", "expo-status-bar", "expo-font"]
+    "plugins": [
+      "expo-sharing",
+      "expo-status-bar",
+      "expo-font",
+      "expo-sqlite"
+    ]
   }
 }

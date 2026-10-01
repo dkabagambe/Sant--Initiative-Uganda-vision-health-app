@@ -215,6 +215,23 @@ export const apiService = {
           phone_number: u.phone_number ?? u.phoneNumber,
         };
         await AsyncStorage.setItem("user", JSON.stringify(normalizedUser));
+
+        // ── Persist profile to SQLite for offline login ──
+        try {
+          const { upsertProfile } = await import("./db");
+          upsertProfile({
+            id:            u.id,
+            phone_number:  u.phone_number ?? u.phoneNumber ?? "",
+            full_name:     u.full_name ?? u.fullName,
+            role:          u.role,
+            district:      u.district,
+            village:       u.village,
+            profile_image: u.profile_image,
+            token:         data.token,
+          });
+        } catch (dbErr) {
+          console.warn("[login] SQLite upsertProfile failed:", dbErr);
+        }
       } catch (e) {
         console.warn("Storage write after login:", e);
       }
@@ -379,22 +396,46 @@ export const apiService = {
   },
 
   // ============ SCREENINGS ============
-  async createScreening(screeningData: any) {
+  async createScreening(screeningData: any): Promise<any> {
     try {
-      const response = await api.post("/screenings", screeningData);
-      return response.data;
+      // ── Offline-first: write to SQLite + queue, then push when online ──
+      const { saveScreeningOfflineFirst } = await import("./offlineApi");
+      return await saveScreeningOfflineFirst({
+        clientName:           screeningData.clientName           ?? screeningData.client_name,
+        clientPhone:          screeningData.clientPhone          ?? screeningData.client_phone,
+        clientAge:            screeningData.clientAge            ?? screeningData.client_age,
+        clientGender:         screeningData.clientGender         ?? screeningData.client_gender,
+        clientDistrict:       screeningData.clientDistrict       ?? screeningData.client_district,
+        distanceVisionLeft:   screeningData.distanceVisionLeft   ?? screeningData.distance_vision_left,
+        distanceVisionRight:  screeningData.distanceVisionRight  ?? screeningData.distance_vision_right,
+        nearVisionResult:     screeningData.nearVisionResult     ?? screeningData.near_vision_result,
+        torchTestPassed:      screeningData.torchTestPassed      ?? screeningData.torch_test_passed,
+        glassesDispensed:     screeningData.glassesDispensed     ?? screeningData.glasses_dispensed,
+        glassesPower:         screeningData.glassesPower         ?? screeningData.glasses_power,
+        glassesFrameType:     screeningData.glassesFrameType     ?? screeningData.glasses_frame_type,
+        needsReferral:        screeningData.needsReferral        ?? screeningData.needs_referral,
+        referralReason:       screeningData.referralReason       ?? screeningData.referral_reason,
+        recommendedPower:     screeningData.recommendedPower     ?? screeningData.recommended_power,
+        notes:                screeningData.notes,
+      });
     } catch (error: any) {
       const msg = error?.response?.data?.error || error?.message || "Failed to save screening";
-      return { success: false, error: msg };
+      return { success: false, error: msg, data: null, screeningId: null };
     }
   },
 
-  async getScreenings() {
+  async getScreenings(): Promise<any> {
     try {
+      // Return from SQLite first (instant, offline-capable)
+      const { readScreeningsLocal } = await import("./offlineApi");
+      const local = readScreeningsLocal();
+      if (local.data.length > 0) return local;
+      // Fallback to network if SQLite is empty (first run before any pull)
       const response = await api.get("/screenings");
       return response.data;
     } catch (error: any) {
-      return { success: false, data: [], error: error?.message };
+      const { readScreeningsLocal } = await import("./offlineApi");
+      return readScreeningsLocal();
     }
   },
 
@@ -408,9 +449,22 @@ export const apiService = {
   },
 
   // ============ PAYMENTS ============
-  async createPayment(paymentData: any) {
-    const response = await api.post("/simple-payments/create", paymentData);
-    return response.data;
+  async createPayment(paymentData: any): Promise<any> {
+    try {
+      const { savePaymentOfflineFirst } = await import("./offlineApi");
+      return await savePaymentOfflineFirst({
+        clientName:    paymentData.clientName    ?? paymentData.client_name,
+        clientPhone:   paymentData.clientPhone   ?? paymentData.client_phone,
+        amount:        Number(paymentData.amount ?? 0),
+        paymentMethod: paymentData.paymentMethod ?? paymentData.payment_method ?? "cash",
+        provider:      paymentData.provider,
+        status:        paymentData.paymentMethod === "cash" ? "completed" : "pending",
+        productName:   paymentData.productName   ?? paymentData.product_name,
+        productPower:  paymentData.productPower  ?? paymentData.product_power,
+      });
+    } catch (error: any) {
+      return { success: false, error: error?.message ?? "Failed to record payment" };
+    }
   },
 
   async initiateMobileMoneyPayment(paymentData: any) {
@@ -423,13 +477,18 @@ export const apiService = {
     return response.data;
   },
 
-  async getPayments(): Promise<{
-    success: boolean;
-    data: Payment[];
-    count: number;
-  }> {
-    const response = await api.get("/simple-payments/list");
-    return response.data;
+  async getPayments(): Promise<any> {
+    try {
+      const { readPaymentsLocal } = await import("./offlineApi");
+      const local = readPaymentsLocal();
+      if (local.data.length > 0) return { ...local, count: local.data.length };
+      const response = await api.get("/simple-payments/list");
+      return response.data;
+    } catch {
+      const { readPaymentsLocal } = await import("./offlineApi");
+      const local = readPaymentsLocal();
+      return { ...local, count: local.data.length };
+    }
   },
 
   async getPaymentStats() {
@@ -460,16 +519,38 @@ export const apiService = {
   },
 
   // ============ REFERRALS ============
-  async createReferral(referralData: any) {
-    const response = await api.post("/simple-referrals/create", referralData);
-    return response.data;
+  async createReferral(referralData: any): Promise<any> {
+    try {
+      const { saveReferralOfflineFirst } = await import("./offlineApi");
+      return await saveReferralOfflineFirst({
+        clientName:       referralData.client_name       ?? referralData.clientName,
+        clientPhone:      referralData.client_phone      ?? referralData.clientPhone,
+        clientAge:        referralData.client_age        ?? referralData.clientAge,
+        clientGender:     referralData.client_gender     ?? referralData.clientGender,
+        clientDistrict:   referralData.client_district   ?? referralData.clientDistrict,
+        reason:           referralData.reason            ?? "",
+        urgency:          referralData.urgency,
+        facilityName:     referralData.facility_name     ?? referralData.facilityName,
+        facilityLocation: referralData.facility_location ?? referralData.facilityLocation,
+        notes:            referralData.notes,
+        screeningLocalId: referralData.screening_id,
+      });
+    } catch (error: any) {
+      return { success: false, error: error?.message ?? "Failed to create referral" };
+    }
   },
 
-  async getReferrals(status?: string) {
-    const response = await api.get("/simple-referrals/list", {
-      params: { status },
-    });
-    return response.data;
+  async getReferrals(status?: string): Promise<any> {
+    try {
+      const { readReferralsLocal } = await import("./offlineApi");
+      const local = readReferralsLocal(status);
+      if (local.data.length > 0) return local;
+      const response = await api.get("/simple-referrals/list", { params: { status } });
+      return response.data;
+    } catch (error: any) {
+      const { readReferralsLocal } = await import("./offlineApi");
+      return readReferralsLocal(status);
+    }
   },
 
   async getReferralById(id: string) {
@@ -517,8 +598,14 @@ export const apiService = {
 
   // ============ DASHBOARD ============
   async getDashboardStats() {
-    const response = await api.get("/simple-dashboard/stats");
-    return response.data;
+    try {
+      const response = await api.get("/simple-dashboard/stats");
+      return response.data;
+    } catch {
+      // Offline fallback – compute stats from local SQLite
+      const { readDashboardStatsLocal } = await import("./offlineApi");
+      return readDashboardStatsLocal();
+    }
   },
 
   async getInventorySummary() {
