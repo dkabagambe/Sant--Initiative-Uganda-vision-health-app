@@ -126,24 +126,39 @@ export async function initDb(): Promise<void> {
 
   db.execSync(`
     CREATE TABLE IF NOT EXISTS payments (
-      local_id        TEXT PRIMARY KEY,
-      server_id       TEXT,
-      health_worker_id TEXT,
-      client_name     TEXT,
-      client_phone    TEXT,
-      amount          REAL,
-      payment_method  TEXT DEFAULT 'cash',
-      provider        TEXT,
-      status          TEXT DEFAULT 'pending',
-      due_date        TEXT,
-      payment_date    TEXT,
-      transaction_id  TEXT,
-      product_name    TEXT,
-      product_power   TEXT,
-      sync_status     TEXT DEFAULT 'pending',
-      created_at      TEXT DEFAULT (datetime('now'))
+      local_id          TEXT PRIMARY KEY,
+      server_id         TEXT,
+      health_worker_id  TEXT,
+      client_name       TEXT,
+      client_phone      TEXT,
+      amount            REAL,
+      payment_method    TEXT DEFAULT 'cash',
+      provider          TEXT,
+      status            TEXT DEFAULT 'pending',
+      due_date          TEXT,
+      payment_date      TEXT,
+      transaction_id    TEXT,
+      product_name      TEXT,
+      product_power     TEXT,
+      vsla_group_name   TEXT,
+      total_installments INTEGER DEFAULT 1,
+      sync_status       TEXT DEFAULT 'pending',
+      created_at        TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  // Migrate older installs that are missing the new payments columns
+  const paymentCols = (db.getAllSync("PRAGMA table_info(payments)") as any[]).map(
+    (c: any) => c.name as string
+  );
+  for (const col of [
+    { name: "vsla_group_name",   def: "TEXT" },
+    { name: "total_installments", def: "INTEGER DEFAULT 1" },
+  ]) {
+    if (!paymentCols.includes(col.name)) {
+      db.execSync(`ALTER TABLE payments ADD COLUMN ${col.name} ${col.def};`);
+    }
+  }
 
   db.execSync(`
     CREATE TABLE IF NOT EXISTS stock (
@@ -429,14 +444,16 @@ export function insertPayment(p: {
   dueDate?: string;
   productName?: string;
   productPower?: string;
+  vslaGroupName?: string;
+  totalInstallments?: number;
 }): void {
   const db = getDb();
   db.runSync(
     `INSERT OR REPLACE INTO payments
       (local_id, health_worker_id, client_name, client_phone, amount,
        payment_method, provider, status, due_date, product_name, product_power,
-       sync_status)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+       vsla_group_name, total_installments, sync_status)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       p.localId,
       p.healthWorkerId,
@@ -449,6 +466,8 @@ export function insertPayment(p: {
       p.dueDate ?? null,
       p.productName ?? null,
       p.productPower ?? null,
+      p.vslaGroupName ?? null,
+      p.totalInstallments ?? 1,
       "pending",
     ]
   );

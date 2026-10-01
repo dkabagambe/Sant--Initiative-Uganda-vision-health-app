@@ -18,6 +18,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { apiService } from "../../services/api";
+import { savePaymentOfflineFirst, readStockLocal } from "../../services/offlineApi";
 import SaleComplete from "./SaleComplete";
 import {
   moderateScale,
@@ -56,6 +57,7 @@ export default function ClientRegistration() {
   );
   const [vslaGroup, setVslaGroup] = useState<any>(null);
   const [showVslaDropdown, setShowVslaDropdown] = useState(false);
+  const [vslaGroupCustom, setVslaGroupCustom] = useState("");
   const [mobileProvider, setMobileProvider] = useState<"MTN" | "Airtel">("MTN");
   const [mobileNumber, setMobileNumber] = useState(
     clientData.clientPhone || "",
@@ -130,35 +132,57 @@ export default function ClientRegistration() {
   }, []);
 
   const loadProducts = async () => {
+    // 1. Try the server first (needed for stock count accuracy)
     try {
       const response = await apiService.getProducts();
       const productList = Array.isArray(response?.data) ? response.data : [];
 
-      if (!response?.success || productList.length === 0) {
-        setProducts([]);
-        setSelectedProduct(null);
+      if (response?.success && productList.length > 0) {
+        let matchingProducts = productList.filter(
+          (p: any) => p?.power === clientData?.recommendedPower,
+        );
+        if (matchingProducts.length === 0) {
+          matchingProducts = productList;
+        }
+        setProducts(matchingProducts);
+        if (matchingProducts.length > 0) {
+          setSelectedProduct(matchingProducts[0]);
+        }
         return;
       }
+    } catch (_) {
+      // Network unavailable – fall through to local stock
+    }
 
-      // Filter products matching recommended power, or show all if no match
-      let matchingProducts = productList.filter(
-        (p: any) => p?.power === clientData?.recommendedPower,
+    // 2. Offline fallback: use locally cached stock snapshot
+    const localStock = readStockLocal();
+    const localProducts = (localStock?.data ?? []).map((s: any) => ({
+      id:    s.id,
+      power: s.power,
+      name:  "Reading Glasses",
+      price: s.price ?? 15000,
+    }));
+
+    if (localProducts.length > 0) {
+      let matchingProducts = localProducts.filter(
+        (p: any) => p.power === clientData?.recommendedPower,
       );
-
-      // If no matching products, show all products
       if (matchingProducts.length === 0) {
-        matchingProducts = productList;
+        matchingProducts = localProducts;
       }
-
       setProducts(matchingProducts);
-      if (matchingProducts.length > 0) {
-        setSelectedProduct(matchingProducts[0]);
-      }
-    } catch (error) {
-      console.error("Failed to load products:", error);
-      setProducts([]);
-      setSelectedProduct(null);
-      Alert.alert("Error", "Failed to load products. Please try again.");
+      setSelectedProduct(matchingProducts[0] ?? null);
+    } else {
+      // Last resort: synthesise a product from the recommended power so the
+      // VHT can still record the sale – it will sync with full details later.
+      const fallback = {
+        id:    `offline_${clientData?.recommendedPower ?? "unknown"}`,
+        power: clientData?.recommendedPower ?? "Unknown",
+        name:  "Reading Glasses",
+        price: 15000,
+      };
+      setProducts([fallback]);
+      setSelectedProduct(fallback);
     }
   };
 
@@ -173,8 +197,8 @@ export default function ClientRegistration() {
       return;
     }
 
-    if (paymentMethod === "hire-purchase" && !vslaGroup) {
-      Alert.alert("Error", "Please select a VSLA group");
+    if (paymentMethod === "hire-purchase" && !vslaGroup && !vslaGroupCustom.trim()) {
+      Alert.alert("Error", "Please select or enter a VSLA group name");
       return;
     }
 
@@ -183,123 +207,88 @@ export default function ClientRegistration() {
         Alert.alert("Error", "Please enter a valid mobile money number");
         return;
       }
-      // Full/cash payment - mobile number is optional, use placeholder if empty
     }
 
     setLoading(true);
 
     try {
-      // Calculate next payment date (30 days from now) for hire-purchase
-      let nextPaymentDate: string | undefined;
-      if (paymentMethod === "hire-purchase") {
-        const nextDate = new Date();
-        nextDate.setDate(nextDate.getDate() + 30);
-        nextPaymentDate = nextDate.toISOString().slice(0, 10); // YYYY-MM-DD for backend
+      // ── Step 1: Save locally first (always succeeds, works offline) ──────
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + 30);
+      const nextPaymentDate = paymentMethod === "hire-purchase"
+        ? nextDate.toISOString().slice(0, 10)
+        : undefined;
+
+      const productLabel = `${activeProduct.power} - ${activeProduct.name || "Reading Glasses"}`;
+
+      await savePaymentOfflineFirst({
+        clientName:        clientData.clientName,
+        clientPhone:       mobileNumber,
+        amount:            Number(activeProduct.price || 0),
+        paymentMethod:     paymentMethod === "hire-purchase" ? "mobile_money" : "cash",
+        paymentType:       paymentMethod === "hire-purchase" ? "installment" : "full",
+        provider:          paymentMethod === "hire-purchase" ? mobileProvider.toLowerCase() : undefined,
+        status:            "pending",
+        dueDate:           nextPaymentDate,
+        productName:       productLabel,
+        productPower:      activeProduct.power,
+        vslaGroupName:     (vslaGroup?.name ?? vslaGroupCustom.trim()) || undefined,
+        totalInstallments: paymentMethod === "hire-purchase" ? 3 : 1,
+      });
+
+      // ── Step 2: Show success immediately (local save is done) ────────────
+      let displayNextPaymentDate: string | undefined;
+      if (nextPaymentDate) {
+        displayNextPaymentDate = new Date(nextPaymentDate).toLocaleDateString("en-US", {
+          month: "short",
+          day:   "numeric",
+          year:  "numeric",
+        });
       }
 
-      // Create payment record
-      const paymentData = {
-        screening_id: screeningId,
-        product_id: activeProduct.id,
-        client_name: clientData.clientName,
-        client_phone: mobileNumber,
-        amount: Number(activeProduct.price || 0),
-        mobile_money_number: mobileNumber,
-        payment_method:
-          paymentMethod === "hire-purchase" ? "mobile_money" : "cash",
-        payment_type:
-          paymentMethod === "hire-purchase" ? "installment" : "full",
-        total_installments: paymentMethod === "hire-purchase" ? 3 : 1,
-        installment_number: 1,
-        // Used by backend for reminders / SMS text
-        due_date: nextPaymentDate,
-      };
+      setSaleData({
+        clientName:        clientData.clientName,
+        clientPhone:       mobileNumber,
+        productName:       productLabel,
+        totalAmount:       Number(activeProduct.price || 0),
+        paymentMethod,
+        installmentAmount,
+        nextPaymentDate:   displayNextPaymentDate,
+      });
+      setShowSaleComplete(true);
 
-      let result: any;
+      // ── Step 3: Fire-and-forget mobile money request (hire-purchase) ─────
+      // This runs in the background after the VHT sees the success screen.
+      // If it fails (offline / server error), the payment stays as 'pending'
+      // in SQLite and the sync engine will retry when connectivity returns.
       if (paymentMethod === "hire-purchase") {
-        // Initiate real-time mobile money request and poll for completion
-        result = await apiService.initiateMobileMoneyPayment({
-          ...paymentData,
-          provider: mobileProvider.toLowerCase(),
-        });
-
-        if (!result.success || !result.data?.id) {
-          throw new Error(result.error || "Failed to initiate mobile money");
-        }
-
-        const paymentId = result.data.id;
-        let currentStatus = result.data.status || "pending";
-
-        for (let i = 0; i < 20; i += 1) {
-          if (currentStatus === "completed" || currentStatus === "failed")
-            break;
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-          const statusResult = await apiService.getPaymentStatus(paymentId);
-          if (statusResult.success) {
-            currentStatus = statusResult.data?.status || currentStatus;
+        (async () => {
+          try {
+            const paymentData = {
+              screening_id:       screeningId,
+              product_id:         activeProduct.id,
+              client_name:        clientData.clientName,
+              client_phone:       mobileNumber,
+              amount:             Number(activeProduct.price || 0),
+              mobile_money_number:mobileNumber,
+              payment_method:     "mobile_money",
+              payment_type:       "installment",
+              total_installments: 3,
+              installment_number: 1,
+              due_date:           nextPaymentDate,
+              vsla_group_name:    (vslaGroup?.name ?? vslaGroupCustom.trim()) || undefined,
+              provider:           mobileProvider.toLowerCase(),
+            };
+            await apiService.initiateMobileMoneyPayment(paymentData);
+          } catch (_) {
+            // Silently swallow — payment is already saved locally as 'pending'
+            // and will be synced by the background sync queue.
           }
-        }
-
-        if (currentStatus !== "completed") {
-          Alert.alert(
-            "Payment Pending",
-            "Mobile money request was sent. Ask the client to complete approval on their phone. The payment status will update automatically when approved.",
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  // Still show sale complete so VHT can record the glasses were given
-                  setSaleData({
-                    clientName: clientData.clientName,
-                    clientPhone: mobileNumber,
-                    productName: `${activeProduct.power} - ${activeProduct.name || "Reading Glasses"}`,
-                    totalAmount: Number(activeProduct.price || 0),
-                    paymentMethod,
-                    installmentAmount,
-                    nextPaymentDate: undefined,
-                  });
-                  setShowSaleComplete(true);
-                },
-              },
-            ],
-          );
-          return;
-        }
-      } else {
-        result = await apiService.createPayment(paymentData);
-      }
-
-      if (result?.success) {
-        // Format next payment date nicely for UI (if hire-purchase)
-        let displayNextPaymentDate: string | undefined;
-        if (nextPaymentDate) {
-          const d = new Date(nextPaymentDate);
-          displayNextPaymentDate = d.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          });
-        }
-
-        // Save sale data and show completion screen
-        setSaleData({
-          clientName: clientData.clientName,
-          clientPhone: mobileNumber,
-          productName: `${activeProduct.power} - ${
-            activeProduct.name || "Reading Glasses"
-          }`,
-          totalAmount: Number(activeProduct.price || 0),
-          paymentMethod,
-          installmentAmount,
-          nextPaymentDate: displayNextPaymentDate,
-        });
-        setShowSaleComplete(true);
-      } else {
-        throw new Error("Payment creation failed");
+        })();
       }
     } catch (error) {
       console.error("Sale error:", error);
-      Alert.alert("Error", "Failed to complete sale. Please try again.");
+      Alert.alert("Error", "Failed to save sale locally. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -545,6 +534,18 @@ export default function ClientRegistration() {
                 )}
                 <Ionicons name="chevron-down" size={20} color="#6B7280" />
               </TouchableOpacity>
+              {/* Free-text fallback if the group isn't in the list */}
+              <TextInput
+                style={[styles.input, { marginTop: 8 }]}
+                placeholder="Or type group name if not listed"
+                value={vslaGroupCustom}
+                onChangeText={(t) => {
+                  setVslaGroupCustom(t);
+                  // Clear the dropdown selection when the user starts typing
+                  if (t.length > 0) setVslaGroup(null);
+                }}
+                returnKeyType="done"
+              />
             </View>
           )}
 

@@ -237,15 +237,18 @@ export function markReferralCompleteLocal(localId: string): void {
 // ═════════════════════════════════════════════════════════════════════════════
 
 export async function savePaymentOfflineFirst(data: {
-  clientName:    string;
-  clientPhone:   string;
-  amount:        number;
-  paymentMethod?:string;
-  provider?:     string;
-  status?:       string;
-  dueDate?:      string;
-  productName?:  string;
-  productPower?: string;
+  clientName:        string;
+  clientPhone:       string;
+  amount:            number;
+  paymentMethod?:    string;
+  paymentType?:      string;   // 'full' | 'installment'
+  provider?:         string;
+  status?:           string;
+  dueDate?:          string;
+  productName?:      string;
+  productPower?:     string;
+  vslaGroupName?:    string;
+  totalInstallments?:number;
 }): Promise<{ success: boolean; localId: string; error?: string }> {
   const localId = newLocalId();
   const userId  = await currentUserId();
@@ -255,13 +258,15 @@ export async function savePaymentOfflineFirst(data: {
 
   // 2. Neon payload (matches /api/simple-payments/create)
   const neonPayload = {
-    clientName:    data.clientName,
-    clientPhone:   data.clientPhone,
-    amount:        data.amount,
-    paymentMethod: data.paymentMethod ?? "cash",
-    provider:      data.provider,
+    clientName:        data.clientName,
+    clientPhone:       data.clientPhone,
+    amount:            data.amount,
+    paymentMethod:     data.paymentMethod ?? "cash",
+    provider:          data.provider,
     mobileMoneyNumber: data.clientPhone,
-    paymentType:   "full",
+    paymentType:       data.paymentType ?? "full",
+    totalInstallments: data.totalInstallments ?? 1,
+    vslaGroupName:     data.vslaGroupName,
     localId,
   };
 
