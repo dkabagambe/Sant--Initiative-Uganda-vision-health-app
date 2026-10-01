@@ -174,6 +174,22 @@ export default function EditProfileScreen() {
           if (token) await apiService.storeUserData(freshUser as any, token);
         }
 
+        // ── Also update the local profile store so SettingsScreen shows
+        //    the new name / district immediately after the user comes back.
+        try {
+          const rawLocal = await AsyncStorage.getItem("user_profile");
+          const localProfile = rawLocal ? JSON.parse(rawLocal) : {};
+          await AsyncStorage.setItem(
+            "user_profile",
+            JSON.stringify({
+              ...localProfile,
+              name:     formData.fullName,
+              district: formData.district,
+              phone:    formData.phoneNumber,
+            }),
+          );
+        } catch (_) { /* non-fatal */ }
+
         Alert.alert("✅ Profile Updated", "Your profile has been saved successfully.", [
           { text: "OK", onPress: () => navigation.goBack() },
         ]);
