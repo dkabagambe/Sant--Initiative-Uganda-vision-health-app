@@ -120,7 +120,6 @@ const GREEN_DISABLED = "#86EFAC";
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     flex: 1,
     gap: 12,
@@ -128,19 +127,14 @@ const styles = StyleSheet.create({
   rowEnd: {
     justifyContent: "flex-end",
   },
-  // NOTE: The wrapping View (KeyboardAwareFormLayout footer or custom bottomNav)
-  // must supply: paddingHorizontal 16, paddingTop 12, paddingBottom 32,
-  // backgroundColor white, borderTopWidth 1, borderTopColor #E5E7EB, elevation 8.
 
   /* ── Prev (outline) ── */
   prevButton: {
     flex: 1,
+    height: 52,
     borderWidth: 1.5,
     borderColor: GREEN,
     borderRadius: 12,
-    paddingHorizontal: 28,
-    paddingVertical: 14,
-    minWidth: 110,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#FFFFFF",
@@ -160,11 +154,9 @@ const styles = StyleSheet.create({
   /* ── Next (solid) ── */
   nextButton: {
     flex: 1,
+    height: 52,
     backgroundColor: GREEN,
     borderRadius: 12,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    minWidth: 120,
     alignItems: "center",
     justifyContent: "center",
   },

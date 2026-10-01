@@ -5,19 +5,18 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Alert,
   ActivityIndicator,
   Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { moderateScale, scale, verticalScale, fontSize as responsiveFontSize } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import CHWHeader from "../../components/CHWHeader";
 
 const GLASSES_POWERS = [
   { value: "+1.00", label: "+1.00D", description: "Mild presbyopia" },
@@ -445,30 +444,24 @@ export default function ReadingGlassesSelection() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
-      {/* Top Header with Logo and Menu - Fixed at top */}
+      {/* Header */}
       <View style={styles.topHeader}>
         <View style={styles.headerLeft}>
           <View style={styles.logoBox}>
-            <Image
-              source={require("../../../assets/logo.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+            <Image source={require("../../../assets/logo.png")} style={styles.logo} resizeMode="contain" />
           </View>
         </View>
-
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>
+          <Text style={styles.headerTitle} numberOfLines={1}>
             {userData?.fullName || userData?.full_name || "Santé Initiative Uganda"}
           </Text>
-          <Text style={styles.headerSubtitle}>
-            {userData?.district ? `VHT - ${userData.district} District` : ""}
+          <Text style={styles.headerSubtitle} numberOfLines={1}>
+            {userData?.district ? `VHT · ${userData.district} District` : ""}
           </Text>
         </View>
-
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
             <Ionicons name="menu" size={28} color="#1A4D8F" />
@@ -523,16 +516,9 @@ const styles = StyleSheet.create({
   topHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    height: 72,
+    paddingHorizontal: 20,
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    paddingTop: 44,
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
     elevation: 2,
@@ -541,33 +527,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
-  headerLeft: {
-    flex: 1,
-  },
-  logoBox: {
-    alignSelf: "center",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  logo: {
-    width: 80,
-    height: 80,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A1A1A",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
-  },
+  headerLeft: { width: 44, alignItems: "flex-start", justifyContent: "center" },
+  logoBox: { width: 38, height: 38, justifyContent: "center", alignItems: "center" },
+  logo: { width: 36, height: 36 },
+  headerCenter: { flex: 1, alignItems: "center", paddingHorizontal: 8 },
+  headerTitle: { fontSize: 15, fontWeight: "700", color: "#1A1A1A" },
+  headerSubtitle: { fontSize: 12, color: "#6B7280", marginTop: 1 },
   headerRight: {
     flex: 1,
     alignItems: "flex-end",
@@ -582,11 +547,12 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    marginTop: 150,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 180,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 130,
+    gap: 16,
   },
   titleCard: {
     backgroundColor: "#FFFFFF",
@@ -865,32 +831,26 @@ const styles = StyleSheet.create({
   },
   bottomContainer: {
     position: "absolute",
-    bottom: 100,
+    bottom: 0,
     left: 0,
     right: 0,
     backgroundColor: "#FFFFFF",
-    padding: 16,
-    paddingBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 34,
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+    elevation: 10,
+    zIndex: 100,
   },
   dispenseButton: {
+    height: 52,
     backgroundColor: "#2E7D32",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    padding: 18,
     borderRadius: 12,
-    shadowColor: "#2E7D32",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    elevation: 4,
   },
   dispenseButtonText: {
     fontSize: 16,

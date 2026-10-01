@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   StatusBar,
 } from "react-native";
@@ -11,6 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 // Step 8 disinfection checklist (MOH manual Section 5, Step 8)
 const step8Points = [
@@ -122,7 +122,23 @@ export default function VHTNormalFindingsScreen() {
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+      <KeyboardAwareFormLayout
+        footer={
+          <View style={styles.footerInner}>
+            <TouchableOpacity
+              style={[styles.button, !canComplete && styles.buttonDisabled]}
+              onPress={handleComplete}
+              disabled={!canComplete}
+              activeOpacity={canComplete ? 0.7 : 1}
+            >
+              <Text style={[styles.buttonText, !canComplete && styles.buttonTextDisabled]}>
+                {canComplete ? "Complete Screening" : "Complete all steps above first"}
+              </Text>
+              {canComplete && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
+            </TouchableOpacity>
+          </View>
+        }
+      >
         <View style={styles.successCard}>
           <Ionicons name="checkmark-circle" size={40} color="#10B981" />
           <Text style={styles.successText}>
@@ -244,21 +260,7 @@ export default function VHTNormalFindingsScreen() {
             </Text>
           </View>
         )}
-      </ScrollView>
-
-      <View style={[styles.footer, { paddingBottom: 32 }]}>
-        <TouchableOpacity
-          style={[styles.button, !canComplete && styles.buttonDisabled]}
-          onPress={handleComplete}
-          disabled={!canComplete}
-          activeOpacity={canComplete ? 0.7 : 1}
-        >
-          <Text style={[styles.buttonText, !canComplete && styles.buttonTextDisabled]}>
-            {canComplete ? "Complete Screening" : "Complete all steps above first"}
-          </Text>
-          {canComplete && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
-        </TouchableOpacity>
-      </View>
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 }
@@ -269,13 +271,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    height: 72,
+    paddingHorizontal: 20,
     paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
   },
   headerTitle: { fontSize: 18, fontWeight: "600", color: "#1F2937", flex: 1, textAlign: "center" },
-  content: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
   successCard: {
     backgroundColor: "#DCFCE7",
     borderLeftWidth: 4,
@@ -326,8 +329,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   checkbox: {
-    width: 24,
-    height: 24,
+    width: 22,
+    height: 22,
     borderRadius: 6,
     borderWidth: 2,
     borderColor: "#D1D5DB",
@@ -396,35 +399,18 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
   },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 32,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
-    elevation: 8,
-  },
+  footerInner: { flex: 1 },
   button: {
     flex: 1,
+    height: 52,
     backgroundColor: "#15803D",
-    paddingVertical: 14,
     borderRadius: 12,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
-    minHeight: 48,
   },
-  buttonDisabled: {
-    backgroundColor: "#D1D5DB",
-  },
-  buttonText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  buttonTextDisabled: {
-    color: "#9CA3AF",
-  },
+  buttonDisabled: { backgroundColor: "#D1D5DB" },
+  buttonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
+  buttonTextDisabled: { color: "#9CA3AF" },
 });

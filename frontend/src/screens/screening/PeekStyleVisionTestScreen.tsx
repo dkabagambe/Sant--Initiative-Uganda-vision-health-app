@@ -53,7 +53,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Dimensions,
   ScrollView,
@@ -61,6 +60,7 @@ import {
   Image,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -1309,7 +1309,7 @@ const styles = StyleSheet.create({
   // ── Low-vision screens ──
   lvHeader: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    padding: 16, paddingTop: 44, backgroundColor: "#FFF",
+    paddingHorizontal: 20, height: 72, backgroundColor: "#FFF",
     borderBottomWidth: 1, borderBottomColor: "#E5E7EB",
   },
   lvTitle:    { fontSize: 16, fontWeight: "700", color: "#111827" },

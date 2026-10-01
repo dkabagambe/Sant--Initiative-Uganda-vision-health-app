@@ -21,7 +21,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   StatusBar,
 } from "react-native";
@@ -32,6 +31,7 @@ import { useScreening } from "../../context/ScreeningContext";
 import { useLanguage } from "../../context/LanguageContext";
 import TumblingE, { eSize6_60, eSize6_12, eSizeN8 } from "../../components/TumblingE";
 import { FormNavBar } from "../../components/FormNavBar";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 type EDir = "right" | "down" | "left" | "up";
 // Alias so existing JSX (<BlockE>) keeps working without changes
@@ -126,10 +126,15 @@ export default function VHTScreeningStep6() {
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={{ paddingBottom: 24 }}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAwareFormLayout
+        footer={
+          <FormNavBar
+            onPrev={() => navigation.goBack()}
+            onNext={handleContinue}
+            nextDisabled={!canProceed}
+            nextLabel={canProceed ? "Continue → Torch Light Test" : "Complete all steps above first"}
+          />
+        }
       >
         <View style={styles.instructionCard}>
           <Ionicons name="megaphone" size={24} color="#8B5CF6" />
@@ -337,16 +342,7 @@ export default function VHTScreeningStep6() {
             </Text>
           </View>
         )}
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <FormNavBar
-          onPrev={() => navigation.goBack()}
-          onNext={handleContinue}
-          nextDisabled={!canProceed}
-          nextLabel={canProceed ? "Continue → Torch Light Test" : "Complete all steps above first"}
-        />
-      </View>
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 }
@@ -355,11 +351,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFF" },
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 12,
+    height: 72,
+    paddingHorizontal: 20, paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1, borderBottomColor: "#E5E7EB",
   },
   headerTitle: { fontSize: 17, fontWeight: "600", color: "#1F2937", flex: 1, textAlign: "center" },
-  content: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
 
   instructionCard: {
     backgroundColor: "#F3E8FF", borderLeftWidth: 4, borderLeftColor: "#8B5CF6",
@@ -424,7 +421,7 @@ const styles = StyleSheet.create({
   stepCardDone: { borderLeftColor: "#8B5CF6" },
   stepLeft: { flexDirection: "row", alignItems: "flex-start", gap: 12, flex: 1 },
   checkbox: {
-    width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: "#D1D5DB",
+    width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: "#D1D5DB",
     alignItems: "center", justifyContent: "center", marginTop: 1,
   },
   checkboxDone: { backgroundColor: "#8B5CF6", borderColor: "#8B5CF6" },
@@ -452,17 +449,8 @@ const styles = StyleSheet.create({
   readyCard: {
     backgroundColor: "#DCFCE7", borderLeftWidth: 4, borderLeftColor: "#10B981",
     padding: 14, borderRadius: 8, flexDirection: "row", alignItems: "center",
-    gap: 12, marginBottom: 24,
+    gap: 12,
   },
   readyText: { fontSize: 14, color: "#065F46", fontWeight: "500", flex: 1, lineHeight: 20 },
 
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 32,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
-    elevation: 8,
-  },
 });

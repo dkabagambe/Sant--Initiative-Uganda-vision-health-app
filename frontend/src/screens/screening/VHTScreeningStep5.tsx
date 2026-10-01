@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   StatusBar,
 } from "react-native";
@@ -13,6 +12,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { FormNavBar } from "../../components/FormNavBar";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 export default function VHTScreeningStep5() {
   const navigation = useNavigation<any>();
@@ -55,10 +55,19 @@ export default function VHTScreeningStep5() {
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={{ paddingBottom: 24 }}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAwareFormLayout
+        footer={
+          <FormNavBar
+            onPrev={() => navigation.goBack()}
+            onNext={handleContinue}
+            nextDisabled={!allStepsCompleted}
+            nextLabel={
+              allStepsCompleted
+                ? t("continueToDemo")
+                : `${completedSteps.size}/${preparationSteps.length} ${t("itemsChecked")}`
+            }
+          />
+        }
       >
         <View style={styles.instructionCard}>
           <Ionicons name="settings" size={24} color="#0891B2" />
@@ -110,21 +119,7 @@ export default function VHTScreeningStep5() {
             <Text style={styles.readyText}>{t("setupComplete")}</Text>
           </View>
         )}
-      </ScrollView>
-
-      {/* Single footer button - no duplicate inside scroll */}
-      <View style={styles.footer}>
-        <FormNavBar
-          onPrev={() => navigation.goBack()}
-          onNext={handleContinue}
-          nextDisabled={!allStepsCompleted}
-          nextLabel={
-            allStepsCompleted
-              ? t("continueToDemo")
-              : `${completedSteps.size}/${preparationSteps.length} ${t("itemsChecked")}`
-          }
-        />
-      </View>
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 }
@@ -135,20 +130,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    height: 72,
+    paddingHorizontal: 20,
     paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
   },
   headerTitle: { fontSize: 18, fontWeight: "600", color: "#1F2937", flex: 1, textAlign: "center" },
-  content: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
   instructionCard: {
     backgroundColor: "#F0F9FF",
     borderLeftWidth: 4,
     borderLeftColor: "#0891B2",
     padding: 12,
     borderRadius: 8,
-    marginBottom: 16,
     flexDirection: "row",
     gap: 12,
   },
@@ -159,13 +154,12 @@ const styles = StyleSheet.create({
     borderLeftColor: "#D97706",
     padding: 12,
     borderRadius: 8,
-    marginBottom: 20,
     flexDirection: "row",
     gap: 12,
   },
   warningTitle: { fontSize: 14, fontWeight: "700", color: "#92400E", marginBottom: 2 },
   warningText: { fontSize: 13, color: "#B45309", lineHeight: 18 },
-  section: { marginBottom: 24 },
+  section: { marginBottom: 8 },
   sectionTitle: { fontSize: 16, fontWeight: "700", color: "#1F2937", marginBottom: 8 },
   sectionSubtitle: { fontSize: 14, color: "#6B7280", marginBottom: 12 },
   stepCard: {
@@ -182,7 +176,7 @@ const styles = StyleSheet.create({
   stepCardDone: { borderLeftColor: "#0891B2", backgroundColor: "#F0F9FF" },
   stepLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
   checkbox: {
-    width: 24, height: 24, borderRadius: 6,
+    width: 22, height: 22, borderRadius: 6,
     borderWidth: 2, borderColor: "#D1D5DB",
     alignItems: "center", justifyContent: "center",
   },
@@ -196,17 +190,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     alignItems: "center",
-    marginBottom: 24,
     gap: 12,
   },
   readyText: { fontSize: 14, color: "#065F46", fontWeight: "500", textAlign: "center", lineHeight: 20 },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 32,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
-    elevation: 8,
-  },
 });

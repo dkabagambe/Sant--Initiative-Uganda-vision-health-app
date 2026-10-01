@@ -3,17 +3,16 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
-  Dimensions,
   Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { apiService } from "../../services/api";
 import { FormNavBar } from "../../components/FormNavBar";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 export default function SafetyInformationScreen() {
   const navigation = useNavigation<any>();
@@ -67,30 +66,26 @@ export default function SafetyInformationScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#F8FAFC" barStyle="dark-content" />
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
-      {/* Top Header with Logo and Menu - Fixed at top */}
+      {/* Header */}
       <View style={styles.topHeader}>
         <View style={styles.headerLeft}>
-          <View style={styles.logoBox}>
-            <Image
-              source={require("../../../assets/logo.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
+          <Image
+            source={require("../../../assets/logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
-
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>
+          <Text style={styles.headerTitle} numberOfLines={1}>
             {userData?.fullName || userData?.full_name || "Santé Initiative Uganda"}
           </Text>
-          <Text style={styles.headerSubtitle}>
-            {userData?.district ? `VHT - ${userData.district} District` : ""}
+          <Text style={styles.headerSubtitle} numberOfLines={1}>
+            {userData?.district ? `VHT · ${userData.district} District` : ""}
           </Text>
         </View>
-
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
             <Ionicons name="menu" size={28} color="#1A4D8F" />
@@ -98,11 +93,16 @@ export default function SafetyInformationScreen() {
         </View>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+      <KeyboardAwareFormLayout
+        footer={
+          <FormNavBar
+            onPrev={() => navigation.goBack()}
+            onNext={handleStartTest}
+            nextLabel="🔦 Start Torch Light Test"
+          />
+        }
       >
-        {/* Progress Section */}
+        {/* Progress */}
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>Step 3 of 6</Text>
           <View style={styles.progressBar}>
@@ -110,26 +110,26 @@ export default function SafetyInformationScreen() {
           </View>
         </View>
 
-        {/* Safety Information Section */}
-        <View style={styles.safetySection}>
+        {/* Safety warnings */}
+        <View>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionIcon}> ⚠️ </Text>
-            <View>
-              <Text style={styles.sectionTitle}>
-                Important Safety Information
-              </Text>
-              <Text style={styles.sectionSubtitle}>
-                Read these warnings before starting tests.
-              </Text>
+            <Text style={styles.sectionIcon}>⚠️</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.sectionTitle}>Important Safety Information</Text>
+              <Text style={styles.sectionSubtitle}>Read these warnings before starting tests.</Text>
             </View>
           </View>
 
           <View style={styles.warningsContainer}>
             {warnings.map((warning, index) => (
-              <View key={index} style={styles.warningItem}>
-                <View style={styles.warningEmojiContainer}>
-                  <Text style={styles.warningEmoji}>{warning.emoji}</Text>
-                </View>
+              <View
+                key={index}
+                style={[
+                  styles.warningItem,
+                  index === warnings.length - 1 && styles.warningItemLast,
+                ]}
+              >
+                <Text style={styles.warningEmoji}>{warning.emoji}</Text>
                 <Text style={styles.warningText}>
                   <Text style={styles.boldText}>
                     {warning.text.split(" - ")[0]}
@@ -144,58 +144,33 @@ export default function SafetyInformationScreen() {
           </View>
         </View>
 
-        {/* Remember Section */}
+        {/* Reminders */}
         <View style={styles.rememberSection}>
           <View style={styles.rememberHeader}>
             <Text style={styles.rememberIcon}>✅</Text>
             <Text style={styles.rememberTitle}>Remember:</Text>
           </View>
-
-          <View style={styles.rememberList}>
-            {reminders.map((reminder, index) => (
-              <View key={index} style={styles.reminderItem}>
-                <Text style={styles.reminderText}>{reminder.text}</Text>
-              </View>
-            ))}
-          </View>
+          {reminders.map((reminder, index) => (
+            <View key={index} style={styles.reminderItem}>
+              <Text style={styles.reminderText}>{reminder.text}</Text>
+            </View>
+          ))}
         </View>
-
-        <View style={{ height: 140 }} />
-      </ScrollView>
-
-      {/* Fixed bottom navigation - outside ScrollView so it doesn't scroll */}
-      <View style={styles.bottomNav}>
-        <FormNavBar
-          onPrev={() => navigation.goBack()}
-          onNext={handleStartTest}
-          nextLabel="🔦 Start Torch Light Test"
-        />
-      </View>
-
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 }
 
-const { width } = Dimensions.get("window");
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
+  container: { flex: 1, backgroundColor: "#F8FAFC" },
+
+  /* Header */
   topHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    height: 72,
+    paddingHorizontal: 20,
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    paddingTop: 44,
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
     elevation: 2,
@@ -204,202 +179,77 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
-  headerLeft: {
-    flex: 1,
-  },
-  logoBox: {
-    alignSelf: "center",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  logo: {
-    width: 80,
-    height: 80,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A1A1A",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
-  },
-  headerRight: {
-    flex: 1,
-    alignItems: "flex-end",
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerRightPlaceholder: {
-    width: 40,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 150,
-    paddingBottom: 140,
-  },  progressContainer: {
-    marginBottom: 28,
-  },
-  progressText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1A4D8F",
-    marginBottom: 10,
-    letterSpacing: -0.3,
-  },
+  headerLeft: { width: 44, alignItems: "flex-start", justifyContent: "center" },
+  logo: { width: 38, height: 38 },
+  headerCenter: { flex: 1, alignItems: "center", paddingHorizontal: 8 },
+  headerTitle: { fontSize: 15, fontWeight: "700", color: "#1A1A1A" },
+  headerSubtitle: { fontSize: 12, color: "#6B7280", marginTop: 1 },
+  headerRight: { width: 44, alignItems: "flex-end", justifyContent: "center" },
+
+  /* Progress */
+  progressContainer: { marginBottom: 4 },
+  progressText: { fontSize: 15, fontWeight: "700", color: "#1A4D8F", marginBottom: 8 },
   progressBar: {
     height: 6,
     backgroundColor: "#E8EAED",
     borderRadius: 3,
     overflow: "hidden",
   },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#2E7D32",
-    borderRadius: 3,
-  },
-  safetySection: {
-    marginBottom: 30,
-  },
+  progressFill: { height: "100%", backgroundColor: "#2E7D32", borderRadius: 3 },
+
+  /* Safety section */
   sectionHeader: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    alignItems: "flex-start",
+    marginBottom: 16,
+    gap: 10,
   },
-  sectionIcon: {
-    fontSize: 28,
-    marginRight: 12,
-    marginTop: 2,
-  },
+  sectionIcon: { fontSize: 26, marginTop: 2 },
   sectionTitle: {
-    fontSize: 26,
+    fontSize: 20,
     fontWeight: "800",
     color: "#3f1d1d",
-    marginBottom: 4,
-    letterSpacing: -0.5,
+    marginBottom: 2,
   },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: "#a11414",
-    fontWeight: "500",
-    lineHeight: 20,
-    textAlign: "left",
-  },
+  sectionSubtitle: { fontSize: 14, color: "#a11414", fontWeight: "500", lineHeight: 20 },
+
   warningsContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#FFE4E6",
-    padding: 24,
+    padding: 20,
+    elevation: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
   },
   warningItem: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: 20,
-    paddingBottom: 20,
+    gap: 12,
+    marginBottom: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#F8FAFC",
   },
-  warningItemLast: {
-    marginBottom: 0,
-    paddingBottom: 0,
-    borderBottomWidth: 0,
-  },
-  warningEmojiContainer: {
-    width: 36,
-    alignItems: "center",
-    marginRight: 12,
-    marginTop: 2,
-  },
-  warningEmoji: {
-    fontSize: 22,
-  },
-  warningText: {
-    flex: 1,
-    fontSize: 16,
-    color: "#374151",
-    lineHeight: 22,
-    fontWeight: "500",
-  },
-  boldText: {
-    fontWeight: "700",
-    color: "#EF4444",
-  },
+  warningItemLast: { marginBottom: 0, paddingBottom: 0, borderBottomWidth: 0 },
+  warningEmoji: { fontSize: 22, width: 28, textAlign: "center" },
+  warningText: { flex: 1, fontSize: 15, color: "#374151", lineHeight: 22, fontWeight: "500" },
+  boldText: { fontWeight: "700", color: "#EF4444" },
+
+  /* Reminders */
   rememberSection: {
     backgroundColor: "#F0F9FF",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#E0F2FE",
-    padding: 24,
-    marginBottom: 20,
+    padding: 20,
   },
-  rememberHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  rememberIcon: {
-    fontSize: 24,
-    marginRight: 12,
-  },
-  rememberTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#0369A1",
-    letterSpacing: -0.3,
-  },
-  rememberList: {
-    paddingLeft: 4,
-  },
-  reminderItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  reminderEmoji: {
-    fontSize: 20,
-    marginRight: 12,
-    width: 32,
-  },
-  reminderText: {
-    flex: 1,
-    fontSize: 16,
-    color: "#0C4A6E",
-    lineHeight: 22,
-    fontWeight: "500",
-  },
-  spacer: {
-    height: 20,
-  },
-  bottomNav: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 32,
-    elevation: 8,
-  },
+  rememberHeader: { flexDirection: "row", alignItems: "center", marginBottom: 16, gap: 10 },
+  rememberIcon: { fontSize: 22 },
+  rememberTitle: { fontSize: 18, fontWeight: "700", color: "#0369A1" },
+  reminderItem: { marginBottom: 12 },
+  reminderText: { fontSize: 15, color: "#0C4A6E", lineHeight: 22, fontWeight: "500" },
 });

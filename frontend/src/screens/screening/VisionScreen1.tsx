@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   TextInput,
   Platform,
@@ -13,6 +12,7 @@ import {
   FlatList,
   Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
@@ -181,29 +181,27 @@ export default function VisionScreen1() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
-      {/* Top Header with Logo and Menu - Fixed at top */}
+      {/* Header: logo + VHT name + menu */}
       <View style={styles.topHeader}>
         <View style={styles.headerLeft}>
-          <View style={styles.logoBox}>
-            <Image
-              source={require("../../../assets/logo.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
+          <Image
+            source={require("../../../assets/logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>
+          <Text style={styles.headerTitle} numberOfLines={1}>
             {userData?.fullName ||
               userData?.full_name ||
               "Santé Initiative Uganda"}
           </Text>
-          <Text style={styles.headerSubtitle}>
-            {userData?.district ? `VHT - ${userData.district} District` : ""}
+          <Text style={styles.headerSubtitle} numberOfLines={1}>
+            {userData?.district ? `VHT · ${userData.district} District` : ""}
           </Text>
         </View>
 
@@ -473,8 +471,6 @@ export default function VisionScreen1() {
           </View>
         </View>
 
-        {/* Spacer for bottom tab bar */}
-        <View style={styles.spacer} />
       </KeyboardAwareFormLayout>
 
       {/* District Dropdown Modal */}
@@ -722,19 +718,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8FAFC",
   },
+
+  /* ── Header ─────────────────────────────────────────────────── */
   topHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    height: 72,
+    paddingHorizontal: 20,
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 44,
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
     elevation: 2,
@@ -744,53 +735,44 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   headerLeft: {
-    flex: 1,
-  },
-  logoBox: {
-    alignSelf: "center",
+    width: 44,
+    alignItems: "flex-start",
     justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
   },
   logo: {
-    width: 80,
-    height: 80,
+    width: 38,
+    height: 38,
   },
   headerCenter: {
     flex: 1,
     alignItems: "center",
+    paddingHorizontal: 8,
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
     color: "#1A1A1A",
   },
   headerSubtitle: {
     fontSize: 12,
     color: "#6B7280",
-    marginTop: 2,
+    marginTop: 1,
   },
   headerRight: {
-    flex: 1,
+    width: 44,
     alignItems: "flex-end",
+    justifyContent: "center",
   },
-  scrollView: {
-    flex: 1,
-    marginTop: StatusBar.currentHeight ? StatusBar.currentHeight + 120 : 150,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 30,
-    paddingBottom: 120,
-  },
+
+  /* ── Progress ────────────────────────────────────────────────── */
   progressSection: {
-    marginBottom: 24,
+    marginBottom: 4,
   },
   progressText: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#1A4D8F",
     fontWeight: "600",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   progressBar: {
     height: 6,
@@ -803,26 +785,29 @@ const styles = StyleSheet.create({
     backgroundColor: "#2E7D32",
     borderRadius: 3,
   },
+
+  /* ── Form header ─────────────────────────────────────────────── */
   formHeader: {
-    marginBottom: 28,
+    marginBottom: 4,
   },
   formTitle: {
     fontSize: 22,
     fontWeight: "700",
     color: "#1A1A1A",
-    marginBottom: 6,
+    marginBottom: 4,
   },
   formSubtitle: {
     fontSize: 14,
     color: "#666666",
     lineHeight: 20,
   },
+
+  /* ── Form fields ─────────────────────────────────────────────── */
   formContainer: {
-    marginBottom: 30,
+    marginBottom: 4,
   },
   inputGroup: {
-    marginBottom: 20,
-    gap: 8,
+    gap: 6,
   },
   label: {
     fontSize: 14,
@@ -833,12 +818,12 @@ const styles = StyleSheet.create({
     color: "#EF4444",
   },
   input: {
+    height: 52,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#D1D5DB",
     borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
     fontSize: 15,
     color: "#111827",
   },
@@ -847,20 +832,21 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     marginTop: 2,
   },
+
+  /* ── Sex buttons ─────────────────────────────────────────────── */
   sexButtons: {
     flexDirection: "row",
     gap: 12,
   },
   sexButton: {
     flex: 1,
+    height: 52,
     backgroundColor: "#F3F4F6",
-    paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     borderColor: "#E5E7EB",
-    minHeight: 48,
-    justifyContent: "center",
   },
   sexButtonActive: {
     backgroundColor: "#1A4D8F",
@@ -869,39 +855,20 @@ const styles = StyleSheet.create({
   sexButtonText: {
     fontSize: 15,
     color: "#666666",
-    fontWeight: "500",
+    fontWeight: "600",
   },
   sexButtonTextActive: {
     color: "#FFFFFF",
   },
-  nextButton: {
-    backgroundColor: "#2E7D32",
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-    marginBottom: 16,
-    minHeight: 52,
-    shadowColor: "#1A4D8F",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  nextButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  spacer: {
-    height: 20,
-  },
+
+  /* ── Dropdowns ───────────────────────────────────────────────── */
   dropdownButton: {
+    height: 52,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#D1D5DB",
     borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -918,6 +885,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3F4F6",
     borderColor: "#E5E7EB",
   },
+
+  /* ── Modals ──────────────────────────────────────────────────── */
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",

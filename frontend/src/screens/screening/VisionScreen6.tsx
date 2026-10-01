@@ -23,12 +23,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Dimensions,
   Image,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
@@ -120,7 +120,7 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
   // ── Instructions ─────────────────────────────────────────────────────────
   if (phase === "instructions") {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
         <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
         <Header userData={userData} navigation={navigation} />
 
@@ -207,7 +207,7 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
     const canStillPass = correctSoFar + remainingLetters + 1 >= N8_PASS;
 
     return (
-      <SafeAreaView style={styles.testContainer}>
+      <SafeAreaView style={styles.testContainer} edges={["top", "left", "right"]}>
         <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
         {/* Top bar */}
@@ -292,7 +292,7 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
     const passed = testPassed === true;
 
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
         <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
         <Header userData={userData} navigation={navigation} />
 
@@ -435,19 +435,20 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16, paddingVertical: 12, paddingTop: 44,
+    height: 72,
+    paddingHorizontal: 20,
     borderBottomWidth: 1, borderBottomColor: "#E5E7EB",
     elevation: 2, shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2,
   },
   logoBox: { width: 44, height: 44, justifyContent: "center", alignItems: "center" },
-  logo: { width: 40, height: 40 },
-  headerCenter: { flex: 1, alignItems: "center" },
-  headerTitle: { fontSize: 15, fontWeight: "600", color: "#111827" },
+  logo: { width: 38, height: 38 },
+  headerCenter: { flex: 1, alignItems: "center", paddingHorizontal: 8 },
+  headerTitle: { fontSize: 15, fontWeight: "700", color: "#111827" },
   headerSubtitle: { fontSize: 11, color: "#6B7280", marginTop: 1 },
   menuBtn: { width: 44, alignItems: "flex-end" },
 
-  scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40, gap: 16 },
   stepTitle: { fontSize: 22, fontWeight: "700", color: "#111827", marginBottom: 8 },
 
   badge: {

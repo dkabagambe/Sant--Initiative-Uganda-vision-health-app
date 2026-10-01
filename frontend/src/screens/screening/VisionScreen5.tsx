@@ -21,9 +21,10 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  SafeAreaView, StatusBar, Dimensions,
+  StatusBar, Dimensions,
   Image, ScrollView, Animated,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   GestureHandlerRootView,
   PanGestureHandler,
@@ -448,7 +449,7 @@ export default function VisionScreen5() {
   // ══════════════════════════════════════════════════════════════════════════
   if (phase === "calibration") {
     return (
-      <SafeAreaView style={s.page}>
+      <SafeAreaView style={s.page} edges={["top", "left", "right"]}>
         <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
         <Header userData={userData} navigation={navigation} />
         <ScrollView contentContainerStyle={s.scrollPad} showsVerticalScrollIndicator={false}>
@@ -508,7 +509,7 @@ export default function VisionScreen5() {
   // ══════════════════════════════════════════════════════════════════════════
   if (phase === "instructions") {
     return (
-      <SafeAreaView style={s.page}>
+      <SafeAreaView style={s.page} edges={["top", "left", "right"]}>
         <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
         <Header userData={userData} navigation={navigation} />
         <ScrollView contentContainerStyle={s.scrollPad} showsVerticalScrollIndicator={false}>
@@ -1067,12 +1068,13 @@ const s = StyleSheet.create({
 
   header: {
     flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF",
-    paddingHorizontal: 14, paddingVertical: 10, paddingTop: 44,
+    paddingHorizontal: 20,
+    height: 72,
     borderBottomWidth: 1, borderBottomColor: "#E5E7EB", elevation: 2,
   },
   logoBox:   { width: 40, height: 40, justifyContent: "center", alignItems: "center" },
   logo:      { width: 36, height: 36 },
-  headerMid: { flex: 1, alignItems: "center" },
+  headerMid: { flex: 1, alignItems: "center", paddingHorizontal: 8 },
   headerTitle: { fontSize: 14, fontWeight: "600", color: "#111827" },
   headerSub:   { fontSize: 11, color: "#6B7280", marginTop: 1 },
   menuBtn:     { width: 40, alignItems: "flex-end" },

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   StatusBar,
   Alert,
@@ -13,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { FormNavBar } from "../../components/FormNavBar";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 export default function VHTScreeningStep4() {
   const navigation = useNavigation<any>();
@@ -185,7 +185,24 @@ export default function VHTScreeningStep4() {
         <View style={{ width: 28 }} />
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+      <KeyboardAwareFormLayout
+        footer={
+          <FormNavBar
+            onPrev={() => navigation.goBack()}
+            onNext={handleContinue}
+            nextDisabled={!allQuestionsAnswered}
+            nextLabel={
+              !allQuestionsAnswered
+                ? `Answer remaining (${questions.length - questionsAnswered.size} left)`
+                : shouldRefer && hasDangerSign
+                ? "⛔ Danger Sign — Complete Referral"
+                : shouldRefer && !hasDangerSign
+                ? "Proceed to Screening (+ Refer after)"
+                : "Proceed to Setup Screening Area"
+            }
+          />
+        }
+      >
         <View style={styles.instructionCard}>
           <Ionicons name="alert-circle" size={24} color="#DC2626" />
           <Text style={styles.instructionText}>
@@ -304,25 +321,7 @@ export default function VHTScreeningStep4() {
             </Text>
           </View>
         )}
-      </ScrollView>
-
-      {/* Single unified footer - always visible */}
-      <View style={styles.footer}>
-        <FormNavBar
-          onPrev={() => navigation.goBack()}
-          onNext={handleContinue}
-          nextDisabled={!allQuestionsAnswered}
-          nextLabel={
-            !allQuestionsAnswered
-              ? `Answer remaining (${questions.length - questionsAnswered.size} left)`
-              : shouldRefer && hasDangerSign
-              ? "⛔ Danger Sign — Complete Referral"
-              : shouldRefer && !hasDangerSign
-              ? "Proceed to Screening (+ Refer after)"
-              : "Proceed to Setup Screening Area"
-          }
-        />
-      </View>
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 }
@@ -336,8 +335,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    height: 72,
+    paddingHorizontal: 20,
     paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
   },
@@ -347,11 +348,6 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     flex: 1,
     textAlign: "center",
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
   },
   instructionCard: {
     backgroundColor: "#FEE2E2",
@@ -477,14 +473,5 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
     lineHeight: 20,
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 32,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
-    elevation: 8,
   },
 });

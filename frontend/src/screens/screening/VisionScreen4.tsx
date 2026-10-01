@@ -3,20 +3,19 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Dimensions,
   Image,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import CHWHeader from "../../components/CHWHeader";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 export default function TorchLightStepScreen() {
   const navigation = useNavigation<any>();
@@ -515,30 +514,26 @@ export default function TorchLightStepScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#F8FAFC" barStyle="dark-content" />
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
-      {/* Top Header with Logo and Menu - Fixed at top */}
+      {/* Header */}
       <View style={styles.topHeader}>
         <View style={styles.headerLeft}>
-          <View style={styles.logoBox}>
-            <Image
-              source={require("../../../assets/logo.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
+          <Image
+            source={require("../../../assets/logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
-
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>
+          <Text style={styles.headerTitle} numberOfLines={1}>
             {userData?.fullName || userData?.full_name || "Santé Initiative Uganda"}
           </Text>
-          <Text style={styles.headerSubtitle}>
-            {userData?.district ? `VHT - ${userData.district} District` : ""}
+          <Text style={styles.headerSubtitle} numberOfLines={1}>
+            {userData?.district ? `VHT · ${userData.district} District` : ""}
           </Text>
         </View>
-
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
             <Ionicons name="menu" size={28} color="#1A4D8F" />
@@ -546,22 +541,12 @@ export default function TorchLightStepScreen() {
         </View>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <KeyboardAwareFormLayout>
         {/* Progress Section */}
         <View style={styles.progressContainer}>
-          <Text style={styles.progressText}>
-            Step 4 of 6
-          </Text>
+          <Text style={styles.progressText}>Step 4 of 6</Text>
           <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: "66.67%" },
-              ]}
-            />
+            <View style={[styles.progressFill, { width: "66.67%" }]} />
           </View>
         </View>
 
@@ -590,9 +575,7 @@ export default function TorchLightStepScreen() {
               onPress={() => setCurrentSubStep(3)}
               activeOpacity={0.8}
             >
-              <Text style={styles.primaryButtonText}>
-                I Have Completed the Test
-              </Text>
+              <Text style={styles.primaryButtonText}>I Have Completed the Test</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -601,9 +584,7 @@ export default function TorchLightStepScreen() {
               activeOpacity={0.8}
             >
               <Ionicons name="arrow-back" size={20} color="#1A4D8F" />
-              <Text style={styles.secondaryButtonText}>
-                Back to Instructions
-              </Text>
+              <Text style={styles.secondaryButtonText}>Back to Instructions</Text>
             </TouchableOpacity>
           </>
         ) : currentSubStep === 3 ? (
@@ -614,7 +595,6 @@ export default function TorchLightStepScreen() {
             ]}
             onPress={() => {
               if (abnormalSigns.length === 0) {
-                // Nothing selected yet — auto-select "none" (no abnormal signs) and proceed
                 setAbnormalSigns(["none"]);
               }
               setTestPassed(null);
@@ -629,7 +609,6 @@ export default function TorchLightStepScreen() {
             </Text>
           </TouchableOpacity>
         ) : (
-          // SubStep 4 — Y/N buttons are inside the card above; footer shows a hint
           <View style={styles.step4FooterHint}>
             <Ionicons name="arrow-up" size={18} color="#6B7280" />
             <Text style={styles.step4FooterHintText}>
@@ -638,8 +617,7 @@ export default function TorchLightStepScreen() {
           </View>
         )}
         </View>
-        <View style={{ height: 190 }} />
-      </ScrollView>
+      </KeyboardAwareFormLayout>
 
     </SafeAreaView>
   );
@@ -655,16 +633,9 @@ const styles = StyleSheet.create({
   topHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    height: 72,
+    paddingHorizontal: 20,
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    paddingTop: 44,
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
     elevation: 2,
@@ -673,45 +644,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
-  headerLeft: {
-    flex: 1,
-  },
-  logoBox: {
-    alignSelf: "center",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  logo: {
-    width: 80,
-    height: 80,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1A1A1A",
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
-  },
-  headerRight: {
-    flex: 1,
-    alignItems: "flex-end",
-  },
-  headerRightPlaceholder: {
-    width: 40,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 150,
-    paddingBottom: 40,
-  },
+  headerLeft: { width: 44, alignItems: "flex-start", justifyContent: "center" },
+  logo: { width: 38, height: 38 },
+  headerCenter: { flex: 1, alignItems: "center", paddingHorizontal: 8 },
+  headerTitle: { fontSize: 15, fontWeight: "700", color: "#1A1A1A" },
+  headerSubtitle: { fontSize: 12, color: "#6B7280", marginTop: 1 },
+  headerRight: { width: 44, alignItems: "flex-end", justifyContent: "center" },
   progressContainer: {
     marginBottom: 16,
   },

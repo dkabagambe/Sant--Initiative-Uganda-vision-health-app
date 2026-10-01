@@ -3,14 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   StatusBar,
   TextInput,
   Alert,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useScreening } from "../../context/ScreeningContext";
 import { apiService } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { KeyboardAwareFormLayout } from "../../components/KeyboardAwareFormLayout";
 
 export default function VHTReferralScreen() {
   const navigation = useNavigation<any>();
@@ -145,15 +143,25 @@ export default function VHTReferralScreen() {
         <View style={{ width: 28 }} />
       </View>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={{ paddingBottom: 24 }}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAwareFormLayout
+        footer={
+          <View style={styles.footerInner}>
+            <TouchableOpacity
+              style={[styles.button, isButtonDisabled && styles.buttonDisabled]}
+              onPress={handleCompleteReferral}
+              disabled={isButtonDisabled}
+            >
+              {saving ? (
+                <ActivityIndicator color="#FFF" size="small" />
+              ) : (
+                <>
+                  <Text style={styles.buttonText}>Save & Complete Referral</Text>
+                  <Ionicons name="arrow-forward" size={20} color="#FFF" />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        }
       >
         <View style={styles.warningCard}>
           <Ionicons name="alert-circle" size={32} color="#DC2626" />
@@ -247,25 +255,7 @@ export default function VHTReferralScreen() {
             </Text>
           </View>
         </View>
-      </ScrollView>
-      </KeyboardAvoidingView>
-
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.button, isButtonDisabled && styles.buttonDisabled]}
-          onPress={handleCompleteReferral}
-          disabled={isButtonDisabled}
-        >
-          {saving ? (
-            <ActivityIndicator color="#FFF" size="small" />
-          ) : (
-            <>
-              <Text style={styles.buttonText}>Save & Complete Referral</Text>
-              <Ionicons name="arrow-forward" size={20} color="#FFF" />
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
+      </KeyboardAwareFormLayout>
     </SafeAreaView>
   );
 }
@@ -276,8 +266,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    height: 72,
+    paddingHorizontal: 20,
     paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
   },
@@ -288,7 +280,6 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
   },
-  content: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
   warningCard: {
     backgroundColor: "#FEE2E2",
     borderLeftWidth: 4,
@@ -322,11 +313,11 @@ const styles = StyleSheet.create({
   facilityButtonText: { fontSize: 15, color: "#6B7280", fontWeight: "500" },
   facilityButtonTextSelected: { color: "#DC2626", fontWeight: "600" },
   input: {
+    height: 52,
     borderWidth: 1,
     borderColor: "#D1D5DB",
     borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
     fontSize: 15,
     color: "#111827",
     backgroundColor: "#FFFFFF",
@@ -353,25 +344,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   reminderText: { fontSize: 13, color: "#5B21B6", flex: 1, lineHeight: 20 },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 32,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
-    elevation: 8,
-  },
+  footerInner: { flex: 1 },
   button: {
     flex: 1,
+    height: 52,
     backgroundColor: "#DC2626",
-    paddingVertical: 14,
     borderRadius: 12,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
-    minHeight: 48,
   },
   buttonDisabled: { backgroundColor: "#D1D5DB" },
   buttonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
