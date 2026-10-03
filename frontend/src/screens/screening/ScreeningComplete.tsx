@@ -171,7 +171,7 @@ export default function ScreeningComplete() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#10B981" barStyle="light-content" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
       <View style={styles.content}>
         {/* Success Icon */}

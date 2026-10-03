@@ -15,7 +15,9 @@
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle",
-        "gradleCommand": ":app:bundleRelease"
+        "gradleCommand": ":app:bundleRelease",
+        "image": "latest",
+        "ndk": "28.0.12674087"
       },
       "env": {
         "EAS_BUILD_NO_EXPO_GO_WARNING": "true"

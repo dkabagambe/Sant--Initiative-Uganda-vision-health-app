@@ -309,7 +309,7 @@ export default function ReferralManagementScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor="#2E7D32" barStyle="light-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#2E7D32" />
           <Text style={styles.loadingText}>Loading referrals...</Text>
@@ -320,7 +320,7 @@ export default function ReferralManagementScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#2E7D32" barStyle="light-content" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
       <AppHeader
         userName={userData?.fullName || userData?.full_name}

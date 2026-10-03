@@ -349,7 +349,7 @@ export default function InventoryDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FFF8" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
       <CHWHeader />
 

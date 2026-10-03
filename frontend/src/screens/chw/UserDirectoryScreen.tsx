@@ -215,7 +215,7 @@ const UserDirectoryScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E40AF" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       <CHWHeader showMenu={false} />
       
       <View style={styles.content}>

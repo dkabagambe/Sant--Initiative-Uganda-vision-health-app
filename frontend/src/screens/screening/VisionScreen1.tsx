@@ -182,7 +182,7 @@ export default function VisionScreen1() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
       {/* Header: logo + VHT name + menu */}
       <View style={styles.topHeader}>

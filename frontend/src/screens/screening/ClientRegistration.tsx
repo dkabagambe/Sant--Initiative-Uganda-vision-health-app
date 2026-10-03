@@ -341,7 +341,7 @@ export default function ClientRegistration() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#10B981" barStyle="light-content" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       <CHWHeader />
 
       <KeyboardAvoidingView

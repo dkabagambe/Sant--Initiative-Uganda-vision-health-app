@@ -82,7 +82,7 @@ export default function VSLADashboardScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#F8FFF8" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#1E40AF" />
           <Text style={styles.loadingText}>Loading dashboard...</Text>
@@ -93,7 +93,7 @@ export default function VSLADashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FFF8" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
       {/* Header */}
       <View style={styles.header}>

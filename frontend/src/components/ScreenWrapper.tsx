@@ -15,10 +15,15 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
 }) => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top', 'left', 'right']}>
+      {/*
+        translucent={true} avoids the deprecated Window.setStatusBarColor API
+        that Google Play warns about. Bar tint is controlled via barStyle only.
+        The SafeAreaView background colour provides the visual bar colour.
+      */}
       <StatusBar
-        backgroundColor={backgroundColor}
+        translucent
         barStyle={statusBarStyle}
-        translucent={false}
+        backgroundColor="transparent"
       />
       {children}
     </SafeAreaView>

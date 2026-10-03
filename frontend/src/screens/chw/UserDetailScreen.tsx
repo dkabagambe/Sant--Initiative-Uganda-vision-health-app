@@ -333,7 +333,7 @@ const UserDetailScreen: React.FC = () => {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#1E40AF" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
         <CHWHeader showMenu={false} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3B82F6" />
@@ -346,7 +346,7 @@ const UserDetailScreen: React.FC = () => {
   if (error || !userDetails) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#1E40AF" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
         <CHWHeader showMenu={false} />
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={48} color="#EF4444" />
@@ -361,7 +361,7 @@ const UserDetailScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E40AF" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
       <CHWHeader showMenu={false} />
       
       <View style={styles.headerActions}>

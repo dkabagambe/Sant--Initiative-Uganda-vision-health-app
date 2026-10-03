@@ -510,7 +510,7 @@ export default function VHTCommunityFollowUpScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => selectedClient ? resetForm() : navigation.goBack()}>

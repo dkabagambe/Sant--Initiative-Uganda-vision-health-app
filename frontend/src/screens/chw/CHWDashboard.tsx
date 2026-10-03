@@ -376,7 +376,7 @@ export default function CHWDashboard() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
       {/* Offline Sync Banner */}
       {offlineCount > 0 && (

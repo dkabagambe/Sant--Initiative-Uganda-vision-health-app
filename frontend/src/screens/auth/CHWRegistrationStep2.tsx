@@ -158,7 +158,7 @@ export default function CHWRegistrationStep2() {
 
   return (
     <SafeAreaView style={styles.screenContainer}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       {/* Header with Back Button */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>

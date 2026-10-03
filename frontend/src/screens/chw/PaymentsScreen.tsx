@@ -517,7 +517,7 @@ export default function PaymentsScreen() {
   // ── Main render ───────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <CHWHeader />
 
       {/* Search Bar */}

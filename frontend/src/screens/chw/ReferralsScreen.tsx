@@ -400,7 +400,7 @@ export default function ReferralsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
       <CHWHeader />
 

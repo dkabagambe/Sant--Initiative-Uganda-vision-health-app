@@ -494,7 +494,7 @@ export default function VisionScreen5() {
   if (phase === "calibration") {
     return (
       <SafeAreaView style={s.page} edges={["top", "left", "right"]}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
         <Header userData={userData} navigation={navigation} />
         <ScrollView contentContainerStyle={s.scrollPad} showsVerticalScrollIndicator={false}>
 
@@ -554,7 +554,7 @@ export default function VisionScreen5() {
   if (phase === "instructions") {
     return (
       <SafeAreaView style={s.page} edges={["top", "left", "right"]}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
         <Header userData={userData} navigation={navigation} />
         <ScrollView contentContainerStyle={s.scrollPad} showsVerticalScrollIndicator={false}>
 
@@ -625,7 +625,7 @@ export default function VisionScreen5() {
     return (
       <GestureHandlerRootView style={s.testRoot}>
         <SafeAreaView style={s.testRoot}>
-          <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+          <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
           {/* Testing banner — always visible at top */}
           <View style={[s.testingBanner, { backgroundColor: currentEye === "right" ? "#1565C0" : "#7C3AED" }]}>
@@ -745,7 +745,7 @@ export default function VisionScreen5() {
       return (
         <GestureHandlerRootView style={s.testRoot}>
           <SafeAreaView style={s.testRoot}>
-            <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+            <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
             <View style={s.testBar}>
               <View style={[s.eyePill, { backgroundColor: "#B45309" }]}>
                 <Text style={s.eyePillTxt}>{eyeLabel}</Text>
@@ -837,7 +837,7 @@ export default function VisionScreen5() {
 
     return (
       <SafeAreaView style={s.page}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
         <Header userData={userData} navigation={navigation} />
         <View style={s.lvScreen}>
           <View style={[s.lvIconCircle, { backgroundColor: cfg.color + "20" }]}>
@@ -870,7 +870,7 @@ export default function VisionScreen5() {
 
     return (
       <SafeAreaView style={s.page}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
         <Header userData={userData} navigation={navigation} />
         <ScrollView contentContainerStyle={s.scrollPad} showsVerticalScrollIndicator={false}>
 
@@ -929,7 +929,7 @@ export default function VisionScreen5() {
   if (phase === "switch_eye") {
     return (
       <SafeAreaView style={s.switchPage}>
-        <StatusBar backgroundColor="#1565C0" barStyle="light-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
         <View style={s.switchBody}>
           <View style={s.switchIconCircle}>
             <Ionicons name="eye" size={48} color="#FFF" />
@@ -960,7 +960,7 @@ export default function VisionScreen5() {
 
     return (
       <SafeAreaView style={s.page}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
         <Header userData={userData} navigation={navigation} />
         <ScrollView contentContainerStyle={s.scrollPad} showsVerticalScrollIndicator={false}>
 

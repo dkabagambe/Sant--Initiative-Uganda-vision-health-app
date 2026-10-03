@@ -36,7 +36,7 @@ export default function SaleComplete({
 }: SaleCompleteProps) {
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#10B981" barStyle="light-content" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
       {/* Header */}
       <View style={styles.header}>

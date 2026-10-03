@@ -442,7 +442,7 @@ export default function PeekStyleVisionTestScreen() {
   if (phase === "calibration") {
     return (
       <SafeAreaView style={styles.lightContainer}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
         <SmallHeader userData={userData} navigation={navigation} />
         <ScrollView contentContainerStyle={styles.scrollPad} showsVerticalScrollIndicator={false}>
 
@@ -506,7 +506,7 @@ export default function PeekStyleVisionTestScreen() {
   if (phase === "instructions") {
     return (
       <SafeAreaView style={styles.lightContainer}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
         <SmallHeader userData={userData} navigation={navigation} />
         <ScrollView contentContainerStyle={styles.scrollPad} showsVerticalScrollIndicator={false}>
 
@@ -612,7 +612,7 @@ export default function PeekStyleVisionTestScreen() {
 
     return (
       <SafeAreaView style={styles.testRoot}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
         {/* ── Top bar ─────────────────────────────────────────────────── */}
         <View style={styles.testTopBar}>
@@ -712,7 +712,7 @@ export default function PeekStyleVisionTestScreen() {
 
     return (
       <SafeAreaView style={styles.lightContainer}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
         <SmallHeader userData={userData} navigation={navigation} />
         <ScrollView contentContainerStyle={styles.scrollPad} showsVerticalScrollIndicator={false}>
 
@@ -804,7 +804,7 @@ export default function PeekStyleVisionTestScreen() {
 
     return (
       <SafeAreaView style={styles.lightContainer}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
         <SmallHeader userData={userData} navigation={navigation} />
         <ScrollView contentContainerStyle={styles.scrollPad} showsVerticalScrollIndicator={false}>
 
@@ -900,7 +900,7 @@ function LowVision1mScreen({
 
   return (
     <SafeAreaView style={styles.testRoot}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <View style={styles.testTopBar}>
         <View style={[styles.eyePill, { backgroundColor: eye === "right" ? "#1D4ED8" : "#7C3AED" }]}>
           <Text style={styles.eyePillTxt}>{eye.toUpperCase()}</Text>
@@ -950,7 +950,7 @@ function LowVisionChoiceScreen({
 }) {
   return (
     <SafeAreaView style={styles.lightContainer}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <View style={styles.lvHeader}>
         <View style={[styles.eyePill, { backgroundColor: eye === "right" ? "#1D4ED8" : "#7C3AED" }]}>
           <Text style={styles.eyePillTxt}>{eye.toUpperCase()} EYE</Text>

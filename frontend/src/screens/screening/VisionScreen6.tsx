@@ -121,7 +121,7 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
   if (phase === "instructions") {
     return (
       <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
         <Header userData={userData} navigation={navigation} />
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -208,7 +208,7 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
 
     return (
       <SafeAreaView style={styles.testContainer} edges={["top", "left", "right"]}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
         {/* Top bar */}
         <View style={styles.testTopBar}>
@@ -293,7 +293,7 @@ export default function VisionScreen6({ clientAge, onComplete, onRefer }: Vision
 
     return (
       <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
         <Header userData={userData} navigation={navigation} />
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
