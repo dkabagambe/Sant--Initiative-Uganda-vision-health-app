@@ -16,21 +16,12 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.sante.initiative",
-      "versionCode": 68,
-      "permissions": [
-        "INTERNET",
-        "ACCESS_NETWORK_STATE"
-      ],
-      "resizeableActivity": true,
-      "edgeToEdgeEnabled": true
+      "versionCode": 68
     },
     "androidStatusBar": {
       "translucent": true,
       "backgroundColor": "#00000000",
       "barStyle": "dark-content"
-    },
-    "androidNavigationBar": {
-      "visible": "immersive"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -61,7 +52,8 @@
             }
           }
         }
-      ]
+      ],
+      "expo-asset"
     ]
   }
 }
