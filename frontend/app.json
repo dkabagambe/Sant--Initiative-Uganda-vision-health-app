@@ -2,7 +2,7 @@
   "expo": {
     "name": "Santé Initiative Uganda",
     "slug": "sante-initiative",
-    "version": "1.0.1",
+    "version": "1.4.6",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
