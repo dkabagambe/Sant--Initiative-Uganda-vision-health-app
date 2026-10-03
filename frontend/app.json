@@ -18,11 +18,6 @@
       "package": "com.sante.initiative",
       "versionCode": 68
     },
-    "androidStatusBar": {
-      "translucent": true,
-      "backgroundColor": "#00000000",
-      "barStyle": "dark-content"
-    },
     "web": {
       "favicon": "./assets/favicon.png"
     },
@@ -33,9 +28,19 @@
     },
     "plugins": [
       "expo-sharing",
-      "expo-status-bar",
+      [
+        "expo-status-bar",
+        {
+          "androidStatusBar": {
+            "translucent": true,
+            "backgroundColor": "#00000000",
+            "hidden": false
+          }
+        }
+      ],
       "expo-font",
       "expo-sqlite",
+      "expo-system-ui",
       [
         "expo-build-properties",
         {

@@ -111,3 +111,6 @@ test-screening.js
 test-login.js
 setup-sms.sh
 QUICK_VERCEL_FIX.sql
+
+# EAS local credentials (contains keystore passwords)
+frontend/credentials.json
