@@ -31,6 +31,7 @@ import {
   Modal,
   TextInput,
   Platform,
+  Linking,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -257,6 +258,21 @@ export default function SettingsScreen() {
   // ── Language ──────────────────────────────────────────────────────────────
   // setLanguage from context already persists to AsyncStorage "appLanguage"
 
+  // ── Privacy Policy ────────────────────────────────────────────────────────
+  const handlePrivacyPolicy = async () => {
+    const url = "https://sante-initiative.netlify.app/privacy_policy.html";
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert("Error", "Unable to open the Privacy Policy. Please visit:\n\nhttps://sante-initiative.netlify.app/privacy_policy.html");
+      }
+    } catch (err) {
+      Alert.alert("Error", "Could not open the Privacy Policy. Please try again.");
+    }
+  };
+
   // ── Security ──────────────────────────────────────────────────────────────
   const handleSecuritySettings = () => {
     Alert.alert(
@@ -266,6 +282,7 @@ export default function SettingsScreen() {
         { text: "🔑 Change Password",   onPress: () => navigation.navigate("ChangePassword") },
         { text: "🔒 Two-Factor Auth",   onPress: () => Alert.alert("Two-Factor Authentication", "2FA is managed through SMS OTP at login. Each sign-in sends a one-time code to your registered phone.") },
         { text: "🛡️ Data Privacy",      onPress: () => Alert.alert("Data Privacy", "All health data is encrypted at rest and in transit.\n\nCompliant with Uganda Health Data Protection Act.\n\nOnly authorised VHT supervisors can access records.") },
+        { text: "📄 Privacy Policy",    onPress: handlePrivacyPolicy },
         { text: "Cancel", style: "cancel" },
       ],
     );
@@ -570,6 +587,12 @@ export default function SettingsScreen() {
             label="Security & Privacy"
             subtitle="Password, 2FA, data protection"
             onPress={handleSecuritySettings}
+          />
+          <MenuItem
+            icon="document-text-outline"
+            label="Privacy Policy"
+            subtitle="How we collect and use your data"
+            onPress={handlePrivacyPolicy}
           />
           <MenuItem
             icon="person-circle-outline"
