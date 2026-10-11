@@ -113,8 +113,11 @@ exports.login = async (req, res) => {
       canonicalPhone,
     );
 
+    const phoneForSms = storedPhone || canonicalPhone;
+    console.log(`[AUTH login] phone_in=${phoneNumber} canonical=${canonicalPhone} stored=${existingUser.phone_number} phoneForSms=${phoneForSms}`);
+
     const smsResult = await smsService.sendOTP(
-      storedPhone || canonicalPhone,
+      phoneForSms,
       null,
     );
 
@@ -184,6 +187,7 @@ exports.verifyOTP = async (req, res) => {
       }
 
       const verifyPhone = user.phone_number || canonicalPhone;
+      console.log(`[AUTH verify] phone_in=${phoneNumber} canonical=${canonicalPhone} stored=${user.phone_number} verifyPhone=${verifyPhone}`);
       const verifyResult = await smsService.verifyOTP(verifyPhone, otp);
 
       if (!verifyResult.success) {

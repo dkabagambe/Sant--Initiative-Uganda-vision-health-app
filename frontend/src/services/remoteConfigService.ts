@@ -37,7 +37,7 @@ class RemoteConfigService {
 
   private getDefaultConfig(): RemoteConfig {
     return {
-      apiBaseUrl: "https://backend-tau-sepia-43.vercel.app/api",
+      apiBaseUrl: "https://sante-backend.onrender.com/api",
       maintenanceMode: false,
       features: {
         paymentsEnabled: true,

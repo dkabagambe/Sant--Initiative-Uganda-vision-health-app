@@ -65,16 +65,30 @@ const DEMO_ROLES = ['CHW', 'OUTLET', 'VSLA'];
 
 /**
  * Returns the demo entry for a phone number, or null if not a demo number.
+ * Compares in E.164 format so +256700000101, 256700000101 and 0700000101 all match.
  * { phone: '+256...', otp: '######', role: 'CHW'|'OUTLET'|'VSLA' }
  */
 const getDemoEntry = (phoneNumber) => {
-  if (!isDemoEnabled()) return null;
+  const enabled = isDemoEnabled();
   const normalized = toE164(phoneNumber);
+
+  // Always log the feature-flag state so it's visible in Render/Vercel logs
+  console.log(
+    `[DEMO] flag=${enabled ? 'ON' : 'OFF'} | checking: ${normalized}`
+  );
+
+  if (!enabled) return null;
+
   for (const role of DEMO_ROLES) {
     const envPhone = process.env[`DEMO_${role}_PHONE`];
-    if (!envPhone) continue;
+    if (!envPhone) {
+      console.log(`[DEMO] DEMO_${role}_PHONE not set — skipping`);
+      continue;
+    }
     const envNormalized = toE164(envPhone);
+    console.log(`[DEMO] comparing ${normalized} vs ${envNormalized} (${role})`);
     if (envNormalized && envNormalized === normalized) {
+      console.log(`[DEMO] ✓ matched role=${role}`);
       return {
         phone: envNormalized,
         otp: process.env[`DEMO_${role}_OTP`] || '',
@@ -82,11 +96,26 @@ const getDemoEntry = (phoneNumber) => {
       };
     }
   }
+
+  console.log(`[DEMO] no match for ${normalized}`);
   return null;
 };
 
 /** Exported for use in authController */
 exports.getDemoEntry = getDemoEntry;
+
+// ── Startup diagnostic (visible in Render / Vercel logs on every cold start) ──
+;(() => {
+  const on = isDemoEnabled();
+  console.log(`[DEMO] DEMO_LOGIN_ENABLED=${process.env.DEMO_LOGIN_ENABLED ?? '(unset)'} → bypass ${on ? 'ACTIVE' : 'INACTIVE'}`);
+  if (on) {
+    for (const role of DEMO_ROLES) {
+      const p = process.env[`DEMO_${role}_PHONE`];
+      const hasOtp = !!(process.env[`DEMO_${role}_OTP`]);
+      console.log(`[DEMO]   ${role}: phone=${p ?? '(unset)'}  otp=${hasOtp ? '(set)' : '(UNSET!)'}`);
+    }
+  }
+})();
 
 exports.sendOTP = async (phoneNumber, otp) => {
   const normalized = toE164(phoneNumber);
