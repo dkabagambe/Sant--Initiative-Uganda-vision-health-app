@@ -29,6 +29,9 @@ type RootStackParamList = {
   InventoryScreen: undefined;
   PaymentsScreen: undefined;
   ReferralsScreen: undefined;
+  CreateReferralScreen: { fromScreening: boolean };
+  SelectClientForReferralScreen: undefined;
+  CommunityFollowUp: undefined;
 };
 
 type ReferralsScreenNavigationProp = NativeStackNavigationProp<
@@ -164,28 +167,11 @@ export default function ReferralsScreen() {
   };
 
   const handleCreateReferral = () => {
-    // Open CreateReferralScreen with blank form (manual referral, no prior screening).
-    // Navigate via the CHWHome tab stack where CreateReferralScreen is registered.
-    const tabNav = navigation.getParent();
-    if (tabNav) {
-      tabNav.navigate("CHWHome", {
-        screen: "CreateReferralScreen",
-        params: { fromScreening: false },
-      });
-    } else {
-      (navigation as any).navigate("CreateReferralScreen", { fromScreening: false });
-    }
+    navigation.navigate("CreateReferralScreen", { fromScreening: false });
   };
 
   const handleCommunityFollowUp = () => {
-    const tabNav = navigation.getParent();
-    if (tabNav) {
-      tabNav.navigate("CHWHome", {
-        screen: "CommunityFollowUp",
-      });
-    } else {
-      (navigation as any).navigate("CommunityFollowUp");
-    }
+    navigation.navigate("CommunityFollowUp");
   };
 
   // Deduplicate by client identity - keep only the most recent record per client.

@@ -152,7 +152,21 @@ function CHWHomeStack() {
   );
 }
 
-// ─── CHW Tab Navigator (Green #2E7D32) ───────────────────────────────────────
+// ─── CHW Referrals Stack ──────────────────────────────────────────────────────
+// Wraps the Referrals tab so it can push CreateReferralScreen and
+// CommunityFollowUp directly without relying on parent-navigator hacks.
+function CHWReferralsStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{ headerShown: false, animation: "slide_from_right" }}
+    >
+      <Stack.Screen name="ReferralsScreen" component={ReferralsScreen} />
+      <Stack.Screen name="CreateReferralScreen" component={CreateReferralScreen} />
+      <Stack.Screen name="SelectClientForReferralScreen" component={SelectClientForReferralScreen} />
+      <Stack.Screen name="CommunityFollowUp" component={VHTCommunityFollowUpScreen} />
+    </Stack.Navigator>
+  );
+}
 function CHWTabs() {
   return (
     <Tab.Navigator
@@ -210,7 +224,7 @@ function CHWTabs() {
       />
       <Tab.Screen
         name="CHWReferralsTab"
-        component={ReferralsScreen}
+        component={CHWReferralsStack}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? "people" : "people-outline"} size={size} color={color} />
