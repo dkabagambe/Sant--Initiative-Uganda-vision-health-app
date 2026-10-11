@@ -37,7 +37,7 @@ class RemoteConfigService {
 
   private getDefaultConfig(): RemoteConfig {
     return {
-      apiBaseUrl: "https://sante-backend.onrender.com/api",
+      apiBaseUrl: "https://sante-initiative-uganda-app.onrender.com/api",
       maintenanceMode: false,
       features: {
         paymentsEnabled: true,

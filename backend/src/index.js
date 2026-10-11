@@ -72,7 +72,13 @@ app.use(
   }),
 );
 
-// --- Health check ---
+// --- Fast ping (no DB) — use this for uptime monitors ---
+// Responds in <5 ms. Safe to poll every 60 s on free tier.
+app.get("/api/ping", (req, res) => {
+  res.json({ ok: true, ts: Date.now() });
+});
+
+// --- Health check (queries DB) ---
 app.get("/api/health", async (req, res) => {
   let dbStatus = "disconnected";
   let dbError = null;
@@ -203,20 +209,24 @@ const {
 } = require("./services/paymentReminderScheduler");
 const os = require("os");
 
-// --- Serve uploaded files (on Vercel use /tmp; local use backend/uploads) ---
-const uploadsPath = process.env.VERCEL
+// --- Serve uploaded files ---
+// Vercel: files go to /tmp (ephemeral, cleared on each function invocation).
+// Render/local: files go to backend/uploads (persistent on Render paid disk,
+//   ephemeral on Render free tier — see FILE UPLOADS note in RENDER_DEPLOY.md).
+const isVercelRuntime = !!process.env.VERCEL;
+const uploadsPath = isVercelRuntime
   ? path.join(os.tmpdir(), "sante-uploads")
   : path.join(__dirname, "../uploads");
 app.use("/uploads", express.static(uploadsPath));
 
 // --- Serve outlet uploaded files ---
-const outletUploadsPath = process.env.VERCEL
+const outletUploadsPath = isVercelRuntime
   ? path.join(os.tmpdir(), "sante-outlet-uploads")
   : path.join(__dirname, "../uploads/outlets");
 app.use("/uploads/outlets", express.static(outletUploadsPath));
 
 // --- Serve CHW uploaded files ---
-const chwUploadsPath = process.env.VERCEL
+const chwUploadsPath = isVercelRuntime
   ? path.join(os.tmpdir(), "sante-chw-uploads")
   : path.join(__dirname, "../uploads/chw");
 app.use("/uploads/chw", express.static(chwUploadsPath));
