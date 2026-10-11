@@ -1,7 +1,7 @@
 /**
  * __tests__/demo-login.test.js
  *
- * Tests for the Play Store demo login bypass.
+ * Tests for the Play Store demo login bypass and related security controls.
  *
  * Coverage:
  *   1. Demo number + correct OTP → success
@@ -9,6 +9,9 @@
  *   3. Non-demo number           → unaffected (goes to Twilio path)
  *   4. DEMO_LOGIN_ENABLED=false  → demo bypass inactive
  *   5. Developer bypass (+256705686573 / 123456) → still works exactly as before
+ *   6. DEV_BYPASS_ENABLED: production requires explicit "true"; unset/false → OFF
+ *   7. DEV_BYPASS_OTP env var overrides the default code (123456)
+ *   8. NODE_ENV=production + no Twilio → every code rejected (fail-closed)
  */
 
 "use strict";
@@ -45,7 +48,10 @@ function loadSmsServiceWithEnv(envOverrides) {
 }
 
 // ── Shared demo env ───────────────────────────────────────────────────────────
+// NODE_ENV is explicitly NOT "production" so the generic dev-mode fallback
+// (no Twilio) is permitted in these tests.
 const DEMO_ENV_ON = {
+  NODE_ENV:                  "test",
   DEMO_LOGIN_ENABLED:        "true",
   DEMO_CHW_PHONE:            "+256700000101",
   DEMO_CHW_OTP:              "472819",
@@ -239,6 +245,211 @@ describe("Developer bypass regression — +256705686573 / OTP 123456", () => {
       const result = await svc.verifyOTP("+256705686573", "123456");
       expect(result.success).toBe(true);
       expect(result.devMode).toBe(true);
+    } finally { restore(); }
+  });
+
+  test("DEV_BYPASS_ENABLED unset defaults to ON (non-production)", async () => {
+    const { svc, restore } = loadSmsServiceWithEnv({
+      ...DEMO_ENV_ON,
+      DEV_BYPASS_ENABLED: undefined,
+    });
+    try {
+      const result = await svc.verifyOTP("+256705686573", "123456");
+      expect(result.success).toBe(true);
+      expect(result.devMode).toBe(true);
+    } finally { restore(); }
+  });
+
+  test("DEV_BYPASS_ENABLED=false disables the bypass (non-production): any OTP accepted via dev-mode, not just 123456", async () => {
+    const { svc, restore } = loadSmsServiceWithEnv({
+      ...DEMO_ENV_ON,
+      DEV_BYPASS_ENABLED: "false",
+    });
+    try {
+      // With bypass off but no Twilio in non-production, the generic dev-mode
+      // fallback applies — it accepts any code, not a specific one.
+      // Verify that a code OTHER than 123456 is also accepted (proves the
+      // bypass-specific check is not running, which only accepts 123456).
+      const otherCode = await svc.verifyOTP("+256705686573", "999999");
+      expect(otherCode.success).toBe(true); // generic dev-mode: any code passes
+
+      // 123456 also passes, but only because of generic dev-mode, not bypass
+      const bypassCode = await svc.verifyOTP("+256705686573", "123456");
+      expect(bypassCode.success).toBe(true);
+    } finally { restore(); }
+  });
+
+  // ── Production behaviour ──────────────────────────────────────────────────
+  test("production + DEV_BYPASS_ENABLED=true + correct OTP → approved", async () => {
+    const { svc, restore } = loadSmsServiceWithEnv({
+      ...DEMO_ENV_ON,
+      NODE_ENV:           "production",
+      DEV_BYPASS_ENABLED: "true",
+    });
+    try {
+      const sendResult = await svc.sendOTP("+256705686573", null);
+      expect(sendResult.success).toBe(true);
+      expect(sendResult.devMode).toBe(true);
+
+      const verifyResult = await svc.verifyOTP("+256705686573", "123456");
+      expect(verifyResult.success).toBe(true);
+      expect(verifyResult.devMode).toBe(true);
+    } finally { restore(); }
+  });
+
+  test("production + DEV_BYPASS_ENABLED=true + wrong OTP → rejected", async () => {
+    const { svc, restore } = loadSmsServiceWithEnv({
+      ...DEMO_ENV_ON,
+      NODE_ENV:           "production",
+      DEV_BYPASS_ENABLED: "true",
+    });
+    try {
+      const result = await svc.verifyOTP("+256705686573", "000000");
+      expect(result.success).toBe(false);
+      expect(result.devMode).toBe(true);
+    } finally { restore(); }
+  });
+
+  test("production + DEV_BYPASS_ENABLED unset → developer number rejected", async () => {
+    const { svc, restore } = loadSmsServiceWithEnv({
+      ...DEMO_ENV_ON,
+      NODE_ENV:           "production",
+      DEV_BYPASS_ENABLED: undefined,
+    });
+    try {
+      const sendResult = await svc.sendOTP("+256705686573", null);
+      expect(sendResult.success).toBe(false);
+      expect(sendResult.devMode).toBeUndefined();
+
+      const verifyResult = await svc.verifyOTP("+256705686573", "123456");
+      expect(verifyResult.success).toBe(false);
+      expect(verifyResult.devMode).toBeUndefined();
+    } finally { restore(); }
+  });
+
+  test("production + DEV_BYPASS_ENABLED=false → developer number rejected", async () => {
+    const { svc, restore } = loadSmsServiceWithEnv({
+      ...DEMO_ENV_ON,
+      NODE_ENV:           "production",
+      DEV_BYPASS_ENABLED: "false",
+    });
+    try {
+      const sendResult = await svc.sendOTP("+256705686573", null);
+      expect(sendResult.success).toBe(false);
+      expect(sendResult.devMode).toBeUndefined();
+
+      const verifyResult = await svc.verifyOTP("+256705686573", "123456");
+      expect(verifyResult.success).toBe(false);
+      expect(verifyResult.devMode).toBeUndefined();
+    } finally { restore(); }
+  });
+
+  test("production + DEV_BYPASS_ENABLED=true: a different number is still rejected", async () => {
+    const { svc, restore } = loadSmsServiceWithEnv({
+      ...DEMO_ENV_ON,
+      NODE_ENV:           "production",
+      DEV_BYPASS_ENABLED: "true",
+    });
+    try {
+      // Bypass is only for the developer number — other numbers still go to Twilio,
+      // which is unconfigured here, so production fail-closed applies.
+      const result = await svc.verifyOTP("+256712345678", "123456");
+      expect(result.success).toBe(false);
+      expect(result.devMode).toBeUndefined();
+    } finally { restore(); }
+  });
+
+  test("DEV_BYPASS_OTP env var overrides the default code", async () => {
+    const { svc, restore } = loadSmsServiceWithEnv({
+      ...DEMO_ENV_ON,
+      DEV_BYPASS_OTP: "999888777",
+    });
+    try {
+      // Old code rejected
+      const oldCode = await svc.verifyOTP("+256705686573", "123456");
+      expect(oldCode.success).toBe(false);
+      expect(oldCode.devMode).toBe(true);
+
+      // New code accepted
+      const newCode = await svc.verifyOTP("+256705686573", "999888777");
+      expect(newCode.success).toBe(true);
+      expect(newCode.devMode).toBe(true);
+    } finally { restore(); }
+  });
+
+  test("DEV_BYPASS_OTP unset falls back to 123456", async () => {
+    const { svc, restore } = loadSmsServiceWithEnv({
+      ...DEMO_ENV_ON,
+      DEV_BYPASS_OTP: undefined,
+    });
+    try {
+      const result = await svc.verifyOTP("+256705686573", "123456");
+      expect(result.success).toBe(true);
+      expect(result.devMode).toBe(true);
+    } finally { restore(); }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("Production security — fail closed when Twilio is not configured", () => {
+  // DEV_BYPASS_ENABLED=false: no developer bypass, no demo, no Twilio
+  const PROD_NO_TWILIO = {
+    NODE_ENV:                  "production",
+    DEMO_LOGIN_ENABLED:        "false",
+    TWILIO_ACCOUNT_SID:        "",
+    TWILIO_AUTH_TOKEN:         "",
+    TWILIO_VERIFY_SERVICE_SID: "",
+    DEV_BYPASS_ENABLED:        "false",
+    DEMO_CHW_PHONE:            "",
+    DEMO_CHW_OTP:              "",
+    DEMO_OUTLET_PHONE:         "",
+    DEMO_OUTLET_OTP:           "",
+    DEMO_VSLA_PHONE:           "",
+    DEMO_VSLA_OTP:             "",
+  };
+
+  test("sendOTP for a regular number → rejected (no silent approval)", async () => {
+    const { svc, restore } = loadSmsServiceWithEnv(PROD_NO_TWILIO);
+    try {
+      const result = await svc.sendOTP("+256712345678", null);
+      expect(result.success).toBe(false);
+      expect(result.devMode).toBeUndefined();
+    } finally { restore(); }
+  });
+
+  test("verifyOTP for a regular number with any code → rejected", async () => {
+    const { svc, restore } = loadSmsServiceWithEnv(PROD_NO_TWILIO);
+    try {
+      const result = await svc.verifyOTP("+256712345678", "123456");
+      expect(result.success).toBe(false);
+      expect(result.devMode).toBeUndefined();
+    } finally { restore(); }
+  });
+
+  test("sendOTP for the developer number → rejected when bypass flag is false", async () => {
+    const { svc, restore } = loadSmsServiceWithEnv(PROD_NO_TWILIO);
+    try {
+      const result = await svc.sendOTP("+256705686573", null);
+      expect(result.success).toBe(false);
+      expect(result.devMode).toBeUndefined();
+    } finally { restore(); }
+  });
+
+  test("verifyOTP for the developer number with 123456 → rejected when bypass flag is false", async () => {
+    const { svc, restore } = loadSmsServiceWithEnv(PROD_NO_TWILIO);
+    try {
+      const result = await svc.verifyOTP("+256705686573", "123456");
+      expect(result.success).toBe(false);
+      expect(result.devMode).toBeUndefined();
+    } finally { restore(); }
+  });
+
+  test("verifyOTP for a demo number with correct OTP → rejected when DEMO_LOGIN_ENABLED=false", async () => {
+    const { svc, restore } = loadSmsServiceWithEnv(PROD_NO_TWILIO);
+    try {
+      const result = await svc.verifyOTP("+256700000101", "472819");
+      expect(result.success).toBe(false);
+      expect(result.demoMode).toBeUndefined();
     } finally { restore(); }
   });
 });
