@@ -6,6 +6,9 @@ const {
   phonesMatch,
 } = require("../utils/phoneUtils");
 
+// Demo numbers are checked in smsService; we only need getDemoEntry here for audit logging.
+const { getDemoEntry } = require("../services/smsService");
+
 /** Find a registered user regardless of how their phone was stored */
 async function findUserByPhone(sql, phoneNumber) {
   const variants = phoneLookupVariants(phoneNumber);
@@ -189,6 +192,13 @@ exports.verifyOTP = async (req, res) => {
           error: "Invalid or expired OTP",
           details: verifyResult.error,
         });
+      }
+
+      // Audit log for demo logins (separate from normal login logs)
+      if (verifyResult.demoMode) {
+        console.log(
+          `[DEMO AUDIT] Demo login verified — phone: ${canonicalPhone}, role: ${user.role}, ip: ${req.ip}, ua: ${req.headers['user-agent']}, ts: ${new Date().toISOString()}`
+        );
       }
     } else {
       console.log(

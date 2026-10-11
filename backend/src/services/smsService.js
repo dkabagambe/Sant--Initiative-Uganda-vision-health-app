@@ -38,7 +38,9 @@ const toE164 = (phone) => {
  * @param {string} otp - Ignored, Twilio Verify generates its own OTP
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-// Dev bypass — developer number only; use OTP "123456" to avoid wasting Twilio credits
+// ─── Developer bypass (existing — DO NOT CHANGE) ─────────────────────────────
+// Developer account +256705686573 always accepts OTP 123456.
+// This block must not be modified; its behaviour is covered by regression tests.
 const DEV_BYPASS_NUMBERS = ['0705686573', '+256705686573', '256705686573'];
 
 const isDevBypassNumber = (phoneNumber) => {
@@ -49,11 +51,56 @@ const isDevBypassNumber = (phoneNumber) => {
   );
 };
 
+// ─── Play Store demo account bypass (separate whitelist) ─────────────────────
+// Enabled only when DEMO_LOGIN_ENABLED=true.
+// Numbers and OTPs are read from env vars — never hardcoded.
+// Demo accounts are completely independent of the developer bypass above.
+const isDemoEnabled = () =>
+  process.env.DEMO_LOGIN_ENABLED &&
+  ['true', '1', 'yes'].includes(
+    String(process.env.DEMO_LOGIN_ENABLED).toLowerCase()
+  );
+
+const DEMO_ROLES = ['CHW', 'OUTLET', 'VSLA'];
+
+/**
+ * Returns the demo entry for a phone number, or null if not a demo number.
+ * { phone: '+256...', otp: '######', role: 'CHW'|'OUTLET'|'VSLA' }
+ */
+const getDemoEntry = (phoneNumber) => {
+  if (!isDemoEnabled()) return null;
+  const normalized = toE164(phoneNumber);
+  for (const role of DEMO_ROLES) {
+    const envPhone = process.env[`DEMO_${role}_PHONE`];
+    if (!envPhone) continue;
+    const envNormalized = toE164(envPhone);
+    if (envNormalized && envNormalized === normalized) {
+      return {
+        phone: envNormalized,
+        otp: process.env[`DEMO_${role}_OTP`] || '',
+        role,
+      };
+    }
+  }
+  return null;
+};
+
+/** Exported for use in authController */
+exports.getDemoEntry = getDemoEntry;
+
 exports.sendOTP = async (phoneNumber, otp) => {
   const normalized = toE164(phoneNumber);
+  // ── Developer bypass (unchanged) ────────────────────────────────────────────
   if (isDevBypassNumber(phoneNumber)) {
     console.log(`📱 [DEV BYPASS] Skipping OTP send for ${phoneNumber} — use code 123456`);
     return { success: true, devMode: true };
+  }
+
+  // ── Demo bypass (new — Play Store reviewers) ─────────────────────────────────
+  const demoEntry = getDemoEntry(phoneNumber);
+  if (demoEntry) {
+    console.log(`📱 [DEMO LOGIN] Skipping SMS for demo number ${normalized} (role: ${demoEntry.role})`);
+    return { success: true, demoMode: true };
   }
 
   // If SMS not configured, just log and return success (dev mode)
@@ -96,11 +143,22 @@ exports.sendOTP = async (phoneNumber, otp) => {
  */
 exports.verifyOTP = async (phoneNumber, code) => {
   const normalized = toE164(phoneNumber);
+  // ── Developer bypass (unchanged) ─────────────────────────────────────────────
   // Bypass OTP verification for dev number only — accept "123456"
   if (isDevBypassNumber(phoneNumber)) {
     const valid = code === '123456';
     console.log(`📱 [DEV BYPASS] Verifying OTP for ${phoneNumber}: ${code} → ${valid ? 'approved' : 'rejected'}`);
     return { success: valid, devMode: true };
+  }
+
+  // ── Demo bypass (new — Play Store reviewers) ──────────────────────────────────
+  const demoEntry = getDemoEntry(phoneNumber);
+  if (demoEntry) {
+    const valid = demoEntry.otp && code === demoEntry.otp;
+    console.log(
+      `📱 [DEMO LOGIN] OTP check for ${normalized} (role: ${demoEntry.role}): ${code} → ${valid ? 'approved' : 'rejected'}`
+    );
+    return { success: valid, demoMode: true };
   }
 
   if (!twilioService) {

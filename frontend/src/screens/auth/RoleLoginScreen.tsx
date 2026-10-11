@@ -75,8 +75,8 @@ export default function RoleLoginScreen() {
         const combined = `${errorMsg} ${details}`.toLowerCase();
         if (combined.includes("blocked") || combined.includes("fraudulent")) {
           Alert.alert(
-            "Number Blocked",
-            "This phone number is temporarily blocked by our SMS provider. Please contact support or try a different number."
+            "Could Not Send Code",
+            "We could not send the verification code right now. Please try again later or contact support at info@santeinitiativeug.org."
           );
         } else if (
           result.code === "NOT_REGISTERED" ||

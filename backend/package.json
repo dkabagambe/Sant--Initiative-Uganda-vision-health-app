@@ -16,7 +16,9 @@
     "dev:local:poll": "npm run dev:local",
     "init-db": "node scripts/init-db.js",
     "seed:production": "FORCE_POSTGRES=1 node scripts/init-db.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest --testMatch='**/__tests__/**/*.test.js' --forceExit",
+    "test:demo": "jest --testMatch='**/__tests__/demo-login.test.js' --forceExit",
+    "seed:demo": "node scripts/seed-demo-accounts.js",
     "test:api": "node scripts/smoke-test-api.js",
     "test:api:vercel": "BASE_URL=https://backend-tau-sepia-43.vercel.app/api node scripts/smoke-test-api.js"
   },
@@ -43,6 +45,7 @@
     "twilio": "^5.12.2"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
     "nodemon": "^3.0.1",
     "vercel": "^50.25.4"
   }
